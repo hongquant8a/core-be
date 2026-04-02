@@ -1,0 +1,130 @@
+<?php
+
+namespace App\Modules\TaskAssignment\Controllers;
+
+use App\Http\Controllers\Controller;
+use App\Modules\Core\Requests\FilterRequest;
+use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
+use App\Modules\TaskAssignment\Models\TaskAssignmentItemReport;
+use App\Modules\TaskAssignment\Requests\StoreReportRequest;
+use App\Modules\TaskAssignment\Requests\UpdateReportRequest;
+use App\Modules\TaskAssignment\Resources\ReportCollection;
+use App\Modules\TaskAssignment\Resources\ReportResource;
+use App\Modules\TaskAssignment\Services\TaskAssignmentReportService;
+
+/**
+ * @group TaskAssignment - Báo cáo công việc
+ * @header X-Organization-Id ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1
+ *
+ * Quản lý báo cáo công việc: danh sách, tạo, cập nhật, xóa báo cáo theo từng công việc.
+ */
+class TaskAssignmentItemReportController extends Controller
+{
+    public function __construct(private TaskAssignmentReportService $reportService) {}
+
+    /**
+     * Danh sách báo cáo công việc
+     *
+     * @queryParam task_assignment_item_id integer required ID công việc. Example: 1
+     * @queryParam limit integer Số bản ghi mỗi trang (1-100). Example: 10
+     *
+     * @apiResourceCollection App\Modules\TaskAssignment\Resources\ReportCollection
+     *
+     * @apiResourceModel App\Modules\TaskAssignment\Models\TaskAssignmentItemReport paginate=10
+     *
+     * @apiResourceAdditional success=true
+     */
+    public function index(FilterRequest $request)
+    {
+        $request->validate([
+            'task_assignment_item_id' => 'required|integer|exists:task_assignment_items,id',
+        ]);
+
+        $reports = $this->reportService->index(
+            (int) $request->input('task_assignment_item_id'),
+            (int) ($request->limit ?? 10)
+        );
+
+        return $this->successCollection(new ReportCollection($reports));
+    }
+
+    /**
+     * Chi tiết báo cáo công việc
+     *
+     * @urlParam taskAssignmentItemReport integer required ID báo cáo. Example: 1
+     *
+     * @apiResource App\Modules\TaskAssignment\Resources\ReportResource
+     * @apiResourceModel App\Modules\TaskAssignment\Models\TaskAssignmentItemReport
+     * @apiResourceAdditional success=true
+     */
+    public function show(TaskAssignmentItemReport $taskAssignmentItemReport)
+    {
+        $report = $taskAssignmentItemReport->load(['reporter', 'attachments.media']);
+
+        return $this->successResource(new ReportResource($report));
+    }
+
+    /**
+     * Tạo báo cáo công việc
+     *
+     * @bodyParam task_assignment_item_id integer required ID công việc. Example: 1
+     * @bodyParam content string required Nội dung báo cáo. Example: Đã hoàn thành 50% khối lượng công việc.
+     * @bodyParam progress integer Tiến độ tại thời điểm báo cáo (0-100). Example: 50
+     * @bodyParam files[] file Tệp đính kèm (tối đa 10 tệp).
+     *
+     * @apiResource App\Modules\TaskAssignment\Resources\ReportResource status=201
+     *
+     * @apiResourceModel App\Modules\TaskAssignment\Models\TaskAssignmentItemReport
+     *
+     * @apiResourceAdditional success=true message="Báo cáo đã được tạo thành công!"
+     */
+    public function store(StoreReportRequest $request)
+    {
+        $item = TaskAssignmentItem::findOrFail($request->input('task_assignment_item_id'));
+        $report = $this->reportService->store($item, $request->validated(), $request->file('files', []));
+
+        return $this->successResource(new ReportResource($report), 'Báo cáo đã được tạo thành công!', 201);
+    }
+
+    /**
+     * Cập nhật báo cáo công việc
+     *
+     * @urlParam taskAssignmentItemReport integer required ID báo cáo. Example: 1
+     *
+     * @bodyParam content string Nội dung báo cáo.
+     * @bodyParam progress integer Tiến độ tại thời điểm báo cáo (0-100).
+     * @bodyParam files[] file Tệp đính kèm mới (append).
+     * @bodyParam remove_attachment_ids array Mảng ID đính kèm cần xóa.
+     *
+     * @apiResource App\Modules\TaskAssignment\Resources\ReportResource
+     *
+     * @apiResourceModel App\Modules\TaskAssignment\Models\TaskAssignmentItemReport
+     *
+     * @apiResourceAdditional success=true message="Báo cáo đã được cập nhật!"
+     */
+    public function update(UpdateReportRequest $request, TaskAssignmentItemReport $taskAssignmentItemReport)
+    {
+        $report = $this->reportService->update(
+            $taskAssignmentItemReport,
+            $request->validated(),
+            $request->file('files', []),
+            $request->input('remove_attachment_ids', [])
+        );
+
+        return $this->successResource(new ReportResource($report), 'Báo cáo đã được cập nhật!');
+    }
+
+    /**
+     * Xóa báo cáo công việc
+     *
+     * @urlParam taskAssignmentItemReport integer required ID báo cáo. Example: 1
+     *
+     * @response 200 {"success": true, "message": "Báo cáo đã được xóa thành công!"}
+     */
+    public function destroy(TaskAssignmentItemReport $taskAssignmentItemReport)
+    {
+        $this->reportService->destroy($taskAssignmentItemReport);
+
+        return $this->success(null, 'Báo cáo đã được xóa thành công!');
+    }
+}

@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
         $this->seedPostCategories();
         $this->seedPosts();
         $this->call(PermissionSeeder::class);
+        $this->call(TaskAssignmentDataSeeder::class);
         $this->call(SettingSeeder::class);
     }
 

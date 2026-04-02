@@ -92,6 +92,36 @@ class PermissionSeeder extends Seeder
             'stats', 'index', 'show', 'store', 'update', 'destroy',
             'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
         ],
+        // TaskAssignment - Phòng ban giao việc
+        'task-assignment-departments' => [
+            'stats', 'index', 'show', 'store', 'update', 'destroy',
+            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
+        ],
+        // TaskAssignment - Loại văn bản giao việc
+        'task-assignment-types' => [
+            'stats', 'index', 'show', 'store', 'update', 'destroy',
+            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
+        ],
+        // TaskAssignment - Loại công việc
+        'task-assignment-item-types' => [
+            'stats', 'index', 'show', 'store', 'update', 'destroy',
+            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
+        ],
+        // TaskAssignment - Văn bản giao việc
+        'task-assignment-documents' => [
+            'stats', 'index', 'show', 'store', 'update', 'destroy',
+            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
+        ],
+        // TaskAssignment - Công việc
+        'task-assignment-items' => [
+            'stats', 'index', 'show', 'store', 'update', 'destroy',
+            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
+            'updateProgress',
+        ],
+        // TaskAssignment - Báo cáo công việc
+        'task-assignment-item-reports' => [
+            'index', 'show', 'store', 'update', 'destroy',
+        ],
         // Core - Cấu hình hệ thống
         'settings' => [
             'index', 'show', 'update',
@@ -145,6 +175,12 @@ class PermissionSeeder extends Seeder
         'document-signers' => 'Người ký',
         'document-fields' => 'Lĩnh vực',
         'settings' => 'Cấu hình hệ thống',
+        'task-assignment-departments' => 'Phòng ban giao việc',
+        'task-assignment-types' => 'Loại văn bản giao việc',
+        'task-assignment-item-types' => 'Loại công việc',
+        'task-assignment-documents' => 'Văn bản giao việc',
+        'task-assignment-items' => 'Công việc',
+        'task-assignment-item-reports' => 'Báo cáo công việc',
     ];
 
     /** Nhãn action (để description). */
@@ -164,6 +200,7 @@ class PermissionSeeder extends Seeder
         'incrementView' => 'Tăng lượt xem',
         'destroyByDate' => 'Xóa theo khoảng thời gian',
         'destroyAll' => 'Xóa toàn bộ',
+        'updateProgress' => 'Cập nhật tiến độ',
     ];
 
     /** Tạo đầy đủ permission từ danh sách PERMISSIONS (kèm description, sort_order, parent_id). */
@@ -216,6 +253,20 @@ class PermissionSeeder extends Seeder
             ['organization_id' => null]
         );
 
+        // TaskAssignment - 3 role nghiệp vụ giao việc
+        Role::firstOrCreate(
+            ['name' => 'Quản trị', 'guard_name' => self::GUARD],
+            ['organization_id' => null]
+        );
+        Role::firstOrCreate(
+            ['name' => 'Trưởng phòng', 'guard_name' => self::GUARD],
+            ['organization_id' => null]
+        );
+        Role::firstOrCreate(
+            ['name' => 'Nhân viên', 'guard_name' => self::GUARD],
+            ['organization_id' => null]
+        );
+
         // Chuẩn hóa dữ liệu cũ nếu còn role theo organization.
         Role::query()->update(['organization_id' => null]);
     }
@@ -244,6 +295,22 @@ class PermissionSeeder extends Seeder
         $sampleRole = Role::where('name', 'Vai trò mẫu')->where('guard_name', self::GUARD)->first();
         if ($sampleRole) {
             $sampleRole->syncPermissions($samplePermissionNames);
+        }
+
+        // TaskAssignment roles
+        $quanTriRole = Role::where('name', 'Quản trị')->where('guard_name', self::GUARD)->first();
+        if ($quanTriRole) {
+            $quanTriRole->syncPermissions($this->getQuanTriPermissionNames());
+        }
+
+        $truongPhongRole = Role::where('name', 'Trưởng phòng')->where('guard_name', self::GUARD)->first();
+        if ($truongPhongRole) {
+            $truongPhongRole->syncPermissions($this->getTruongPhongPermissionNames());
+        }
+
+        $nhanVienRole = Role::where('name', 'Nhân viên')->where('guard_name', self::GUARD)->first();
+        if ($nhanVienRole) {
+            $nhanVienRole->syncPermissions($this->getNhanVienPermissionNames());
         }
     }
 
@@ -340,6 +407,80 @@ class PermissionSeeder extends Seeder
             'post-categories.index',
             'post-categories.tree',
             'post-categories.show',
+        ];
+    }
+
+    /** Permission cho Quản trị: full danh mục + xem/thống kê/export văn bản, công việc, báo cáo. */
+    protected function getQuanTriPermissionNames(): array
+    {
+        $names = [];
+
+        // Full quyền trên danh mục
+        foreach (['task-assignment-departments', 'task-assignment-types', 'task-assignment-item-types'] as $resource) {
+            foreach (self::$PERMISSIONS[$resource] as $action) {
+                $names[] = "{$resource}.{$action}";
+            }
+        }
+
+        // Xem + thống kê + export văn bản và công việc
+        foreach (['task-assignment-documents', 'task-assignment-items'] as $resource) {
+            foreach (['stats', 'index', 'show', 'export'] as $action) {
+                $names[] = "{$resource}.{$action}";
+            }
+        }
+
+        // Xem báo cáo
+        $names[] = 'task-assignment-item-reports.index';
+        $names[] = 'task-assignment-item-reports.show';
+
+        return $names;
+    }
+
+    /** Permission cho Trưởng phòng: tạo/sửa văn bản, công việc, assign, xem báo cáo. */
+    protected function getTruongPhongPermissionNames(): array
+    {
+        return [
+            // Văn bản giao việc
+            'task-assignment-documents.stats',
+            'task-assignment-documents.index',
+            'task-assignment-documents.show',
+            'task-assignment-documents.store',
+            'task-assignment-documents.update',
+            'task-assignment-documents.changeStatus',
+
+            // Công việc
+            'task-assignment-items.stats',
+            'task-assignment-items.index',
+            'task-assignment-items.show',
+            'task-assignment-items.store',
+            'task-assignment-items.update',
+            'task-assignment-items.changeStatus',
+            'task-assignment-items.updateProgress',
+
+            // Báo cáo
+            'task-assignment-item-reports.index',
+            'task-assignment-item-reports.show',
+        ];
+    }
+
+    /** Permission cho Nhân viên: xem văn bản/công việc, cập nhật tiến độ, tạo/sửa báo cáo. */
+    protected function getNhanVienPermissionNames(): array
+    {
+        return [
+            // Văn bản giao việc (chỉ xem)
+            'task-assignment-documents.index',
+            'task-assignment-documents.show',
+
+            // Công việc (xem + cập nhật tiến độ)
+            'task-assignment-items.index',
+            'task-assignment-items.show',
+            'task-assignment-items.updateProgress',
+
+            // Báo cáo (tạo, sửa, xem)
+            'task-assignment-item-reports.index',
+            'task-assignment-item-reports.show',
+            'task-assignment-item-reports.store',
+            'task-assignment-item-reports.update',
         ];
     }
 }

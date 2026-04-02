@@ -171,6 +171,7 @@ class LogActivity
             'destroyByDate' => 'Xóa theo khoảng thời gian',
             'destroyAll' => 'Xóa toàn bộ',
             'public' => 'Xem dữ liệu công khai',
+            'updateProgress' => 'Cập nhật tiến độ',
         ];
 
         $actionLabel = $actionLabels[$action] ?? $action;
@@ -189,6 +190,12 @@ class LogActivity
             ?? $params['issuingLevel']
             ?? $params['documentSigner']
             ?? $params['documentField']
+            ?? $params['taskAssignmentDepartment']
+            ?? $params['taskAssignmentType']
+            ?? $params['taskAssignmentItemType']
+            ?? $params['taskAssignmentDocument']
+            ?? $params['taskAssignmentItem']
+            ?? $params['taskAssignmentItemReport']
             ?? $params['id']
             ?? null;
         $suffix = $id ? ' #'.(is_object($id) ? $id->getKey() : $id) : '';
@@ -215,6 +222,12 @@ class LogActivity
             'document-signers' => 'người ký',
             'document-fields' => 'lĩnh vực',
             'settings' => 'cấu hình hệ thống',
+            'task-assignment-departments' => 'Phòng ban giao việc',
+            'task-assignment-types' => 'Loại văn bản giao việc',
+            'task-assignment-item-types' => 'Loại công việc',
+            'task-assignment-documents' => 'Văn bản giao việc',
+            'task-assignment-items' => 'Công việc',
+            'task-assignment-item-reports' => 'Báo cáo công việc',
         ];
 
         return $labels[$resource] ?? str_replace('-', ' ', $resource);

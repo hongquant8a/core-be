@@ -115,7 +115,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":[{"id":161,"name":"eius et","description":null,"status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"08:01:26 27\/03\/2026","updated_at":"08:01:26 27\/03\/2026"},{"id":162,"name":"velit et","description":"Nihil accusantium harum mollitia modi deserunt.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"08:01:26 27\/03\/2026","updated_at":"08:01:26 27\/03\/2026"}],"success":"true"}'
+        content: '{"data":[{"id":33,"name":"eius et","description":null,"status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:35 02\/04\/2026","updated_at":"09:41:35 02\/04\/2026"},{"id":34,"name":"velit et","description":"Nihil accusantium harum mollitia modi deserunt.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:35 02\/04\/2026","updated_at":"09:41:35 02\/04\/2026"}],"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -237,7 +237,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":[{"id":163,"name":"animi quos","description":null},{"id":164,"name":"fugiat sunt","description":"Harum mollitia modi deserunt aut ab provident perspiciatis quo."}],"success":"true"}'
+        content: '{"data":[{"id":35,"name":"animi quos","description":null},{"id":36,"name":"fugiat sunt","description":"Harum mollitia modi deserunt aut ab provident perspiciatis quo."}],"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -803,7 +803,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":[{"id":170,"name":"nemo odit","description":null,"status":"inactive","created_by":"N\/A","updated_by":"N\/A","created_at":"08:01:30 27\/03\/2026","updated_at":"08:01:30 27\/03\/2026"},{"id":171,"name":"est dignissimos","description":null,"status":"inactive","created_by":"N\/A","updated_by":"N\/A","created_at":"08:01:30 27\/03\/2026","updated_at":"08:01:30 27\/03\/2026"}],"links":{"first":"\/?page=1","last":"\/?page=1","prev":null,"next":null},"meta":{"current_page":1,"from":1,"last_page":1,"links":[{"url":null,"label":"&laquo; Previous","page":null,"active":false},{"url":"\/?page=1","label":"1","page":1,"active":true},{"url":null,"label":"Next &raquo;","page":null,"active":false}],"path":"\/","per_page":10,"to":2,"total":2},"success":"true"}'
+        content: '{"data":[{"id":42,"name":"nemo odit","description":null,"status":"inactive","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"},{"id":43,"name":"est dignissimos","description":null,"status":"inactive","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"}],"links":{"first":"\/?page=1","last":"\/?page=1","prev":null,"next":null},"meta":{"current_page":1,"from":1,"last_page":1,"links":[{"url":null,"label":"&laquo; Previous","page":null,"active":false},{"url":"\/?page=1","label":"1","page":1,"active":true},{"url":null,"label":"Next &raquo;","page":null,"active":false}],"path":"\/","per_page":10,"to":2,"total":2},"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -869,7 +869,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":172,"name":"omnis autem","description":null,"status":"inactive","created_by":"N\/A","updated_by":"N\/A","created_at":"08:01:30 27\/03\/2026","updated_at":"08:01:30 27\/03\/2026"},"success":"true"}'
+        content: '{"data":{"id":44,"name":"omnis autem","description":null,"status":"inactive","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"},"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -947,7 +947,7 @@ endpoints:
       -
         custom: []
         status: 201
-        content: '{"data":{"id":173,"name":"quia officia","description":"Neque blanditiis odio veritatis excepturi doloribus delectus.","status":"inactive","created_by":"N\/A","updated_by":"N\/A","created_at":"08:01:30 27\/03\/2026","updated_at":"08:01:30 27\/03\/2026"},"success":"true","message":"T\u1ea1o l\u0129nh v\u1ef1c th\u00e0nh c\u00f4ng!"}'
+        content: '{"data":{"id":45,"name":"quia officia","description":"Neque blanditiis odio veritatis excepturi doloribus delectus.","status":"inactive","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"},"success":"true","message":"T\u1ea1o l\u0129nh v\u1ef1c th\u00e0nh c\u00f4ng!"}'
         headers: []
         description: ''
     responseFields: []
@@ -1049,7 +1049,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":174,"name":"neque blanditiis","description":null,"status":"inactive","created_by":"N\/A","updated_by":"N\/A","created_at":"08:01:30 27\/03\/2026","updated_at":"08:01:30 27\/03\/2026"},"success":"true","message":"C\u1eadp nh\u1eadt l\u0129nh v\u1ef1c th\u00e0nh c\u00f4ng!"}'
+        content: '{"data":{"id":46,"name":"neque blanditiis","description":null,"status":"inactive","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"},"success":"true","message":"C\u1eadp nh\u1eadt l\u0129nh v\u1ef1c th\u00e0nh c\u00f4ng!"}'
         headers: []
         description: ''
     responseFields: []
@@ -1151,7 +1151,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":175,"name":"odio veritatis","description":null,"status":"inactive","created_by":"N\/A","updated_by":"N\/A","created_at":"08:01:30 27\/03\/2026","updated_at":"08:01:30 27\/03\/2026"},"success":"true","message":"C\u1eadp nh\u1eadt l\u0129nh v\u1ef1c th\u00e0nh c\u00f4ng!"}'
+        content: '{"data":{"id":47,"name":"odio veritatis","description":null,"status":"inactive","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"},"success":"true","message":"C\u1eadp nh\u1eadt l\u0129nh v\u1ef1c th\u00e0nh c\u00f4ng!"}'
         headers: []
         description: ''
     responseFields: []
@@ -1295,7 +1295,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":176,"name":"aut dolores","description":"Facere tempora ex voluptatem laboriosam.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"08:01:30 27\/03\/2026","updated_at":"08:01:30 27\/03\/2026"},"success":"true","message":"\u0110\u1ed5i tr\u1ea1ng th\u00e1i th\u00e0nh c\u00f4ng!"}'
+        content: '{"data":{"id":48,"name":"aut dolores","description":"Facere tempora ex voluptatem laboriosam.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"},"success":"true","message":"\u0110\u1ed5i tr\u1ea1ng th\u00e1i th\u00e0nh c\u00f4ng!"}'
         headers: []
         description: ''
     responseFields: []

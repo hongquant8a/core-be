@@ -1,0 +1,58 @@
+<?php
+
+namespace App\Modules\TaskAssignment\Resources;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class ItemResource extends JsonResource
+{
+    public function toArray(Request $request): array
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'description' => $this->description,
+            'document' => new DocumentResource($this->whenLoaded('document')),
+            'item_type' => new LookupResource($this->whenLoaded('itemType')),
+            'deadline_type' => $this->deadline_type,
+            'start_at' => $this->start_at?->format('H:i:s d/m/Y'),
+            'end_at' => $this->end_at?->format('H:i:s d/m/Y'),
+            'processing_status' => $this->processing_status,
+            'completion_percent' => $this->completion_percent,
+            'priority' => $this->priority,
+            'completed_at' => $this->completed_at?->format('H:i:s d/m/Y'),
+            'departments' => $this->whenLoaded('departments', function () {
+                return $this->departments->map(function ($dept) {
+                    return [
+                        'id' => $dept->id,
+                        'code' => $dept->code,
+                        'name' => $dept->name,
+                        'role' => $dept->pivot->role,
+                    ];
+                });
+            }),
+            'users' => $this->whenLoaded('users', function () {
+                return $this->users->map(function ($user) {
+                    return [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'department_id' => $user->pivot->department_id,
+                        'assignment_role' => $user->pivot->assignment_role,
+                        'assignment_status' => $user->pivot->assignment_status,
+                        'assigned_at' => $user->pivot->assigned_at ? \Carbon\Carbon::parse($user->pivot->assigned_at)->format('H:i:s d/m/Y') : null,
+                        'accepted_at' => $user->pivot->accepted_at ? \Carbon\Carbon::parse($user->pivot->accepted_at)->format('H:i:s d/m/Y') : null,
+                        'completed_at' => $user->pivot->completed_at ? \Carbon\Carbon::parse($user->pivot->completed_at)->format('H:i:s d/m/Y') : null,
+                        'note' => $user->pivot->note,
+                    ];
+                });
+            }),
+            'reports_count' => $this->whenCounted('reports'),
+            'created_by' => $this->whenLoaded('creator', fn () => $this->creator?->name, 'N/A'),
+            'updated_by' => $this->whenLoaded('editor', fn () => $this->editor?->name, 'N/A'),
+            'created_at' => $this->created_at?->format('H:i:s d/m/Y'),
+            'updated_at' => $this->updated_at?->format('H:i:s d/m/Y'),
+        ];
+    }
+}

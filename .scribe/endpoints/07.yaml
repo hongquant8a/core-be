@@ -117,7 +117,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":[{"id":258,"name":"Architecto Eius","slug":"architecto-eius","description":"Quos velit et fugiat sunt nihil accusantium harum.","status":"active","sort_order":86,"parent_id":null,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"27\/03\/2026 08:01:26","updated_at":"27\/03\/2026 08:01:26"},{"id":259,"name":"Deserunt Aut","slug":"deserunt-aut","description":null,"status":"active","sort_order":7,"parent_id":null,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"27\/03\/2026 08:01:26","updated_at":"27\/03\/2026 08:01:26"}],"success":"true"}'
+        content: '{"data":[{"id":67,"name":"Architecto Eius","slug":"architecto-eius","description":"Quos velit et fugiat sunt nihil accusantium harum.","status":"active","sort_order":86,"parent_id":null,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:35","updated_at":"02\/04\/2026 09:41:35"},{"id":68,"name":"Deserunt Aut","slug":"deserunt-aut","description":null,"status":"active","sort_order":7,"parent_id":null,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:35","updated_at":"02\/04\/2026 09:41:35"}],"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -241,7 +241,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":[{"id":260,"name":"Et Animi","description":"Et fugiat sunt nihil accusantium."},{"id":261,"name":"Quo Omnis","description":"Adipisci quidem nostrum qui commodi incidunt iure."}],"success":"true"}'
+        content: '{"data":[{"id":69,"name":"Et Animi","description":"Et fugiat sunt nihil accusantium."},{"id":70,"name":"Quo Omnis","description":"Adipisci quidem nostrum qui commodi incidunt iure."}],"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -859,7 +859,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":[{"id":267,"name":"Adipisci Quidem","slug":"adipisci-quidem","description":"Commodi incidunt iure odit.","status":"active","sort_order":20,"parent_id":null,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"27\/03\/2026 08:01:27","updated_at":"27\/03\/2026 08:01:27"},{"id":268,"name":"Modi Ipsum","slug":"modi-ipsum","description":"Autem et consequatur aut dolores enim non facere tempora.","status":"inactive","sort_order":78,"parent_id":null,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"27\/03\/2026 08:01:27","updated_at":"27\/03\/2026 08:01:27"}],"links":{"first":"\/?page=1","last":"\/?page=1","prev":null,"next":null},"meta":{"current_page":1,"from":1,"last_page":1,"links":[{"url":null,"label":"&laquo; Previous","page":null,"active":false},{"url":"\/?page=1","label":"1","page":1,"active":true},{"url":null,"label":"Next &raquo;","page":null,"active":false}],"path":"\/","per_page":10,"to":2,"total":2},"success":"true"}'
+        content: '{"data":[{"id":76,"name":"Adipisci Quidem","slug":"adipisci-quidem","description":"Commodi incidunt iure odit.","status":"active","sort_order":20,"parent_id":null,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:35","updated_at":"02\/04\/2026 09:41:35"},{"id":77,"name":"Modi Ipsum","slug":"modi-ipsum","description":"Autem et consequatur aut dolores enim non facere tempora.","status":"inactive","sort_order":78,"parent_id":null,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:35","updated_at":"02\/04\/2026 09:41:35"}],"links":{"first":"\/?page=1","last":"\/?page=1","prev":null,"next":null},"meta":{"current_page":1,"from":1,"last_page":1,"links":[{"url":null,"label":"&laquo; Previous","page":null,"active":false},{"url":"\/?page=1","label":"1","page":1,"active":true},{"url":null,"label":"Next &raquo;","page":null,"active":false}],"path":"\/","per_page":10,"to":2,"total":2},"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -925,7 +925,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":270,"name":"Aut Adipisci","slug":"aut-adipisci","description":"Qui commodi incidunt iure odit.","status":"active","sort_order":20,"parent_id":269,"depth":1,"created_by":"N\/A","updated_by":"N\/A","created_at":"27\/03\/2026 08:01:27","updated_at":"27\/03\/2026 08:01:27","parent":{"id":269,"name":"Nostrum Omnis","slug":"nostrum-omnis","description":"Consequatur aut dolores enim non facere tempora.","status":"inactive","sort_order":78,"parent_id":null,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"27\/03\/2026 08:01:27","updated_at":"27\/03\/2026 08:01:27"},"children":[{"id":271,"name":"Laboriosam Praesentium","slug":"laboriosam-praesentium","description":"Molestias fugit deleniti distinctio eum doloremque id.","status":"active","sort_order":61,"parent_id":270,"depth":2,"created_by":"N\/A","updated_by":"N\/A","created_at":"27\/03\/2026 08:01:27","updated_at":"27\/03\/2026 08:01:27"}]},"success":"true"}'
+        content: '{"data":{"id":79,"name":"Aut Adipisci","slug":"aut-adipisci","description":"Qui commodi incidunt iure odit.","status":"active","sort_order":20,"parent_id":78,"depth":1,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:35","updated_at":"02\/04\/2026 09:41:35","parent":{"id":78,"name":"Nostrum Omnis","slug":"nostrum-omnis","description":"Consequatur aut dolores enim non facere tempora.","status":"inactive","sort_order":78,"parent_id":null,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:35","updated_at":"02\/04\/2026 09:41:35"},"children":[{"id":80,"name":"Laboriosam Praesentium","slug":"laboriosam-praesentium","description":"Molestias fugit deleniti distinctio eum doloremque id.","status":"active","sort_order":61,"parent_id":79,"depth":2,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:35","updated_at":"02\/04\/2026 09:41:35"}]},"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -1039,7 +1039,7 @@ endpoints:
       -
         custom: []
         status: 201
-        content: '{"data":{"id":272,"name":"Nostrum Qui","slug":"nostrum-qui","description":"Iure odit et et modi ipsum nostrum omnis.","status":"active","sort_order":54,"parent_id":null,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"27\/03\/2026 08:01:27","updated_at":"27\/03\/2026 08:01:27"},"success":"true","message":"Danh m\u1ee5c \u0111\u00e3 \u0111\u01b0\u1ee3c t\u1ea1o th\u00e0nh c\u00f4ng!"}'
+        content: '{"data":{"id":81,"name":"Nostrum Qui","slug":"nostrum-qui","description":"Iure odit et et modi ipsum nostrum omnis.","status":"active","sort_order":54,"parent_id":null,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:35","updated_at":"02\/04\/2026 09:41:35"},"success":"true","message":"Danh m\u1ee5c \u0111\u00e3 \u0111\u01b0\u1ee3c t\u1ea1o th\u00e0nh c\u00f4ng!"}'
         headers: []
         description: ''
     responseFields: []
@@ -1177,7 +1177,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":274,"name":"Commodi Incidunt","slug":"commodi-incidunt","description":"Et et modi ipsum nostrum.","status":"active","sort_order":41,"parent_id":273,"depth":1,"created_by":"N\/A","updated_by":"N\/A","created_at":"27\/03\/2026 08:01:27","updated_at":"27\/03\/2026 08:01:27","parent":{"id":273,"name":"Et Consequatur","slug":"et-consequatur","description":"Enim non facere tempora ex voluptatem laboriosam praesentium.","status":"inactive","sort_order":47,"parent_id":null,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"27\/03\/2026 08:01:27","updated_at":"27\/03\/2026 08:01:27"},"children":[{"id":275,"name":"Molestias Fugit","slug":"molestias-fugit","description":null,"status":"inactive","sort_order":7,"parent_id":274,"depth":2,"created_by":"N\/A","updated_by":"N\/A","created_at":"27\/03\/2026 08:01:27","updated_at":"27\/03\/2026 08:01:27"}]},"success":"true","message":"Danh m\u1ee5c \u0111\u00e3 \u0111\u01b0\u1ee3c c\u1eadp nh\u1eadt!"}'
+        content: '{"data":{"id":83,"name":"Commodi Incidunt","slug":"commodi-incidunt","description":"Et et modi ipsum nostrum.","status":"active","sort_order":41,"parent_id":82,"depth":1,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:36","updated_at":"02\/04\/2026 09:41:36","parent":{"id":82,"name":"Et Consequatur","slug":"et-consequatur","description":"Enim non facere tempora ex voluptatem laboriosam praesentium.","status":"inactive","sort_order":47,"parent_id":null,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:36","updated_at":"02\/04\/2026 09:41:36"},"children":[{"id":84,"name":"Molestias Fugit","slug":"molestias-fugit","description":null,"status":"inactive","sort_order":7,"parent_id":83,"depth":2,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:36","updated_at":"02\/04\/2026 09:41:36"}]},"success":"true","message":"Danh m\u1ee5c \u0111\u00e3 \u0111\u01b0\u1ee3c c\u1eadp nh\u1eadt!"}'
         headers: []
         description: ''
     responseFields: []
@@ -1315,7 +1315,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":277,"name":"Iure Odit","slug":"iure-odit","description":"Modi ipsum nostrum omnis autem et.","status":"inactive","sort_order":84,"parent_id":276,"depth":1,"created_by":"N\/A","updated_by":"N\/A","created_at":"27\/03\/2026 08:01:27","updated_at":"27\/03\/2026 08:01:27","parent":{"id":276,"name":"Dolores Enim","slug":"dolores-enim","description":"Tempora ex voluptatem laboriosam praesentium quis.","status":"inactive","sort_order":71,"parent_id":null,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"27\/03\/2026 08:01:27","updated_at":"27\/03\/2026 08:01:27"},"children":[{"id":278,"name":"Fugit Deleniti","slug":"fugit-deleniti","description":null,"status":"active","sort_order":35,"parent_id":277,"depth":2,"created_by":"N\/A","updated_by":"N\/A","created_at":"27\/03\/2026 08:01:27","updated_at":"27\/03\/2026 08:01:27"}]},"success":"true","message":"Danh m\u1ee5c \u0111\u00e3 \u0111\u01b0\u1ee3c c\u1eadp nh\u1eadt!"}'
+        content: '{"data":{"id":86,"name":"Iure Odit","slug":"iure-odit","description":"Modi ipsum nostrum omnis autem et.","status":"inactive","sort_order":84,"parent_id":85,"depth":1,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:36","updated_at":"02\/04\/2026 09:41:36","parent":{"id":85,"name":"Dolores Enim","slug":"dolores-enim","description":"Tempora ex voluptatem laboriosam praesentium quis.","status":"inactive","sort_order":71,"parent_id":null,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:36","updated_at":"02\/04\/2026 09:41:36"},"children":[{"id":87,"name":"Fugit Deleniti","slug":"fugit-deleniti","description":null,"status":"active","sort_order":35,"parent_id":86,"depth":2,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:36","updated_at":"02\/04\/2026 09:41:36"}]},"success":"true","message":"Danh m\u1ee5c \u0111\u00e3 \u0111\u01b0\u1ee3c c\u1eadp nh\u1eadt!"}'
         headers: []
         description: ''
     responseFields: []
@@ -1459,7 +1459,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":280,"name":"Quidem Nostrum","slug":"quidem-nostrum","description":null,"status":"inactive","sort_order":0,"parent_id":279,"depth":1,"created_by":"N\/A","updated_by":"N\/A","created_at":"27\/03\/2026 08:01:27","updated_at":"27\/03\/2026 08:01:27","parent":{"id":279,"name":"Et Et","slug":"et-et","description":"Nostrum omnis autem et consequatur aut.","status":"inactive","sort_order":62,"parent_id":null,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"27\/03\/2026 08:01:27","updated_at":"27\/03\/2026 08:01:27"},"children":[{"id":281,"name":"Non Facere","slug":"non-facere","description":"Voluptatem laboriosam praesentium quis adipisci.","status":"inactive","sort_order":10,"parent_id":280,"depth":2,"created_by":"N\/A","updated_by":"N\/A","created_at":"27\/03\/2026 08:01:27","updated_at":"27\/03\/2026 08:01:27"}]},"success":"true","message":"C\u1eadp nh\u1eadt tr\u1ea1ng th\u00e1i th\u00e0nh c\u00f4ng!"}'
+        content: '{"data":{"id":89,"name":"Quidem Nostrum","slug":"quidem-nostrum","description":null,"status":"inactive","sort_order":0,"parent_id":88,"depth":1,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:36","updated_at":"02\/04\/2026 09:41:36","parent":{"id":88,"name":"Et Et","slug":"et-et","description":"Nostrum omnis autem et consequatur aut.","status":"inactive","sort_order":62,"parent_id":null,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:36","updated_at":"02\/04\/2026 09:41:36"},"children":[{"id":90,"name":"Non Facere","slug":"non-facere","description":"Voluptatem laboriosam praesentium quis adipisci.","status":"inactive","sort_order":10,"parent_id":89,"depth":2,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:36","updated_at":"02\/04\/2026 09:41:36"}]},"success":"true","message":"C\u1eadp nh\u1eadt tr\u1ea1ng th\u00e1i th\u00e0nh c\u00f4ng!"}'
         headers: []
         description: ''
     responseFields: []

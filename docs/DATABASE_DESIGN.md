@@ -419,4 +419,202 @@ Các bảng: `document_types`, `document_issuing_agencies`, `document_issuing_le
 
 ---
 
+## 6. Giao việc liên phòng ban (Module TaskAssignment)
+
+**Lưu ý:** Module này vận hành độc lập, logic nghiệp vụ không filter theo `organization_id`. Tuy nhiên, các model đích có cột `organization_id` (nullable) để sẵn sàng phân vùng tổ chức sau này. Phòng ban được quản lý riêng qua bảng `task_assignment_departments`.
+
+### `task_assignment_departments`
+Phòng ban nội bộ phục vụ nghiệp vụ giao việc.
+
+| Cột | Kiểu | Nullable | Mặc định | Ràng buộc / Ghi chú |
+|-----|------|----------|----------|---------------------|
+| id | bigint unsigned | No | — | PK |
+| code | varchar(255) | No | — | UNIQUE |
+| name | varchar(255) | No | — | |
+| description | text | Yes | null | |
+| status | varchar(255) | No | 'active' | active, inactive |
+| sort_order | int unsigned | No | 0 | |
+| organization_id | bigint unsigned | Yes | null | FK → organizations.id, INDEX |
+| created_by | bigint unsigned | Yes | null | FK → users.id |
+| updated_by | bigint unsigned | Yes | null | FK → users.id |
+| created_at | timestamp | Yes | null | |
+| updated_at | timestamp | Yes | null | |
+
+### `task_assignment_types`
+Loại văn bản giao việc.
+
+| Cột | Kiểu | Nullable | Mặc định | Ràng buộc / Ghi chú |
+|-----|------|----------|----------|---------------------|
+| id | bigint unsigned | No | — | PK |
+| name | varchar(255) | No | — | |
+| description | text | Yes | null | |
+| status | varchar(255) | No | 'active' | active, inactive |
+| organization_id | bigint unsigned | Yes | null | FK → organizations.id, INDEX |
+| created_by | bigint unsigned | Yes | null | FK → users.id |
+| updated_by | bigint unsigned | Yes | null | FK → users.id |
+| created_at | timestamp | Yes | null | |
+| updated_at | timestamp | Yes | null | |
+
+### `task_assignment_item_types`
+Loại công việc. Cấu trúc giống `task_assignment_types` (có `organization_id`).
+
+### `task_assignment_documents`
+Văn bản giao việc.
+
+| Cột | Kiểu | Nullable | Mặc định | Ràng buộc / Ghi chú |
+|-----|------|----------|----------|---------------------|
+| id | bigint unsigned | No | — | PK |
+| name | varchar(255) | No | — | |
+| summary | text | Yes | null | |
+| issue_date | date | Yes | null | INDEX |
+| task_assignment_type_id | bigint unsigned | Yes | null | FK → task_assignment_types.id, INDEX |
+| status | varchar(255) | No | 'draft' | draft, issued. INDEX |
+| issued_at | timestamp | Yes | null | |
+| organization_id | bigint unsigned | Yes | null | FK → organizations.id, INDEX |
+| created_by | bigint unsigned | Yes | null | FK → users.id |
+| updated_by | bigint unsigned | Yes | null | FK → users.id |
+| created_at | timestamp | Yes | null | |
+| updated_at | timestamp | Yes | null | |
+
+### `task_assignment_document_attachments`
+Tệp đính kèm văn bản giao việc.
+
+| Cột | Kiểu | Nullable | Mặc định | Ràng buộc / Ghi chú |
+|-----|------|----------|----------|---------------------|
+| id | bigint unsigned | No | — | PK |
+| task_assignment_document_id | bigint unsigned | No | — | FK → task_assignment_documents.id CASCADE |
+| media_id | bigint unsigned | No | — | FK → media.id CASCADE |
+| file_name | varchar(255) | Yes | null | |
+| sort_order | int unsigned | No | 0 | |
+| created_by | bigint unsigned | Yes | null | FK → users.id |
+| updated_by | bigint unsigned | Yes | null | FK → users.id |
+| created_at | timestamp | Yes | null | |
+| updated_at | timestamp | Yes | null | |
+
+Ràng buộc: UNIQUE(task_assignment_document_id, media_id)
+
+### `task_assignment_items`
+Công việc thuộc văn bản.
+
+| Cột | Kiểu | Nullable | Mặc định | Ràng buộc / Ghi chú |
+|-----|------|----------|----------|---------------------|
+| id | bigint unsigned | No | — | PK |
+| task_assignment_document_id | bigint unsigned | No | — | FK CASCADE, INDEX |
+| name | varchar(255) | No | — | |
+| description | text | Yes | null | |
+| task_assignment_item_type_id | bigint unsigned | Yes | null | FK nullOnDelete, INDEX |
+| deadline_type | varchar(255) | No | 'no_deadline' | has_deadline, no_deadline |
+| start_at | datetime | Yes | null | |
+| end_at | datetime | Yes | null | INDEX(deadline_type, end_at) |
+| processing_status | varchar(255) | No | 'todo' | todo, in_progress, done, overdue, paused, cancelled. INDEX |
+| completion_percent | tinyint unsigned | No | 0 | 0-100 |
+| priority | varchar(255) | No | 'medium' | low, medium, high, urgent. INDEX |
+| completed_at | datetime | Yes | null | |
+| organization_id | bigint unsigned | Yes | null | FK → organizations.id, INDEX |
+| created_by | bigint unsigned | Yes | null | FK → users.id |
+| updated_by | bigint unsigned | Yes | null | FK → users.id |
+| created_at | timestamp | Yes | null | |
+| updated_at | timestamp | Yes | null | |
+
+### `task_assignment_item_department`
+Pivot: công việc ↔ phòng ban.
+
+| Cột | Kiểu | Nullable | Mặc định | Ràng buộc / Ghi chú |
+|-----|------|----------|----------|---------------------|
+| id | bigint unsigned | No | — | PK |
+| task_assignment_item_id | bigint unsigned | No | — | FK CASCADE |
+| department_id | bigint unsigned | No | — | FK CASCADE |
+| role | varchar(255) | No | 'main' | main, cooperate |
+| created_at | timestamp | Yes | null | |
+| updated_at | timestamp | Yes | null | |
+
+Ràng buộc: UNIQUE(task_assignment_item_id, department_id)
+
+### `task_assignment_item_user`
+Pivot: công việc ↔ người dùng.
+
+| Cột | Kiểu | Nullable | Mặc định | Ràng buộc / Ghi chú |
+|-----|------|----------|----------|---------------------|
+| id | bigint unsigned | No | — | PK |
+| task_assignment_item_id | bigint unsigned | No | — | FK CASCADE |
+| department_id | bigint unsigned | No | — | FK CASCADE |
+| user_id | bigint unsigned | No | — | FK CASCADE |
+| assignment_role | varchar(255) | No | 'main' | main, support |
+| assignment_status | varchar(255) | No | 'assigned' | assigned, accepted, rejected, done |
+| assigned_at | datetime | Yes | null | |
+| accepted_at | datetime | Yes | null | |
+| completed_at | datetime | Yes | null | |
+| note | text | Yes | null | |
+| created_at | timestamp | Yes | null | |
+| updated_at | timestamp | Yes | null | |
+
+Ràng buộc: UNIQUE(task_assignment_item_id, user_id), INDEX(department_id, assignment_status)
+
+### `task_assignment_item_reports`
+Báo cáo kết quả thực hiện công việc.
+
+| Cột | Kiểu | Nullable | Mặc định | Ràng buộc / Ghi chú |
+|-----|------|----------|----------|---------------------|
+| id | bigint unsigned | No | — | PK |
+| task_assignment_item_id | bigint unsigned | No | — | FK CASCADE |
+| reporter_user_id | bigint unsigned | Yes | null | FK nullOnDelete |
+| completed_at | datetime | Yes | null | INDEX |
+| report_document_number | varchar(255) | Yes | null | |
+| report_document_excerpt | text | Yes | null | |
+| report_document_content | text | Yes | null | |
+| organization_id | bigint unsigned | Yes | null | FK → organizations.id, INDEX |
+| created_at | timestamp | Yes | null | |
+| updated_at | timestamp | Yes | null | |
+
+INDEX(task_assignment_item_id, reporter_user_id)
+
+### `task_assignment_item_report_attachments`
+Tệp đính kèm báo cáo.
+
+| Cột | Kiểu | Nullable | Mặc định | Ràng buộc / Ghi chú |
+|-----|------|----------|----------|---------------------|
+| id | bigint unsigned | No | — | PK |
+| task_assignment_item_report_id | bigint unsigned | No | — | FK CASCADE |
+| media_id | bigint unsigned | No | — | FK CASCADE |
+| file_name | varchar(255) | Yes | null | |
+| sort_order | int unsigned | No | 0 | |
+| created_at | timestamp | Yes | null | |
+| updated_at | timestamp | Yes | null | |
+
+Ràng buộc: UNIQUE(task_assignment_item_report_id, media_id)
+
+### `task_assignment_reminders`
+Nhắc việc tự động.
+
+| Cột | Kiểu | Nullable | Mặc định | Ràng buộc / Ghi chú |
+|-----|------|----------|----------|---------------------|
+| id | bigint unsigned | No | — | PK |
+| task_assignment_item_id | bigint unsigned | No | — | FK CASCADE |
+| remind_at | datetime | No | — | |
+| sent_at | datetime | Yes | null | |
+| channel | varchar(255) | No | — | system, email, zalo, sms |
+| recipient_department_id | bigint unsigned | Yes | null | FK nullOnDelete |
+| recipient_user_id | bigint unsigned | Yes | null | FK nullOnDelete |
+| status | varchar(255) | No | 'pending' | pending, sent, failed |
+| error_message | text | Yes | null | |
+| created_at | timestamp | Yes | null | |
+| updated_at | timestamp | Yes | null | |
+
+### Sơ đồ quan hệ (Module TaskAssignment)
+
+```
+task_assignment_types ──1-n──► task_assignment_documents
+                                    ├── 1-n ──► task_assignment_document_attachments ──► media
+                                    └── 1-n ──► task_assignment_items
+                                                    ├── n-n ──► task_assignment_item_department ◄── task_assignment_departments
+                                                    ├── n-n ──► task_assignment_item_user ◄── users
+                                                    ├── 1-n ──► task_assignment_item_reports
+                                                    │               └── 1-n ──► task_assignment_item_report_attachments ──► media
+                                                    └── 1-n ──► task_assignment_reminders
+
+task_assignment_item_types ──1-n──► task_assignment_items
+```
+
+---
+
 *File được cập nhật theo migration trong `database/migrations/`.*
