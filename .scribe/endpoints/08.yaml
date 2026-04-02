@@ -1,267 +1,19 @@
-name: 'Core - Organization'
+name: 'Core - Role'
 description: ''
 endpoints:
   -
     custom: []
     httpMethods:
       - GET
-    uri: api/organizations/public
+    uri: api/roles/export
     metadata:
       custom: []
-      groupName: 'Core - Organization'
+      groupName: 'Core - Role'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Danh sách organization công khai'
-      description: 'Trả về danh sách organization đang hoạt động (active), thứ tự theo cây, dùng cho các chức năng công khai.'
-      authenticated: false
-      deprecated: false
-    headers:
-      X-Organization-Id: 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1'
-      Content-Type: application/json
-      Accept: application/json
-    urlParameters: []
-    cleanUrlParameters: []
-    queryParameters:
-      search:
-        custom: []
-        name: search
-        description: 'Từ khóa tìm kiếm (name, slug).'
-        required: false
-        example: cong-ty
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-      status:
-        custom: []
-        name: status
-        description: 'Lọc theo trạng thái.'
-        required: false
-        example: active
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      from_date:
-        custom: []
-        name: from_date
-        description: 'Lọc từ ngày tạo (Y-m-d). Must be a valid date.'
-        required: false
-        example: '2026-01-01'
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      to_date:
-        custom: []
-        name: to_date
-        description: 'Lọc đến ngày tạo (Y-m-d). Must be a valid date. Must be a date after or equal to <code>from_date</code>.'
-        required: false
-        example: '2026-12-31'
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      sort_by:
-        custom: []
-        name: sort_by
-        description: 'Trường dùng để sắp xếp. Must not be greater than 50 characters.'
-        required: false
-        example: created_at
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      sort_order:
-        custom: []
-        name: sort_order
-        description: 'Thứ tự sắp xếp.'
-        required: false
-        example: desc
-        type: string
-        enumValues:
-          - asc
-          - desc
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      limit:
-        custom: []
-        name: limit
-        description: 'Số bản ghi mỗi trang (1-100). Must be at least 1. Must not be greater than 100.'
-        required: false
-        example: 10
-        type: integer
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-    cleanQueryParameters:
-      search: cong-ty
-      status: active
-      from_date: '2026-01-01'
-      to_date: '2026-12-31'
-      sort_by: created_at
-      sort_order: desc
-      limit: 10
-    bodyParameters: []
-    cleanBodyParameters: []
-    fileParameters: []
-    responses:
-      -
-        custom: []
-        status: 200
-        content: '{"data":[{"id":44,"name":"Bailey Inc","slug":"quos-velit-et-fugiat-sunt-nihil-accusantium-harum","description":null,"status":"active","parent_id":null,"sort_order":7,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:35 02\/04\/2026","updated_at":"09:41:35 02\/04\/2026"},{"id":45,"name":"DuBuque Inc","slug":"quo-omnis-nostrum-aut-adipisci","description":"Qui commodi incidunt iure odit.","status":"active","parent_id":null,"sort_order":20,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:35 02\/04\/2026","updated_at":"09:41:35 02\/04\/2026"}],"success":"true"}'
-        headers: []
-        description: ''
-    responseFields: []
-    auth: []
-    controller: null
-    method: null
-    route: null
-  -
-    custom: []
-    httpMethods:
-      - GET
-    uri: api/organizations/public-options
-    metadata:
-      custom: []
-      groupName: 'Core - Organization'
-      groupDescription: ''
-      subgroup: ''
-      subgroupDescription: ''
-      title: 'Danh sách organization công khai cho dropdown'
-      description: 'Trả về dữ liệu tối giản chỉ gồm id, name, description để tối ưu payload cho dropdown.'
-      authenticated: false
-      deprecated: false
-    headers:
-      X-Organization-Id: 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1'
-      Content-Type: application/json
-      Accept: application/json
-    urlParameters: []
-    cleanUrlParameters: []
-    queryParameters:
-      search:
-        custom: []
-        name: search
-        description: 'Từ khóa tìm kiếm (name, slug).'
-        required: false
-        example: cong-ty
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-      status:
-        custom: []
-        name: status
-        description: 'Lọc theo trạng thái.'
-        required: false
-        example: active
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      from_date:
-        custom: []
-        name: from_date
-        description: 'Lọc từ ngày tạo (Y-m-d). Must be a valid date.'
-        required: false
-        example: '2026-01-01'
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      to_date:
-        custom: []
-        name: to_date
-        description: 'Lọc đến ngày tạo (Y-m-d). Must be a valid date. Must be a date after or equal to <code>from_date</code>.'
-        required: false
-        example: '2026-12-31'
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      sort_by:
-        custom: []
-        name: sort_by
-        description: 'Trường dùng để sắp xếp. Must not be greater than 50 characters.'
-        required: false
-        example: created_at
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      sort_order:
-        custom: []
-        name: sort_order
-        description: 'Thứ tự sắp xếp.'
-        required: false
-        example: desc
-        type: string
-        enumValues:
-          - asc
-          - desc
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      limit:
-        custom: []
-        name: limit
-        description: 'Số bản ghi mỗi trang (1-100). Must be at least 1. Must not be greater than 100.'
-        required: false
-        example: 10
-        type: integer
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-    cleanQueryParameters:
-      search: cong-ty
-      status: active
-      from_date: '2026-01-01'
-      to_date: '2026-12-31'
-      sort_by: created_at
-      sort_order: desc
-      limit: 10
-    bodyParameters: []
-    cleanBodyParameters: []
-    fileParameters: []
-    responses:
-      -
-        custom: []
-        status: 200
-        content: '{"data":[{"id":46,"name":"Okuneva, Rempel and Gulgowski","description":null},{"id":47,"name":"Cormier Inc","description":"Odit et et modi."}],"success":"true"}'
-        headers: []
-        description: ''
-    responseFields: []
-    auth: []
-    controller: null
-    method: null
-    route: null
-  -
-    custom: []
-    httpMethods:
-      - GET
-    uri: api/organizations/export
-    metadata:
-      custom: []
-      groupName: 'Core - Organization'
-      groupDescription: ''
-      subgroup: ''
-      subgroupDescription: ''
-      title: 'Xuất danh sách organization'
-      description: 'Áp dụng cùng bộ lọc với index. Xuất ra các trường: id, name, slug, description, status, parent_id, parent_slug, sort_order, depth, created_by, updated_by, created_at, updated_at.'
+      title: 'Xuất danh sách role'
+      description: 'Áp dụng cùng bộ lọc với index. Xuất ra các trường: id, name, guard_name, organization_id, organization_name, created_at, updated_at.'
       authenticated: true
       deprecated: false
     headers:
@@ -275,7 +27,7 @@ endpoints:
       search:
         custom: []
         name: search
-        description: 'Từ khóa tìm kiếm (name, slug).'
+        description: 'Từ khóa tìm kiếm (name, guard_name).'
         required: false
         example: architecto
         type: string
@@ -286,9 +38,9 @@ endpoints:
       status:
         custom: []
         name: status
-        description: 'Lọc theo trạng thái: active, inactive.'
+        description: 'Lọc theo trạng thái.'
         required: false
-        example: architecto
+        example: active
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -319,7 +71,7 @@ endpoints:
       sort_by:
         custom: []
         name: sort_by
-        description: 'Sắp xếp theo: id, name, slug, status, created_at, updated_at.'
+        description: 'Sắp xếp theo: id, name, guard_name, created_at, updated_at.'
         required: false
         example: architecto
         type: string
@@ -351,7 +103,7 @@ endpoints:
         deprecated: false
     cleanQueryParameters:
       search: architecto
-      status: architecto
+      status: active
       from_date: architecto
       to_date: architecto
       sort_by: architecto
@@ -382,15 +134,15 @@ endpoints:
     custom: []
     httpMethods:
       - POST
-    uri: api/organizations/import
+    uri: api/roles/import
     metadata:
       custom: []
-      groupName: 'Core - Organization'
+      groupName: 'Core - Role'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Nhập danh sách organization'
-      description: 'Cột bắt buộc: name. Cột không bắt buộc: slug, description, status (mặc định "active"), parent_id.'
+      title: 'Nhập danh sách role'
+      description: 'Cột bắt buộc: name. Cột không bắt buộc: guard_name (mặc định "web"), organization_id.'
       authenticated: true
       deprecated: false
     headers:
@@ -421,7 +173,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"success": true, "message": "Import organization thành công."}'
+        content: '{"success": true, "message": "Import vai trò thành công."}'
         headers: []
         description: ''
     responseFields: []
@@ -436,14 +188,14 @@ endpoints:
     custom: []
     httpMethods:
       - POST
-    uri: api/organizations/bulk-delete
+    uri: api/roles/bulk-delete
     metadata:
       custom: []
-      groupName: 'Core - Organization'
+      groupName: 'Core - Role'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Xóa hàng loạt organization'
+      title: 'Xóa hàng loạt role'
       description: ''
       authenticated: true
       deprecated: false
@@ -481,79 +233,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"success": true, "message": "Đã xóa thành công các organization được chọn!"}'
-        headers: []
-        description: ''
-    responseFields: []
-    auth:
-      - headers
-      - Authorization
-      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
-    controller: null
-    method: null
-    route: null
-  -
-    custom: []
-    httpMethods:
-      - PATCH
-    uri: api/organizations/bulk-status
-    metadata:
-      custom: []
-      groupName: 'Core - Organization'
-      groupDescription: ''
-      subgroup: ''
-      subgroupDescription: ''
-      title: 'Cập nhật trạng thái organization hàng loạt'
-      description: ''
-      authenticated: true
-      deprecated: false
-    headers:
-      Authorization: 'Bearer Bearer {YOUR_ACCESS_TOKEN}'
-      X-Organization-Id: 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1'
-      Content-Type: application/json
-      Accept: application/json
-    urlParameters: []
-    cleanUrlParameters: []
-    queryParameters: []
-    cleanQueryParameters: []
-    bodyParameters:
-      ids:
-        custom: []
-        name: ids
-        description: 'Danh sách ID.'
-        required: true
-        example:
-          - 1
-          - 2
-          - 3
-        type: 'string[]'
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-      status:
-        custom: []
-        name: status
-        description: 'Trạng thái: active, inactive.'
-        required: true
-        example: active
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-    cleanBodyParameters:
-      ids:
-        - 1
-        - 2
-        - 3
-      status: active
-    fileParameters: []
-    responses:
-      -
-        custom: []
-        status: 200
-        content: '{"success": true, "message": "Cập nhật trạng thái organization thành công."}'
+        content: '{"success": true, "message": "Đã xóa thành công các vai trò được chọn!"}'
         headers: []
         description: ''
     responseFields: []
@@ -568,15 +248,15 @@ endpoints:
     custom: []
     httpMethods:
       - GET
-    uri: api/organizations/stats
+    uri: api/roles/stats
     metadata:
       custom: []
-      groupName: 'Core - Organization'
+      groupName: 'Core - Role'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Thống kê organization'
-      description: 'Tổng số, đang kích hoạt (active), không kích hoạt (inactive). Áp dụng cùng bộ lọc với index.'
+      title: 'Thống kê role'
+      description: 'Tổng số bản ghi (áp dụng cùng bộ lọc với index). Role không có cột status (chuẩn Spatie).'
       authenticated: true
       deprecated: false
     headers:
@@ -590,9 +270,9 @@ endpoints:
       search:
         custom: []
         name: search
-        description: 'Từ khóa tìm kiếm (name, slug).'
+        description: 'Từ khóa tìm kiếm (name, guard_name).'
         required: false
-        example: cong-ty
+        example: admin
         type: string
         enumValues: []
         exampleWasSpecified: true
@@ -601,9 +281,9 @@ endpoints:
       status:
         custom: []
         name: status
-        description: 'Lọc theo trạng thái: active, inactive.'
+        description: 'Lọc theo trạng thái.'
         required: false
-        example: architecto
+        example: active
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -634,7 +314,7 @@ endpoints:
       sort_by:
         custom: []
         name: sort_by
-        description: 'Sắp xếp theo: id, name, slug, status, created_at, updated_at.'
+        description: 'Sắp xếp theo: id, name, guard_name, created_at, updated_at.'
         required: false
         example: created_at
         type: string
@@ -665,8 +345,8 @@ endpoints:
         nullable: true
         deprecated: false
     cleanQueryParameters:
-      search: cong-ty
-      status: architecto
+      search: admin
+      status: active
       from_date: '2026-02-01'
       to_date: '2026-02-17'
       sort_by: created_at
@@ -679,7 +359,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"success": true, "data": {"total": 10, "active": 5, "inactive": 5}}'
+        content: '{"success": true, "data": {"total": 5}}'
         headers: []
         description: ''
     responseFields: []
@@ -694,69 +374,15 @@ endpoints:
     custom: []
     httpMethods:
       - GET
-    uri: api/organizations/tree
+    uri: api/roles
     metadata:
       custom: []
-      groupName: 'Core - Organization'
+      groupName: 'Core - Role'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Cây organization (toàn bộ cây, không phân trang). Cấu trúc parent_id.'
-      description: ''
-      authenticated: true
-      deprecated: false
-    headers:
-      Authorization: 'Bearer Bearer {YOUR_ACCESS_TOKEN}'
-      X-Organization-Id: 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1'
-      Content-Type: application/json
-      Accept: application/json
-    urlParameters: []
-    cleanUrlParameters: []
-    queryParameters:
-      status:
-        custom: []
-        name: status
-        description: 'Lọc theo trạng thái: active, inactive.'
-        required: false
-        example: architecto
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: false
-        deprecated: false
-    cleanQueryParameters:
-      status: architecto
-    bodyParameters: []
-    cleanBodyParameters: []
-    fileParameters: []
-    responses:
-      -
-        custom: []
-        status: 200
-        content: '{"success": true, "data": [{"id": 1, "name": "Công ty A", "slug": "cong-ty-a", "status": "active", "parent_id": null, "children": []}]}'
-        headers: []
-        description: ''
-    responseFields: []
-    auth:
-      - headers
-      - Authorization
-      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
-    controller: null
-    method: null
-    route: null
-  -
-    custom: []
-    httpMethods:
-      - GET
-    uri: api/organizations
-    metadata:
-      custom: []
-      groupName: 'Core - Organization'
-      groupDescription: ''
-      subgroup: ''
-      subgroupDescription: ''
-      title: 'Danh sách organization'
-      description: 'Lấy danh sách có phân trang, lọc và sắp xếp.'
+      title: 'Danh sách role'
+      description: 'Lấy danh sách có phân trang, lọc và sắp xếp. Có kèm organization và permissions.'
       authenticated: true
       deprecated: false
     headers:
@@ -770,9 +396,9 @@ endpoints:
       search:
         custom: []
         name: search
-        description: 'Từ khóa tìm kiếm (name, slug).'
+        description: 'Từ khóa tìm kiếm (name, guard_name).'
         required: false
-        example: cong-ty
+        example: admin
         type: string
         enumValues: []
         exampleWasSpecified: true
@@ -781,9 +407,9 @@ endpoints:
       status:
         custom: []
         name: status
-        description: 'Lọc theo trạng thái: active, inactive.'
+        description: 'Lọc theo trạng thái.'
         required: false
-        example: architecto
+        example: active
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -814,7 +440,7 @@ endpoints:
       sort_by:
         custom: []
         name: sort_by
-        description: 'Sắp xếp theo: id, name, slug, status, created_at, updated_at.'
+        description: 'Sắp xếp theo: id, name, guard_name, created_at, updated_at.'
         required: false
         example: id
         type: string
@@ -845,8 +471,8 @@ endpoints:
         nullable: true
         deprecated: false
     cleanQueryParameters:
-      search: cong-ty
-      status: architecto
+      search: admin
+      status: active
       from_date: '2026-02-01'
       to_date: '2026-02-17'
       sort_by: id
@@ -859,7 +485,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":[{"id":49,"name":"Bailey Ltd","slug":"velit-et-fugiat-sunt-nihil-accusantium","description":"Modi deserunt aut ab provident perspiciatis.","status":"active","parent_id":null,"sort_order":23,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"},{"id":50,"name":"Marquardt Inc","slug":"nostrum-qui-commodi-incidunt-iure","description":null,"status":"active","parent_id":null,"sort_order":20,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"}],"links":{"first":"\/?page=1","last":"\/?page=1","prev":null,"next":null},"meta":{"current_page":1,"from":1,"last_page":1,"links":[{"url":null,"label":"&laquo; Previous","page":null,"active":false},{"url":"\/?page=1","label":"1","page":1,"active":true},{"url":null,"label":"Next &raquo;","page":null,"active":false}],"path":"\/","per_page":10,"to":2,"total":2},"success":"true"}'
+        content: '{"data":[{"id":14,"name":"role_ng775","guard_name":"web","organization_id":null,"created_at":"09:52:14 02\/04\/2026","updated_at":"09:52:14 02\/04\/2026"},{"id":15,"name":"role_mi365","guard_name":"web","organization_id":null,"created_at":"09:52:14 02\/04\/2026","updated_at":"09:52:14 02\/04\/2026"}],"links":{"first":"\/?page=1","last":"\/?page=1","prev":null,"next":null},"meta":{"current_page":1,"from":1,"last_page":1,"links":[{"url":null,"label":"&laquo; Previous","page":null,"active":false},{"url":"\/?page=1","label":"1","page":1,"active":true},{"url":null,"label":"Next &raquo;","page":null,"active":false}],"path":"\/","per_page":10,"to":2,"total":2},"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -874,14 +500,14 @@ endpoints:
     custom: []
     httpMethods:
       - GET
-    uri: 'api/organizations/{organization_id}'
+    uri: 'api/roles/{role_id}'
     metadata:
       custom: []
-      groupName: 'Core - Organization'
+      groupName: 'Core - Role'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Chi tiết organization'
+      title: 'Chi tiết role'
       description: ''
       authenticated: true
       deprecated: false
@@ -891,10 +517,10 @@ endpoints:
       Content-Type: application/json
       Accept: application/json
     urlParameters:
-      organization_id:
+      role_id:
         custom: []
-        name: organization_id
-        description: 'The ID of the organization.'
+        name: role_id
+        description: 'The ID of the role.'
         required: true
         example: 1
         type: integer
@@ -902,10 +528,10 @@ endpoints:
         exampleWasSpecified: false
         nullable: false
         deprecated: false
-      organization:
+      role:
         custom: []
-        name: organization
-        description: 'ID organization.'
+        name: role
+        description: 'ID role.'
         required: true
         example: 1
         type: integer
@@ -914,8 +540,8 @@ endpoints:
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      organization_id: 1
-      organization: 1
+      role_id: 1
+      role: 1
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters: []
@@ -925,7 +551,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":52,"name":"Price Ltd","slug":"qui-commodi-incidunt-iure-odit","description":"Modi ipsum nostrum omnis autem et.","status":"inactive","parent_id":51,"sort_order":84,"depth":1,"created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026","parent":{"id":51,"name":"Stokes and Sons","slug":"tempora-ex-voluptatem-laboriosam-praesentium-quis","description":"Fugit deleniti distinctio eum doloremque id aut libero.","status":"inactive","parent_id":null,"sort_order":49,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"},"children":[{"id":53,"name":"Kutch and Sons","slug":"nemo-odit-quia-officia-est-dignissimos","description":null,"status":"inactive","parent_id":52,"sort_order":6,"depth":2,"created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"}]},"success":"true"}'
+        content: '{"data":{"id":16,"name":"role_wp680","guard_name":"web","organization_id":27,"organization":{"id":27,"name":"Dare Group"},"permissions":["organizations.index.7602"],"created_at":"09:52:14 02\/04\/2026","updated_at":"09:52:14 02\/04\/2026"},"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -940,14 +566,14 @@ endpoints:
     custom: []
     httpMethods:
       - POST
-    uri: api/organizations
+    uri: api/roles
     metadata:
       custom: []
-      groupName: 'Core - Organization'
+      groupName: 'Core - Role'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Tạo organization mới'
+      title: 'Tạo role mới'
       description: ''
       authenticated: true
       deprecated: false
@@ -964,82 +590,52 @@ endpoints:
       name:
         custom: []
         name: name
-        description: 'Tên organization.'
+        description: 'Tên role.'
         required: true
-        example: 'Công ty A'
+        example: admin
         type: string
         enumValues: []
         exampleWasSpecified: true
         nullable: false
         deprecated: false
-      slug:
+      guard_name:
         custom: []
-        name: slug
-        description: 'Slug (nếu không gửi sẽ tự sinh từ name).'
+        name: guard_name
+        description: 'Guard name (mặc định web).'
         required: false
-        example: cong-ty-a
+        example: web
         type: string
         enumValues: []
         exampleWasSpecified: true
         nullable: true
         deprecated: false
-      description:
+      permission_ids:
         custom: []
-        name: description
-        description: 'Mô tả.'
+        name: permission_ids
+        description: 'Danh sách ID permission để sync.'
         required: false
-        example: 'Tổ chức quản trị'
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-      status:
-        custom: []
-        name: status
-        description: 'Trạng thái: active, inactive.'
-        required: true
-        example: active
-        type: string
+        example:
+          - 1
+          - 2
+          - 3
+        type: 'string[]'
         enumValues: []
         exampleWasSpecified: true
         nullable: false
-        deprecated: false
-      parent_id:
-        custom: []
-        name: parent_id
-        description: 'ID organization cha (null = gốc).'
-        required: false
-        example: null
-        type: integer
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-      sort_order:
-        custom: []
-        name: sort_order
-        description: 'Thứ tự.'
-        required: false
-        example: 0
-        type: integer
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
         deprecated: false
     cleanBodyParameters:
-      name: 'Công ty A'
-      slug: cong-ty-a
-      description: 'Tổ chức quản trị'
-      status: active
-      parent_id: null
-      sort_order: 0
+      name: admin
+      guard_name: web
+      permission_ids:
+        - 1
+        - 2
+        - 3
     fileParameters: []
     responses:
       -
         custom: []
         status: 201
-        content: '{"data":{"id":54,"name":"Dach-Gaylord","slug":"mollitia-modi-deserunt-aut-ab-provident-perspiciatis-quo","description":null,"status":"active","parent_id":null,"sort_order":49,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"},"success":"true","message":"Organization \u0111\u00e3 \u0111\u01b0\u1ee3c t\u1ea1o th\u00e0nh c\u00f4ng!"}'
+        content: '{"data":{"id":17,"name":"role_zm806","guard_name":"web","organization_id":null,"permissions":["documents.index.5606"],"created_at":"09:52:14 02\/04\/2026","updated_at":"09:52:14 02\/04\/2026"},"success":"true","message":"Vai tr\u00f2 \u0111\u00e3 \u0111\u01b0\u1ee3c t\u1ea1o th\u00e0nh c\u00f4ng!"}'
         headers: []
         description: ''
     responseFields: []
@@ -1054,14 +650,14 @@ endpoints:
     custom: []
     httpMethods:
       - PUT
-    uri: 'api/organizations/{organization_id}'
+    uri: 'api/roles/{role_id}'
     metadata:
       custom: []
-      groupName: 'Core - Organization'
+      groupName: 'Core - Role'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Cập nhật organization'
+      title: 'Cập nhật role'
       description: ''
       authenticated: true
       deprecated: false
@@ -1071,10 +667,10 @@ endpoints:
       Content-Type: application/json
       Accept: application/json
     urlParameters:
-      organization_id:
+      role_id:
         custom: []
-        name: organization_id
-        description: 'The ID of the organization.'
+        name: role_id
+        description: 'The ID of the role.'
         required: true
         example: 1
         type: integer
@@ -1082,10 +678,10 @@ endpoints:
         exampleWasSpecified: false
         nullable: false
         deprecated: false
-      organization:
+      role:
         custom: []
-        name: organization
-        description: 'ID organization.'
+        name: role
+        description: 'ID role.'
         required: true
         example: 1
         type: integer
@@ -1094,90 +690,58 @@ endpoints:
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      organization_id: 1
-      organization: 1
+      role_id: 1
+      role: 1
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters:
       name:
         custom: []
         name: name
-        description: 'Tên organization.'
+        description: 'Tên role.'
         required: false
-        example: 'Công ty A'
+        example: editor
         type: string
         enumValues: []
         exampleWasSpecified: true
         nullable: false
         deprecated: false
-      slug:
+      guard_name:
         custom: []
-        name: slug
-        description: Slug.
+        name: guard_name
+        description: 'Guard name.'
         required: false
-        example: cong-ty-a
+        example: web
         type: string
         enumValues: []
         exampleWasSpecified: true
         nullable: true
         deprecated: false
-      description:
+      permission_ids:
         custom: []
-        name: description
-        description: 'Mô tả.'
+        name: permission_ids
+        description: 'Danh sách ID permission để sync (gửi mảng rỗng để bỏ hết).'
         required: false
-        example: 'Tổ chức quản trị'
-        type: string
+        example:
+          - 1
+          - 2
+        type: 'string[]'
         enumValues: []
         exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-      status:
-        custom: []
-        name: status
-        description: 'Trạng thái: active, inactive.'
-        required: false
-        example: inactive
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-      parent_id:
-        custom: []
-        name: parent_id
-        description: 'ID organization cha (null = gốc).'
-        required: false
-        example: null
-        type: integer
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-      sort_order:
-        custom: []
-        name: sort_order
-        description: 'Thứ tự.'
-        required: false
-        example: 0
-        type: integer
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
+        nullable: false
         deprecated: false
     cleanBodyParameters:
-      name: 'Công ty A'
-      slug: cong-ty-a
-      description: 'Tổ chức quản trị'
-      status: inactive
-      parent_id: null
-      sort_order: 0
+      name: editor
+      guard_name: web
+      permission_ids:
+        - 1
+        - 2
     fileParameters: []
     responses:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":56,"name":"Tillman-Runte","slug":"aut-ab-provident-perspiciatis-quo-omnis-nostrum-aut","description":"Nostrum qui commodi incidunt iure.","status":"inactive","parent_id":55,"sort_order":45,"depth":1,"created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026","parent":{"id":55,"name":"Bauch, Fritsch and O''Keefe","slug":"autem-et-consequatur-aut-dolores-enim-non-facere-tempora","description":"Laboriosam praesentium quis adipisci molestias fugit deleniti distinctio.","status":"active","parent_id":null,"sort_order":35,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"},"children":[{"id":57,"name":"Ankunding PLC","slug":"veniam-corporis-dolorem-mollitia","description":"Odit quia officia est dignissimos neque blanditiis odio.","status":"inactive","parent_id":56,"sort_order":16,"depth":2,"created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"}]},"success":"true","message":"Organization \u0111\u00e3 \u0111\u01b0\u1ee3c c\u1eadp nh\u1eadt!"}'
+        content: '{"data":{"id":18,"name":"role_yv564","guard_name":"web","organization_id":null,"permissions":["users.update.3433"],"created_at":"09:52:14 02\/04\/2026","updated_at":"09:52:14 02\/04\/2026"},"success":"true","message":"Vai tr\u00f2 \u0111\u00e3 \u0111\u01b0\u1ee3c c\u1eadp nh\u1eadt!"}'
         headers: []
         description: ''
     responseFields: []
@@ -1192,14 +756,14 @@ endpoints:
     custom: []
     httpMethods:
       - PATCH
-    uri: 'api/organizations/{organization_id}'
+    uri: 'api/roles/{role_id}'
     metadata:
       custom: []
-      groupName: 'Core - Organization'
+      groupName: 'Core - Role'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Cập nhật organization'
+      title: 'Cập nhật role'
       description: ''
       authenticated: true
       deprecated: false
@@ -1209,10 +773,10 @@ endpoints:
       Content-Type: application/json
       Accept: application/json
     urlParameters:
-      organization_id:
+      role_id:
         custom: []
-        name: organization_id
-        description: 'The ID of the organization.'
+        name: role_id
+        description: 'The ID of the role.'
         required: true
         example: 1
         type: integer
@@ -1220,10 +784,10 @@ endpoints:
         exampleWasSpecified: false
         nullable: false
         deprecated: false
-      organization:
+      role:
         custom: []
-        name: organization
-        description: 'ID organization.'
+        name: role
+        description: 'ID role.'
         required: true
         example: 1
         type: integer
@@ -1232,90 +796,58 @@ endpoints:
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      organization_id: 1
-      organization: 1
+      role_id: 1
+      role: 1
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters:
       name:
         custom: []
         name: name
-        description: 'Tên organization.'
+        description: 'Tên role.'
         required: false
-        example: 'Công ty A'
+        example: editor
         type: string
         enumValues: []
         exampleWasSpecified: true
         nullable: false
         deprecated: false
-      slug:
+      guard_name:
         custom: []
-        name: slug
-        description: Slug.
+        name: guard_name
+        description: 'Guard name.'
         required: false
-        example: cong-ty-a
+        example: web
         type: string
         enumValues: []
         exampleWasSpecified: true
         nullable: true
         deprecated: false
-      description:
+      permission_ids:
         custom: []
-        name: description
-        description: 'Mô tả.'
+        name: permission_ids
+        description: 'Danh sách ID permission để sync (gửi mảng rỗng để bỏ hết).'
         required: false
-        example: 'Tổ chức quản trị'
-        type: string
+        example:
+          - 1
+          - 2
+        type: 'string[]'
         enumValues: []
         exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-      status:
-        custom: []
-        name: status
-        description: 'Trạng thái: active, inactive.'
-        required: false
-        example: inactive
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-      parent_id:
-        custom: []
-        name: parent_id
-        description: 'ID organization cha (null = gốc).'
-        required: false
-        example: null
-        type: integer
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-      sort_order:
-        custom: []
-        name: sort_order
-        description: 'Thứ tự.'
-        required: false
-        example: 0
-        type: integer
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
+        nullable: false
         deprecated: false
     cleanBodyParameters:
-      name: 'Công ty A'
-      slug: cong-ty-a
-      description: 'Tổ chức quản trị'
-      status: inactive
-      parent_id: null
-      sort_order: 0
+      name: editor
+      guard_name: web
+      permission_ids:
+        - 1
+        - 2
     fileParameters: []
     responses:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":59,"name":"Schuster Inc","slug":"perspiciatis-quo-omnis-nostrum-aut-adipisci-quidem-nostrum-qui","description":"Iure odit et et modi ipsum nostrum omnis.","status":"active","parent_id":58,"sort_order":54,"depth":1,"created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026","parent":{"id":58,"name":"Tromp-Leffler","slug":"non-facere-tempora-ex-voluptatem-laboriosam-praesentium","description":"Molestias fugit deleniti distinctio eum doloremque id.","status":"active","parent_id":null,"sort_order":61,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"},"children":[{"id":60,"name":"Batz Inc","slug":"mollitia-deleniti-nemo-odit-quia-officia","description":"Neque blanditiis odio veritatis excepturi doloribus delectus.","status":"inactive","parent_id":59,"sort_order":22,"depth":2,"created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"}]},"success":"true","message":"Organization \u0111\u00e3 \u0111\u01b0\u1ee3c c\u1eadp nh\u1eadt!"}'
+        content: '{"data":{"id":19,"name":"role_lj575","guard_name":"web","organization_id":null,"permissions":["roles.destroy.6854"],"created_at":"09:52:14 02\/04\/2026","updated_at":"09:52:14 02\/04\/2026"},"success":"true","message":"Vai tr\u00f2 \u0111\u00e3 \u0111\u01b0\u1ee3c c\u1eadp nh\u1eadt!"}'
         headers: []
         description: ''
     responseFields: []
@@ -1330,14 +862,14 @@ endpoints:
     custom: []
     httpMethods:
       - DELETE
-    uri: 'api/organizations/{organization_id}'
+    uri: 'api/roles/{role_id}'
     metadata:
       custom: []
-      groupName: 'Core - Organization'
+      groupName: 'Core - Role'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Xóa organization'
+      title: 'Xóa role'
       description: ''
       authenticated: true
       deprecated: false
@@ -1347,10 +879,10 @@ endpoints:
       Content-Type: application/json
       Accept: application/json
     urlParameters:
-      organization_id:
+      role_id:
         custom: []
-        name: organization_id
-        description: 'The ID of the organization.'
+        name: role_id
+        description: 'The ID of the role.'
         required: true
         example: 1
         type: integer
@@ -1358,10 +890,10 @@ endpoints:
         exampleWasSpecified: false
         nullable: false
         deprecated: false
-      organization:
+      role:
         custom: []
-        name: organization
-        description: 'ID organization.'
+        name: role
+        description: 'ID role.'
         required: true
         example: 1
         type: integer
@@ -1370,8 +902,8 @@ endpoints:
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      organization_id: 1
-      organization: 1
+      role_id: 1
+      role: 1
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters: []
@@ -1381,85 +913,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"success": true, "message": "Organization đã được xóa!"}'
-        headers: []
-        description: ''
-    responseFields: []
-    auth:
-      - headers
-      - Authorization
-      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
-    controller: null
-    method: null
-    route: null
-  -
-    custom: []
-    httpMethods:
-      - PATCH
-    uri: 'api/organizations/{organization_id}/status'
-    metadata:
-      custom: []
-      groupName: 'Core - Organization'
-      groupDescription: ''
-      subgroup: ''
-      subgroupDescription: ''
-      title: 'Thay đổi trạng thái organization'
-      description: ''
-      authenticated: true
-      deprecated: false
-    headers:
-      Authorization: 'Bearer Bearer {YOUR_ACCESS_TOKEN}'
-      X-Organization-Id: 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1'
-      Content-Type: application/json
-      Accept: application/json
-    urlParameters:
-      organization_id:
-        custom: []
-        name: organization_id
-        description: 'The ID of the organization.'
-        required: true
-        example: 1
-        type: integer
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: false
-        deprecated: false
-      organization:
-        custom: []
-        name: organization
-        description: 'ID organization.'
-        required: true
-        example: 1
-        type: integer
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-    cleanUrlParameters:
-      organization_id: 1
-      organization: 1
-    queryParameters: []
-    cleanQueryParameters: []
-    bodyParameters:
-      status:
-        custom: []
-        name: status
-        description: 'Trạng thái mới: active, inactive.'
-        required: true
-        example: inactive
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-    cleanBodyParameters:
-      status: inactive
-    fileParameters: []
-    responses:
-      -
-        custom: []
-        status: 200
-        content: '{"data":{"id":62,"name":"Baumbach Ltd","slug":"et-modi-ipsum-nostrum-omnis-autem-et-consequatur","description":null,"status":"inactive","parent_id":61,"sort_order":62,"depth":1,"created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026","parent":{"id":61,"name":"VonRueden-Leuschke","slug":"voluptatem-laboriosam-praesentium-quis-adipisci","description":null,"status":"inactive","parent_id":null,"sort_order":72,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"},"children":[{"id":63,"name":"Gaylord, Hettinger and Nitzsche","slug":"libero-aliquam-veniam-corporis-dolorem-mollitia-deleniti","description":"Quia officia est dignissimos neque.","status":"inactive","parent_id":62,"sort_order":6,"depth":2,"created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"}]},"success":"true","message":"C\u1eadp nh\u1eadt tr\u1ea1ng th\u00e1i th\u00e0nh c\u00f4ng!"}'
+        content: '{"success": true, "message": "Vai trò đã được xóa!"}'
         headers: []
         description: ''
     responseFields: []

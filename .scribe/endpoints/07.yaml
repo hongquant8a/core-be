@@ -1,267 +1,19 @@
-name: 'Post - Category'
+name: 'Core - Permission'
 description: ''
 endpoints:
   -
     custom: []
     httpMethods:
       - GET
-    uri: api/post-categories/public
+    uri: api/permissions/export
     metadata:
       custom: []
-      groupName: 'Post - Category'
+      groupName: 'Core - Permission'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Danh sách danh mục công khai'
-      description: 'Trả về danh sách danh mục đang hoạt động (active), thứ tự theo cây, dùng cho các chức năng công khai.'
-      authenticated: false
-      deprecated: false
-    headers:
-      X-Organization-Id: 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1'
-      Content-Type: application/json
-      Accept: application/json
-    urlParameters: []
-    cleanUrlParameters: []
-    queryParameters:
-      search:
-        custom: []
-        name: search
-        description: 'Từ khóa tìm kiếm (name).'
-        required: false
-        example: tin-tuc
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-      status:
-        custom: []
-        name: status
-        description: 'Lọc theo trạng thái.'
-        required: false
-        example: active
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      from_date:
-        custom: []
-        name: from_date
-        description: 'Lọc từ ngày tạo (Y-m-d). Must be a valid date.'
-        required: false
-        example: '2026-01-01'
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      to_date:
-        custom: []
-        name: to_date
-        description: 'Lọc đến ngày tạo (Y-m-d). Must be a valid date. Must be a date after or equal to <code>from_date</code>.'
-        required: false
-        example: '2026-12-31'
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      sort_by:
-        custom: []
-        name: sort_by
-        description: 'Trường dùng để sắp xếp. Must not be greater than 50 characters.'
-        required: false
-        example: created_at
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      sort_order:
-        custom: []
-        name: sort_order
-        description: 'Thứ tự sắp xếp.'
-        required: false
-        example: desc
-        type: string
-        enumValues:
-          - asc
-          - desc
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      limit:
-        custom: []
-        name: limit
-        description: 'Số bản ghi mỗi trang (1-100). Must be at least 1. Must not be greater than 100.'
-        required: false
-        example: 10
-        type: integer
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-    cleanQueryParameters:
-      search: tin-tuc
-      status: active
-      from_date: '2026-01-01'
-      to_date: '2026-12-31'
-      sort_by: created_at
-      sort_order: desc
-      limit: 10
-    bodyParameters: []
-    cleanBodyParameters: []
-    fileParameters: []
-    responses:
-      -
-        custom: []
-        status: 200
-        content: '{"data":[{"id":67,"name":"Architecto Eius","slug":"architecto-eius","description":"Quos velit et fugiat sunt nihil accusantium harum.","status":"active","sort_order":86,"parent_id":null,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:35","updated_at":"02\/04\/2026 09:41:35"},{"id":68,"name":"Deserunt Aut","slug":"deserunt-aut","description":null,"status":"active","sort_order":7,"parent_id":null,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:35","updated_at":"02\/04\/2026 09:41:35"}],"success":"true"}'
-        headers: []
-        description: ''
-    responseFields: []
-    auth: []
-    controller: null
-    method: null
-    route: null
-  -
-    custom: []
-    httpMethods:
-      - GET
-    uri: api/post-categories/public-options
-    metadata:
-      custom: []
-      groupName: 'Post - Category'
-      groupDescription: ''
-      subgroup: ''
-      subgroupDescription: ''
-      title: 'Danh sách danh mục công khai cho dropdown'
-      description: 'Trả về dữ liệu tối giản chỉ gồm id, name, description để tối ưu payload cho dropdown.'
-      authenticated: false
-      deprecated: false
-    headers:
-      X-Organization-Id: 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1'
-      Content-Type: application/json
-      Accept: application/json
-    urlParameters: []
-    cleanUrlParameters: []
-    queryParameters:
-      search:
-        custom: []
-        name: search
-        description: 'Từ khóa tìm kiếm (name).'
-        required: false
-        example: tin-tuc
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-      status:
-        custom: []
-        name: status
-        description: 'Lọc theo trạng thái.'
-        required: false
-        example: active
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      from_date:
-        custom: []
-        name: from_date
-        description: 'Lọc từ ngày tạo (Y-m-d). Must be a valid date.'
-        required: false
-        example: '2026-01-01'
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      to_date:
-        custom: []
-        name: to_date
-        description: 'Lọc đến ngày tạo (Y-m-d). Must be a valid date. Must be a date after or equal to <code>from_date</code>.'
-        required: false
-        example: '2026-12-31'
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      sort_by:
-        custom: []
-        name: sort_by
-        description: 'Trường dùng để sắp xếp. Must not be greater than 50 characters.'
-        required: false
-        example: created_at
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      sort_order:
-        custom: []
-        name: sort_order
-        description: 'Thứ tự sắp xếp.'
-        required: false
-        example: desc
-        type: string
-        enumValues:
-          - asc
-          - desc
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      limit:
-        custom: []
-        name: limit
-        description: 'Số bản ghi mỗi trang (1-100). Must be at least 1. Must not be greater than 100.'
-        required: false
-        example: 10
-        type: integer
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-    cleanQueryParameters:
-      search: tin-tuc
-      status: active
-      from_date: '2026-01-01'
-      to_date: '2026-12-31'
-      sort_by: created_at
-      sort_order: desc
-      limit: 10
-    bodyParameters: []
-    cleanBodyParameters: []
-    fileParameters: []
-    responses:
-      -
-        custom: []
-        status: 200
-        content: '{"data":[{"id":69,"name":"Et Animi","description":"Et fugiat sunt nihil accusantium."},{"id":70,"name":"Quo Omnis","description":"Adipisci quidem nostrum qui commodi incidunt iure."}],"success":"true"}'
-        headers: []
-        description: ''
-    responseFields: []
-    auth: []
-    controller: null
-    method: null
-    route: null
-  -
-    custom: []
-    httpMethods:
-      - GET
-    uri: api/post-categories/export
-    metadata:
-      custom: []
-      groupName: 'Post - Category'
-      groupDescription: ''
-      subgroup: ''
-      subgroupDescription: ''
-      title: 'Xuất danh sách danh mục'
-      description: 'Áp dụng cùng bộ lọc với index. Xuất ra các trường: id, name, slug, description, status, sort_order, parent_id, parent_slug, depth, created_by, updated_by, created_at, updated_at.'
+      title: 'Xuất danh sách permission'
+      description: 'Áp dụng cùng bộ lọc với index. Xuất ra các trường: id, name, guard_name, description, sort_order, parent_id, created_at, updated_at.'
       authenticated: true
       deprecated: false
     headers:
@@ -275,7 +27,7 @@ endpoints:
       search:
         custom: []
         name: search
-        description: 'Từ khóa tìm kiếm (name).'
+        description: 'Từ khóa tìm kiếm (name, guard_name).'
         required: false
         example: architecto
         type: string
@@ -286,9 +38,9 @@ endpoints:
       status:
         custom: []
         name: status
-        description: 'Lọc theo trạng thái: active, inactive.'
+        description: 'Lọc theo trạng thái.'
         required: false
-        example: architecto
+        example: active
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -297,7 +49,7 @@ endpoints:
       from_date:
         custom: []
         name: from_date
-        description: 'date Lọc từ ngày tạo (Y-m-d).'
+        description: 'date Lọc từ ngày tạo (created_at) (Y-m-d).'
         required: false
         example: architecto
         type: string
@@ -308,7 +60,7 @@ endpoints:
       to_date:
         custom: []
         name: to_date
-        description: 'date Lọc đến ngày tạo (Y-m-d).'
+        description: 'date Lọc đến ngày tạo (created_at) (Y-m-d).'
         required: false
         example: architecto
         type: string
@@ -319,7 +71,7 @@ endpoints:
       sort_by:
         custom: []
         name: sort_by
-        description: 'Sắp xếp theo: id, name, sort_order, parent_id, created_at.'
+        description: 'Sắp xếp theo: id, name, guard_name, created_at, updated_at.'
         required: false
         example: architecto
         type: string
@@ -351,7 +103,7 @@ endpoints:
         deprecated: false
     cleanQueryParameters:
       search: architecto
-      status: architecto
+      status: active
       from_date: architecto
       to_date: architecto
       sort_by: architecto
@@ -382,15 +134,15 @@ endpoints:
     custom: []
     httpMethods:
       - POST
-    uri: api/post-categories/import
+    uri: api/permissions/import
     metadata:
       custom: []
-      groupName: 'Post - Category'
+      groupName: 'Core - Permission'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Nhập danh sách danh mục'
-      description: 'Cột bắt buộc: name. Cột không bắt buộc: slug (tự sinh từ name), description, status (mặc định "active"), sort_order (mặc định 0), parent_slug (slug của danh mục cha).'
+      title: 'Nhập danh sách permission'
+      description: 'Cột bắt buộc: name. Cột không bắt buộc: guard_name (mặc định "web"), description, sort_order, parent_id.'
       authenticated: true
       deprecated: false
     headers:
@@ -421,7 +173,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"success": true, "message": "Import danh mục bài viết thành công."}'
+        content: '{"success": true, "message": "Import quyền thành công."}'
         headers: []
         description: ''
     responseFields: []
@@ -436,14 +188,14 @@ endpoints:
     custom: []
     httpMethods:
       - POST
-    uri: api/post-categories/bulk-delete
+    uri: api/permissions/bulk-delete
     metadata:
       custom: []
-      groupName: 'Post - Category'
+      groupName: 'Core - Permission'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Xóa hàng loạt danh mục'
+      title: 'Xóa hàng loạt permission'
       description: ''
       authenticated: true
       deprecated: false
@@ -481,7 +233,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"success": true, "message": "Đã xóa thành công các danh mục được chọn!"}'
+        content: '{"success": true, "message": "Đã xóa thành công các quyền được chọn!"}'
         headers: []
         description: ''
     responseFields: []
@@ -495,16 +247,16 @@ endpoints:
   -
     custom: []
     httpMethods:
-      - PATCH
-    uri: api/post-categories/bulk-status
+      - GET
+    uri: api/permissions/stats
     metadata:
       custom: []
-      groupName: 'Post - Category'
+      groupName: 'Core - Permission'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Cập nhật trạng thái danh mục hàng loạt'
-      description: ''
+      title: 'Thống kê permission'
+      description: 'Tổng số bản ghi sau khi áp dụng bộ lọc.'
       authenticated: true
       deprecated: false
     headers:
@@ -514,163 +266,91 @@ endpoints:
       Accept: application/json
     urlParameters: []
     cleanUrlParameters: []
-    queryParameters: []
-    cleanQueryParameters: []
-    bodyParameters:
-      ids:
+    queryParameters:
+      search:
         custom: []
-        name: ids
-        description: 'Danh sách ID.'
-        required: true
-        example:
-          - 1
-          - 2
-          - 3
-        type: 'string[]'
+        name: search
+        description: 'Từ khóa tìm kiếm (name, guard_name, description).'
+        required: false
+        example: posts
+        type: string
         enumValues: []
         exampleWasSpecified: true
-        nullable: false
+        nullable: true
         deprecated: false
       status:
         custom: []
         name: status
-        description: 'Trạng thái: active, inactive.'
-        required: true
+        description: 'Lọc theo trạng thái.'
+        required: false
         example: active
         type: string
         enumValues: []
-        exampleWasSpecified: true
-        nullable: false
+        exampleWasSpecified: false
+        nullable: true
         deprecated: false
-    cleanBodyParameters:
-      ids:
-        - 1
-        - 2
-        - 3
+      from_date:
+        custom: []
+        name: from_date
+        description: 'date Lọc từ ngày tạo (created_at) (Y-m-d).'
+        required: false
+        example: '2026-02-01'
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: true
+        deprecated: false
+      to_date:
+        custom: []
+        name: to_date
+        description: 'date Lọc đến ngày tạo (created_at) (Y-m-d).'
+        required: false
+        example: '2026-02-17'
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: true
+        deprecated: false
+      sort_by:
+        custom: []
+        name: sort_by
+        description: 'Sắp xếp theo: id, name, guard_name, created_at, updated_at.'
+        required: false
+        example: created_at
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: true
+        deprecated: false
+      sort_order:
+        custom: []
+        name: sort_order
+        description: 'Thứ tự: asc, desc.'
+        required: false
+        example: desc
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: true
+        deprecated: false
+      limit:
+        custom: []
+        name: limit
+        description: 'Số bản ghi mỗi trang (1-100).'
+        required: false
+        example: 10
+        type: integer
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: true
+        deprecated: false
+    cleanQueryParameters:
+      search: posts
       status: active
-    fileParameters: []
-    responses:
-      -
-        custom: []
-        status: 200
-        content: '{"success": true, "message": "Cập nhật trạng thái thành công các danh mục được chọn!"}'
-        headers: []
-        description: ''
-    responseFields: []
-    auth:
-      - headers
-      - Authorization
-      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
-    controller: null
-    method: null
-    route: null
-  -
-    custom: []
-    httpMethods:
-      - GET
-    uri: api/post-categories/stats
-    metadata:
-      custom: []
-      groupName: 'Post - Category'
-      groupDescription: ''
-      subgroup: ''
-      subgroupDescription: ''
-      title: 'Thống kê danh mục tin tức'
-      description: 'Tổng số, đang kích hoạt (active), không kích hoạt (inactive). Áp dụng cùng bộ lọc với index.'
-      authenticated: true
-      deprecated: false
-    headers:
-      Authorization: 'Bearer Bearer {YOUR_ACCESS_TOKEN}'
-      X-Organization-Id: 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1'
-      Content-Type: application/json
-      Accept: application/json
-    urlParameters: []
-    cleanUrlParameters: []
-    queryParameters:
-      search:
-        custom: []
-        name: search
-        description: 'Từ khóa tìm kiếm (name).'
-        required: false
-        example: tin-tuc
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-      status:
-        custom: []
-        name: status
-        description: 'Lọc theo trạng thái: active, inactive.'
-        required: false
-        example: architecto
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      from_date:
-        custom: []
-        name: from_date
-        description: 'date Lọc từ ngày tạo (created_at) (Y-m-d).'
-        required: false
-        example: '2026-02-01'
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-      to_date:
-        custom: []
-        name: to_date
-        description: 'date Lọc đến ngày tạo (created_at) (Y-m-d).'
-        required: false
-        example: '2026-02-17'
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-      sort_by:
-        custom: []
-        name: sort_by
-        description: 'Sắp xếp theo: id, name, sort_order, parent_id, created_at.'
-        required: false
-        example: sort_order
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-      sort_order:
-        custom: []
-        name: sort_order
-        description: 'Thứ tự: asc, desc.'
-        required: false
-        example: asc
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-      limit:
-        custom: []
-        name: limit
-        description: 'Số bản ghi mỗi trang (1-100).'
-        required: false
-        example: 10
-        type: integer
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-    cleanQueryParameters:
-      search: tin-tuc
-      status: architecto
       from_date: '2026-02-01'
       to_date: '2026-02-17'
-      sort_by: sort_order
-      sort_order: asc
+      sort_by: created_at
+      sort_order: desc
       limit: 10
     bodyParameters: []
     cleanBodyParameters: []
@@ -679,7 +359,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"success": true, "data": {"total": 10, "active": 5, "inactive": 5}}'
+        content: '{"success": true, "data": {"total": 20}}'
         headers: []
         description: ''
     responseFields: []
@@ -694,14 +374,14 @@ endpoints:
     custom: []
     httpMethods:
       - GET
-    uri: api/post-categories/tree
+    uri: api/permissions/tree
     metadata:
       custom: []
-      groupName: 'Post - Category'
+      groupName: 'Core - Permission'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Cây danh mục (toàn bộ cây, không phân trang). Cấu trúc parent_id, children đệ quy.'
+      title: 'Cây permission (toàn bộ cây, không phân trang). Để hiển thị nhóm quyền trên frontend.'
       description: ''
       authenticated: true
       deprecated: false
@@ -713,19 +393,19 @@ endpoints:
     urlParameters: []
     cleanUrlParameters: []
     queryParameters:
-      status:
+      parent_id:
         custom: []
-        name: status
-        description: 'Lọc theo trạng thái: active, inactive.'
+        name: parent_id
+        description: 'Lọc theo parent_id (null = gốc).'
         required: false
-        example: architecto
-        type: string
+        example: null
+        type: integer
         enumValues: []
-        exampleWasSpecified: false
+        exampleWasSpecified: true
         nullable: false
         deprecated: false
     cleanQueryParameters:
-      status: architecto
+      parent_id: null
     bodyParameters: []
     cleanBodyParameters: []
     fileParameters: []
@@ -733,7 +413,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"success": true, "data": [{"id": 1, "name": "Tin tức", "slug": "tin-tuc", "status": "active", "sort_order": 0, "parent_id": null, "depth": 0, "children": []}]}'
+        content: '{"success": true, "data": [{"id": 1, "name": "posts", "guard_name": "web", "description": "Quản lý bài viết", "sort_order": 0, "parent_id": null, "children": []}]}'
         headers: []
         description: ''
     responseFields: []
@@ -748,15 +428,15 @@ endpoints:
     custom: []
     httpMethods:
       - GET
-    uri: api/post-categories
+    uri: api/permissions
     metadata:
       custom: []
-      groupName: 'Post - Category'
+      groupName: 'Core - Permission'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Danh sách danh mục (dạng phẳng, phân trang, thứ tự cây)'
-      description: ''
+      title: 'Danh sách permission'
+      description: 'Lấy danh sách có phân trang, lọc và sắp xếp.'
       authenticated: true
       deprecated: false
     headers:
@@ -770,9 +450,9 @@ endpoints:
       search:
         custom: []
         name: search
-        description: 'Từ khóa tìm kiếm (name).'
+        description: 'Từ khóa tìm kiếm (name, guard_name, description).'
         required: false
-        example: tin-tuc
+        example: posts
         type: string
         enumValues: []
         exampleWasSpecified: true
@@ -781,9 +461,9 @@ endpoints:
       status:
         custom: []
         name: status
-        description: 'Lọc theo trạng thái: active, inactive.'
+        description: 'Lọc theo trạng thái.'
         required: false
-        example: architecto
+        example: active
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -814,7 +494,7 @@ endpoints:
       sort_by:
         custom: []
         name: sort_by
-        description: 'Sắp xếp theo: id, name, sort_order, parent_id, created_at.'
+        description: 'Sắp xếp theo: id, name, guard_name, description, sort_order, parent_id, created_at, updated_at.'
         required: false
         example: sort_order
         type: string
@@ -845,8 +525,8 @@ endpoints:
         nullable: true
         deprecated: false
     cleanQueryParameters:
-      search: tin-tuc
-      status: architecto
+      search: posts
+      status: active
       from_date: '2026-02-01'
       to_date: '2026-02-17'
       sort_by: sort_order
@@ -859,7 +539,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":[{"id":76,"name":"Adipisci Quidem","slug":"adipisci-quidem","description":"Commodi incidunt iure odit.","status":"active","sort_order":20,"parent_id":null,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:35","updated_at":"02\/04\/2026 09:41:35"},{"id":77,"name":"Modi Ipsum","slug":"modi-ipsum","description":"Autem et consequatur aut dolores enim non facere tempora.","status":"inactive","sort_order":78,"parent_id":null,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:35","updated_at":"02\/04\/2026 09:41:35"}],"links":{"first":"\/?page=1","last":"\/?page=1","prev":null,"next":null},"meta":{"current_page":1,"from":1,"last_page":1,"links":[{"url":null,"label":"&laquo; Previous","page":null,"active":false},{"url":"\/?page=1","label":"1","page":1,"active":true},{"url":null,"label":"Next &raquo;","page":null,"active":false}],"path":"\/","per_page":10,"to":2,"total":2},"success":"true"}'
+        content: '{"data":[{"id":237,"name":"users.update.4027","guard_name":"web","description":null,"sort_order":95,"parent_id":null,"created_at":"09:52:14 02\/04\/2026","updated_at":"09:52:14 02\/04\/2026"},{"id":238,"name":"documents.index.6955","guard_name":"web","description":null,"sort_order":39,"parent_id":null,"created_at":"09:52:14 02\/04\/2026","updated_at":"09:52:14 02\/04\/2026"}],"links":{"first":"\/?page=1","last":"\/?page=1","prev":null,"next":null},"meta":{"current_page":1,"from":1,"last_page":1,"links":[{"url":null,"label":"&laquo; Previous","page":null,"active":false},{"url":"\/?page=1","label":"1","page":1,"active":true},{"url":null,"label":"Next &raquo;","page":null,"active":false}],"path":"\/","per_page":10,"to":2,"total":2},"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -874,14 +554,14 @@ endpoints:
     custom: []
     httpMethods:
       - GET
-    uri: 'api/post-categories/{category_id}'
+    uri: 'api/permissions/{permission_id}'
     metadata:
       custom: []
-      groupName: 'Post - Category'
+      groupName: 'Core - Permission'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Chi tiết danh mục'
+      title: 'Chi tiết permission'
       description: ''
       authenticated: true
       deprecated: false
@@ -891,10 +571,10 @@ endpoints:
       Content-Type: application/json
       Accept: application/json
     urlParameters:
-      category_id:
+      permission_id:
         custom: []
-        name: category_id
-        description: 'The ID of the category.'
+        name: permission_id
+        description: 'The ID of the permission.'
         required: true
         example: 1
         type: integer
@@ -902,10 +582,10 @@ endpoints:
         exampleWasSpecified: false
         nullable: false
         deprecated: false
-      category:
+      permission:
         custom: []
-        name: category
-        description: 'ID danh mục.'
+        name: permission
+        description: 'ID permission.'
         required: true
         example: 1
         type: integer
@@ -914,8 +594,8 @@ endpoints:
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      category_id: 1
-      category: 1
+      permission_id: 1
+      permission: 1
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters: []
@@ -925,7 +605,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":79,"name":"Aut Adipisci","slug":"aut-adipisci","description":"Qui commodi incidunt iure odit.","status":"active","sort_order":20,"parent_id":78,"depth":1,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:35","updated_at":"02\/04\/2026 09:41:35","parent":{"id":78,"name":"Nostrum Omnis","slug":"nostrum-omnis","description":"Consequatur aut dolores enim non facere tempora.","status":"inactive","sort_order":78,"parent_id":null,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:35","updated_at":"02\/04\/2026 09:41:35"},"children":[{"id":80,"name":"Laboriosam Praesentium","slug":"laboriosam-praesentium","description":"Molestias fugit deleniti distinctio eum doloremque id.","status":"active","sort_order":61,"parent_id":79,"depth":2,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:35","updated_at":"02\/04\/2026 09:41:35"}]},"success":"true"}'
+        content: '{"data":{"id":240,"name":"users.index.4524","guard_name":"web","description":"Commodi incidunt iure odit.","sort_order":45,"parent_id":239,"parent":{"id":239,"name":"documents.show.967"},"children":[{"id":241,"name":"roles.destroy.1904","guard_name":"web","description":null,"sort_order":93,"parent_id":240,"created_at":"09:52:14 02\/04\/2026","updated_at":"09:52:14 02\/04\/2026"}],"created_at":"09:52:14 02\/04\/2026","updated_at":"09:52:14 02\/04\/2026"},"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -940,14 +620,14 @@ endpoints:
     custom: []
     httpMethods:
       - POST
-    uri: api/post-categories
+    uri: api/permissions
     metadata:
       custom: []
-      groupName: 'Post - Category'
+      groupName: 'Core - Permission'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Tạo danh mục mới'
+      title: 'Tạo permission mới'
       description: ''
       authenticated: true
       deprecated: false
@@ -964,20 +644,20 @@ endpoints:
       name:
         custom: []
         name: name
-        description: 'Tên danh mục.'
+        description: 'Tên permission.'
         required: true
-        example: 'Tin tức'
+        example: posts.create
         type: string
         enumValues: []
         exampleWasSpecified: true
         nullable: false
         deprecated: false
-      slug:
+      guard_name:
         custom: []
-        name: slug
-        description: 'Slug (tự sinh từ name nếu không gửi).'
+        name: guard_name
+        description: 'Guard name (mặc định web).'
         required: false
-        example: tin-tuc
+        example: web
         type: string
         enumValues: []
         exampleWasSpecified: true
@@ -986,7 +666,7 @@ endpoints:
       description:
         custom: []
         name: description
-        description: 'Mô tả.'
+        description: 'Mô tả hiển thị trên frontend.'
         required: false
         example: 'Eius et animi quos velit et.'
         type: string
@@ -994,21 +674,10 @@ endpoints:
         exampleWasSpecified: false
         nullable: true
         deprecated: false
-      status:
-        custom: []
-        name: status
-        description: 'Trạng thái: active, inactive.'
-        required: true
-        example: active
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
       sort_order:
         custom: []
         name: sort_order
-        description: 'Thứ tự.'
+        description: 'Thứ tự sắp xếp.'
         required: false
         example: 0
         type: integer
@@ -1019,27 +688,26 @@ endpoints:
       parent_id:
         custom: []
         name: parent_id
-        description: 'ID danh mục cha (null = gốc).'
+        description: 'ID permission cha (null = gốc/nhóm).'
         required: false
-        example: null
+        example: 16
         type: integer
         enumValues: []
-        exampleWasSpecified: true
+        exampleWasSpecified: false
         nullable: true
         deprecated: false
     cleanBodyParameters:
-      name: 'Tin tức'
-      slug: tin-tuc
+      name: posts.create
+      guard_name: web
       description: 'Eius et animi quos velit et.'
-      status: active
       sort_order: 0
-      parent_id: null
+      parent_id: 16
     fileParameters: []
     responses:
       -
         custom: []
         status: 201
-        content: '{"data":{"id":81,"name":"Nostrum Qui","slug":"nostrum-qui","description":"Iure odit et et modi ipsum nostrum omnis.","status":"active","sort_order":54,"parent_id":null,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:35","updated_at":"02\/04\/2026 09:41:35"},"success":"true","message":"Danh m\u1ee5c \u0111\u00e3 \u0111\u01b0\u1ee3c t\u1ea1o th\u00e0nh c\u00f4ng!"}'
+        content: '{"data":{"id":242,"name":"roles.index.660","guard_name":"web","description":"Et fugiat sunt nihil accusantium.","sort_order":91,"parent_id":null,"created_at":"09:52:14 02\/04\/2026","updated_at":"09:52:14 02\/04\/2026"},"success":"true","message":"Quy\u1ec1n \u0111\u00e3 \u0111\u01b0\u1ee3c t\u1ea1o th\u00e0nh c\u00f4ng!"}'
         headers: []
         description: ''
     responseFields: []
@@ -1054,14 +722,14 @@ endpoints:
     custom: []
     httpMethods:
       - PUT
-    uri: 'api/post-categories/{category_id}'
+    uri: 'api/permissions/{permission_id}'
     metadata:
       custom: []
-      groupName: 'Post - Category'
+      groupName: 'Core - Permission'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Cập nhật danh mục'
+      title: 'Cập nhật permission'
       description: ''
       authenticated: true
       deprecated: false
@@ -1071,10 +739,10 @@ endpoints:
       Content-Type: application/json
       Accept: application/json
     urlParameters:
-      category_id:
+      permission_id:
         custom: []
-        name: category_id
-        description: 'The ID of the category.'
+        name: permission_id
+        description: 'The ID of the permission.'
         required: true
         example: 1
         type: integer
@@ -1082,10 +750,10 @@ endpoints:
         exampleWasSpecified: false
         nullable: false
         deprecated: false
-      category:
+      permission:
         custom: []
-        name: category
-        description: 'ID danh mục.'
+        name: permission
+        description: 'ID permission.'
         required: true
         example: 1
         type: integer
@@ -1094,32 +762,32 @@ endpoints:
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      category_id: 1
-      category: 1
+      permission_id: 1
+      permission: 1
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters:
       name:
         custom: []
         name: name
-        description: 'Tên danh mục.'
+        description: 'Tên permission.'
         required: false
-        example: architecto
+        example: posts.update
         type: string
         enumValues: []
-        exampleWasSpecified: false
+        exampleWasSpecified: true
         nullable: false
         deprecated: false
-      slug:
+      guard_name:
         custom: []
-        name: slug
-        description: Slug.
+        name: guard_name
+        description: 'Guard name.'
         required: false
-        example: architecto
+        example: web
         type: string
         enumValues: []
-        exampleWasSpecified: false
-        nullable: false
+        exampleWasSpecified: true
+        nullable: true
         deprecated: false
       description:
         custom: []
@@ -1132,21 +800,10 @@ endpoints:
         exampleWasSpecified: false
         nullable: true
         deprecated: false
-      status:
-        custom: []
-        name: status
-        description: 'Trạng thái: active, inactive.'
-        required: false
-        example: architecto
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: false
-        deprecated: false
       sort_order:
         custom: []
         name: sort_order
-        description: 'Thứ tự.'
+        description: 'Thứ tự sắp xếp.'
         required: false
         example: 16
         type: integer
@@ -1157,7 +814,7 @@ endpoints:
       parent_id:
         custom: []
         name: parent_id
-        description: 'ID danh mục cha (null hoặc 0 = gốc).'
+        description: 'ID permission cha (null = gốc).'
         required: false
         example: 16
         type: integer
@@ -1166,10 +823,9 @@ endpoints:
         nullable: true
         deprecated: false
     cleanBodyParameters:
-      name: architecto
-      slug: architecto
+      name: posts.update
+      guard_name: web
       description: 'Eius et animi quos velit et.'
-      status: architecto
       sort_order: 16
       parent_id: 16
     fileParameters: []
@@ -1177,7 +833,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":83,"name":"Commodi Incidunt","slug":"commodi-incidunt","description":"Et et modi ipsum nostrum.","status":"active","sort_order":41,"parent_id":82,"depth":1,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:36","updated_at":"02\/04\/2026 09:41:36","parent":{"id":82,"name":"Et Consequatur","slug":"et-consequatur","description":"Enim non facere tempora ex voluptatem laboriosam praesentium.","status":"inactive","sort_order":47,"parent_id":null,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:36","updated_at":"02\/04\/2026 09:41:36"},"children":[{"id":84,"name":"Molestias Fugit","slug":"molestias-fugit","description":null,"status":"inactive","sort_order":7,"parent_id":83,"depth":2,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:36","updated_at":"02\/04\/2026 09:41:36"}]},"success":"true","message":"Danh m\u1ee5c \u0111\u00e3 \u0111\u01b0\u1ee3c c\u1eadp nh\u1eadt!"}'
+        content: '{"data":{"id":243,"name":"roles.index.4338","guard_name":"web","description":null,"sort_order":7,"parent_id":null,"created_at":"09:52:14 02\/04\/2026","updated_at":"09:52:14 02\/04\/2026"},"success":"true","message":"Quy\u1ec1n \u0111\u00e3 \u0111\u01b0\u1ee3c c\u1eadp nh\u1eadt!"}'
         headers: []
         description: ''
     responseFields: []
@@ -1192,14 +848,14 @@ endpoints:
     custom: []
     httpMethods:
       - PATCH
-    uri: 'api/post-categories/{category_id}'
+    uri: 'api/permissions/{permission_id}'
     metadata:
       custom: []
-      groupName: 'Post - Category'
+      groupName: 'Core - Permission'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Cập nhật danh mục'
+      title: 'Cập nhật permission'
       description: ''
       authenticated: true
       deprecated: false
@@ -1209,10 +865,10 @@ endpoints:
       Content-Type: application/json
       Accept: application/json
     urlParameters:
-      category_id:
+      permission_id:
         custom: []
-        name: category_id
-        description: 'The ID of the category.'
+        name: permission_id
+        description: 'The ID of the permission.'
         required: true
         example: 1
         type: integer
@@ -1220,10 +876,10 @@ endpoints:
         exampleWasSpecified: false
         nullable: false
         deprecated: false
-      category:
+      permission:
         custom: []
-        name: category
-        description: 'ID danh mục.'
+        name: permission
+        description: 'ID permission.'
         required: true
         example: 1
         type: integer
@@ -1232,32 +888,32 @@ endpoints:
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      category_id: 1
-      category: 1
+      permission_id: 1
+      permission: 1
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters:
       name:
         custom: []
         name: name
-        description: 'Tên danh mục.'
+        description: 'Tên permission.'
         required: false
-        example: architecto
+        example: posts.update
         type: string
         enumValues: []
-        exampleWasSpecified: false
+        exampleWasSpecified: true
         nullable: false
         deprecated: false
-      slug:
+      guard_name:
         custom: []
-        name: slug
-        description: Slug.
+        name: guard_name
+        description: 'Guard name.'
         required: false
-        example: architecto
+        example: web
         type: string
         enumValues: []
-        exampleWasSpecified: false
-        nullable: false
+        exampleWasSpecified: true
+        nullable: true
         deprecated: false
       description:
         custom: []
@@ -1270,21 +926,10 @@ endpoints:
         exampleWasSpecified: false
         nullable: true
         deprecated: false
-      status:
-        custom: []
-        name: status
-        description: 'Trạng thái: active, inactive.'
-        required: false
-        example: architecto
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: false
-        deprecated: false
       sort_order:
         custom: []
         name: sort_order
-        description: 'Thứ tự.'
+        description: 'Thứ tự sắp xếp.'
         required: false
         example: 16
         type: integer
@@ -1295,7 +940,7 @@ endpoints:
       parent_id:
         custom: []
         name: parent_id
-        description: 'ID danh mục cha (null hoặc 0 = gốc).'
+        description: 'ID permission cha (null = gốc).'
         required: false
         example: 16
         type: integer
@@ -1304,10 +949,9 @@ endpoints:
         nullable: true
         deprecated: false
     cleanBodyParameters:
-      name: architecto
-      slug: architecto
+      name: posts.update
+      guard_name: web
       description: 'Eius et animi quos velit et.'
-      status: architecto
       sort_order: 16
       parent_id: 16
     fileParameters: []
@@ -1315,7 +959,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":86,"name":"Iure Odit","slug":"iure-odit","description":"Modi ipsum nostrum omnis autem et.","status":"inactive","sort_order":84,"parent_id":85,"depth":1,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:36","updated_at":"02\/04\/2026 09:41:36","parent":{"id":85,"name":"Dolores Enim","slug":"dolores-enim","description":"Tempora ex voluptatem laboriosam praesentium quis.","status":"inactive","sort_order":71,"parent_id":null,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:36","updated_at":"02\/04\/2026 09:41:36"},"children":[{"id":87,"name":"Fugit Deleniti","slug":"fugit-deleniti","description":null,"status":"active","sort_order":35,"parent_id":86,"depth":2,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:36","updated_at":"02\/04\/2026 09:41:36"}]},"success":"true","message":"Danh m\u1ee5c \u0111\u00e3 \u0111\u01b0\u1ee3c c\u1eadp nh\u1eadt!"}'
+        content: '{"data":{"id":244,"name":"roles.index.3491","guard_name":"web","description":"Sunt nihil accusantium harum mollitia.","sort_order":86,"parent_id":null,"created_at":"09:52:14 02\/04\/2026","updated_at":"09:52:14 02\/04\/2026"},"success":"true","message":"Quy\u1ec1n \u0111\u00e3 \u0111\u01b0\u1ee3c c\u1eadp nh\u1eadt!"}'
         headers: []
         description: ''
     responseFields: []
@@ -1330,14 +974,14 @@ endpoints:
     custom: []
     httpMethods:
       - DELETE
-    uri: 'api/post-categories/{category_id}'
+    uri: 'api/permissions/{permission_id}'
     metadata:
       custom: []
-      groupName: 'Post - Category'
+      groupName: 'Core - Permission'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Xóa danh mục'
+      title: 'Xóa permission'
       description: ''
       authenticated: true
       deprecated: false
@@ -1347,10 +991,10 @@ endpoints:
       Content-Type: application/json
       Accept: application/json
     urlParameters:
-      category_id:
+      permission_id:
         custom: []
-        name: category_id
-        description: 'The ID of the category.'
+        name: permission_id
+        description: 'The ID of the permission.'
         required: true
         example: 1
         type: integer
@@ -1358,10 +1002,10 @@ endpoints:
         exampleWasSpecified: false
         nullable: false
         deprecated: false
-      category:
+      permission:
         custom: []
-        name: category
-        description: 'ID danh mục.'
+        name: permission
+        description: 'ID permission.'
         required: true
         example: 1
         type: integer
@@ -1370,8 +1014,8 @@ endpoints:
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      category_id: 1
-      category: 1
+      permission_id: 1
+      permission: 1
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters: []
@@ -1381,85 +1025,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"success": true, "message": "Danh mục đã được xóa!"}'
-        headers: []
-        description: ''
-    responseFields: []
-    auth:
-      - headers
-      - Authorization
-      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
-    controller: null
-    method: null
-    route: null
-  -
-    custom: []
-    httpMethods:
-      - PATCH
-    uri: 'api/post-categories/{category_id}/status'
-    metadata:
-      custom: []
-      groupName: 'Post - Category'
-      groupDescription: ''
-      subgroup: ''
-      subgroupDescription: ''
-      title: 'Thay đổi trạng thái danh mục'
-      description: ''
-      authenticated: true
-      deprecated: false
-    headers:
-      Authorization: 'Bearer Bearer {YOUR_ACCESS_TOKEN}'
-      X-Organization-Id: 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1'
-      Content-Type: application/json
-      Accept: application/json
-    urlParameters:
-      category_id:
-        custom: []
-        name: category_id
-        description: 'The ID of the category.'
-        required: true
-        example: 1
-        type: integer
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: false
-        deprecated: false
-      category:
-        custom: []
-        name: category
-        description: 'ID danh mục.'
-        required: true
-        example: 1
-        type: integer
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-    cleanUrlParameters:
-      category_id: 1
-      category: 1
-    queryParameters: []
-    cleanQueryParameters: []
-    bodyParameters:
-      status:
-        custom: []
-        name: status
-        description: 'Trạng thái mới: active, inactive.'
-        required: true
-        example: active
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-    cleanBodyParameters:
-      status: active
-    fileParameters: []
-    responses:
-      -
-        custom: []
-        status: 200
-        content: '{"data":{"id":89,"name":"Quidem Nostrum","slug":"quidem-nostrum","description":null,"status":"inactive","sort_order":0,"parent_id":88,"depth":1,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:36","updated_at":"02\/04\/2026 09:41:36","parent":{"id":88,"name":"Et Et","slug":"et-et","description":"Nostrum omnis autem et consequatur aut.","status":"inactive","sort_order":62,"parent_id":null,"depth":0,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:36","updated_at":"02\/04\/2026 09:41:36"},"children":[{"id":90,"name":"Non Facere","slug":"non-facere","description":"Voluptatem laboriosam praesentium quis adipisci.","status":"inactive","sort_order":10,"parent_id":89,"depth":2,"created_by":"N\/A","updated_by":"N\/A","created_at":"02\/04\/2026 09:41:36","updated_at":"02\/04\/2026 09:41:36"}]},"success":"true","message":"C\u1eadp nh\u1eadt tr\u1ea1ng th\u00e1i th\u00e0nh c\u00f4ng!"}'
+        content: '{"success": true, "message": "Quyền đã được xóa!"}'
         headers: []
         description: ''
     responseFields: []

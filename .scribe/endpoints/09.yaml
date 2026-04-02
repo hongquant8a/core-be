@@ -1,263 +1,19 @@
-name: 'TaskAssignment - Loại văn bản giao việc'
+name: 'Core - LogActivity'
 description: ''
 endpoints:
   -
     custom: []
     httpMethods:
       - GET
-    uri: api/task-assignment-types/public
+    uri: api/log-activities/export
     metadata:
       custom: []
-      groupName: 'TaskAssignment - Loại văn bản giao việc'
+      groupName: 'Core - LogActivity'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Danh sách loại văn bản giao việc công khai'
-      description: ''
-      authenticated: false
-      deprecated: false
-    headers:
-      X-Organization-Id: 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1'
-      Content-Type: application/json
-      Accept: application/json
-    urlParameters: []
-    cleanUrlParameters: []
-    queryParameters:
-      search:
-        custom: []
-        name: search
-        description: 'Từ khóa tìm kiếm theo tên.'
-        required: false
-        example: architecto
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      status:
-        custom: []
-        name: status
-        description: 'Lọc theo trạng thái.'
-        required: false
-        example: active
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      from_date:
-        custom: []
-        name: from_date
-        description: 'Lọc từ ngày tạo (Y-m-d). Must be a valid date.'
-        required: false
-        example: '2026-01-01'
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      to_date:
-        custom: []
-        name: to_date
-        description: 'Lọc đến ngày tạo (Y-m-d). Must be a valid date. Must be a date after or equal to <code>from_date</code>.'
-        required: false
-        example: '2026-12-31'
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      sort_by:
-        custom: []
-        name: sort_by
-        description: 'Sắp xếp theo: id, name, created_at, updated_at.'
-        required: false
-        example: name
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-      sort_order:
-        custom: []
-        name: sort_order
-        description: 'Thứ tự: asc, desc.'
-        required: false
-        example: asc
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-      limit:
-        custom: []
-        name: limit
-        description: 'Số bản ghi mỗi trang (1-100). Must be at least 1. Must not be greater than 100.'
-        required: false
-        example: 10
-        type: integer
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-    cleanQueryParameters:
-      search: architecto
-      status: active
-      from_date: '2026-01-01'
-      to_date: '2026-12-31'
-      sort_by: name
-      sort_order: asc
-      limit: 10
-    bodyParameters: []
-    cleanBodyParameters: []
-    fileParameters: []
-    responses:
-      -
-        custom: []
-        status: 200
-        content: '{"data":[{"id":26,"name":"eius et animi","description":"Velit et fugiat sunt nihil accusantium.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:35 02\/04\/2026","updated_at":"09:41:35 02\/04\/2026"},{"id":27,"name":"harum mollitia modi","description":"Aut ab provident perspiciatis quo omnis nostrum aut.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:35 02\/04\/2026","updated_at":"09:41:35 02\/04\/2026"}],"success":"true"}'
-        headers: []
-        description: ''
-    responseFields: []
-    auth: []
-    controller: null
-    method: null
-    route: null
-  -
-    custom: []
-    httpMethods:
-      - GET
-    uri: api/task-assignment-types/public-options
-    metadata:
-      custom: []
-      groupName: 'TaskAssignment - Loại văn bản giao việc'
-      groupDescription: ''
-      subgroup: ''
-      subgroupDescription: ''
-      title: 'Danh sách loại văn bản giao việc cho dropdown'
-      description: ''
-      authenticated: false
-      deprecated: false
-    headers:
-      X-Organization-Id: 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1'
-      Content-Type: application/json
-      Accept: application/json
-    urlParameters: []
-    cleanUrlParameters: []
-    queryParameters:
-      search:
-        custom: []
-        name: search
-        description: 'Từ khóa tìm kiếm theo tên.'
-        required: false
-        example: architecto
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      status:
-        custom: []
-        name: status
-        description: 'Lọc theo trạng thái.'
-        required: false
-        example: active
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      from_date:
-        custom: []
-        name: from_date
-        description: 'Lọc từ ngày tạo (Y-m-d). Must be a valid date.'
-        required: false
-        example: '2026-01-01'
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      to_date:
-        custom: []
-        name: to_date
-        description: 'Lọc đến ngày tạo (Y-m-d). Must be a valid date. Must be a date after or equal to <code>from_date</code>.'
-        required: false
-        example: '2026-12-31'
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      sort_by:
-        custom: []
-        name: sort_by
-        description: 'Sắp xếp theo: id, name, created_at, updated_at.'
-        required: false
-        example: name
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-      sort_order:
-        custom: []
-        name: sort_order
-        description: 'Thứ tự: asc, desc.'
-        required: false
-        example: asc
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-      limit:
-        custom: []
-        name: limit
-        description: 'Số bản ghi mỗi trang (1-100). Must be at least 1. Must not be greater than 100.'
-        required: false
-        example: 10
-        type: integer
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-    cleanQueryParameters:
-      search: architecto
-      status: active
-      from_date: '2026-01-01'
-      to_date: '2026-12-31'
-      sort_by: name
-      sort_order: asc
-      limit: 10
-    bodyParameters: []
-    cleanBodyParameters: []
-    fileParameters: []
-    responses:
-      -
-        custom: []
-        status: 200
-        content: '{"data":[{"id":28,"name":"eius et animi","description":"Velit et fugiat sunt nihil accusantium."},{"id":29,"name":"harum mollitia modi","description":"Aut ab provident perspiciatis quo omnis nostrum aut."}],"success":"true"}'
-        headers: []
-        description: ''
-    responseFields: []
-    auth: []
-    controller: null
-    method: null
-    route: null
-  -
-    custom: []
-    httpMethods:
-      - GET
-    uri: api/task-assignment-types/export
-    metadata:
-      custom: []
-      groupName: 'TaskAssignment - Loại văn bản giao việc'
-      groupDescription: ''
-      subgroup: ''
-      subgroupDescription: ''
-      title: 'Xuất Excel loại văn bản giao việc'
-      description: 'Xuất ra các trường: id, name, description, status, created_by, updated_by, created_at, updated_at.'
+      title: 'Xuất danh sách nhật ký'
+      description: 'Áp dụng cùng bộ lọc với index. Trả về file Excel.'
       authenticated: true
       deprecated: false
     headers:
@@ -271,7 +27,7 @@ endpoints:
       search:
         custom: []
         name: search
-        description: 'Từ khóa tìm kiếm theo tên.'
+        description: 'Tìm kiếm (description, route, ip_address, country, user_type).'
         required: false
         example: architecto
         type: string
@@ -282,9 +38,9 @@ endpoints:
       status:
         custom: []
         name: status
-        description: 'Lọc theo trạng thái: active, inactive.'
+        description: 'Lọc theo trạng thái.'
         required: false
-        example: architecto
+        example: active
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -293,31 +49,31 @@ endpoints:
       from_date:
         custom: []
         name: from_date
-        description: 'Lọc từ ngày tạo (Y-m-d). Must be a valid date.'
+        description: 'date Lọc từ ngày (Y-m-d).'
         required: false
         example: '2026-01-01'
         type: string
         enumValues: []
-        exampleWasSpecified: false
+        exampleWasSpecified: true
         nullable: true
         deprecated: false
       to_date:
         custom: []
         name: to_date
-        description: 'Lọc đến ngày tạo (Y-m-d). Must be a valid date. Must be a date after or equal to <code>from_date</code>.'
+        description: 'date Lọc đến ngày (Y-m-d).'
         required: false
         example: '2026-12-31'
         type: string
         enumValues: []
-        exampleWasSpecified: false
+        exampleWasSpecified: true
         nullable: true
         deprecated: false
       sort_by:
         custom: []
         name: sort_by
-        description: 'Trường dùng để sắp xếp. Must not be greater than 50 characters.'
+        description: 'id, description, route, method_type, status_code, ip_address, country, created_at.'
         required: false
-        example: created_at
+        example: architecto
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -326,14 +82,15 @@ endpoints:
       sort_order:
         custom: []
         name: sort_order
-        description: 'Thứ tự sắp xếp.'
+        description: 'asc, desc.'
         required: false
-        example: desc
+        example: |-
+          desc
+
+          Xuất ra các trường: id, description, user_type, user_id, user_name, organization_id, route, method_type, status_code, ip_address, country, user_agent, request_data, created_at, updated_at.
         type: string
-        enumValues:
-          - asc
-          - desc
-        exampleWasSpecified: false
+        enumValues: []
+        exampleWasSpecified: true
         nullable: true
         deprecated: false
       limit:
@@ -347,14 +104,41 @@ endpoints:
         exampleWasSpecified: false
         nullable: true
         deprecated: false
+      method_type:
+        custom: []
+        name: method_type
+        description: 'GET, POST, PUT, PATCH, DELETE.'
+        required: false
+        example: GET
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      status_code:
+        custom: []
+        name: status_code
+        description: 'Mã HTTP (200, 400, 500...).'
+        required: false
+        example: 200
+        type: integer
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
     cleanQueryParameters:
       search: architecto
-      status: architecto
+      status: active
       from_date: '2026-01-01'
       to_date: '2026-12-31'
-      sort_by: created_at
-      sort_order: desc
+      sort_by: architecto
+      sort_order: |-
+        desc
+
+        Xuất ra các trường: id, description, user_type, user_id, user_name, organization_id, route, method_type, status_code, ip_address, country, user_agent, request_data, created_at, updated_at.
       limit: 10
+      method_type: GET
+      status_code: 200
     bodyParameters: []
     cleanBodyParameters: []
     fileParameters: []
@@ -379,202 +163,16 @@ endpoints:
   -
     custom: []
     httpMethods:
-      - POST
-    uri: api/task-assignment-types/import
-    metadata:
-      custom: []
-      groupName: 'TaskAssignment - Loại văn bản giao việc'
-      groupDescription: ''
-      subgroup: ''
-      subgroupDescription: ''
-      title: 'Import loại văn bản giao việc'
-      description: 'Cột bắt buộc: name. Cột không bắt buộc: description, status (mặc định "active").'
-      authenticated: true
-      deprecated: false
-    headers:
-      Authorization: 'Bearer Bearer {YOUR_ACCESS_TOKEN}'
-      X-Organization-Id: 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1'
-      Content-Type: multipart/form-data
-      Accept: application/json
-    urlParameters: []
-    cleanUrlParameters: []
-    queryParameters: []
-    cleanQueryParameters: []
-    bodyParameters:
-      file:
-        custom: []
-        name: file
-        description: 'File Excel (xlsx, xls, csv). Cột theo chuẩn export.'
-        required: true
-        example: null
-        type: file
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: false
-        deprecated: false
-    cleanBodyParameters: []
-    fileParameters:
-      file: null
-    responses:
-      -
-        custom: []
-        status: 200
-        content: '{"success": true, "message": "Import loại văn bản giao việc thành công."}'
-        headers: []
-        description: ''
-    responseFields: []
-    auth:
-      - headers
-      - Authorization
-      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
-    controller: null
-    method: null
-    route: null
-  -
-    custom: []
-    httpMethods:
-      - POST
-    uri: api/task-assignment-types/bulk-delete
-    metadata:
-      custom: []
-      groupName: 'TaskAssignment - Loại văn bản giao việc'
-      groupDescription: ''
-      subgroup: ''
-      subgroupDescription: ''
-      title: 'Xóa hàng loạt loại văn bản giao việc'
-      description: ''
-      authenticated: true
-      deprecated: false
-    headers:
-      Authorization: 'Bearer Bearer {YOUR_ACCESS_TOKEN}'
-      X-Organization-Id: 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1'
-      Content-Type: application/json
-      Accept: application/json
-    urlParameters: []
-    cleanUrlParameters: []
-    queryParameters: []
-    cleanQueryParameters: []
-    bodyParameters:
-      ids:
-        custom: []
-        name: ids
-        description: 'Danh sách ID.'
-        required: true
-        example:
-          - 1
-          - 2
-          - 3
-        type: 'string[]'
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-    cleanBodyParameters:
-      ids:
-        - 1
-        - 2
-        - 3
-    fileParameters: []
-    responses:
-      -
-        custom: []
-        status: 200
-        content: '{"success": true, "message": "Xóa hàng loạt thành công!"}'
-        headers: []
-        description: ''
-    responseFields: []
-    auth:
-      - headers
-      - Authorization
-      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
-    controller: null
-    method: null
-    route: null
-  -
-    custom: []
-    httpMethods:
-      - PATCH
-    uri: api/task-assignment-types/bulk-status
-    metadata:
-      custom: []
-      groupName: 'TaskAssignment - Loại văn bản giao việc'
-      groupDescription: ''
-      subgroup: ''
-      subgroupDescription: ''
-      title: 'Cập nhật trạng thái hàng loạt loại văn bản giao việc'
-      description: ''
-      authenticated: true
-      deprecated: false
-    headers:
-      Authorization: 'Bearer Bearer {YOUR_ACCESS_TOKEN}'
-      X-Organization-Id: 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1'
-      Content-Type: application/json
-      Accept: application/json
-    urlParameters: []
-    cleanUrlParameters: []
-    queryParameters: []
-    cleanQueryParameters: []
-    bodyParameters:
-      ids:
-        custom: []
-        name: ids
-        description: 'Danh sách ID.'
-        required: true
-        example:
-          - 1
-          - 2
-          - 3
-        type: 'string[]'
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-      status:
-        custom: []
-        name: status
-        description: 'Trạng thái mới: active, inactive.'
-        required: true
-        example: inactive
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-    cleanBodyParameters:
-      ids:
-        - 1
-        - 2
-        - 3
-      status: inactive
-    fileParameters: []
-    responses:
-      -
-        custom: []
-        status: 200
-        content: '{"success": true, "message": "Cập nhật trạng thái hàng loạt thành công!"}'
-        headers: []
-        description: ''
-    responseFields: []
-    auth:
-      - headers
-      - Authorization
-      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
-    controller: null
-    method: null
-    route: null
-  -
-    custom: []
-    httpMethods:
       - GET
-    uri: api/task-assignment-types/stats
+    uri: api/log-activities/stats
     metadata:
       custom: []
-      groupName: 'TaskAssignment - Loại văn bản giao việc'
+      groupName: 'Core - LogActivity'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Thống kê loại văn bản giao việc'
-      description: ''
+      title: 'Thống kê nhật ký'
+      description: 'Tổng số bản ghi sau khi áp dụng bộ lọc.'
       authenticated: true
       deprecated: false
     headers:
@@ -588,366 +186,120 @@ endpoints:
       search:
         custom: []
         name: search
-        description: 'Từ khóa tìm kiếm theo tên.'
+        description: 'Tìm kiếm (description, route, ip_address, country, user_type).'
         required: false
-        example: architecto
+        example: 127.0.0.1
         type: string
         enumValues: []
-        exampleWasSpecified: false
+        exampleWasSpecified: true
         nullable: true
         deprecated: false
       status:
         custom: []
         name: status
-        description: 'Lọc theo trạng thái: active, inactive.'
+        description: 'Lọc theo trạng thái.'
         required: false
-        example: architecto
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      from_date:
-        custom: []
-        name: from_date
-        description: 'date Lọc từ ngày tạo (Y-m-d).'
-        required: false
-        example: '2026-01-01'
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-      to_date:
-        custom: []
-        name: to_date
-        description: 'date Lọc đến ngày tạo (Y-m-d).'
-        required: false
-        example: '2026-12-31'
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-      sort_by:
-        custom: []
-        name: sort_by
-        description: 'Sắp xếp theo: id, name, created_at, updated_at.'
-        required: false
-        example: created_at
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-      sort_order:
-        custom: []
-        name: sort_order
-        description: 'Thứ tự: asc, desc.'
-        required: false
-        example: desc
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-      limit:
-        custom: []
-        name: limit
-        description: 'Số bản ghi mỗi trang (1-100).'
-        required: false
-        example: 10
-        type: integer
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-    cleanQueryParameters:
-      search: architecto
-      status: architecto
-      from_date: '2026-01-01'
-      to_date: '2026-12-31'
-      sort_by: created_at
-      sort_order: desc
-      limit: 10
-    bodyParameters: []
-    cleanBodyParameters: []
-    fileParameters: []
-    responses:
-      -
-        custom: []
-        status: 200
-        content: '{"success": true, "data": {"total": 10, "active": 8, "inactive": 2}}'
-        headers: []
-        description: ''
-    responseFields: []
-    auth:
-      - headers
-      - Authorization
-      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
-    controller: null
-    method: null
-    route: null
-  -
-    custom: []
-    httpMethods:
-      - GET
-    uri: api/task-assignment-types
-    metadata:
-      custom: []
-      groupName: 'TaskAssignment - Loại văn bản giao việc'
-      groupDescription: ''
-      subgroup: ''
-      subgroupDescription: ''
-      title: 'Danh sách loại văn bản giao việc'
-      description: ''
-      authenticated: true
-      deprecated: false
-    headers:
-      Authorization: 'Bearer Bearer {YOUR_ACCESS_TOKEN}'
-      X-Organization-Id: 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1'
-      Content-Type: application/json
-      Accept: application/json
-    urlParameters: []
-    cleanUrlParameters: []
-    queryParameters:
-      search:
-        custom: []
-        name: search
-        description: 'Từ khóa tìm kiếm theo tên.'
-        required: false
-        example: architecto
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      status:
-        custom: []
-        name: status
-        description: 'Lọc theo trạng thái: active, inactive.'
-        required: false
-        example: architecto
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      from_date:
-        custom: []
-        name: from_date
-        description: 'date Lọc từ ngày tạo (Y-m-d).'
-        required: false
-        example: '2026-01-01'
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-      to_date:
-        custom: []
-        name: to_date
-        description: 'date Lọc đến ngày tạo (Y-m-d).'
-        required: false
-        example: '2026-12-31'
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-      sort_by:
-        custom: []
-        name: sort_by
-        description: 'Sắp xếp theo: id, name, created_at, updated_at.'
-        required: false
-        example: created_at
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-      sort_order:
-        custom: []
-        name: sort_order
-        description: 'Thứ tự: asc, desc.'
-        required: false
-        example: desc
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-      limit:
-        custom: []
-        name: limit
-        description: 'Số bản ghi mỗi trang (1-100).'
-        required: false
-        example: 10
-        type: integer
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: true
-        deprecated: false
-    cleanQueryParameters:
-      search: architecto
-      status: architecto
-      from_date: '2026-01-01'
-      to_date: '2026-12-31'
-      sort_by: created_at
-      sort_order: desc
-      limit: 10
-    bodyParameters: []
-    cleanBodyParameters: []
-    fileParameters: []
-    responses:
-      -
-        custom: []
-        status: 200
-        content: '{"data":[{"id":30,"name":"eius et animi","description":"Velit et fugiat sunt nihil accusantium.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:37 02\/04\/2026","updated_at":"09:41:37 02\/04\/2026"},{"id":31,"name":"harum mollitia modi","description":"Aut ab provident perspiciatis quo omnis nostrum aut.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:37 02\/04\/2026","updated_at":"09:41:37 02\/04\/2026"}],"links":{"first":"\/?page=1","last":"\/?page=1","prev":null,"next":null},"meta":{"current_page":1,"from":1,"last_page":1,"links":[{"url":null,"label":"&laquo; Previous","page":null,"active":false},{"url":"\/?page=1","label":"1","page":1,"active":true},{"url":null,"label":"Next &raquo;","page":null,"active":false}],"path":"\/","per_page":10,"to":2,"total":2},"success":"true"}'
-        headers: []
-        description: ''
-    responseFields: []
-    auth:
-      - headers
-      - Authorization
-      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
-    controller: null
-    method: null
-    route: null
-  -
-    custom: []
-    httpMethods:
-      - GET
-    uri: 'api/task-assignment-types/{taskAssignmentType_id}'
-    metadata:
-      custom: []
-      groupName: 'TaskAssignment - Loại văn bản giao việc'
-      groupDescription: ''
-      subgroup: ''
-      subgroupDescription: ''
-      title: 'Chi tiết loại văn bản giao việc'
-      description: ''
-      authenticated: true
-      deprecated: false
-    headers:
-      Authorization: 'Bearer Bearer {YOUR_ACCESS_TOKEN}'
-      X-Organization-Id: 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1'
-      Content-Type: application/json
-      Accept: application/json
-    urlParameters:
-      taskAssignmentType_id:
-        custom: []
-        name: taskAssignmentType_id
-        description: 'The ID of the taskAssignmentType.'
-        required: true
-        example: 1
-        type: integer
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: false
-        deprecated: false
-      taskAssignmentType:
-        custom: []
-        name: taskAssignmentType
-        description: 'ID loại văn bản giao việc.'
-        required: true
-        example: 1
-        type: integer
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-    cleanUrlParameters:
-      taskAssignmentType_id: 1
-      taskAssignmentType: 1
-    queryParameters: []
-    cleanQueryParameters: []
-    bodyParameters: []
-    cleanBodyParameters: []
-    fileParameters: []
-    responses:
-      -
-        custom: []
-        status: 200
-        content: '{"data":{"id":32,"name":"aut adipisci quidem","description":"Qui commodi incidunt iure odit.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:37 02\/04\/2026","updated_at":"09:41:37 02\/04\/2026"},"success":"true"}'
-        headers: []
-        description: ''
-    responseFields: []
-    auth:
-      - headers
-      - Authorization
-      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
-    controller: null
-    method: null
-    route: null
-  -
-    custom: []
-    httpMethods:
-      - POST
-    uri: api/task-assignment-types
-    metadata:
-      custom: []
-      groupName: 'TaskAssignment - Loại văn bản giao việc'
-      groupDescription: ''
-      subgroup: ''
-      subgroupDescription: ''
-      title: 'Tạo loại văn bản giao việc'
-      description: ''
-      authenticated: true
-      deprecated: false
-    headers:
-      Authorization: 'Bearer Bearer {YOUR_ACCESS_TOKEN}'
-      X-Organization-Id: 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1'
-      Content-Type: application/json
-      Accept: application/json
-    urlParameters: []
-    cleanUrlParameters: []
-    queryParameters: []
-    cleanQueryParameters: []
-    bodyParameters:
-      name:
-        custom: []
-        name: name
-        description: 'Tên loại văn bản giao việc.'
-        required: true
-        example: 'Quyết định giao việc'
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-      description:
-        custom: []
-        name: description
-        description: 'Mô tả.'
-        required: false
-        example: 'Eius et animi quos velit et.'
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      status:
-        custom: []
-        name: status
-        description: 'Trạng thái: active, inactive.'
-        required: true
         example: active
         type: string
         enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      from_date:
+        custom: []
+        name: from_date
+        description: 'date Lọc từ ngày (Y-m-d).'
+        required: false
+        example: '2026-01-01'
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: true
+        deprecated: false
+      to_date:
+        custom: []
+        name: to_date
+        description: 'date Lọc đến ngày (Y-m-d).'
+        required: false
+        example: '2026-12-31'
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: true
+        deprecated: false
+      sort_by:
+        custom: []
+        name: sort_by
+        description: 'id, description, route, method_type, status_code, ip_address, country, created_at.'
+        required: false
+        example: created_at
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: true
+        deprecated: false
+      sort_order:
+        custom: []
+        name: sort_order
+        description: 'asc, desc.'
+        required: false
+        example: desc
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: true
+        deprecated: false
+      limit:
+        custom: []
+        name: limit
+        description: 1-100.
+        required: false
+        example: 10
+        type: integer
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: true
+        deprecated: false
+      method_type:
+        custom: []
+        name: method_type
+        description: 'GET, POST, PUT, PATCH, DELETE.'
+        required: false
+        example: GET
+        type: string
+        enumValues: []
         exampleWasSpecified: true
         nullable: false
         deprecated: false
-    cleanBodyParameters:
-      name: 'Quyết định giao việc'
-      description: 'Eius et animi quos velit et.'
+      status_code:
+        custom: []
+        name: status_code
+        description: 'Mã HTTP (200, 400, 500...).'
+        required: false
+        example: 200
+        type: integer
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+    cleanQueryParameters:
+      search: 127.0.0.1
       status: active
+      from_date: '2026-01-01'
+      to_date: '2026-12-31'
+      sort_by: created_at
+      sort_order: desc
+      limit: 10
+      method_type: GET
+      status_code: 200
+    bodyParameters: []
+    cleanBodyParameters: []
     fileParameters: []
     responses:
       -
         custom: []
-        status: 201
-        content: '{"data":{"id":33,"name":"fugiat sunt nihil","description":"Harum mollitia modi deserunt aut ab provident perspiciatis quo.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:37 02\/04\/2026","updated_at":"09:41:37 02\/04\/2026"},"success":"true","message":"T\u1ea1o lo\u1ea1i v\u0103n b\u1ea3n giao vi\u1ec7c th\u00e0nh c\u00f4ng!"}'
+        status: 200
+        content: '{"success": true, "data": {"total": 100}}'
         headers: []
         description: ''
     responseFields: []
@@ -961,15 +313,15 @@ endpoints:
   -
     custom: []
     httpMethods:
-      - PUT
-    uri: 'api/task-assignment-types/{taskAssignmentType_id}'
+      - POST
+    uri: api/log-activities/delete-by-date
     metadata:
       custom: []
-      groupName: 'TaskAssignment - Loại văn bản giao việc'
+      groupName: 'Core - LogActivity'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Cập nhật loại văn bản giao việc'
+      title: 'Xóa nhật ký theo khoảng thời gian'
       description: ''
       authenticated: true
       deprecated: false
@@ -978,78 +330,42 @@ endpoints:
       X-Organization-Id: 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1'
       Content-Type: application/json
       Accept: application/json
-    urlParameters:
-      taskAssignmentType_id:
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      from_date:
         custom: []
-        name: taskAssignmentType_id
-        description: 'The ID of the taskAssignmentType.'
+        name: from_date
+        description: 'Từ ngày (Y-m-d).'
         required: true
-        example: 1
-        type: integer
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: false
-        deprecated: false
-      taskAssignmentType:
-        custom: []
-        name: taskAssignmentType
-        description: 'ID loại văn bản giao việc.'
-        required: true
-        example: 1
-        type: integer
+        example: '2026-01-01'
+        type: date
         enumValues: []
         exampleWasSpecified: true
         nullable: false
         deprecated: false
-    cleanUrlParameters:
-      taskAssignmentType_id: 1
-      taskAssignmentType: 1
-    queryParameters: []
-    cleanQueryParameters: []
-    bodyParameters:
-      name:
+      to_date:
         custom: []
-        name: name
-        description: 'Tên loại văn bản giao việc.'
-        required: false
-        example: architecto
-        type: string
+        name: to_date
+        description: 'Đến ngày (Y-m-d).'
+        required: true
+        example: '2026-01-31'
+        type: date
         enumValues: []
-        exampleWasSpecified: false
-        nullable: false
-        deprecated: false
-      description:
-        custom: []
-        name: description
-        description: 'Mô tả.'
-        required: false
-        example: 'Eius et animi quos velit et.'
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      status:
-        custom: []
-        name: status
-        description: 'Trạng thái: active, inactive.'
-        required: false
-        example: architecto
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
+        exampleWasSpecified: true
         nullable: false
         deprecated: false
     cleanBodyParameters:
-      name: architecto
-      description: 'Eius et animi quos velit et.'
-      status: architecto
+      from_date: '2026-01-01'
+      to_date: '2026-01-31'
     fileParameters: []
     responses:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":34,"name":"eius et animi","description":"Velit et fugiat sunt nihil accusantium.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:37 02\/04\/2026","updated_at":"09:41:37 02\/04\/2026"},"success":"true","message":"C\u1eadp nh\u1eadt lo\u1ea1i v\u0103n b\u1ea3n giao vi\u1ec7c th\u00e0nh c\u00f4ng!"}'
+        content: '{"success": true, "message": "Đã xóa thành công 10 nhật ký trong khoảng thời gian!"}'
         headers: []
         description: ''
     responseFields: []
@@ -1063,15 +379,267 @@ endpoints:
   -
     custom: []
     httpMethods:
-      - PATCH
-    uri: 'api/task-assignment-types/{taskAssignmentType_id}'
+      - POST
+    uri: api/log-activities/clear
     metadata:
       custom: []
-      groupName: 'TaskAssignment - Loại văn bản giao việc'
+      groupName: 'Core - LogActivity'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Cập nhật loại văn bản giao việc'
+      title: 'Xóa toàn bộ nhật ký'
+      description: ''
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer Bearer {YOUR_ACCESS_TOKEN}'
+      X-Organization-Id: 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"success": true, "message": "Đã xóa toàn bộ 100 nhật ký!"}'
+        headers: []
+        description: ''
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: api/log-activities/bulk-delete
+    metadata:
+      custom: []
+      groupName: 'Core - LogActivity'
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Xóa hàng loạt nhật ký'
+      description: ''
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer Bearer {YOUR_ACCESS_TOKEN}'
+      X-Organization-Id: 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      ids:
+        custom: []
+        name: ids
+        description: 'Danh sách ID.'
+        required: true
+        example:
+          - 1
+          - 2
+          - 3
+        type: 'string[]'
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+    cleanBodyParameters:
+      ids:
+        - 1
+        - 2
+        - 3
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"success": true, "message": "Đã xóa thành công 3 nhật ký!"}'
+        headers: []
+        description: ''
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/log-activities
+    metadata:
+      custom: []
+      groupName: 'Core - LogActivity'
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Danh sách nhật ký'
+      description: ''
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer Bearer {YOUR_ACCESS_TOKEN}'
+      X-Organization-Id: 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters:
+      search:
+        custom: []
+        name: search
+        description: 'Tìm kiếm.'
+        required: false
+        example: login
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: true
+        deprecated: false
+      status:
+        custom: []
+        name: status
+        description: 'Lọc theo trạng thái.'
+        required: false
+        example: active
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      from_date:
+        custom: []
+        name: from_date
+        description: 'date Từ ngày.'
+        required: false
+        example: '2026-01-01'
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: true
+        deprecated: false
+      to_date:
+        custom: []
+        name: to_date
+        description: 'date Đến ngày.'
+        required: false
+        example: '2026-12-31'
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: true
+        deprecated: false
+      sort_by:
+        custom: []
+        name: sort_by
+        description: ''
+        required: false
+        example: created_at
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: true
+        deprecated: false
+      sort_order:
+        custom: []
+        name: sort_order
+        description: 'asc, desc.'
+        required: false
+        example: desc
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: true
+        deprecated: false
+      limit:
+        custom: []
+        name: limit
+        description: ''
+        required: false
+        example: 10
+        type: integer
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: true
+        deprecated: false
+      method_type:
+        custom: []
+        name: method_type
+        description: 'GET, POST, PUT, PATCH, DELETE.'
+        required: false
+        example: architecto
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      status_code:
+        custom: []
+        name: status_code
+        description: 'Mã HTTP.'
+        required: false
+        example: 16
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanQueryParameters:
+      search: login
+      status: active
+      from_date: '2026-01-01'
+      to_date: '2026-12-31'
+      sort_by: created_at
+      sort_order: desc
+      limit: 10
+      method_type: architecto
+      status_code: 16
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"data":[{"id":4,"description":"Et animi quos velit et fugiat.","user_type":"User","user_id":null,"user_name":"Guest","organization_id":null,"route":"http:\/\/www.dach.com\/mollitia-modi-deserunt-aut-ab-provident-perspiciatis-quo.html","method_type":"PATCH","status_code":404,"ip_address":"125.161.29.220","country":"Pakistan","user_agent":"Mozilla\/5.0 (Windows NT 5.0; en-US; rv:1.9.2.20) Gecko\/20250930 Firefox\/35.0","request_data":{"sample":"et"},"created_at":"09:52:14 02\/04\/2026","updated_at":"09:52:14 02\/04\/2026"},{"id":5,"description":"Aut dolores enim non facere tempora ex voluptatem.","user_type":"User","user_id":null,"user_name":"Guest","organization_id":null,"route":"http:\/\/raynor.org\/molestias-fugit-deleniti-distinctio-eum-doloremque-id","method_type":"PATCH","status_code":201,"ip_address":"239.169.15.174","country":"Turkmenistan","user_agent":"Mozilla\/5.0 (Windows 98; Win 9x 4.90) AppleWebKit\/533.2 (KHTML, like Gecko) Chrome\/86.0.4047.69 Safari\/533.2 Edg\/86.01025.45","request_data":{"sample":"accusamus"},"created_at":"09:52:14 02\/04\/2026","updated_at":"09:52:14 02\/04\/2026"}],"links":{"first":"\/?page=1","last":"\/?page=1","prev":null,"next":null},"meta":{"current_page":1,"from":1,"last_page":1,"links":[{"url":null,"label":"&laquo; Previous","page":null,"active":false},{"url":"\/?page=1","label":"1","page":1,"active":true},{"url":null,"label":"Next &raquo;","page":null,"active":false}],"path":"\/","per_page":10,"to":2,"total":2},"success":"true"}'
+        headers: []
+        description: ''
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: 'api/log-activities/{logActivity_id}'
+    metadata:
+      custom: []
+      groupName: 'Core - LogActivity'
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Chi tiết nhật ký'
       description: ''
       authenticated: true
       deprecated: false
@@ -1081,21 +649,21 @@ endpoints:
       Content-Type: application/json
       Accept: application/json
     urlParameters:
-      taskAssignmentType_id:
+      logActivity_id:
         custom: []
-        name: taskAssignmentType_id
-        description: 'The ID of the taskAssignmentType.'
+        name: logActivity_id
+        description: 'The ID of the logActivity.'
         required: true
-        example: 1
+        example: 16
         type: integer
         enumValues: []
         exampleWasSpecified: false
         nullable: false
         deprecated: false
-      taskAssignmentType:
+      logActivity:
         custom: []
-        name: taskAssignmentType
-        description: 'ID loại văn bản giao việc.'
+        name: logActivity
+        description: 'ID nhật ký.'
         required: true
         example: 1
         type: integer
@@ -1104,54 +672,18 @@ endpoints:
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      taskAssignmentType_id: 1
-      taskAssignmentType: 1
+      logActivity_id: 16
+      logActivity: 1
     queryParameters: []
     cleanQueryParameters: []
-    bodyParameters:
-      name:
-        custom: []
-        name: name
-        description: 'Tên loại văn bản giao việc.'
-        required: false
-        example: architecto
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: false
-        deprecated: false
-      description:
-        custom: []
-        name: description
-        description: 'Mô tả.'
-        required: false
-        example: 'Eius et animi quos velit et.'
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      status:
-        custom: []
-        name: status
-        description: 'Trạng thái: active, inactive.'
-        required: false
-        example: architecto
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: false
-        deprecated: false
-    cleanBodyParameters:
-      name: architecto
-      description: 'Eius et animi quos velit et.'
-      status: architecto
+    bodyParameters: []
+    cleanBodyParameters: []
     fileParameters: []
     responses:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":35,"name":"eius et animi","description":"Velit et fugiat sunt nihil accusantium.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:37 02\/04\/2026","updated_at":"09:41:37 02\/04\/2026"},"success":"true","message":"C\u1eadp nh\u1eadt lo\u1ea1i v\u0103n b\u1ea3n giao vi\u1ec7c th\u00e0nh c\u00f4ng!"}'
+        content: '{"data":{"id":6,"description":"Adipisci quidem nostrum qui commodi incidunt iure.","user_type":"User","user_id":28,"user_name":"Bridget Schaden","organization_id":43,"route":"https:\/\/mclaughlin.com\/ipsum-nostrum-omnis-autem-et-consequatur-aut-dolores-enim.html","method_type":"POST","status_code":401,"ip_address":"222.107.64.3","country":"Montserrat","user_agent":"Opera\/8.56 (Windows NT 6.0; nl-NL) Presto\/2.10.287 Version\/10.00","request_data":{"sample":"veniam"},"created_at":"09:52:14 02\/04\/2026","updated_at":"09:52:14 02\/04\/2026"},"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -1166,14 +698,14 @@ endpoints:
     custom: []
     httpMethods:
       - DELETE
-    uri: 'api/task-assignment-types/{taskAssignmentType_id}'
+    uri: 'api/log-activities/{logActivity_id}'
     metadata:
       custom: []
-      groupName: 'TaskAssignment - Loại văn bản giao việc'
+      groupName: 'Core - LogActivity'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Xóa loại văn bản giao việc'
+      title: 'Xóa nhật ký'
       description: ''
       authenticated: true
       deprecated: false
@@ -1183,21 +715,21 @@ endpoints:
       Content-Type: application/json
       Accept: application/json
     urlParameters:
-      taskAssignmentType_id:
+      logActivity_id:
         custom: []
-        name: taskAssignmentType_id
-        description: 'The ID of the taskAssignmentType.'
+        name: logActivity_id
+        description: 'The ID of the logActivity.'
         required: true
-        example: 1
+        example: 16
         type: integer
         enumValues: []
         exampleWasSpecified: false
         nullable: false
         deprecated: false
-      taskAssignmentType:
+      logActivity:
         custom: []
-        name: taskAssignmentType
-        description: 'ID loại văn bản giao việc.'
+        name: logActivity
+        description: 'ID nhật ký.'
         required: true
         example: 1
         type: integer
@@ -1206,8 +738,8 @@ endpoints:
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      taskAssignmentType_id: 1
-      taskAssignmentType: 1
+      logActivity_id: 16
+      logActivity: 1
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters: []
@@ -1217,85 +749,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"success": true, "message": "Xóa loại văn bản giao việc thành công!"}'
-        headers: []
-        description: ''
-    responseFields: []
-    auth:
-      - headers
-      - Authorization
-      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
-    controller: null
-    method: null
-    route: null
-  -
-    custom: []
-    httpMethods:
-      - PATCH
-    uri: 'api/task-assignment-types/{taskAssignmentType_id}/status'
-    metadata:
-      custom: []
-      groupName: 'TaskAssignment - Loại văn bản giao việc'
-      groupDescription: ''
-      subgroup: ''
-      subgroupDescription: ''
-      title: 'Đổi trạng thái loại văn bản giao việc'
-      description: ''
-      authenticated: true
-      deprecated: false
-    headers:
-      Authorization: 'Bearer Bearer {YOUR_ACCESS_TOKEN}'
-      X-Organization-Id: 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1'
-      Content-Type: application/json
-      Accept: application/json
-    urlParameters:
-      taskAssignmentType_id:
-        custom: []
-        name: taskAssignmentType_id
-        description: 'The ID of the taskAssignmentType.'
-        required: true
-        example: 1
-        type: integer
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: false
-        deprecated: false
-      taskAssignmentType:
-        custom: []
-        name: taskAssignmentType
-        description: 'ID loại văn bản giao việc.'
-        required: true
-        example: 1
-        type: integer
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-    cleanUrlParameters:
-      taskAssignmentType_id: 1
-      taskAssignmentType: 1
-    queryParameters: []
-    cleanQueryParameters: []
-    bodyParameters:
-      status:
-        custom: []
-        name: status
-        description: 'Trạng thái mới: active, inactive.'
-        required: true
-        example: active
-        type: string
-        enumValues: []
-        exampleWasSpecified: true
-        nullable: false
-        deprecated: false
-    cleanBodyParameters:
-      status: active
-    fileParameters: []
-    responses:
-      -
-        custom: []
-        status: 200
-        content: '{"data":{"id":36,"name":"aut adipisci quidem","description":"Qui commodi incidunt iure odit.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:37 02\/04\/2026","updated_at":"09:41:37 02\/04\/2026"},"success":"true","message":"\u0110\u1ed5i tr\u1ea1ng th\u00e1i th\u00e0nh c\u00f4ng!"}'
+        content: '{"success": true, "message": "Đã xóa nhật ký thành công!"}'
         headers: []
         description: ''
     responseFields: []

@@ -1,19 +1,19 @@
-name: 'Document - Lĩnh vực'
+name: 'TaskAssignment - Loại văn bản giao việc'
 description: ''
 endpoints:
   -
     custom: []
     httpMethods:
       - GET
-    uri: api/document-fields/public
+    uri: api/task-assignment-types/public
     metadata:
       custom: []
-      groupName: 'Document - Lĩnh vực'
+      groupName: 'TaskAssignment - Loại văn bản giao việc'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Danh sách lĩnh vực công khai'
-      description: 'Trả về danh sách lĩnh vực đang hoạt động để hiển thị cho các chức năng công khai.'
+      title: 'Danh sách loại văn bản giao việc công khai'
+      description: ''
       authenticated: false
       deprecated: false
     headers:
@@ -115,7 +115,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":[{"id":33,"name":"eius et","description":null,"status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:35 02\/04\/2026","updated_at":"09:41:35 02\/04\/2026"},{"id":34,"name":"velit et","description":"Nihil accusantium harum mollitia modi deserunt.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:35 02\/04\/2026","updated_at":"09:41:35 02\/04\/2026"}],"success":"true"}'
+        content: '{"data":[{"id":15,"name":"eius et animi","description":"Velit et fugiat sunt nihil accusantium.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"09:52:13 02\/04\/2026","updated_at":"09:52:13 02\/04\/2026"},{"id":16,"name":"harum mollitia modi","description":"Aut ab provident perspiciatis quo omnis nostrum aut.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"09:52:13 02\/04\/2026","updated_at":"09:52:13 02\/04\/2026"}],"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -127,15 +127,15 @@ endpoints:
     custom: []
     httpMethods:
       - GET
-    uri: api/document-fields/public-options
+    uri: api/task-assignment-types/public-options
     metadata:
       custom: []
-      groupName: 'Document - Lĩnh vực'
+      groupName: 'TaskAssignment - Loại văn bản giao việc'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Danh sách lĩnh vực công khai cho dropdown'
-      description: 'Trả về dữ liệu tối giản chỉ gồm id, name, description để tối ưu payload cho dropdown.'
+      title: 'Danh sách loại văn bản giao việc cho dropdown'
+      description: ''
       authenticated: false
       deprecated: false
     headers:
@@ -237,7 +237,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":[{"id":35,"name":"animi quos","description":null},{"id":36,"name":"fugiat sunt","description":"Harum mollitia modi deserunt aut ab provident perspiciatis quo."}],"success":"true"}'
+        content: '{"data":[{"id":17,"name":"eius et animi","description":"Velit et fugiat sunt nihil accusantium."},{"id":18,"name":"harum mollitia modi","description":"Aut ab provident perspiciatis quo omnis nostrum aut."}],"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -249,14 +249,14 @@ endpoints:
     custom: []
     httpMethods:
       - GET
-    uri: api/document-fields/export
+    uri: api/task-assignment-types/export
     metadata:
       custom: []
-      groupName: 'Document - Lĩnh vực'
+      groupName: 'TaskAssignment - Loại văn bản giao việc'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Xuất Excel lĩnh vực'
+      title: 'Xuất Excel loại văn bản giao việc'
       description: 'Xuất ra các trường: id, name, description, status, created_by, updated_by, created_at, updated_at.'
       authenticated: true
       deprecated: false
@@ -380,14 +380,14 @@ endpoints:
     custom: []
     httpMethods:
       - POST
-    uri: api/document-fields/import
+    uri: api/task-assignment-types/import
     metadata:
       custom: []
-      groupName: 'Document - Lĩnh vực'
+      groupName: 'TaskAssignment - Loại văn bản giao việc'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Import lĩnh vực'
+      title: 'Import loại văn bản giao việc'
       description: 'Cột bắt buộc: name. Cột không bắt buộc: description, status (mặc định "active").'
       authenticated: true
       deprecated: false
@@ -419,7 +419,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"success": true, "message": "Import lĩnh vực thành công."}'
+        content: '{"success": true, "message": "Import loại văn bản giao việc thành công."}'
         headers: []
         description: ''
     responseFields: []
@@ -434,14 +434,14 @@ endpoints:
     custom: []
     httpMethods:
       - POST
-    uri: api/document-fields/bulk-delete
+    uri: api/task-assignment-types/bulk-delete
     metadata:
       custom: []
-      groupName: 'Document - Lĩnh vực'
+      groupName: 'TaskAssignment - Loại văn bản giao việc'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Xóa hàng loạt lĩnh vực'
+      title: 'Xóa hàng loạt loại văn bản giao việc'
       description: ''
       authenticated: true
       deprecated: false
@@ -494,14 +494,14 @@ endpoints:
     custom: []
     httpMethods:
       - PATCH
-    uri: api/document-fields/bulk-status
+    uri: api/task-assignment-types/bulk-status
     metadata:
       custom: []
-      groupName: 'Document - Lĩnh vực'
+      groupName: 'TaskAssignment - Loại văn bản giao việc'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Cập nhật trạng thái hàng loạt lĩnh vực'
+      title: 'Cập nhật trạng thái hàng loạt loại văn bản giao việc'
       description: ''
       authenticated: true
       deprecated: false
@@ -566,14 +566,14 @@ endpoints:
     custom: []
     httpMethods:
       - GET
-    uri: api/document-fields/stats
+    uri: api/task-assignment-types/stats
     metadata:
       custom: []
-      groupName: 'Document - Lĩnh vực'
+      groupName: 'TaskAssignment - Loại văn bản giao việc'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Thống kê lĩnh vực'
+      title: 'Thống kê loại văn bản giao việc'
       description: ''
       authenticated: true
       deprecated: false
@@ -692,14 +692,14 @@ endpoints:
     custom: []
     httpMethods:
       - GET
-    uri: api/document-fields
+    uri: api/task-assignment-types
     metadata:
       custom: []
-      groupName: 'Document - Lĩnh vực'
+      groupName: 'TaskAssignment - Loại văn bản giao việc'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Danh sách lĩnh vực'
+      title: 'Danh sách loại văn bản giao việc'
       description: ''
       authenticated: true
       deprecated: false
@@ -803,7 +803,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":[{"id":42,"name":"nemo odit","description":null,"status":"inactive","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"},{"id":43,"name":"est dignissimos","description":null,"status":"inactive","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"}],"links":{"first":"\/?page=1","last":"\/?page=1","prev":null,"next":null},"meta":{"current_page":1,"from":1,"last_page":1,"links":[{"url":null,"label":"&laquo; Previous","page":null,"active":false},{"url":"\/?page=1","label":"1","page":1,"active":true},{"url":null,"label":"Next &raquo;","page":null,"active":false}],"path":"\/","per_page":10,"to":2,"total":2},"success":"true"}'
+        content: '{"data":[{"id":19,"name":"eius et animi","description":"Velit et fugiat sunt nihil accusantium.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"09:52:14 02\/04\/2026","updated_at":"09:52:14 02\/04\/2026"},{"id":20,"name":"harum mollitia modi","description":"Aut ab provident perspiciatis quo omnis nostrum aut.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"09:52:14 02\/04\/2026","updated_at":"09:52:14 02\/04\/2026"}],"links":{"first":"\/?page=1","last":"\/?page=1","prev":null,"next":null},"meta":{"current_page":1,"from":1,"last_page":1,"links":[{"url":null,"label":"&laquo; Previous","page":null,"active":false},{"url":"\/?page=1","label":"1","page":1,"active":true},{"url":null,"label":"Next &raquo;","page":null,"active":false}],"path":"\/","per_page":10,"to":2,"total":2},"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -818,14 +818,14 @@ endpoints:
     custom: []
     httpMethods:
       - GET
-    uri: 'api/document-fields/{documentField_id}'
+    uri: 'api/task-assignment-types/{taskAssignmentType_id}'
     metadata:
       custom: []
-      groupName: 'Document - Lĩnh vực'
+      groupName: 'TaskAssignment - Loại văn bản giao việc'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Chi tiết lĩnh vực'
+      title: 'Chi tiết loại văn bản giao việc'
       description: ''
       authenticated: true
       deprecated: false
@@ -835,21 +835,21 @@ endpoints:
       Content-Type: application/json
       Accept: application/json
     urlParameters:
-      documentField_id:
+      taskAssignmentType_id:
         custom: []
-        name: documentField_id
-        description: 'The ID of the documentField.'
+        name: taskAssignmentType_id
+        description: 'The ID of the taskAssignmentType.'
         required: true
-        example: 16
+        example: 1
         type: integer
         enumValues: []
         exampleWasSpecified: false
         nullable: false
         deprecated: false
-      documentField:
+      taskAssignmentType:
         custom: []
-        name: documentField
-        description: 'ID lĩnh vực.'
+        name: taskAssignmentType
+        description: 'ID loại văn bản giao việc.'
         required: true
         example: 1
         type: integer
@@ -858,8 +858,8 @@ endpoints:
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      documentField_id: 16
-      documentField: 1
+      taskAssignmentType_id: 1
+      taskAssignmentType: 1
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters: []
@@ -869,7 +869,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":44,"name":"omnis autem","description":null,"status":"inactive","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"},"success":"true"}'
+        content: '{"data":{"id":21,"name":"aut adipisci quidem","description":"Qui commodi incidunt iure odit.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"09:52:14 02\/04\/2026","updated_at":"09:52:14 02\/04\/2026"},"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -884,14 +884,14 @@ endpoints:
     custom: []
     httpMethods:
       - POST
-    uri: api/document-fields
+    uri: api/task-assignment-types
     metadata:
       custom: []
-      groupName: 'Document - Lĩnh vực'
+      groupName: 'TaskAssignment - Loại văn bản giao việc'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Tạo lĩnh vực'
+      title: 'Tạo loại văn bản giao việc'
       description: ''
       authenticated: true
       deprecated: false
@@ -908,9 +908,9 @@ endpoints:
       name:
         custom: []
         name: name
-        description: 'Tên lĩnh vực.'
+        description: 'Tên loại văn bản giao việc.'
         required: true
-        example: 'Tài chính'
+        example: 'Quyết định giao việc'
         type: string
         enumValues: []
         exampleWasSpecified: true
@@ -939,7 +939,7 @@ endpoints:
         nullable: false
         deprecated: false
     cleanBodyParameters:
-      name: 'Tài chính'
+      name: 'Quyết định giao việc'
       description: 'Eius et animi quos velit et.'
       status: active
     fileParameters: []
@@ -947,7 +947,7 @@ endpoints:
       -
         custom: []
         status: 201
-        content: '{"data":{"id":45,"name":"quia officia","description":"Neque blanditiis odio veritatis excepturi doloribus delectus.","status":"inactive","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"},"success":"true","message":"T\u1ea1o l\u0129nh v\u1ef1c th\u00e0nh c\u00f4ng!"}'
+        content: '{"data":{"id":22,"name":"fugiat sunt nihil","description":"Harum mollitia modi deserunt aut ab provident perspiciatis quo.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"09:52:14 02\/04\/2026","updated_at":"09:52:14 02\/04\/2026"},"success":"true","message":"T\u1ea1o lo\u1ea1i v\u0103n b\u1ea3n giao vi\u1ec7c th\u00e0nh c\u00f4ng!"}'
         headers: []
         description: ''
     responseFields: []
@@ -962,14 +962,14 @@ endpoints:
     custom: []
     httpMethods:
       - PUT
-    uri: 'api/document-fields/{documentField_id}'
+    uri: 'api/task-assignment-types/{taskAssignmentType_id}'
     metadata:
       custom: []
-      groupName: 'Document - Lĩnh vực'
+      groupName: 'TaskAssignment - Loại văn bản giao việc'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Cập nhật lĩnh vực'
+      title: 'Cập nhật loại văn bản giao việc'
       description: ''
       authenticated: true
       deprecated: false
@@ -979,21 +979,21 @@ endpoints:
       Content-Type: application/json
       Accept: application/json
     urlParameters:
-      documentField_id:
+      taskAssignmentType_id:
         custom: []
-        name: documentField_id
-        description: 'The ID of the documentField.'
+        name: taskAssignmentType_id
+        description: 'The ID of the taskAssignmentType.'
         required: true
-        example: 16
+        example: 1
         type: integer
         enumValues: []
         exampleWasSpecified: false
         nullable: false
         deprecated: false
-      documentField:
+      taskAssignmentType:
         custom: []
-        name: documentField
-        description: 'ID lĩnh vực.'
+        name: taskAssignmentType
+        description: 'ID loại văn bản giao việc.'
         required: true
         example: 1
         type: integer
@@ -1002,15 +1002,15 @@ endpoints:
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      documentField_id: 16
-      documentField: 1
+      taskAssignmentType_id: 1
+      taskAssignmentType: 1
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters:
       name:
         custom: []
         name: name
-        description: 'Tên lĩnh vực.'
+        description: 'Tên loại văn bản giao việc.'
         required: false
         example: architecto
         type: string
@@ -1049,7 +1049,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":46,"name":"neque blanditiis","description":null,"status":"inactive","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"},"success":"true","message":"C\u1eadp nh\u1eadt l\u0129nh v\u1ef1c th\u00e0nh c\u00f4ng!"}'
+        content: '{"data":{"id":23,"name":"eius et animi","description":"Velit et fugiat sunt nihil accusantium.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"09:52:14 02\/04\/2026","updated_at":"09:52:14 02\/04\/2026"},"success":"true","message":"C\u1eadp nh\u1eadt lo\u1ea1i v\u0103n b\u1ea3n giao vi\u1ec7c th\u00e0nh c\u00f4ng!"}'
         headers: []
         description: ''
     responseFields: []
@@ -1064,14 +1064,14 @@ endpoints:
     custom: []
     httpMethods:
       - PATCH
-    uri: 'api/document-fields/{documentField_id}'
+    uri: 'api/task-assignment-types/{taskAssignmentType_id}'
     metadata:
       custom: []
-      groupName: 'Document - Lĩnh vực'
+      groupName: 'TaskAssignment - Loại văn bản giao việc'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Cập nhật lĩnh vực'
+      title: 'Cập nhật loại văn bản giao việc'
       description: ''
       authenticated: true
       deprecated: false
@@ -1081,21 +1081,21 @@ endpoints:
       Content-Type: application/json
       Accept: application/json
     urlParameters:
-      documentField_id:
+      taskAssignmentType_id:
         custom: []
-        name: documentField_id
-        description: 'The ID of the documentField.'
+        name: taskAssignmentType_id
+        description: 'The ID of the taskAssignmentType.'
         required: true
-        example: 16
+        example: 1
         type: integer
         enumValues: []
         exampleWasSpecified: false
         nullable: false
         deprecated: false
-      documentField:
+      taskAssignmentType:
         custom: []
-        name: documentField
-        description: 'ID lĩnh vực.'
+        name: taskAssignmentType
+        description: 'ID loại văn bản giao việc.'
         required: true
         example: 1
         type: integer
@@ -1104,15 +1104,15 @@ endpoints:
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      documentField_id: 16
-      documentField: 1
+      taskAssignmentType_id: 1
+      taskAssignmentType: 1
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters:
       name:
         custom: []
         name: name
-        description: 'Tên lĩnh vực.'
+        description: 'Tên loại văn bản giao việc.'
         required: false
         example: architecto
         type: string
@@ -1151,7 +1151,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":47,"name":"odio veritatis","description":null,"status":"inactive","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"},"success":"true","message":"C\u1eadp nh\u1eadt l\u0129nh v\u1ef1c th\u00e0nh c\u00f4ng!"}'
+        content: '{"data":{"id":24,"name":"eius et animi","description":"Velit et fugiat sunt nihil accusantium.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"09:52:14 02\/04\/2026","updated_at":"09:52:14 02\/04\/2026"},"success":"true","message":"C\u1eadp nh\u1eadt lo\u1ea1i v\u0103n b\u1ea3n giao vi\u1ec7c th\u00e0nh c\u00f4ng!"}'
         headers: []
         description: ''
     responseFields: []
@@ -1166,14 +1166,14 @@ endpoints:
     custom: []
     httpMethods:
       - DELETE
-    uri: 'api/document-fields/{documentField_id}'
+    uri: 'api/task-assignment-types/{taskAssignmentType_id}'
     metadata:
       custom: []
-      groupName: 'Document - Lĩnh vực'
+      groupName: 'TaskAssignment - Loại văn bản giao việc'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Xóa lĩnh vực'
+      title: 'Xóa loại văn bản giao việc'
       description: ''
       authenticated: true
       deprecated: false
@@ -1183,21 +1183,21 @@ endpoints:
       Content-Type: application/json
       Accept: application/json
     urlParameters:
-      documentField_id:
+      taskAssignmentType_id:
         custom: []
-        name: documentField_id
-        description: 'The ID of the documentField.'
+        name: taskAssignmentType_id
+        description: 'The ID of the taskAssignmentType.'
         required: true
-        example: 16
+        example: 1
         type: integer
         enumValues: []
         exampleWasSpecified: false
         nullable: false
         deprecated: false
-      documentField:
+      taskAssignmentType:
         custom: []
-        name: documentField
-        description: 'ID lĩnh vực.'
+        name: taskAssignmentType
+        description: 'ID loại văn bản giao việc.'
         required: true
         example: 1
         type: integer
@@ -1206,8 +1206,8 @@ endpoints:
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      documentField_id: 16
-      documentField: 1
+      taskAssignmentType_id: 1
+      taskAssignmentType: 1
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters: []
@@ -1217,7 +1217,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"success": true, "message": "Xóa lĩnh vực thành công!"}'
+        content: '{"success": true, "message": "Xóa loại văn bản giao việc thành công!"}'
         headers: []
         description: ''
     responseFields: []
@@ -1232,14 +1232,14 @@ endpoints:
     custom: []
     httpMethods:
       - PATCH
-    uri: 'api/document-fields/{documentField_id}/status'
+    uri: 'api/task-assignment-types/{taskAssignmentType_id}/status'
     metadata:
       custom: []
-      groupName: 'Document - Lĩnh vực'
+      groupName: 'TaskAssignment - Loại văn bản giao việc'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Đổi trạng thái lĩnh vực'
+      title: 'Đổi trạng thái loại văn bản giao việc'
       description: ''
       authenticated: true
       deprecated: false
@@ -1249,21 +1249,21 @@ endpoints:
       Content-Type: application/json
       Accept: application/json
     urlParameters:
-      documentField_id:
+      taskAssignmentType_id:
         custom: []
-        name: documentField_id
-        description: 'The ID of the documentField.'
+        name: taskAssignmentType_id
+        description: 'The ID of the taskAssignmentType.'
         required: true
-        example: 16
+        example: 1
         type: integer
         enumValues: []
         exampleWasSpecified: false
         nullable: false
         deprecated: false
-      documentField:
+      taskAssignmentType:
         custom: []
-        name: documentField
-        description: 'ID lĩnh vực.'
+        name: taskAssignmentType
+        description: 'ID loại văn bản giao việc.'
         required: true
         example: 1
         type: integer
@@ -1272,8 +1272,8 @@ endpoints:
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      documentField_id: 16
-      documentField: 1
+      taskAssignmentType_id: 1
+      taskAssignmentType: 1
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters:
@@ -1295,7 +1295,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":48,"name":"aut dolores","description":"Facere tempora ex voluptatem laboriosam.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"},"success":"true","message":"\u0110\u1ed5i tr\u1ea1ng th\u00e1i th\u00e0nh c\u00f4ng!"}'
+        content: '{"data":{"id":25,"name":"aut adipisci quidem","description":"Qui commodi incidunt iure odit.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"09:52:14 02\/04\/2026","updated_at":"09:52:14 02\/04\/2026"},"success":"true","message":"\u0110\u1ed5i tr\u1ea1ng th\u00e1i th\u00e0nh c\u00f4ng!"}'
         headers: []
         description: ''
     responseFields: []

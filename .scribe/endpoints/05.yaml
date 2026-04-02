@@ -1,19 +1,19 @@
-name: 'Document - Cấp ban hành'
+name: 'TaskAssignment - Phòng ban giao việc'
 description: ''
 endpoints:
   -
     custom: []
     httpMethods:
       - GET
-    uri: api/issuing-levels/public
+    uri: api/task-assignment-departments/public
     metadata:
       custom: []
-      groupName: 'Document - Cấp ban hành'
+      groupName: 'TaskAssignment - Phòng ban giao việc'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Danh sách cấp ban hành công khai'
-      description: 'Trả về danh sách cấp ban hành đang hoạt động để hiển thị cho các chức năng công khai.'
+      title: 'Danh sách phòng ban giao việc công khai'
+      description: ''
       authenticated: false
       deprecated: false
     headers:
@@ -115,7 +115,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":[{"id":33,"name":"modi deserunt","description":"Provident perspiciatis quo omnis nostrum aut adipisci quidem.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:35 02\/04\/2026","updated_at":"09:41:35 02\/04\/2026"},{"id":34,"name":"qui commodi","description":"Odit et et modi.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:35 02\/04\/2026","updated_at":"09:41:35 02\/04\/2026"}],"success":"true"}'
+        content: '{"data":[{"id":19,"code":"DEPT-171","name":"Crooks LLC","description":"Et fugiat sunt nihil accusantium.","status":"active","sort_order":91,"created_by":"N\/A","updated_by":"N\/A","created_at":"09:52:13 02\/04\/2026","updated_at":"09:52:13 02\/04\/2026"},{"id":20,"code":"DEPT-954","name":"Considine-Schuster","description":"Provident perspiciatis quo omnis nostrum aut adipisci quidem.","status":"active","sort_order":91,"created_by":"N\/A","updated_by":"N\/A","created_at":"09:52:13 02\/04\/2026","updated_at":"09:52:13 02\/04\/2026"}],"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -127,15 +127,15 @@ endpoints:
     custom: []
     httpMethods:
       - GET
-    uri: api/issuing-levels/public-options
+    uri: api/task-assignment-departments/public-options
     metadata:
       custom: []
-      groupName: 'Document - Cấp ban hành'
+      groupName: 'TaskAssignment - Phòng ban giao việc'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Danh sách cấp ban hành công khai cho dropdown'
-      description: 'Trả về dữ liệu tối giản chỉ gồm id, name, description để tối ưu payload cho dropdown.'
+      title: 'Danh sách phòng ban giao việc cho dropdown'
+      description: ''
       authenticated: false
       deprecated: false
     headers:
@@ -237,7 +237,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":[{"id":35,"name":"provident perspiciatis","description":null},{"id":36,"name":"nostrum aut","description":"Nostrum qui commodi incidunt iure."}],"success":"true"}'
+        content: '{"data":[{"id":21,"name":"Okuneva, Rempel and Gulgowski","description":"Sunt nihil accusantium harum mollitia."},{"id":22,"name":"DuBuque Inc","description":"Quo omnis nostrum aut adipisci."}],"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -249,14 +249,14 @@ endpoints:
     custom: []
     httpMethods:
       - GET
-    uri: api/issuing-levels/export
+    uri: api/task-assignment-departments/export
     metadata:
       custom: []
-      groupName: 'Document - Cấp ban hành'
+      groupName: 'TaskAssignment - Phòng ban giao việc'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Xuất Excel cấp ban hành'
+      title: 'Xuất Excel phòng ban giao việc'
       description: 'Xuất ra các trường: id, name, description, status, created_by, updated_by, created_at, updated_at.'
       authenticated: true
       deprecated: false
@@ -380,14 +380,14 @@ endpoints:
     custom: []
     httpMethods:
       - POST
-    uri: api/issuing-levels/import
+    uri: api/task-assignment-departments/import
     metadata:
       custom: []
-      groupName: 'Document - Cấp ban hành'
+      groupName: 'TaskAssignment - Phòng ban giao việc'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Import cấp ban hành'
+      title: 'Import phòng ban giao việc'
       description: 'Cột bắt buộc: name. Cột không bắt buộc: description, status (mặc định "active").'
       authenticated: true
       deprecated: false
@@ -419,7 +419,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"success": true, "message": "Import cấp ban hành thành công."}'
+        content: '{"success": true, "message": "Import phòng ban giao việc thành công."}'
         headers: []
         description: ''
     responseFields: []
@@ -434,14 +434,14 @@ endpoints:
     custom: []
     httpMethods:
       - POST
-    uri: api/issuing-levels/bulk-delete
+    uri: api/task-assignment-departments/bulk-delete
     metadata:
       custom: []
-      groupName: 'Document - Cấp ban hành'
+      groupName: 'TaskAssignment - Phòng ban giao việc'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Xóa hàng loạt cấp ban hành'
+      title: 'Xóa hàng loạt phòng ban giao việc'
       description: ''
       authenticated: true
       deprecated: false
@@ -494,14 +494,14 @@ endpoints:
     custom: []
     httpMethods:
       - PATCH
-    uri: api/issuing-levels/bulk-status
+    uri: api/task-assignment-departments/bulk-status
     metadata:
       custom: []
-      groupName: 'Document - Cấp ban hành'
+      groupName: 'TaskAssignment - Phòng ban giao việc'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Cập nhật trạng thái hàng loạt cấp ban hành'
+      title: 'Cập nhật trạng thái hàng loạt phòng ban giao việc'
       description: ''
       authenticated: true
       deprecated: false
@@ -566,14 +566,14 @@ endpoints:
     custom: []
     httpMethods:
       - GET
-    uri: api/issuing-levels/stats
+    uri: api/task-assignment-departments/stats
     metadata:
       custom: []
-      groupName: 'Document - Cấp ban hành'
+      groupName: 'TaskAssignment - Phòng ban giao việc'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Thống kê cấp ban hành'
+      title: 'Thống kê phòng ban giao việc'
       description: ''
       authenticated: true
       deprecated: false
@@ -692,14 +692,14 @@ endpoints:
     custom: []
     httpMethods:
       - GET
-    uri: api/issuing-levels
+    uri: api/task-assignment-departments
     metadata:
       custom: []
-      groupName: 'Document - Cấp ban hành'
+      groupName: 'TaskAssignment - Phòng ban giao việc'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Danh sách cấp ban hành'
+      title: 'Danh sách phòng ban giao việc'
       description: ''
       authenticated: true
       deprecated: false
@@ -803,7 +803,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":[{"id":42,"name":"doloremque id","description":null,"status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"},{"id":43,"name":"aliquam veniam","description":"Mollitia deleniti nemo odit quia officia.","status":"inactive","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"}],"links":{"first":"\/?page=1","last":"\/?page=1","prev":null,"next":null},"meta":{"current_page":1,"from":1,"last_page":1,"links":[{"url":null,"label":"&laquo; Previous","page":null,"active":false},{"url":"\/?page=1","label":"1","page":1,"active":true},{"url":null,"label":"Next &raquo;","page":null,"active":false}],"path":"\/","per_page":10,"to":2,"total":2},"success":"true"}'
+        content: '{"data":[{"id":23,"code":"DEPT-365","name":"Rempel, Gulgowski and O''Kon","description":"Nihil accusantium harum mollitia modi deserunt.","status":"active","sort_order":4,"created_by":"N\/A","updated_by":"N\/A","created_at":"09:52:14 02\/04\/2026","updated_at":"09:52:14 02\/04\/2026"},{"id":24,"code":"DEPT-196","name":"Breitenberg Inc","description":"Nostrum aut adipisci quidem nostrum.","status":"active","sort_order":35,"created_by":"N\/A","updated_by":"N\/A","created_at":"09:52:14 02\/04\/2026","updated_at":"09:52:14 02\/04\/2026"}],"links":{"first":"\/?page=1","last":"\/?page=1","prev":null,"next":null},"meta":{"current_page":1,"from":1,"last_page":1,"links":[{"url":null,"label":"&laquo; Previous","page":null,"active":false},{"url":"\/?page=1","label":"1","page":1,"active":true},{"url":null,"label":"Next &raquo;","page":null,"active":false}],"path":"\/","per_page":10,"to":2,"total":2},"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -818,14 +818,14 @@ endpoints:
     custom: []
     httpMethods:
       - GET
-    uri: 'api/issuing-levels/{issuingLevel_id}'
+    uri: 'api/task-assignment-departments/{taskAssignmentDepartment_id}'
     metadata:
       custom: []
-      groupName: 'Document - Cấp ban hành'
+      groupName: 'TaskAssignment - Phòng ban giao việc'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Chi tiết cấp ban hành'
+      title: 'Chi tiết phòng ban giao việc'
       description: ''
       authenticated: true
       deprecated: false
@@ -835,21 +835,21 @@ endpoints:
       Content-Type: application/json
       Accept: application/json
     urlParameters:
-      issuingLevel_id:
+      taskAssignmentDepartment_id:
         custom: []
-        name: issuingLevel_id
-        description: 'The ID of the issuingLevel.'
+        name: taskAssignmentDepartment_id
+        description: 'The ID of the taskAssignmentDepartment.'
         required: true
-        example: 16
+        example: 1
         type: integer
         enumValues: []
         exampleWasSpecified: false
         nullable: false
         deprecated: false
-      issuingLevel:
+      taskAssignmentDepartment:
         custom: []
-        name: issuingLevel
-        description: 'ID cấp ban hành.'
+        name: taskAssignmentDepartment
+        description: 'ID phòng ban giao việc.'
         required: true
         example: 1
         type: integer
@@ -858,8 +858,8 @@ endpoints:
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      issuingLevel_id: 16
-      issuingLevel: 1
+      taskAssignmentDepartment_id: 1
+      taskAssignmentDepartment: 1
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters: []
@@ -869,7 +869,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":44,"name":"et modi","description":null,"status":"inactive","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"},"success":"true"}'
+        content: '{"data":{"id":25,"code":"DEPT-680","name":"Hirthe Inc","description":"Commodi incidunt iure odit.","status":"active","sort_order":45,"created_by":"N\/A","updated_by":"N\/A","created_at":"09:52:14 02\/04\/2026","updated_at":"09:52:14 02\/04\/2026"},"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -884,14 +884,14 @@ endpoints:
     custom: []
     httpMethods:
       - POST
-    uri: api/issuing-levels
+    uri: api/task-assignment-departments
     metadata:
       custom: []
-      groupName: 'Document - Cấp ban hành'
+      groupName: 'TaskAssignment - Phòng ban giao việc'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Tạo cấp ban hành'
+      title: 'Tạo phòng ban giao việc'
       description: ''
       authenticated: true
       deprecated: false
@@ -905,12 +905,23 @@ endpoints:
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters:
+      code:
+        custom: []
+        name: code
+        description: 'Mã phòng ban (duy nhất). Must not be greater than 50 characters.'
+        required: true
+        example: PB-KT
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
       name:
         custom: []
         name: name
-        description: 'Tên cấp ban hành.'
+        description: 'Tên phòng ban.'
         required: true
-        example: 'Cấp Trung ương'
+        example: 'Phòng Kế hoạch'
         type: string
         enumValues: []
         exampleWasSpecified: true
@@ -938,16 +949,29 @@ endpoints:
         exampleWasSpecified: true
         nullable: false
         deprecated: false
+      sort_order:
+        custom: []
+        name: sort_order
+        description: 'Thứ tự sắp xếp. Must be at least 0.'
+        required: false
+        example: 1
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
     cleanBodyParameters:
-      name: 'Cấp Trung ương'
+      code: PB-KT
+      name: 'Phòng Kế hoạch'
       description: 'Eius et animi quos velit et.'
       status: active
+      sort_order: 1
     fileParameters: []
     responses:
       -
         custom: []
         status: 201
-        content: '{"data":{"id":45,"name":"aut libero","description":"Corporis dolorem mollitia deleniti nemo odit quia officia.","status":"inactive","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"},"success":"true","message":"T\u1ea1o c\u1ea5p ban h\u00e0nh th\u00e0nh c\u00f4ng!"}'
+        content: '{"data":{"id":26,"code":"DEPT-625","name":"Dach-Gaylord","description":"Mollitia modi deserunt aut ab provident perspiciatis quo.","status":"active","sort_order":23,"created_by":"N\/A","updated_by":"N\/A","created_at":"09:52:14 02\/04\/2026","updated_at":"09:52:14 02\/04\/2026"},"success":"true","message":"T\u1ea1o ph\u00f2ng ban giao vi\u1ec7c th\u00e0nh c\u00f4ng!"}'
         headers: []
         description: ''
     responseFields: []
@@ -962,14 +986,14 @@ endpoints:
     custom: []
     httpMethods:
       - PUT
-    uri: 'api/issuing-levels/{issuingLevel_id}'
+    uri: 'api/task-assignment-departments/{taskAssignmentDepartment_id}'
     metadata:
       custom: []
-      groupName: 'Document - Cấp ban hành'
+      groupName: 'TaskAssignment - Phòng ban giao việc'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Cập nhật cấp ban hành'
+      title: 'Cập nhật phòng ban giao việc'
       description: ''
       authenticated: true
       deprecated: false
@@ -979,21 +1003,21 @@ endpoints:
       Content-Type: application/json
       Accept: application/json
     urlParameters:
-      issuingLevel_id:
+      taskAssignmentDepartment_id:
         custom: []
-        name: issuingLevel_id
-        description: 'The ID of the issuingLevel.'
+        name: taskAssignmentDepartment_id
+        description: 'The ID of the taskAssignmentDepartment.'
         required: true
-        example: 16
+        example: 1
         type: integer
         enumValues: []
         exampleWasSpecified: false
         nullable: false
         deprecated: false
-      issuingLevel:
+      taskAssignmentDepartment:
         custom: []
-        name: issuingLevel
-        description: 'ID cấp ban hành.'
+        name: taskAssignmentDepartment
+        description: 'ID phòng ban giao việc.'
         required: true
         example: 1
         type: integer
@@ -1002,15 +1026,26 @@ endpoints:
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      issuingLevel_id: 16
-      issuingLevel: 1
+      taskAssignmentDepartment_id: 1
+      taskAssignmentDepartment: 1
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters:
+      code:
+        custom: []
+        name: code
+        description: 'Mã phòng ban (duy nhất). Must not be greater than 50 characters.'
+        required: false
+        example: PB-KT
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
       name:
         custom: []
         name: name
-        description: 'Tên cấp ban hành.'
+        description: 'Tên phòng ban.'
         required: false
         example: architecto
         type: string
@@ -1040,16 +1075,29 @@ endpoints:
         exampleWasSpecified: false
         nullable: false
         deprecated: false
+      sort_order:
+        custom: []
+        name: sort_order
+        description: 'Thứ tự sắp xếp. Must be at least 0.'
+        required: false
+        example: 1
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
     cleanBodyParameters:
+      code: PB-KT
       name: architecto
       description: 'Eius et animi quos velit et.'
       status: architecto
+      sort_order: 1
     fileParameters: []
     responses:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":46,"name":"corporis dolorem","description":null,"status":"inactive","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"},"success":"true","message":"C\u1eadp nh\u1eadt c\u1ea5p ban h\u00e0nh th\u00e0nh c\u00f4ng!"}'
+        content: '{"data":{"id":27,"code":"DEPT-316","name":"Gulgowski-O''Kon","description":"Nihil accusantium harum mollitia modi deserunt.","status":"active","sort_order":4,"created_by":"N\/A","updated_by":"N\/A","created_at":"09:52:14 02\/04\/2026","updated_at":"09:52:14 02\/04\/2026"},"success":"true","message":"C\u1eadp nh\u1eadt ph\u00f2ng ban giao vi\u1ec7c th\u00e0nh c\u00f4ng!"}'
         headers: []
         description: ''
     responseFields: []
@@ -1064,14 +1112,14 @@ endpoints:
     custom: []
     httpMethods:
       - PATCH
-    uri: 'api/issuing-levels/{issuingLevel_id}'
+    uri: 'api/task-assignment-departments/{taskAssignmentDepartment_id}'
     metadata:
       custom: []
-      groupName: 'Document - Cấp ban hành'
+      groupName: 'TaskAssignment - Phòng ban giao việc'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Cập nhật cấp ban hành'
+      title: 'Cập nhật phòng ban giao việc'
       description: ''
       authenticated: true
       deprecated: false
@@ -1081,21 +1129,21 @@ endpoints:
       Content-Type: application/json
       Accept: application/json
     urlParameters:
-      issuingLevel_id:
+      taskAssignmentDepartment_id:
         custom: []
-        name: issuingLevel_id
-        description: 'The ID of the issuingLevel.'
+        name: taskAssignmentDepartment_id
+        description: 'The ID of the taskAssignmentDepartment.'
         required: true
-        example: 16
+        example: 1
         type: integer
         enumValues: []
         exampleWasSpecified: false
         nullable: false
         deprecated: false
-      issuingLevel:
+      taskAssignmentDepartment:
         custom: []
-        name: issuingLevel
-        description: 'ID cấp ban hành.'
+        name: taskAssignmentDepartment
+        description: 'ID phòng ban giao việc.'
         required: true
         example: 1
         type: integer
@@ -1104,15 +1152,26 @@ endpoints:
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      issuingLevel_id: 16
-      issuingLevel: 1
+      taskAssignmentDepartment_id: 1
+      taskAssignmentDepartment: 1
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters:
+      code:
+        custom: []
+        name: code
+        description: 'Mã phòng ban (duy nhất). Must not be greater than 50 characters.'
+        required: false
+        example: PB-KT
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
       name:
         custom: []
         name: name
-        description: 'Tên cấp ban hành.'
+        description: 'Tên phòng ban.'
         required: false
         example: architecto
         type: string
@@ -1142,16 +1201,29 @@ endpoints:
         exampleWasSpecified: false
         nullable: false
         deprecated: false
+      sort_order:
+        custom: []
+        name: sort_order
+        description: 'Thứ tự sắp xếp. Must be at least 0.'
+        required: false
+        example: 1
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
     cleanBodyParameters:
+      code: PB-KT
       name: architecto
       description: 'Eius et animi quos velit et.'
       status: architecto
+      sort_order: 1
     fileParameters: []
     responses:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":47,"name":"mollitia deleniti","description":"Quia officia est dignissimos neque.","status":"inactive","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"},"success":"true","message":"C\u1eadp nh\u1eadt c\u1ea5p ban h\u00e0nh th\u00e0nh c\u00f4ng!"}'
+        content: '{"data":{"id":28,"code":"DEPT-564","name":"O''Kon and Sons","description":"Accusantium harum mollitia modi deserunt aut ab.","status":"active","sort_order":16,"created_by":"N\/A","updated_by":"N\/A","created_at":"09:52:14 02\/04\/2026","updated_at":"09:52:14 02\/04\/2026"},"success":"true","message":"C\u1eadp nh\u1eadt ph\u00f2ng ban giao vi\u1ec7c th\u00e0nh c\u00f4ng!"}'
         headers: []
         description: ''
     responseFields: []
@@ -1166,14 +1238,14 @@ endpoints:
     custom: []
     httpMethods:
       - DELETE
-    uri: 'api/issuing-levels/{issuingLevel_id}'
+    uri: 'api/task-assignment-departments/{taskAssignmentDepartment_id}'
     metadata:
       custom: []
-      groupName: 'Document - Cấp ban hành'
+      groupName: 'TaskAssignment - Phòng ban giao việc'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Xóa cấp ban hành'
+      title: 'Xóa phòng ban giao việc'
       description: ''
       authenticated: true
       deprecated: false
@@ -1183,21 +1255,21 @@ endpoints:
       Content-Type: application/json
       Accept: application/json
     urlParameters:
-      issuingLevel_id:
+      taskAssignmentDepartment_id:
         custom: []
-        name: issuingLevel_id
-        description: 'The ID of the issuingLevel.'
+        name: taskAssignmentDepartment_id
+        description: 'The ID of the taskAssignmentDepartment.'
         required: true
-        example: 16
+        example: 1
         type: integer
         enumValues: []
         exampleWasSpecified: false
         nullable: false
         deprecated: false
-      issuingLevel:
+      taskAssignmentDepartment:
         custom: []
-        name: issuingLevel
-        description: 'ID cấp ban hành.'
+        name: taskAssignmentDepartment
+        description: 'ID phòng ban giao việc.'
         required: true
         example: 1
         type: integer
@@ -1206,8 +1278,8 @@ endpoints:
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      issuingLevel_id: 16
-      issuingLevel: 1
+      taskAssignmentDepartment_id: 1
+      taskAssignmentDepartment: 1
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters: []
@@ -1217,7 +1289,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"success": true, "message": "Xóa cấp ban hành thành công!"}'
+        content: '{"success": true, "message": "Xóa phòng ban giao việc thành công!"}'
         headers: []
         description: ''
     responseFields: []
@@ -1232,14 +1304,14 @@ endpoints:
     custom: []
     httpMethods:
       - PATCH
-    uri: 'api/issuing-levels/{issuingLevel_id}/status'
+    uri: 'api/task-assignment-departments/{taskAssignmentDepartment_id}/status'
     metadata:
       custom: []
-      groupName: 'Document - Cấp ban hành'
+      groupName: 'TaskAssignment - Phòng ban giao việc'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: 'Đổi trạng thái cấp ban hành'
+      title: 'Đổi trạng thái phòng ban giao việc'
       description: ''
       authenticated: true
       deprecated: false
@@ -1249,21 +1321,21 @@ endpoints:
       Content-Type: application/json
       Accept: application/json
     urlParameters:
-      issuingLevel_id:
+      taskAssignmentDepartment_id:
         custom: []
-        name: issuingLevel_id
-        description: 'The ID of the issuingLevel.'
+        name: taskAssignmentDepartment_id
+        description: 'The ID of the taskAssignmentDepartment.'
         required: true
-        example: 16
+        example: 1
         type: integer
         enumValues: []
         exampleWasSpecified: false
         nullable: false
         deprecated: false
-      issuingLevel:
+      taskAssignmentDepartment:
         custom: []
-        name: issuingLevel
-        description: 'ID cấp ban hành.'
+        name: taskAssignmentDepartment
+        description: 'ID phòng ban giao việc.'
         required: true
         example: 1
         type: integer
@@ -1272,8 +1344,8 @@ endpoints:
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      issuingLevel_id: 16
-      issuingLevel: 1
+      taskAssignmentDepartment_id: 1
+      taskAssignmentDepartment: 1
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters:
@@ -1295,7 +1367,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":48,"name":"ipsum nostrum","description":null,"status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"09:41:36 02\/04\/2026","updated_at":"09:41:36 02\/04\/2026"},"success":"true","message":"\u0110\u1ed5i tr\u1ea1ng th\u00e1i th\u00e0nh c\u00f4ng!"}'
+        content: '{"data":{"id":29,"code":"DEPT-724","name":"Cronin, Dare and Hauck","description":"Iure odit et et modi ipsum nostrum omnis.","status":"active","sort_order":41,"created_by":"N\/A","updated_by":"N\/A","created_at":"09:52:14 02\/04\/2026","updated_at":"09:52:14 02\/04\/2026"},"success":"true","message":"\u0110\u1ed5i tr\u1ea1ng th\u00e1i th\u00e0nh c\u00f4ng!"}'
         headers: []
         description: ''
     responseFields: []
