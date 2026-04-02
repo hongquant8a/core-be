@@ -367,6 +367,36 @@ class PermissionSeeder extends Seeder
         if ($sampleRole) {
             $basicUser->syncRoles([$sampleRole]);
         }
+
+        // TaskAssignment test users
+        $quanTriRole = Role::where('name', 'Quản trị')->where('guard_name', self::GUARD)->first();
+        $truongPhongRole = Role::where('name', 'Trưởng phòng')->where('guard_name', self::GUARD)->first();
+        $nhanVienRole = Role::where('name', 'Nhân viên')->where('guard_name', self::GUARD)->first();
+
+        foreach ([
+            ['email' => 'quantri@example.com', 'user_name' => 'quantri', 'name' => 'quantri', 'role' => $quanTriRole],
+            ['email' => 'truongphong@example.com', 'user_name' => 'truongphong', 'name' => 'truongphong', 'role' => $truongPhongRole],
+            ['email' => 'nhanvien@example.com', 'user_name' => 'nhanvien', 'name' => 'nhanvien', 'role' => $nhanVienRole],
+        ] as $userData) {
+            $user = User::updateOrCreate(
+                ['email' => $userData['email']],
+                [
+                    'name' => $userData['name'],
+                    'user_name' => $userData['user_name'],
+                    'password' => 'quandcore**11',
+                    'status' => StatusEnum::Active->value,
+                    'email_verified_at' => now(),
+                ]
+            );
+            $user->forceFill([
+                'created_by' => $superAdminUser->id,
+                'updated_by' => $superAdminUser->id,
+            ])->save();
+
+            if ($userData['role']) {
+                $user->syncRoles([$userData['role']]);
+            }
+        }
     }
 
     /** Lấy toàn bộ tên permission (resource.action). */

@@ -24,4 +24,4 @@
 /database/maxmind/*.mmdb
 Homestead.json
 Homestead.yaml
-Thumbs.db
+.http
