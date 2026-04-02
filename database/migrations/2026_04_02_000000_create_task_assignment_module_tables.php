@@ -177,6 +177,15 @@ return new class extends Migration
             $table->unique(['task_assignment_item_report_id', 'media_id'], 'ta_item_report_attach_report_id_media_id_unique');
         });
 
+        // Thêm field task_assignment_department_id vào users (1 user thuộc 1 phòng ban)
+        Schema::table('users', function (Blueprint $table) {
+            $table->foreignId('task_assignment_department_id')
+                ->nullable()
+                ->after('organization_id')
+                ->constrained('task_assignment_departments')
+                ->nullOnDelete();
+        });
+
         Schema::create('task_assignment_reminders', function (Blueprint $table) {
             $table->id();
             $table->foreignId('task_assignment_item_id')->constrained('task_assignment_items')->cascadeOnDelete();
@@ -193,6 +202,9 @@ return new class extends Migration
 
     public function down(): void
     {
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropConstrainedForeignId('task_assignment_department_id');
+        });
         Schema::dropIfExists('task_assignment_reminders');
         Schema::dropIfExists('task_assignment_item_report_attachments');
         Schema::dropIfExists('task_assignment_item_reports');

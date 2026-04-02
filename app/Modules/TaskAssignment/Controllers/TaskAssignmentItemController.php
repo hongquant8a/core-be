@@ -9,7 +9,10 @@ use App\Modules\TaskAssignment\Requests\BulkDestroyItemRequest;
 use App\Modules\TaskAssignment\Requests\BulkUpdateStatusItemRequest;
 use App\Modules\TaskAssignment\Requests\ChangeStatusItemRequest;
 use App\Modules\TaskAssignment\Requests\ImportItemRequest;
+use App\Modules\TaskAssignment\Requests\StatsFilterRequest;
+use App\Modules\TaskAssignment\Requests\StatsByTimeRequest;
 use App\Modules\TaskAssignment\Requests\StoreItemRequest;
+use App\Modules\TaskAssignment\Requests\UpcomingDeadlineRequest;
 use App\Modules\TaskAssignment\Requests\UpdateItemProgressRequest;
 use App\Modules\TaskAssignment\Requests\UpdateItemRequest;
 use App\Modules\TaskAssignment\Resources\ItemCollection;
@@ -252,5 +255,95 @@ class TaskAssignmentItemController extends Controller
         $item = $this->itemService->updateProgress($taskAssignmentItem, $request->validated());
 
         return $this->successResource(new ItemResource($item), 'Cập nhật tiến độ thành công!');
+    }
+
+    /**
+     * Thống kê công việc theo phòng ban
+     *
+     * @queryParam processing_status string Lọc theo trạng thái xử lý.
+     * @queryParam priority string Lọc theo mức độ ưu tiên.
+     * @queryParam deadline_type string Lọc theo loại thời hạn.
+     * @queryParam from_date date Từ ngày (Y-m-d). Example: 2026-01-01
+     * @queryParam to_date date Đến ngày (Y-m-d). Example: 2026-12-31
+     * @queryParam task_assignment_item_type_id integer Lọc theo loại công việc. Example: 1
+     *
+     * @response 200 {"success": true, "data": [{"department_id": 1, "department_name": "Phòng Kế toán", "department_code": "KT", "total": 20, "todo": 5, "in_progress": 8, "done": 3, "overdue": 2, "paused": 1, "cancelled": 1}]}
+     */
+    public function statsByDepartment(StatsFilterRequest $request)
+    {
+        return $this->success($this->itemService->statsByDepartment($request->all()));
+    }
+
+    /**
+     * Thống kê công việc theo người dùng
+     *
+     * @queryParam department_id integer Lọc theo phòng ban. Example: 1
+     * @queryParam processing_status string Lọc theo trạng thái xử lý.
+     * @queryParam priority string Lọc theo mức độ ưu tiên.
+     * @queryParam from_date date Từ ngày (Y-m-d). Example: 2026-01-01
+     * @queryParam to_date date Đến ngày (Y-m-d). Example: 2026-12-31
+     *
+     * @response 200 {"success": true, "data": [{"user_id": 1, "user_name": "Nguyễn Văn A", "total": 10, "todo": 2, "in_progress": 3, "done": 4, "overdue": 1, "on_time_count": 3, "overdue_done_count": 1}]}
+     */
+    public function statsByUser(StatsFilterRequest $request)
+    {
+        return $this->success($this->itemService->statsByUser($request->all()));
+    }
+
+    /**
+     * Thống kê công việc theo thời gian (tháng)
+     *
+     * @queryParam from_date date required Từ ngày (Y-m-d). Example: 2026-01-01
+     * @queryParam to_date date required Đến ngày (Y-m-d, tối đa 12 tháng). Example: 2026-12-31
+     * @queryParam department_id integer Lọc theo phòng ban. Example: 1
+     * @queryParam user_id integer Lọc theo người dùng. Example: 1
+     * @queryParam processing_status string Lọc theo trạng thái xử lý.
+     *
+     * @response 200 {"success": true, "data": [{"month": "2026-01", "total": 15, "done": 8, "overdue": 3, "new_tasks": 10}]}
+     */
+    public function statsByTime(StatsByTimeRequest $request)
+    {
+        return $this->success($this->itemService->statsByTime($request->all()));
+    }
+
+    /**
+     * Danh sách công việc quá hạn
+     *
+     * @queryParam department_id integer Lọc theo phòng ban. Example: 1
+     * @queryParam user_id integer Lọc theo người dùng. Example: 1
+     * @queryParam priority string Lọc theo mức độ ưu tiên.
+     * @queryParam sort_by string Sắp xếp theo: end_at, priority, created_at. Example: end_at
+     * @queryParam sort_order string Thứ tự: asc, desc. Example: asc
+     * @queryParam limit integer Số bản ghi mỗi trang. Example: 10
+     *
+     * @apiResourceCollection App\Modules\TaskAssignment\Resources\ItemCollection
+     * @apiResourceModel App\Modules\TaskAssignment\Models\TaskAssignmentItem paginate=10
+     * @apiResourceAdditional success=true
+     */
+    public function overdue(StatsFilterRequest $request)
+    {
+        $items = $this->itemService->overdue($request->all(), (int) ($request->limit ?? 10));
+
+        return $this->successCollection(new ItemCollection($items));
+    }
+
+    /**
+     * Danh sách công việc sắp đến hạn
+     *
+     * @queryParam days integer Số ngày (1-30, mặc định 3). Example: 3
+     * @queryParam department_id integer Lọc theo phòng ban. Example: 1
+     * @queryParam user_id integer Lọc theo người dùng. Example: 1
+     * @queryParam priority string Lọc theo mức độ ưu tiên.
+     * @queryParam limit integer Số bản ghi mỗi trang. Example: 10
+     *
+     * @apiResourceCollection App\Modules\TaskAssignment\Resources\ItemCollection
+     * @apiResourceModel App\Modules\TaskAssignment\Models\TaskAssignmentItem paginate=10
+     * @apiResourceAdditional success=true
+     */
+    public function upcomingDeadline(UpcomingDeadlineRequest $request)
+    {
+        $items = $this->itemService->upcomingDeadline($request->all(), (int) ($request->limit ?? 10));
+
+        return $this->successCollection(new ItemCollection($items));
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Modules\Core\Models;
 
+use App\Modules\TaskAssignment\Models\TaskAssignmentDepartment;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -28,6 +29,7 @@ class User extends Authenticatable
         'status',
         'created_by',
         'updated_by',
+        'task_assignment_department_id',
     ];
 
     protected $hidden = [
@@ -63,6 +65,11 @@ class User extends Authenticatable
     public function preference()
     {
         return $this->hasOne(UserPreference::class);
+    }
+
+    public function taskAssignmentDepartment()
+    {
+        return $this->belongsTo(TaskAssignmentDepartment::class, 'task_assignment_department_id');
     }
 
     public function scopeFilter($query, array $filters)

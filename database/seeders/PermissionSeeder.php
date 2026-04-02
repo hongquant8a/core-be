@@ -117,6 +117,7 @@ class PermissionSeeder extends Seeder
             'stats', 'index', 'show', 'store', 'update', 'destroy',
             'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
             'updateProgress',
+            'statsByDepartment', 'statsByUser', 'statsByTime', 'overdue', 'upcomingDeadline',
         ],
         // TaskAssignment - Báo cáo công việc
         'task-assignment-item-reports' => [
@@ -201,6 +202,11 @@ class PermissionSeeder extends Seeder
         'destroyByDate' => 'Xóa theo khoảng thời gian',
         'destroyAll' => 'Xóa toàn bộ',
         'updateProgress' => 'Cập nhật tiến độ',
+        'statsByDepartment' => 'Thống kê theo phòng ban',
+        'statsByUser' => 'Thống kê theo người dùng',
+        'statsByTime' => 'Thống kê theo thời gian',
+        'overdue' => 'Danh sách quá hạn',
+        'upcomingDeadline' => 'Danh sách sắp đến hạn',
     ];
 
     /** Tạo đầy đủ permission từ danh sách PERMISSIONS (kèm description, sort_order, parent_id). */
@@ -244,15 +250,6 @@ class PermissionSeeder extends Seeder
             ['name' => 'Admin', 'guard_name' => self::GUARD],
             ['organization_id' => null]
         );
-        Role::firstOrCreate(
-            ['name' => 'Editor', 'guard_name' => self::GUARD],
-            ['organization_id' => null]
-        );
-        Role::firstOrCreate(
-            ['name' => 'Vai trò mẫu', 'guard_name' => self::GUARD],
-            ['organization_id' => null]
-        );
-
         // TaskAssignment - 3 role nghiệp vụ giao việc
         Role::firstOrCreate(
             ['name' => 'Quản trị', 'guard_name' => self::GUARD],
@@ -283,18 +280,6 @@ class PermissionSeeder extends Seeder
         $admin = Role::where('name', 'Admin')->where('guard_name', self::GUARD)->first();
         if ($admin) {
             $admin->syncPermissions($allPermissionNames);
-        }
-
-        $editorPermissionNames = $this->getEditorPermissionNames();
-        $editor = Role::where('name', 'Editor')->where('guard_name', self::GUARD)->first();
-        if ($editor) {
-            $editor->syncPermissions($editorPermissionNames);
-        }
-
-        $samplePermissionNames = $this->getSamplePermissionNames();
-        $sampleRole = Role::where('name', 'Vai trò mẫu')->where('guard_name', self::GUARD)->first();
-        if ($sampleRole) {
-            $sampleRole->syncPermissions($samplePermissionNames);
         }
 
         // TaskAssignment roles
@@ -328,7 +313,6 @@ class PermissionSeeder extends Seeder
         setPermissionsTeamId($defaultOrganization->id);
 
         $superAdmin = Role::where('name', 'Super Admin')->where('guard_name', self::GUARD)->first();
-        $sampleRole = Role::where('name', 'Vai trò mẫu')->where('guard_name', self::GUARD)->first();
 
         $superAdminUser = User::updateOrCreate(
             ['email' => 'admin@example.com'],
@@ -347,25 +331,6 @@ class PermissionSeeder extends Seeder
 
         if ($superAdmin) {
             $superAdminUser->syncRoles([$superAdmin]);
-        }
-
-        $basicUser = User::updateOrCreate(
-            ['email' => 'basic@example.com'],
-            [
-                'name' => 'basic',
-                'user_name' => 'basic',
-                'password' => 'quandcore**11',
-                'status' => StatusEnum::Active->value,
-                'email_verified_at' => now(),
-            ]
-        );
-        $basicUser->forceFill([
-            'created_by' => $superAdminUser->id,
-            'updated_by' => $superAdminUser->id,
-        ])->save();
-
-        if ($sampleRole) {
-            $basicUser->syncRoles([$sampleRole]);
         }
 
         // TaskAssignment test users
@@ -412,34 +377,6 @@ class PermissionSeeder extends Seeder
         return $names;
     }
 
-    /** Permission cho role Editor: chỉ posts và post-categories. */
-    protected function getEditorPermissionNames(): array
-    {
-        $names = [];
-        foreach (['posts' => self::$PERMISSIONS['posts'], 'post-categories' => self::$PERMISSIONS['post-categories']] as $resource => $actions) {
-            foreach ($actions as $action) {
-                $names[] = "{$resource}.{$action}";
-            }
-        }
-
-        return $names;
-    }
-
-    /** Permission cho Vai trò mẫu: chỉ xem bài viết và danh mục (index, show, tree, stats, incrementView). */
-    protected function getSamplePermissionNames(): array
-    {
-        return [
-            'posts.stats',
-            'posts.index',
-            'posts.show',
-            'posts.incrementView',
-            'post-categories.stats',
-            'post-categories.index',
-            'post-categories.tree',
-            'post-categories.show',
-        ];
-    }
-
     /** Permission cho Quản trị: full danh mục + xem/thống kê/export văn bản, công việc, báo cáo. */
     protected function getQuanTriPermissionNames(): array
     {
@@ -457,6 +394,11 @@ class PermissionSeeder extends Seeder
             foreach (['stats', 'index', 'show', 'export'] as $action) {
                 $names[] = "{$resource}.{$action}";
             }
+        }
+
+        // Thống kê nâng cao (giai đoạn 2)
+        foreach (['statsByDepartment', 'statsByUser', 'statsByTime', 'overdue', 'upcomingDeadline'] as $action) {
+            $names[] = "task-assignment-items.{$action}";
         }
 
         // Xem báo cáo
@@ -487,6 +429,13 @@ class PermissionSeeder extends Seeder
             'task-assignment-items.changeStatus',
             'task-assignment-items.updateProgress',
 
+            // Thống kê nâng cao (giai đoạn 2) - BE ép department_id phòng mình
+            'task-assignment-items.statsByDepartment',
+            'task-assignment-items.statsByUser',
+            'task-assignment-items.statsByTime',
+            'task-assignment-items.overdue',
+            'task-assignment-items.upcomingDeadline',
+
             // Báo cáo
             'task-assignment-item-reports.index',
             'task-assignment-item-reports.show',
@@ -505,6 +454,10 @@ class PermissionSeeder extends Seeder
             'task-assignment-items.index',
             'task-assignment-items.show',
             'task-assignment-items.updateProgress',
+
+            // Quá hạn + sắp đến hạn (giai đoạn 2) - BE ép department_id phòng mình
+            'task-assignment-items.overdue',
+            'task-assignment-items.upcomingDeadline',
 
             // Báo cáo (tạo, sửa, xem)
             'task-assignment-item-reports.index',
