@@ -4,12 +4,15 @@ namespace App\Modules\Core\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
 /**
  * Model Setting – cấu hình hệ thống dạng key-value.
  */
-class Setting extends Model
+class Setting extends Model implements HasMedia
 {
+    use InteractsWithMedia;
     protected $table = 'settings';
 
     protected $fillable = [
@@ -94,6 +97,7 @@ class Setting extends Model
             'integer' => (int) $value,
             'boolean' => filter_var($value, FILTER_VALIDATE_BOOLEAN),
             'json' => json_decode($value, true),
+            'image' => $value,
             default => $value,
         };
     }

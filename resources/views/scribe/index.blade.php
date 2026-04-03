@@ -360,6 +360,21 @@
                                                                                 <li class="tocify-item level-2" data-unique="taskassignment-cong-viec-GETapi-task-assignment-items-stats">
                                 <a href="#taskassignment-cong-viec-GETapi-task-assignment-items-stats">Thống kê công việc</a>
                             </li>
+                                                                                <li class="tocify-item level-2" data-unique="taskassignment-cong-viec-GETapi-task-assignment-items-stats-by-department">
+                                <a href="#taskassignment-cong-viec-GETapi-task-assignment-items-stats-by-department">Thống kê công việc theo phòng ban</a>
+                            </li>
+                                                                                <li class="tocify-item level-2" data-unique="taskassignment-cong-viec-GETapi-task-assignment-items-stats-by-user">
+                                <a href="#taskassignment-cong-viec-GETapi-task-assignment-items-stats-by-user">Thống kê công việc theo người dùng</a>
+                            </li>
+                                                                                <li class="tocify-item level-2" data-unique="taskassignment-cong-viec-GETapi-task-assignment-items-stats-by-time">
+                                <a href="#taskassignment-cong-viec-GETapi-task-assignment-items-stats-by-time">Thống kê công việc theo thời gian (tháng)</a>
+                            </li>
+                                                                                <li class="tocify-item level-2" data-unique="taskassignment-cong-viec-GETapi-task-assignment-items-overdue">
+                                <a href="#taskassignment-cong-viec-GETapi-task-assignment-items-overdue">Danh sách công việc quá hạn</a>
+                            </li>
+                                                                                <li class="tocify-item level-2" data-unique="taskassignment-cong-viec-GETapi-task-assignment-items-upcoming-deadline">
+                                <a href="#taskassignment-cong-viec-GETapi-task-assignment-items-upcoming-deadline">Danh sách công việc sắp đến hạn</a>
+                            </li>
                                                                                 <li class="tocify-item level-2" data-unique="taskassignment-cong-viec-GETapi-task-assignment-items">
                                 <a href="#taskassignment-cong-viec-GETapi-task-assignment-items">Danh sách công việc</a>
                             </li>
@@ -585,7 +600,7 @@
     </ul>
 
     <ul class="toc-footer" id="last-updated">
-        <li>Last updated: April 2, 2026</li>
+        <li>Last updated: April 3, 2026</li>
     </ul>
 </div>
 
@@ -3012,7 +3027,7 @@ print_r(json_decode((string) $body));</code></pre></div>
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: [
         {
-            &quot;id&quot;: 1,
+            &quot;id&quot;: 307,
             &quot;description&quot;: &quot;Et animi quos velit et fugiat.&quot;,
             &quot;user_type&quot;: &quot;User&quot;,
             &quot;user_id&quot;: null,
@@ -3023,15 +3038,15 @@ print_r(json_decode((string) $body));</code></pre></div>
             &quot;status_code&quot;: 404,
             &quot;ip_address&quot;: &quot;125.161.29.220&quot;,
             &quot;country&quot;: &quot;Pakistan&quot;,
-            &quot;user_agent&quot;: &quot;Mozilla/5.0 (Windows NT 5.0; en-US; rv:1.9.2.20) Gecko/20250929 Firefox/35.0&quot;,
+            &quot;user_agent&quot;: &quot;Mozilla/5.0 (Windows NT 5.0; en-US; rv:1.9.2.20) Gecko/20250927 Firefox/35.0&quot;,
             &quot;request_data&quot;: {
                 &quot;sample&quot;: &quot;et&quot;
             },
-            &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;
         },
         {
-            &quot;id&quot;: 2,
+            &quot;id&quot;: 308,
             &quot;description&quot;: &quot;Aut dolores enim non facere tempora ex voluptatem.&quot;,
             &quot;user_type&quot;: &quot;User&quot;,
             &quot;user_id&quot;: null,
@@ -3046,8 +3061,8 @@ print_r(json_decode((string) $body));</code></pre></div>
             &quot;request_data&quot;: {
                 &quot;sample&quot;: &quot;accusamus&quot;
             },
-            &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;
         }
     ],
     &quot;links&quot;: {
@@ -3309,7 +3324,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request GET \
-    --get "http://localhost/api/log-activities/16" \
+    --get "http://localhost/api/log-activities/7" \
     --header "Authorization: Bearer Bearer {YOUR_ACCESS_TOKEN}" \
     --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
     --header "Content-Type: application/json" \
@@ -3318,7 +3333,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/log-activities/16"
+    "http://localhost/api/log-activities/7"
 );
 
 const headers = {
@@ -3337,7 +3352,7 @@ fetch(url, {
 
 <div class="php-example">
     <pre><code class="language-php">$client = new \GuzzleHttp\Client();
-$url = 'http://localhost/api/log-activities/16';
+$url = 'http://localhost/api/log-activities/7';
 $response = $client-&gt;get(
     $url,
     [
@@ -3362,12 +3377,12 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 3,
+        &quot;id&quot;: 309,
         &quot;description&quot;: &quot;Adipisci quidem nostrum qui commodi incidunt iure.&quot;,
         &quot;user_type&quot;: &quot;User&quot;,
-        &quot;user_id&quot;: 23,
+        &quot;user_id&quot;: 39,
         &quot;user_name&quot;: &quot;Bridget Schaden&quot;,
-        &quot;organization_id&quot;: 22,
+        &quot;organization_id&quot;: 64,
         &quot;route&quot;: &quot;https://mclaughlin.com/ipsum-nostrum-omnis-autem-et-consequatur-aut-dolores-enim.html&quot;,
         &quot;method_type&quot;: &quot;POST&quot;,
         &quot;status_code&quot;: 401,
@@ -3377,8 +3392,8 @@ print_r(json_decode((string) $body));</code></pre></div>
         &quot;request_data&quot;: {
             &quot;sample&quot;: &quot;veniam&quot;
         },
-        &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;
 }</code>
@@ -3487,10 +3502,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="logActivity_id"                data-endpoint="GETapi-log-activities--logActivity_id-"
-               value="16"
+               value="7"
                data-component="url">
     <br>
-<p>The ID of the logActivity. Example: <code>16</code></p>
+<p>The ID of the logActivity. Example: <code>7</code></p>
             </div>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>logActivity</code></b>&nbsp;&nbsp;
@@ -3520,7 +3535,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request DELETE \
-    "http://localhost/api/log-activities/16" \
+    "http://localhost/api/log-activities/7" \
     --header "Authorization: Bearer Bearer {YOUR_ACCESS_TOKEN}" \
     --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
     --header "Content-Type: application/json" \
@@ -3529,7 +3544,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/log-activities/16"
+    "http://localhost/api/log-activities/7"
 );
 
 const headers = {
@@ -3548,7 +3563,7 @@ fetch(url, {
 
 <div class="php-example">
     <pre><code class="language-php">$client = new \GuzzleHttp\Client();
-$url = 'http://localhost/api/log-activities/16';
+$url = 'http://localhost/api/log-activities/7';
 $response = $client-&gt;delete(
     $url,
     [
@@ -3680,10 +3695,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="logActivity_id"                data-endpoint="DELETEapi-log-activities--logActivity_id-"
-               value="16"
+               value="7"
                data-component="url">
     <br>
-<p>The ID of the logActivity. Example: <code>16</code></p>
+<p>The ID of the logActivity. Example: <code>7</code></p>
             </div>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>logActivity</code></b>&nbsp;&nbsp;
@@ -3788,32 +3803,32 @@ print_r(json_decode((string) $body));</code></pre></div>
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: [
         {
-            &quot;id&quot;: 2,
-            &quot;name&quot;: &quot;Bailey Inc&quot;,
-            &quot;slug&quot;: &quot;quos-velit-et-fugiat-sunt-nihil-accusantium-harum&quot;,
-            &quot;description&quot;: null,
-            &quot;status&quot;: &quot;active&quot;,
+            &quot;id&quot;: 44,
+            &quot;name&quot;: &quot;Wehner LLC&quot;,
+            &quot;slug&quot;: &quot;fugit-soluta-corporis-delectus-dolorem-et-rerum&quot;,
+            &quot;description&quot;: &quot;Debitis magnam et ea molestias.&quot;,
+            &quot;status&quot;: &quot;inactive&quot;,
             &quot;parent_id&quot;: null,
-            &quot;sort_order&quot;: 7,
+            &quot;sort_order&quot;: 57,
             &quot;depth&quot;: 0,
             &quot;created_by&quot;: &quot;N/A&quot;,
             &quot;updated_by&quot;: &quot;N/A&quot;,
-            &quot;created_at&quot;: &quot;14:10:47 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:47 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:37 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:37 03/04/2026&quot;
         },
         {
-            &quot;id&quot;: 3,
-            &quot;name&quot;: &quot;DuBuque Inc&quot;,
-            &quot;slug&quot;: &quot;quo-omnis-nostrum-aut-adipisci&quot;,
-            &quot;description&quot;: &quot;Qui commodi incidunt iure odit.&quot;,
-            &quot;status&quot;: &quot;active&quot;,
+            &quot;id&quot;: 45,
+            &quot;name&quot;: &quot;Ward-Paucek&quot;,
+            &quot;slug&quot;: &quot;vero-sit-repellendus-ipsam&quot;,
+            &quot;description&quot;: null,
+            &quot;status&quot;: &quot;inactive&quot;,
             &quot;parent_id&quot;: null,
-            &quot;sort_order&quot;: 20,
+            &quot;sort_order&quot;: 41,
             &quot;depth&quot;: 0,
             &quot;created_by&quot;: &quot;N/A&quot;,
             &quot;updated_by&quot;: &quot;N/A&quot;,
-            &quot;created_at&quot;: &quot;14:10:47 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:47 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:37 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:37 03/04/2026&quot;
         }
     ],
     &quot;success&quot;: &quot;true&quot;
@@ -4077,14 +4092,14 @@ print_r(json_decode((string) $body));</code></pre></div>
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: [
         {
-            &quot;id&quot;: 4,
-            &quot;name&quot;: &quot;Okuneva, Rempel and Gulgowski&quot;,
+            &quot;id&quot;: 46,
+            &quot;name&quot;: &quot;Bailey Inc&quot;,
             &quot;description&quot;: null
         },
         {
-            &quot;id&quot;: 5,
-            &quot;name&quot;: &quot;Cormier Inc&quot;,
-            &quot;description&quot;: &quot;Odit et et modi.&quot;
+            &quot;id&quot;: 47,
+            &quot;name&quot;: &quot;DuBuque Inc&quot;,
+            &quot;description&quot;: &quot;Qui commodi incidunt iure odit.&quot;
         }
     ],
     &quot;success&quot;: &quot;true&quot;
@@ -4562,7 +4577,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
     --header "Content-Type: multipart/form-data" \
     --header "Accept: application/json" \
-    --form "file=@C:\Users\tuanl\AppData\Local\Temp\php5C8E.tmp" </code></pre></div>
+    --form "file=@/tmp/php32sapo62u0csfNID0PS" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -4602,7 +4617,7 @@ $response = $client-&gt;post(
         'multipart' =&gt; [
             [
                 'name' =&gt; 'file',
-                'contents' =&gt; fopen('C:\Users\tuanl\AppData\Local\Temp\php5C8E.tmp', 'r')
+                'contents' =&gt; fopen('/tmp/php32sapo62u0csfNID0PS', 'r')
             ],
         ],
     ]
@@ -4730,7 +4745,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>File Excel (xlsx, xls, csv). Cột theo chuẩn export. Example: <code>C:\Users\tuanl\AppData\Local\Temp\php5C8E.tmp</code></p>
+<p>File Excel (xlsx, xls, csv). Cột theo chuẩn export. Example: <code>/tmp/php32sapo62u0csfNID0PS</code></p>
         </div>
         </form>
 
@@ -5727,7 +5742,7 @@ print_r(json_decode((string) $body));</code></pre></div>
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: [
         {
-            &quot;id&quot;: 7,
+            &quot;id&quot;: 49,
             &quot;name&quot;: &quot;Bailey Ltd&quot;,
             &quot;slug&quot;: &quot;velit-et-fugiat-sunt-nihil-accusantium&quot;,
             &quot;description&quot;: &quot;Modi deserunt aut ab provident perspiciatis.&quot;,
@@ -5737,11 +5752,11 @@ print_r(json_decode((string) $body));</code></pre></div>
             &quot;depth&quot;: 0,
             &quot;created_by&quot;: &quot;N/A&quot;,
             &quot;updated_by&quot;: &quot;N/A&quot;,
-            &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;
         },
         {
-            &quot;id&quot;: 8,
+            &quot;id&quot;: 50,
             &quot;name&quot;: &quot;Marquardt Inc&quot;,
             &quot;slug&quot;: &quot;nostrum-qui-commodi-incidunt-iure&quot;,
             &quot;description&quot;: null,
@@ -5751,8 +5766,8 @@ print_r(json_decode((string) $body));</code></pre></div>
             &quot;depth&quot;: 0,
             &quot;created_by&quot;: &quot;N/A&quot;,
             &quot;updated_by&quot;: &quot;N/A&quot;,
-            &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;
         }
     ],
     &quot;links&quot;: {
@@ -6043,20 +6058,20 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 10,
+        &quot;id&quot;: 52,
         &quot;name&quot;: &quot;Price Ltd&quot;,
         &quot;slug&quot;: &quot;qui-commodi-incidunt-iure-odit&quot;,
         &quot;description&quot;: &quot;Modi ipsum nostrum omnis autem et.&quot;,
         &quot;status&quot;: &quot;inactive&quot;,
-        &quot;parent_id&quot;: 9,
+        &quot;parent_id&quot;: 51,
         &quot;sort_order&quot;: 84,
         &quot;depth&quot;: 1,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;,
+        &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;,
         &quot;parent&quot;: {
-            &quot;id&quot;: 9,
+            &quot;id&quot;: 51,
             &quot;name&quot;: &quot;Stokes and Sons&quot;,
             &quot;slug&quot;: &quot;tempora-ex-voluptatem-laboriosam-praesentium-quis&quot;,
             &quot;description&quot;: &quot;Fugit deleniti distinctio eum doloremque id aut libero.&quot;,
@@ -6066,23 +6081,23 @@ print_r(json_decode((string) $body));</code></pre></div>
             &quot;depth&quot;: 0,
             &quot;created_by&quot;: &quot;N/A&quot;,
             &quot;updated_by&quot;: &quot;N/A&quot;,
-            &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;
         },
         &quot;children&quot;: [
             {
-                &quot;id&quot;: 11,
+                &quot;id&quot;: 53,
                 &quot;name&quot;: &quot;Kutch and Sons&quot;,
                 &quot;slug&quot;: &quot;nemo-odit-quia-officia-est-dignissimos&quot;,
                 &quot;description&quot;: null,
                 &quot;status&quot;: &quot;inactive&quot;,
-                &quot;parent_id&quot;: 10,
+                &quot;parent_id&quot;: 52,
                 &quot;sort_order&quot;: 6,
                 &quot;depth&quot;: 2,
                 &quot;created_by&quot;: &quot;N/A&quot;,
                 &quot;updated_by&quot;: &quot;N/A&quot;,
-                &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-                &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+                &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+                &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;
             }
         ]
     },
@@ -6305,7 +6320,7 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 12,
+        &quot;id&quot;: 54,
         &quot;name&quot;: &quot;Dach-Gaylord&quot;,
         &quot;slug&quot;: &quot;mollitia-modi-deserunt-aut-ab-provident-perspiciatis-quo&quot;,
         &quot;description&quot;: null,
@@ -6315,8 +6330,8 @@ print_r(json_decode((string) $body));</code></pre></div>
         &quot;depth&quot;: 0,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;Organization đ&atilde; được tạo th&agrave;nh c&ocirc;ng!&quot;
@@ -6586,20 +6601,20 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 14,
+        &quot;id&quot;: 56,
         &quot;name&quot;: &quot;Tillman-Runte&quot;,
         &quot;slug&quot;: &quot;aut-ab-provident-perspiciatis-quo-omnis-nostrum-aut&quot;,
         &quot;description&quot;: &quot;Nostrum qui commodi incidunt iure.&quot;,
         &quot;status&quot;: &quot;inactive&quot;,
-        &quot;parent_id&quot;: 13,
+        &quot;parent_id&quot;: 55,
         &quot;sort_order&quot;: 45,
         &quot;depth&quot;: 1,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;,
+        &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;,
         &quot;parent&quot;: {
-            &quot;id&quot;: 13,
+            &quot;id&quot;: 55,
             &quot;name&quot;: &quot;Bauch, Fritsch and O&#039;Keefe&quot;,
             &quot;slug&quot;: &quot;autem-et-consequatur-aut-dolores-enim-non-facere-tempora&quot;,
             &quot;description&quot;: &quot;Laboriosam praesentium quis adipisci molestias fugit deleniti distinctio.&quot;,
@@ -6609,23 +6624,23 @@ print_r(json_decode((string) $body));</code></pre></div>
             &quot;depth&quot;: 0,
             &quot;created_by&quot;: &quot;N/A&quot;,
             &quot;updated_by&quot;: &quot;N/A&quot;,
-            &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;
         },
         &quot;children&quot;: [
             {
-                &quot;id&quot;: 15,
+                &quot;id&quot;: 57,
                 &quot;name&quot;: &quot;Ankunding PLC&quot;,
                 &quot;slug&quot;: &quot;veniam-corporis-dolorem-mollitia&quot;,
                 &quot;description&quot;: &quot;Odit quia officia est dignissimos neque blanditiis odio.&quot;,
                 &quot;status&quot;: &quot;inactive&quot;,
-                &quot;parent_id&quot;: 14,
+                &quot;parent_id&quot;: 56,
                 &quot;sort_order&quot;: 16,
                 &quot;depth&quot;: 2,
                 &quot;created_by&quot;: &quot;N/A&quot;,
                 &quot;updated_by&quot;: &quot;N/A&quot;,
-                &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-                &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+                &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+                &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;
             }
         ]
     },
@@ -6922,20 +6937,20 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 17,
+        &quot;id&quot;: 59,
         &quot;name&quot;: &quot;Schuster Inc&quot;,
         &quot;slug&quot;: &quot;perspiciatis-quo-omnis-nostrum-aut-adipisci-quidem-nostrum-qui&quot;,
         &quot;description&quot;: &quot;Iure odit et et modi ipsum nostrum omnis.&quot;,
         &quot;status&quot;: &quot;active&quot;,
-        &quot;parent_id&quot;: 16,
+        &quot;parent_id&quot;: 58,
         &quot;sort_order&quot;: 54,
         &quot;depth&quot;: 1,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;,
+        &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;,
         &quot;parent&quot;: {
-            &quot;id&quot;: 16,
+            &quot;id&quot;: 58,
             &quot;name&quot;: &quot;Tromp-Leffler&quot;,
             &quot;slug&quot;: &quot;non-facere-tempora-ex-voluptatem-laboriosam-praesentium&quot;,
             &quot;description&quot;: &quot;Molestias fugit deleniti distinctio eum doloremque id.&quot;,
@@ -6945,23 +6960,23 @@ print_r(json_decode((string) $body));</code></pre></div>
             &quot;depth&quot;: 0,
             &quot;created_by&quot;: &quot;N/A&quot;,
             &quot;updated_by&quot;: &quot;N/A&quot;,
-            &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;
         },
         &quot;children&quot;: [
             {
-                &quot;id&quot;: 18,
+                &quot;id&quot;: 60,
                 &quot;name&quot;: &quot;Batz Inc&quot;,
                 &quot;slug&quot;: &quot;mollitia-deleniti-nemo-odit-quia-officia&quot;,
                 &quot;description&quot;: &quot;Neque blanditiis odio veritatis excepturi doloribus delectus.&quot;,
                 &quot;status&quot;: &quot;inactive&quot;,
-                &quot;parent_id&quot;: 17,
+                &quot;parent_id&quot;: 59,
                 &quot;sort_order&quot;: 22,
                 &quot;depth&quot;: 2,
                 &quot;created_by&quot;: &quot;N/A&quot;,
                 &quot;updated_by&quot;: &quot;N/A&quot;,
-                &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-                &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+                &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+                &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;
             }
         ]
     },
@@ -7436,20 +7451,20 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 20,
+        &quot;id&quot;: 62,
         &quot;name&quot;: &quot;Baumbach Ltd&quot;,
         &quot;slug&quot;: &quot;et-modi-ipsum-nostrum-omnis-autem-et-consequatur&quot;,
         &quot;description&quot;: null,
         &quot;status&quot;: &quot;inactive&quot;,
-        &quot;parent_id&quot;: 19,
+        &quot;parent_id&quot;: 61,
         &quot;sort_order&quot;: 62,
         &quot;depth&quot;: 1,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;,
+        &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;,
         &quot;parent&quot;: {
-            &quot;id&quot;: 19,
+            &quot;id&quot;: 61,
             &quot;name&quot;: &quot;VonRueden-Leuschke&quot;,
             &quot;slug&quot;: &quot;voluptatem-laboriosam-praesentium-quis-adipisci&quot;,
             &quot;description&quot;: null,
@@ -7459,23 +7474,23 @@ print_r(json_decode((string) $body));</code></pre></div>
             &quot;depth&quot;: 0,
             &quot;created_by&quot;: &quot;N/A&quot;,
             &quot;updated_by&quot;: &quot;N/A&quot;,
-            &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;
         },
         &quot;children&quot;: [
             {
-                &quot;id&quot;: 21,
+                &quot;id&quot;: 63,
                 &quot;name&quot;: &quot;Gaylord, Hettinger and Nitzsche&quot;,
                 &quot;slug&quot;: &quot;libero-aliquam-veniam-corporis-dolorem-mollitia-deleniti&quot;,
                 &quot;description&quot;: &quot;Quia officia est dignissimos neque.&quot;,
                 &quot;status&quot;: &quot;inactive&quot;,
-                &quot;parent_id&quot;: 20,
+                &quot;parent_id&quot;: 62,
                 &quot;sort_order&quot;: 6,
                 &quot;depth&quot;: 2,
                 &quot;created_by&quot;: &quot;N/A&quot;,
                 &quot;updated_by&quot;: &quot;N/A&quot;,
-                &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-                &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+                &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+                &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;
             }
         ]
     },
@@ -7922,7 +7937,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
     --header "Content-Type: multipart/form-data" \
     --header "Accept: application/json" \
-    --form "file=@C:\Users\tuanl\AppData\Local\Temp\php5AC3.tmp" </code></pre></div>
+    --form "file=@/tmp/phpoaevt216oa4h2RP1a4S" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -7962,7 +7977,7 @@ $response = $client-&gt;post(
         'multipart' =&gt; [
             [
                 'name' =&gt; 'file',
-                'contents' =&gt; fopen('C:\Users\tuanl\AppData\Local\Temp\php5AC3.tmp', 'r')
+                'contents' =&gt; fopen('/tmp/phpoaevt216oa4h2RP1a4S', 'r')
             ],
         ],
     ]
@@ -8090,7 +8105,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>File Excel (xlsx, xls, csv). Cột theo chuẩn export. Example: <code>C:\Users\tuanl\AppData\Local\Temp\php5AC3.tmp</code></p>
+<p>File Excel (xlsx, xls, csv). Cột theo chuẩn export. Example: <code>/tmp/phpoaevt216oa4h2RP1a4S</code></p>
         </div>
         </form>
 
@@ -8865,24 +8880,24 @@ print_r(json_decode((string) $body));</code></pre></div>
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: [
         {
-            &quot;id&quot;: 225,
+            &quot;id&quot;: 254,
             &quot;name&quot;: &quot;users.update.4027&quot;,
             &quot;guard_name&quot;: &quot;web&quot;,
             &quot;description&quot;: null,
             &quot;sort_order&quot;: 95,
             &quot;parent_id&quot;: null,
-            &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;
         },
         {
-            &quot;id&quot;: 226,
+            &quot;id&quot;: 255,
             &quot;name&quot;: &quot;documents.index.6955&quot;,
             &quot;guard_name&quot;: &quot;web&quot;,
             &quot;description&quot;: null,
             &quot;sort_order&quot;: 39,
             &quot;parent_id&quot;: null,
-            &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;
         }
     ],
     &quot;links&quot;: {
@@ -9173,30 +9188,30 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 228,
+        &quot;id&quot;: 257,
         &quot;name&quot;: &quot;users.index.4524&quot;,
         &quot;guard_name&quot;: &quot;web&quot;,
         &quot;description&quot;: &quot;Commodi incidunt iure odit.&quot;,
         &quot;sort_order&quot;: 45,
-        &quot;parent_id&quot;: 227,
+        &quot;parent_id&quot;: 256,
         &quot;parent&quot;: {
-            &quot;id&quot;: 227,
+            &quot;id&quot;: 256,
             &quot;name&quot;: &quot;documents.show.967&quot;
         },
         &quot;children&quot;: [
             {
-                &quot;id&quot;: 229,
+                &quot;id&quot;: 258,
                 &quot;name&quot;: &quot;roles.destroy.1904&quot;,
                 &quot;guard_name&quot;: &quot;web&quot;,
                 &quot;description&quot;: null,
                 &quot;sort_order&quot;: 93,
-                &quot;parent_id&quot;: 228,
-                &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-                &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+                &quot;parent_id&quot;: 257,
+                &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+                &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;
             }
         ],
-        &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;
 }</code>
@@ -9414,14 +9429,14 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 230,
+        &quot;id&quot;: 259,
         &quot;name&quot;: &quot;roles.index.660&quot;,
         &quot;guard_name&quot;: &quot;web&quot;,
         &quot;description&quot;: &quot;Et fugiat sunt nihil accusantium.&quot;,
         &quot;sort_order&quot;: 91,
         &quot;parent_id&quot;: null,
-        &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;Quyền đ&atilde; được tạo th&agrave;nh c&ocirc;ng!&quot;
@@ -9676,14 +9691,14 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 231,
+        &quot;id&quot;: 260,
         &quot;name&quot;: &quot;roles.index.4338&quot;,
         &quot;guard_name&quot;: &quot;web&quot;,
         &quot;description&quot;: null,
         &quot;sort_order&quot;: 7,
         &quot;parent_id&quot;: null,
-        &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;Quyền đ&atilde; được cập nhật!&quot;
@@ -9963,14 +9978,14 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 232,
+        &quot;id&quot;: 261,
         &quot;name&quot;: &quot;roles.index.3491&quot;,
         &quot;guard_name&quot;: &quot;web&quot;,
         &quot;description&quot;: &quot;Sunt nihil accusantium harum mollitia.&quot;,
         &quot;sort_order&quot;: 86,
         &quot;parent_id&quot;: null,
-        &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;Quyền đ&atilde; được cập nhật!&quot;
@@ -10656,7 +10671,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
     --header "Content-Type: multipart/form-data" \
     --header "Accept: application/json" \
-    --form "file=@C:\Users\tuanl\AppData\Local\Temp\php5BD0.tmp" </code></pre></div>
+    --form "file=@/tmp/php1dcdccb9sde41urry5p" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -10696,7 +10711,7 @@ $response = $client-&gt;post(
         'multipart' =&gt; [
             [
                 'name' =&gt; 'file',
-                'contents' =&gt; fopen('C:\Users\tuanl\AppData\Local\Temp\php5BD0.tmp', 'r')
+                'contents' =&gt; fopen('/tmp/php1dcdccb9sde41urry5p', 'r')
             ],
         ],
     ]
@@ -10824,7 +10839,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>File Excel (xlsx, xls, csv). Cột theo chuẩn export. Example: <code>C:\Users\tuanl\AppData\Local\Temp\php5BD0.tmp</code></p>
+<p>File Excel (xlsx, xls, csv). Cột theo chuẩn export. Example: <code>/tmp/php1dcdccb9sde41urry5p</code></p>
         </div>
         </form>
 
@@ -11399,20 +11414,20 @@ print_r(json_decode((string) $body));</code></pre></div>
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: [
         {
-            &quot;id&quot;: 8,
+            &quot;id&quot;: 20,
             &quot;name&quot;: &quot;role_ng775&quot;,
             &quot;guard_name&quot;: &quot;web&quot;,
             &quot;organization_id&quot;: null,
-            &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;
         },
         {
-            &quot;id&quot;: 9,
-            &quot;name&quot;: &quot;role_lc464&quot;,
+            &quot;id&quot;: 21,
+            &quot;name&quot;: &quot;role_mi365&quot;,
             &quot;guard_name&quot;: &quot;web&quot;,
             &quot;organization_id&quot;: null,
-            &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;
         }
     ],
     &quot;links&quot;: {
@@ -11703,19 +11718,19 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 10,
+        &quot;id&quot;: 22,
         &quot;name&quot;: &quot;role_wp680&quot;,
         &quot;guard_name&quot;: &quot;web&quot;,
-        &quot;organization_id&quot;: 6,
+        &quot;organization_id&quot;: 48,
         &quot;organization&quot;: {
-            &quot;id&quot;: 6,
+            &quot;id&quot;: 48,
             &quot;name&quot;: &quot;Dare Group&quot;
         },
         &quot;permissions&quot;: [
             &quot;organizations.index.7602&quot;
         ],
-        &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;
 }</code>
@@ -11939,15 +11954,15 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 11,
+        &quot;id&quot;: 23,
         &quot;name&quot;: &quot;role_zm806&quot;,
         &quot;guard_name&quot;: &quot;web&quot;,
         &quot;organization_id&quot;: null,
         &quot;permissions&quot;: [
             &quot;documents.index.5606&quot;
         ],
-        &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;Vai tr&ograve; đ&atilde; được tạo th&agrave;nh c&ocirc;ng!&quot;
@@ -12183,15 +12198,15 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 12,
+        &quot;id&quot;: 24,
         &quot;name&quot;: &quot;role_yv564&quot;,
         &quot;guard_name&quot;: &quot;web&quot;,
         &quot;organization_id&quot;: null,
         &quot;permissions&quot;: [
             &quot;users.update.3433&quot;
         ],
-        &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;Vai tr&ograve; đ&atilde; được cập nhật!&quot;
@@ -12452,15 +12467,15 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 13,
+        &quot;id&quot;: 25,
         &quot;name&quot;: &quot;role_lj575&quot;,
         &quot;guard_name&quot;: &quot;web&quot;,
         &quot;organization_id&quot;: null,
         &quot;permissions&quot;: [
             &quot;roles.destroy.6854&quot;
         ],
-        &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:38 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:38 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;Vai tr&ograve; đ&atilde; được cập nhật!&quot;
@@ -13850,7 +13865,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
     --header "Content-Type: multipart/form-data" \
     --header "Accept: application/json" \
-    --form "file=@C:\Users\tuanl\AppData\Local\Temp\php58CC.tmp" </code></pre></div>
+    --form "file=@/tmp/phpvrb6i4296u19fPBeh7h" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -13890,7 +13905,7 @@ $response = $client-&gt;post(
         'multipart' =&gt; [
             [
                 'name' =&gt; 'file',
-                'contents' =&gt; fopen('C:\Users\tuanl\AppData\Local\Temp\php58CC.tmp', 'r')
+                'contents' =&gt; fopen('/tmp/phpvrb6i4296u19fPBeh7h', 'r')
             ],
         ],
     ]
@@ -14018,7 +14033,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>File Excel (xlsx, xls, csv). Cột theo chuẩn export. Example: <code>C:\Users\tuanl\AppData\Local\Temp\php58CC.tmp</code></p>
+<p>File Excel (xlsx, xls, csv). Cột theo chuẩn export. Example: <code>/tmp/phpvrb6i4296u19fPBeh7h</code></p>
         </div>
         </form>
 
@@ -14816,7 +14831,7 @@ print_r(json_decode((string) $body));</code></pre></div>
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: [
         {
-            &quot;id&quot;: 16,
+            &quot;id&quot;: 32,
             &quot;name&quot;: &quot;Ms. Elisabeth Okuneva&quot;,
             &quot;email&quot;: &quot;gulgowski.asia@example.com&quot;,
             &quot;user_name&quot;: &quot;idickens&quot;,
@@ -14824,11 +14839,11 @@ print_r(json_decode((string) $body));</code></pre></div>
             &quot;created_by&quot;: &quot;N/A&quot;,
             &quot;updated_by&quot;: &quot;N/A&quot;,
             &quot;assignments&quot;: [],
-            &quot;created_at&quot;: &quot;02/04/2026 14:10:47&quot;,
-            &quot;updated_at&quot;: &quot;02/04/2026 14:10:47&quot;
+            &quot;created_at&quot;: &quot;03/04/2026 01:16:38&quot;,
+            &quot;updated_at&quot;: &quot;03/04/2026 01:16:38&quot;
         },
         {
-            &quot;id&quot;: 17,
+            &quot;id&quot;: 33,
             &quot;name&quot;: &quot;Mya DuBuque&quot;,
             &quot;email&quot;: &quot;breitenberg.gilbert@example.com&quot;,
             &quot;user_name&quot;: &quot;price.amber&quot;,
@@ -14836,8 +14851,8 @@ print_r(json_decode((string) $body));</code></pre></div>
             &quot;created_by&quot;: &quot;N/A&quot;,
             &quot;updated_by&quot;: &quot;N/A&quot;,
             &quot;assignments&quot;: [],
-            &quot;created_at&quot;: &quot;02/04/2026 14:10:47&quot;,
-            &quot;updated_at&quot;: &quot;02/04/2026 14:10:47&quot;
+            &quot;created_at&quot;: &quot;03/04/2026 01:16:38&quot;,
+            &quot;updated_at&quot;: &quot;03/04/2026 01:16:38&quot;
         }
     ],
     &quot;links&quot;: {
@@ -15128,7 +15143,7 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 18,
+        &quot;id&quot;: 34,
         &quot;name&quot;: &quot;Morgan Hirthe&quot;,
         &quot;email&quot;: &quot;dare.emelie@example.com&quot;,
         &quot;user_name&quot;: &quot;imclaughlin&quot;,
@@ -15136,8 +15151,8 @@ print_r(json_decode((string) $body));</code></pre></div>
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
         &quot;assignments&quot;: [],
-        &quot;created_at&quot;: &quot;02/04/2026 14:10:47&quot;,
-        &quot;updated_at&quot;: &quot;02/04/2026 14:10:47&quot;
+        &quot;created_at&quot;: &quot;03/04/2026 01:16:38&quot;,
+        &quot;updated_at&quot;: &quot;03/04/2026 01:16:38&quot;
     },
     &quot;success&quot;: &quot;true&quot;
 }</code>
@@ -15367,7 +15382,7 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 19,
+        &quot;id&quot;: 35,
         &quot;name&quot;: &quot;Ms. Elisabeth Okuneva&quot;,
         &quot;email&quot;: &quot;idickens@example.org&quot;,
         &quot;user_name&quot;: &quot;aschuster&quot;,
@@ -15375,8 +15390,8 @@ print_r(json_decode((string) $body));</code></pre></div>
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
         &quot;assignments&quot;: [],
-        &quot;created_at&quot;: &quot;02/04/2026 14:10:47&quot;,
-        &quot;updated_at&quot;: &quot;02/04/2026 14:10:47&quot;
+        &quot;created_at&quot;: &quot;03/04/2026 01:16:38&quot;,
+        &quot;updated_at&quot;: &quot;03/04/2026 01:16:38&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;T&agrave;i khoản đ&atilde; được tạo th&agrave;nh c&ocirc;ng!&quot;
@@ -15693,7 +15708,7 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 20,
+        &quot;id&quot;: 36,
         &quot;name&quot;: &quot;Ms. Elisabeth Okuneva&quot;,
         &quot;email&quot;: &quot;aschuster@example.com&quot;,
         &quot;user_name&quot;: &quot;gilbert32&quot;,
@@ -15701,8 +15716,8 @@ print_r(json_decode((string) $body));</code></pre></div>
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
         &quot;assignments&quot;: [],
-        &quot;created_at&quot;: &quot;02/04/2026 14:10:47&quot;,
-        &quot;updated_at&quot;: &quot;02/04/2026 14:10:47&quot;
+        &quot;created_at&quot;: &quot;03/04/2026 01:16:38&quot;,
+        &quot;updated_at&quot;: &quot;03/04/2026 01:16:38&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;T&agrave;i khoản đ&atilde; được cập nhật!&quot;
@@ -16044,7 +16059,7 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 21,
+        &quot;id&quot;: 37,
         &quot;name&quot;: &quot;Ms. Elisabeth Okuneva&quot;,
         &quot;email&quot;: &quot;gilbert32@example.com&quot;,
         &quot;user_name&quot;: &quot;hirthe.theo&quot;,
@@ -16052,8 +16067,8 @@ print_r(json_decode((string) $body));</code></pre></div>
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
         &quot;assignments&quot;: [],
-        &quot;created_at&quot;: &quot;02/04/2026 14:10:47&quot;,
-        &quot;updated_at&quot;: &quot;02/04/2026 14:10:47&quot;
+        &quot;created_at&quot;: &quot;03/04/2026 01:16:38&quot;,
+        &quot;updated_at&quot;: &quot;03/04/2026 01:16:38&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;T&agrave;i khoản đ&atilde; được cập nhật!&quot;
@@ -16564,7 +16579,7 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 22,
+        &quot;id&quot;: 38,
         &quot;name&quot;: &quot;Morgan Hirthe&quot;,
         &quot;email&quot;: &quot;imclaughlin@example.org&quot;,
         &quot;user_name&quot;: &quot;okeefe.isidro&quot;,
@@ -16572,8 +16587,8 @@ print_r(json_decode((string) $body));</code></pre></div>
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
         &quot;assignments&quot;: [],
-        &quot;created_at&quot;: &quot;02/04/2026 14:10:48&quot;,
-        &quot;updated_at&quot;: &quot;02/04/2026 14:10:48&quot;
+        &quot;created_at&quot;: &quot;03/04/2026 01:16:38&quot;,
+        &quot;updated_at&quot;: &quot;03/04/2026 01:16:38&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;Cập nhật trạng th&aacute;i th&agrave;nh c&ocirc;ng!&quot;
@@ -16821,24 +16836,24 @@ print_r(json_decode((string) $body));</code></pre></div>
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: [
         {
-            &quot;id&quot;: 1,
-            &quot;task_assignment_item_id&quot;: 9,
+            &quot;id&quot;: 15,
+            &quot;task_assignment_item_id&quot;: 53,
             &quot;completed_at&quot;: null,
             &quot;report_document_number&quot;: &quot;BC-71/2026&quot;,
             &quot;report_document_excerpt&quot;: &quot;Animi quos velit et fugiat.&quot;,
             &quot;report_document_content&quot;: &quot;Accusantium harum mollitia modi deserunt aut ab. Perspiciatis quo omnis nostrum aut adipisci quidem nostrum qui. Incidunt iure odit et et modi ipsum.\n\nAutem et consequatur aut dolores enim non facere tempora. Voluptatem laboriosam praesentium quis adipisci.&quot;,
-            &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
         },
         {
-            &quot;id&quot;: 2,
-            &quot;task_assignment_item_id&quot;: 10,
+            &quot;id&quot;: 16,
+            &quot;task_assignment_item_id&quot;: 54,
             &quot;completed_at&quot;: null,
             &quot;report_document_number&quot;: &quot;BC-42/2026&quot;,
             &quot;report_document_excerpt&quot;: &quot;Molestiae ut rem est esse.&quot;,
             &quot;report_document_content&quot;: &quot;Molestiae sunt suscipit doloribus fugiat ut aut. Et error neque recusandae et. Dolorem et ut dicta.\n\nConsequatur ut et sunt quisquam sit repellendus ut. Alias ratione dolores sed rem. Ut aut deserunt sint quis in quod id aspernatur.&quot;,
-            &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
         }
     ],
     &quot;links&quot;: {
@@ -17115,8 +17130,8 @@ Must be one of:
     --form "report_document_content=Nội dung báo cáo đầy đủ..."\
     --form "content=Đã hoàn thành 50% khối lượng công việc."\
     --form "progress=50"\
-    --form "files[]=@C:\Users\tuanl\AppData\Local\Temp\php6171.tmp" \
-    --form "files[]=@C:\Users\tuanl\AppData\Local\Temp\php6172.tmp" </code></pre></div>
+    --form "files[]=@/tmp/php26t8ifqovkemefqYJEu" \
+    --form "files[]=@/tmp/php0k7g7o692iufetIqgq2" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -17192,11 +17207,11 @@ $response = $client-&gt;post(
             ],
             [
                 'name' =&gt; 'files[]',
-                'contents' =&gt; fopen('C:\Users\tuanl\AppData\Local\Temp\php6171.tmp', 'r')
+                'contents' =&gt; fopen('/tmp/php26t8ifqovkemefqYJEu', 'r')
             ],
             [
                 'name' =&gt; 'files[]',
-                'contents' =&gt; fopen('C:\Users\tuanl\AppData\Local\Temp\php6172.tmp', 'r')
+                'contents' =&gt; fopen('/tmp/php0k7g7o692iufetIqgq2', 'r')
             ],
         ],
     ]
@@ -17214,14 +17229,14 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 3,
-        &quot;task_assignment_item_id&quot;: 11,
+        &quot;id&quot;: 17,
+        &quot;task_assignment_item_id&quot;: 55,
         &quot;completed_at&quot;: null,
         &quot;report_document_number&quot;: &quot;BC-75/2026&quot;,
         &quot;report_document_excerpt&quot;: &quot;Et animi quos velit et fugiat.&quot;,
         &quot;report_document_content&quot;: &quot;Accusantium harum mollitia modi deserunt aut ab. Perspiciatis quo omnis nostrum aut adipisci quidem nostrum qui. Incidunt iure odit et et modi ipsum.\n\nAutem et consequatur aut dolores enim non facere tempora. Voluptatem laboriosam praesentium quis adipisci.&quot;,
-        &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;B&aacute;o c&aacute;o đ&atilde; được tạo th&agrave;nh c&ocirc;ng!&quot;
@@ -17432,7 +17447,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Tệp đính kèm (tối đa 10 tệp). Example: <code>C:\Users\tuanl\AppData\Local\Temp\php6172.tmp</code></p>
+<p>Tệp đính kèm (tối đa 10 tệp). Example: <code>/tmp/php0k7g7o692iufetIqgq2</code></p>
         </div>
         </form>
 
@@ -17503,14 +17518,14 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 4,
-        &quot;task_assignment_item_id&quot;: 12,
+        &quot;id&quot;: 18,
+        &quot;task_assignment_item_id&quot;: 56,
         &quot;completed_at&quot;: null,
         &quot;report_document_number&quot;: &quot;BC-80/2026&quot;,
         &quot;report_document_excerpt&quot;: &quot;Quidem nostrum qui commodi incidunt iure odit.&quot;,
         &quot;report_document_content&quot;: &quot;Modi ipsum nostrum omnis autem et. Aut dolores enim non facere tempora ex voluptatem. Praesentium quis adipisci molestias fugit. Distinctio eum doloremque id aut libero aliquam veniam corporis.\n\nDeleniti nemo odit quia officia. Dignissimos neque blanditiis odio. Excepturi doloribus delectus fugit qui repudiandae laboriosam.&quot;,
-        &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;
 }</code>
@@ -17664,8 +17679,8 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "remove_attachment_ids[]=architecto"\
     --form "content=architecto"\
     --form "progress=16"\
-    --form "files[]=@C:\Users\tuanl\AppData\Local\Temp\php6192.tmp" \
-    --form "files[]=@C:\Users\tuanl\AppData\Local\Temp\php6193.tmp" </code></pre></div>
+    --form "files[]=@/tmp/phpig6rl80qr5s60N7PWeC" \
+    --form "files[]=@/tmp/php3hkh51k29j6v3eZuPlb" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -17741,11 +17756,11 @@ $response = $client-&gt;put(
             ],
             [
                 'name' =&gt; 'files[]',
-                'contents' =&gt; fopen('C:\Users\tuanl\AppData\Local\Temp\php6192.tmp', 'r')
+                'contents' =&gt; fopen('/tmp/phpig6rl80qr5s60N7PWeC', 'r')
             ],
             [
                 'name' =&gt; 'files[]',
-                'contents' =&gt; fopen('C:\Users\tuanl\AppData\Local\Temp\php6193.tmp', 'r')
+                'contents' =&gt; fopen('/tmp/php3hkh51k29j6v3eZuPlb', 'r')
             ],
         ],
     ]
@@ -17763,14 +17778,14 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 5,
-        &quot;task_assignment_item_id&quot;: 13,
+        &quot;id&quot;: 19,
+        &quot;task_assignment_item_id&quot;: 57,
         &quot;completed_at&quot;: null,
         &quot;report_document_number&quot;: &quot;BC-71/2026&quot;,
         &quot;report_document_excerpt&quot;: &quot;Animi quos velit et fugiat.&quot;,
         &quot;report_document_content&quot;: &quot;Accusantium harum mollitia modi deserunt aut ab. Perspiciatis quo omnis nostrum aut adipisci quidem nostrum qui. Incidunt iure odit et et modi ipsum.\n\nAutem et consequatur aut dolores enim non facere tempora. Voluptatem laboriosam praesentium quis adipisci.&quot;,
-        &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;B&aacute;o c&aacute;o đ&atilde; được cập nhật!&quot;
@@ -18008,7 +18023,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Tệp đính kèm mới (append). Example: <code>C:\Users\tuanl\AppData\Local\Temp\php6193.tmp</code></p>
+<p>Tệp đính kèm mới (append). Example: <code>/tmp/php3hkh51k29j6v3eZuPlb</code></p>
         </div>
         </form>
 
@@ -18038,8 +18053,8 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "remove_attachment_ids[]=architecto"\
     --form "content=architecto"\
     --form "progress=16"\
-    --form "files[]=@C:\Users\tuanl\AppData\Local\Temp\php61A4.tmp" \
-    --form "files[]=@C:\Users\tuanl\AppData\Local\Temp\php61A5.tmp" </code></pre></div>
+    --form "files[]=@/tmp/phpfmuv04p2ptn4eHLVNM7" \
+    --form "files[]=@/tmp/php3nvcnl2sl7iielclYX5" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -18115,11 +18130,11 @@ $response = $client-&gt;patch(
             ],
             [
                 'name' =&gt; 'files[]',
-                'contents' =&gt; fopen('C:\Users\tuanl\AppData\Local\Temp\php61A4.tmp', 'r')
+                'contents' =&gt; fopen('/tmp/phpfmuv04p2ptn4eHLVNM7', 'r')
             ],
             [
                 'name' =&gt; 'files[]',
-                'contents' =&gt; fopen('C:\Users\tuanl\AppData\Local\Temp\php61A5.tmp', 'r')
+                'contents' =&gt; fopen('/tmp/php3nvcnl2sl7iielclYX5', 'r')
             ],
         ],
     ]
@@ -18137,14 +18152,14 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 6,
-        &quot;task_assignment_item_id&quot;: 14,
+        &quot;id&quot;: 20,
+        &quot;task_assignment_item_id&quot;: 58,
         &quot;completed_at&quot;: null,
         &quot;report_document_number&quot;: &quot;BC-71/2026&quot;,
         &quot;report_document_excerpt&quot;: &quot;Animi quos velit et fugiat.&quot;,
         &quot;report_document_content&quot;: &quot;Accusantium harum mollitia modi deserunt aut ab. Perspiciatis quo omnis nostrum aut adipisci quidem nostrum qui. Incidunt iure odit et et modi ipsum.\n\nAutem et consequatur aut dolores enim non facere tempora. Voluptatem laboriosam praesentium quis adipisci.&quot;,
-        &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;B&aacute;o c&aacute;o đ&atilde; được cập nhật!&quot;
@@ -18382,7 +18397,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Tệp đính kèm mới (append). Example: <code>C:\Users\tuanl\AppData\Local\Temp\php61A5.tmp</code></p>
+<p>Tệp đính kèm mới (append). Example: <code>/tmp/php3nvcnl2sl7iielclYX5</code></p>
         </div>
         </form>
 
@@ -18913,7 +18928,7 @@ Must be one of:
     --header "Content-Type: multipart/form-data" \
     --header "Accept: application/json" \
     --form "task_assignment_document_id=1"\
-    --form "file=@C:\Users\tuanl\AppData\Local\Temp\php6065.tmp" </code></pre></div>
+    --form "file=@/tmp/php24bsla5i0lival6gCoM" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -18958,7 +18973,7 @@ $response = $client-&gt;post(
             ],
             [
                 'name' =&gt; 'file',
-                'contents' =&gt; fopen('C:\Users\tuanl\AppData\Local\Temp\php6065.tmp', 'r')
+                'contents' =&gt; fopen('/tmp/php24bsla5i0lival6gCoM', 'r')
             ],
         ],
     ]
@@ -19086,7 +19101,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>File Excel (xlsx, xls, csv). Cột theo chuẩn export. Example: <code>C:\Users\tuanl\AppData\Local\Temp\php6065.tmp</code></p>
+<p>File Excel (xlsx, xls, csv). Cột theo chuẩn export. Example: <code>/tmp/php24bsla5i0lival6gCoM</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>task_assignment_document_id</code></b>&nbsp;&nbsp;
@@ -19836,6 +19851,2161 @@ You can check the Dev Tools console for debugging information.</code></pre>
             </div>
                 </form>
 
+                    <h2 id="taskassignment-cong-viec-GETapi-task-assignment-items-stats-by-department">Thống kê công việc theo phòng ban</h2>
+
+<p>
+<small class="badge badge-darkred">requires authentication</small>
+</p>
+
+
+
+<span id="example-requests-GETapi-task-assignment-items-stats-by-department">
+<blockquote>Example request:</blockquote>
+
+
+<div class="bash-example">
+    <pre><code class="language-bash">curl --request GET \
+    --get "http://localhost/api/task-assignment-items/stats-by-department?processing_status=architecto&amp;priority=architecto&amp;deadline_type=architecto&amp;from_date=2026-01-01&amp;to_date=2026-12-31&amp;task_assignment_item_type_id=1" \
+    --header "Authorization: Bearer Bearer {YOUR_ACCESS_TOKEN}" \
+    --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
+    --header "Content-Type: application/json" \
+    --header "Accept: application/json" \
+    --data "{
+    \"processing_status\": \"architecto\",
+    \"priority\": \"architecto\",
+    \"deadline_type\": \"architecto\",
+    \"from_date\": \"2026-04-03T01:16:39\",
+    \"to_date\": \"2052-04-26\",
+    \"task_assignment_item_type_id\": 16,
+    \"department_id\": 16,
+    \"user_id\": 16,
+    \"sort_by\": \"architecto\",
+    \"sort_order\": \"desc\",
+    \"limit\": 22
+}"
+</code></pre></div>
+
+
+<div class="javascript-example">
+    <pre><code class="language-javascript">const url = new URL(
+    "http://localhost/api/task-assignment-items/stats-by-department"
+);
+
+const params = {
+    "processing_status": "architecto",
+    "priority": "architecto",
+    "deadline_type": "architecto",
+    "from_date": "2026-01-01",
+    "to_date": "2026-12-31",
+    "task_assignment_item_type_id": "1",
+};
+Object.keys(params)
+    .forEach(key =&gt; url.searchParams.append(key, params[key]));
+
+const headers = {
+    "Authorization": "Bearer Bearer {YOUR_ACCESS_TOKEN}",
+    "X-Organization-Id": "ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1",
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+};
+
+let body = {
+    "processing_status": "architecto",
+    "priority": "architecto",
+    "deadline_type": "architecto",
+    "from_date": "2026-04-03T01:16:39",
+    "to_date": "2052-04-26",
+    "task_assignment_item_type_id": 16,
+    "department_id": 16,
+    "user_id": 16,
+    "sort_by": "architecto",
+    "sort_order": "desc",
+    "limit": 22
+};
+
+fetch(url, {
+    method: "GET",
+    headers,
+    body: JSON.stringify(body),
+}).then(response =&gt; response.json());</code></pre></div>
+
+
+<div class="php-example">
+    <pre><code class="language-php">$client = new \GuzzleHttp\Client();
+$url = 'http://localhost/api/task-assignment-items/stats-by-department';
+$response = $client-&gt;get(
+    $url,
+    [
+        'headers' =&gt; [
+            'Authorization' =&gt; 'Bearer Bearer {YOUR_ACCESS_TOKEN}',
+            'X-Organization-Id' =&gt; 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1',
+            'Content-Type' =&gt; 'application/json',
+            'Accept' =&gt; 'application/json',
+        ],
+        'query' =&gt; [
+            'processing_status' =&gt; 'architecto',
+            'priority' =&gt; 'architecto',
+            'deadline_type' =&gt; 'architecto',
+            'from_date' =&gt; '2026-01-01',
+            'to_date' =&gt; '2026-12-31',
+            'task_assignment_item_type_id' =&gt; '1',
+        ],
+        'json' =&gt; [
+            'processing_status' =&gt; 'architecto',
+            'priority' =&gt; 'architecto',
+            'deadline_type' =&gt; 'architecto',
+            'from_date' =&gt; '2026-04-03T01:16:39',
+            'to_date' =&gt; '2052-04-26',
+            'task_assignment_item_type_id' =&gt; 16,
+            'department_id' =&gt; 16,
+            'user_id' =&gt; 16,
+            'sort_by' =&gt; 'architecto',
+            'sort_order' =&gt; 'desc',
+            'limit' =&gt; 22,
+        ],
+    ]
+);
+$body = $response-&gt;getBody();
+print_r(json_decode((string) $body));</code></pre></div>
+
+</span>
+
+<span id="example-responses-GETapi-task-assignment-items-stats-by-department">
+            <blockquote>
+            <p>Example response (200):</p>
+        </blockquote>
+                <pre>
+
+<code class="language-json" style="max-height: 300px;">{
+    &quot;success&quot;: true,
+    &quot;data&quot;: [
+        {
+            &quot;department_id&quot;: 1,
+            &quot;department_name&quot;: &quot;Ph&ograve;ng Kế to&aacute;n&quot;,
+            &quot;department_code&quot;: &quot;KT&quot;,
+            &quot;total&quot;: 20,
+            &quot;todo&quot;: 5,
+            &quot;in_progress&quot;: 8,
+            &quot;done&quot;: 3,
+            &quot;overdue&quot;: 2,
+            &quot;paused&quot;: 1,
+            &quot;cancelled&quot;: 1
+        }
+    ]
+}</code>
+ </pre>
+    </span>
+<span id="execution-results-GETapi-task-assignment-items-stats-by-department" hidden>
+    <blockquote>Received response<span
+                id="execution-response-status-GETapi-task-assignment-items-stats-by-department"></span>:
+    </blockquote>
+    <pre class="json"><code id="execution-response-content-GETapi-task-assignment-items-stats-by-department"
+      data-empty-response-text="<Empty response>" style="max-height: 400px;"></code></pre>
+</span>
+<span id="execution-error-GETapi-task-assignment-items-stats-by-department" hidden>
+    <blockquote>Request failed with error:</blockquote>
+    <pre><code id="execution-error-message-GETapi-task-assignment-items-stats-by-department">
+
+Tip: Check that you&#039;re properly connected to the network.
+If you&#039;re a maintainer of ths API, verify that your API is running and you&#039;ve enabled CORS.
+You can check the Dev Tools console for debugging information.</code></pre>
+</span>
+<form id="form-GETapi-task-assignment-items-stats-by-department" data-method="GET"
+      data-path="api/task-assignment-items/stats-by-department"
+      data-authed="1"
+      data-hasfiles="0"
+      data-isarraybody="0"
+      autocomplete="off"
+      onsubmit="event.preventDefault(); executeTryOut('GETapi-task-assignment-items-stats-by-department', this);">
+    <h3>
+        Request&nbsp;&nbsp;&nbsp;
+                    <button type="button"
+                    style="background-color: #8fbcd4; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-tryout-GETapi-task-assignment-items-stats-by-department"
+                    onclick="tryItOut('GETapi-task-assignment-items-stats-by-department');">Try it out ⚡
+            </button>
+            <button type="button"
+                    style="background-color: #c97a7e; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-canceltryout-GETapi-task-assignment-items-stats-by-department"
+                    onclick="cancelTryOut('GETapi-task-assignment-items-stats-by-department');" hidden>Cancel 🛑
+            </button>&nbsp;&nbsp;
+            <button type="submit"
+                    style="background-color: #6ac174; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-executetryout-GETapi-task-assignment-items-stats-by-department"
+                    data-initial-text="Send Request 💥"
+                    data-loading-text="⏱ Sending..."
+                    hidden>Send Request 💥
+            </button>
+            </h3>
+            <p>
+            <small class="badge badge-green">GET</small>
+            <b><code>api/task-assignment-items/stats-by-department</code></b>
+        </p>
+                <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Authorization" class="auth-value"               data-endpoint="GETapi-task-assignment-items-stats-by-department"
+               value="Bearer Bearer {YOUR_ACCESS_TOKEN}"
+               data-component="header">
+    <br>
+<p>Example: <code>Bearer Bearer {YOUR_ACCESS_TOKEN}</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>X-Organization-Id</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="X-Organization-Id"                data-endpoint="GETapi-task-assignment-items-stats-by-department"
+               value="ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1"
+               data-component="header">
+    <br>
+<p>Example: <code>ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Content-Type"                data-endpoint="GETapi-task-assignment-items-stats-by-department"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Accept"                data-endpoint="GETapi-task-assignment-items-stats-by-department"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                            <h4 class="fancy-heading-panel"><b>Query Parameters</b></h4>
+                                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>processing_status</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="processing_status"                data-endpoint="GETapi-task-assignment-items-stats-by-department"
+               value="architecto"
+               data-component="query">
+    <br>
+<p>Lọc theo trạng thái xử lý. Example: <code>architecto</code></p>
+            </div>
+                                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>priority</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="priority"                data-endpoint="GETapi-task-assignment-items-stats-by-department"
+               value="architecto"
+               data-component="query">
+    <br>
+<p>Lọc theo mức độ ưu tiên. Example: <code>architecto</code></p>
+            </div>
+                                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>deadline_type</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="deadline_type"                data-endpoint="GETapi-task-assignment-items-stats-by-department"
+               value="architecto"
+               data-component="query">
+    <br>
+<p>Lọc theo loại thời hạn. Example: <code>architecto</code></p>
+            </div>
+                                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>from_date</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="from_date"                data-endpoint="GETapi-task-assignment-items-stats-by-department"
+               value="2026-01-01"
+               data-component="query">
+    <br>
+<p>date Từ ngày (Y-m-d). Example: <code>2026-01-01</code></p>
+            </div>
+                                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>to_date</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="to_date"                data-endpoint="GETapi-task-assignment-items-stats-by-department"
+               value="2026-12-31"
+               data-component="query">
+    <br>
+<p>date Đến ngày (Y-m-d). Example: <code>2026-12-31</code></p>
+            </div>
+                                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>task_assignment_item_type_id</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="task_assignment_item_type_id"                data-endpoint="GETapi-task-assignment-items-stats-by-department"
+               value="1"
+               data-component="query">
+    <br>
+<p>Lọc theo loại công việc. Example: <code>1</code></p>
+            </div>
+                        <h4 class="fancy-heading-panel"><b>Body Parameters</b></h4>
+        <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>processing_status</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="processing_status"                data-endpoint="GETapi-task-assignment-items-stats-by-department"
+               value="architecto"
+               data-component="body">
+    <br>
+<p>Example: <code>architecto</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>priority</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="priority"                data-endpoint="GETapi-task-assignment-items-stats-by-department"
+               value="architecto"
+               data-component="body">
+    <br>
+<p>Example: <code>architecto</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>deadline_type</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="deadline_type"                data-endpoint="GETapi-task-assignment-items-stats-by-department"
+               value="architecto"
+               data-component="body">
+    <br>
+<p>Example: <code>architecto</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>from_date</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="from_date"                data-endpoint="GETapi-task-assignment-items-stats-by-department"
+               value="2026-04-03T01:16:39"
+               data-component="body">
+    <br>
+<p>Must be a valid date. Example: <code>2026-04-03T01:16:39</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>to_date</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="to_date"                data-endpoint="GETapi-task-assignment-items-stats-by-department"
+               value="2052-04-26"
+               data-component="body">
+    <br>
+<p>Must be a valid date. Must be a date after or equal to <code>from_date</code>. Example: <code>2052-04-26</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>task_assignment_item_type_id</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="task_assignment_item_type_id"                data-endpoint="GETapi-task-assignment-items-stats-by-department"
+               value="16"
+               data-component="body">
+    <br>
+<p>The <code>id</code> of an existing record in the task_assignment_item_types table. Example: <code>16</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>department_id</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="department_id"                data-endpoint="GETapi-task-assignment-items-stats-by-department"
+               value="16"
+               data-component="body">
+    <br>
+<p>The <code>id</code> of an existing record in the task_assignment_departments table. Example: <code>16</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>user_id</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="user_id"                data-endpoint="GETapi-task-assignment-items-stats-by-department"
+               value="16"
+               data-component="body">
+    <br>
+<p>The <code>id</code> of an existing record in the users table. Example: <code>16</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>sort_by</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="sort_by"                data-endpoint="GETapi-task-assignment-items-stats-by-department"
+               value="architecto"
+               data-component="body">
+    <br>
+<p>Example: <code>architecto</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>sort_order</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="sort_order"                data-endpoint="GETapi-task-assignment-items-stats-by-department"
+               value="desc"
+               data-component="body">
+    <br>
+<p>Example: <code>desc</code></p>
+Must be one of:
+<ul style="list-style-type: square;"><li><code>asc</code></li> <li><code>desc</code></li></ul>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>limit</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="limit"                data-endpoint="GETapi-task-assignment-items-stats-by-department"
+               value="22"
+               data-component="body">
+    <br>
+<p>Must be at least 1. Must not be greater than 100. Example: <code>22</code></p>
+        </div>
+        </form>
+
+                    <h2 id="taskassignment-cong-viec-GETapi-task-assignment-items-stats-by-user">Thống kê công việc theo người dùng</h2>
+
+<p>
+<small class="badge badge-darkred">requires authentication</small>
+</p>
+
+
+
+<span id="example-requests-GETapi-task-assignment-items-stats-by-user">
+<blockquote>Example request:</blockquote>
+
+
+<div class="bash-example">
+    <pre><code class="language-bash">curl --request GET \
+    --get "http://localhost/api/task-assignment-items/stats-by-user?department_id=1&amp;processing_status=architecto&amp;priority=architecto&amp;from_date=2026-01-01&amp;to_date=2026-12-31" \
+    --header "Authorization: Bearer Bearer {YOUR_ACCESS_TOKEN}" \
+    --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
+    --header "Content-Type: application/json" \
+    --header "Accept: application/json" \
+    --data "{
+    \"processing_status\": \"architecto\",
+    \"priority\": \"architecto\",
+    \"deadline_type\": \"architecto\",
+    \"from_date\": \"2026-04-03T01:16:39\",
+    \"to_date\": \"2052-04-26\",
+    \"task_assignment_item_type_id\": 16,
+    \"department_id\": 16,
+    \"user_id\": 16,
+    \"sort_by\": \"architecto\",
+    \"sort_order\": \"desc\",
+    \"limit\": 22
+}"
+</code></pre></div>
+
+
+<div class="javascript-example">
+    <pre><code class="language-javascript">const url = new URL(
+    "http://localhost/api/task-assignment-items/stats-by-user"
+);
+
+const params = {
+    "department_id": "1",
+    "processing_status": "architecto",
+    "priority": "architecto",
+    "from_date": "2026-01-01",
+    "to_date": "2026-12-31",
+};
+Object.keys(params)
+    .forEach(key =&gt; url.searchParams.append(key, params[key]));
+
+const headers = {
+    "Authorization": "Bearer Bearer {YOUR_ACCESS_TOKEN}",
+    "X-Organization-Id": "ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1",
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+};
+
+let body = {
+    "processing_status": "architecto",
+    "priority": "architecto",
+    "deadline_type": "architecto",
+    "from_date": "2026-04-03T01:16:39",
+    "to_date": "2052-04-26",
+    "task_assignment_item_type_id": 16,
+    "department_id": 16,
+    "user_id": 16,
+    "sort_by": "architecto",
+    "sort_order": "desc",
+    "limit": 22
+};
+
+fetch(url, {
+    method: "GET",
+    headers,
+    body: JSON.stringify(body),
+}).then(response =&gt; response.json());</code></pre></div>
+
+
+<div class="php-example">
+    <pre><code class="language-php">$client = new \GuzzleHttp\Client();
+$url = 'http://localhost/api/task-assignment-items/stats-by-user';
+$response = $client-&gt;get(
+    $url,
+    [
+        'headers' =&gt; [
+            'Authorization' =&gt; 'Bearer Bearer {YOUR_ACCESS_TOKEN}',
+            'X-Organization-Id' =&gt; 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1',
+            'Content-Type' =&gt; 'application/json',
+            'Accept' =&gt; 'application/json',
+        ],
+        'query' =&gt; [
+            'department_id' =&gt; '1',
+            'processing_status' =&gt; 'architecto',
+            'priority' =&gt; 'architecto',
+            'from_date' =&gt; '2026-01-01',
+            'to_date' =&gt; '2026-12-31',
+        ],
+        'json' =&gt; [
+            'processing_status' =&gt; 'architecto',
+            'priority' =&gt; 'architecto',
+            'deadline_type' =&gt; 'architecto',
+            'from_date' =&gt; '2026-04-03T01:16:39',
+            'to_date' =&gt; '2052-04-26',
+            'task_assignment_item_type_id' =&gt; 16,
+            'department_id' =&gt; 16,
+            'user_id' =&gt; 16,
+            'sort_by' =&gt; 'architecto',
+            'sort_order' =&gt; 'desc',
+            'limit' =&gt; 22,
+        ],
+    ]
+);
+$body = $response-&gt;getBody();
+print_r(json_decode((string) $body));</code></pre></div>
+
+</span>
+
+<span id="example-responses-GETapi-task-assignment-items-stats-by-user">
+            <blockquote>
+            <p>Example response (200):</p>
+        </blockquote>
+                <pre>
+
+<code class="language-json" style="max-height: 300px;">{
+    &quot;success&quot;: true,
+    &quot;data&quot;: [
+        {
+            &quot;user_id&quot;: 1,
+            &quot;user_name&quot;: &quot;Nguyễn Văn A&quot;,
+            &quot;total&quot;: 10,
+            &quot;todo&quot;: 2,
+            &quot;in_progress&quot;: 3,
+            &quot;done&quot;: 4,
+            &quot;overdue&quot;: 1,
+            &quot;on_time_count&quot;: 3,
+            &quot;overdue_done_count&quot;: 1
+        }
+    ]
+}</code>
+ </pre>
+    </span>
+<span id="execution-results-GETapi-task-assignment-items-stats-by-user" hidden>
+    <blockquote>Received response<span
+                id="execution-response-status-GETapi-task-assignment-items-stats-by-user"></span>:
+    </blockquote>
+    <pre class="json"><code id="execution-response-content-GETapi-task-assignment-items-stats-by-user"
+      data-empty-response-text="<Empty response>" style="max-height: 400px;"></code></pre>
+</span>
+<span id="execution-error-GETapi-task-assignment-items-stats-by-user" hidden>
+    <blockquote>Request failed with error:</blockquote>
+    <pre><code id="execution-error-message-GETapi-task-assignment-items-stats-by-user">
+
+Tip: Check that you&#039;re properly connected to the network.
+If you&#039;re a maintainer of ths API, verify that your API is running and you&#039;ve enabled CORS.
+You can check the Dev Tools console for debugging information.</code></pre>
+</span>
+<form id="form-GETapi-task-assignment-items-stats-by-user" data-method="GET"
+      data-path="api/task-assignment-items/stats-by-user"
+      data-authed="1"
+      data-hasfiles="0"
+      data-isarraybody="0"
+      autocomplete="off"
+      onsubmit="event.preventDefault(); executeTryOut('GETapi-task-assignment-items-stats-by-user', this);">
+    <h3>
+        Request&nbsp;&nbsp;&nbsp;
+                    <button type="button"
+                    style="background-color: #8fbcd4; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-tryout-GETapi-task-assignment-items-stats-by-user"
+                    onclick="tryItOut('GETapi-task-assignment-items-stats-by-user');">Try it out ⚡
+            </button>
+            <button type="button"
+                    style="background-color: #c97a7e; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-canceltryout-GETapi-task-assignment-items-stats-by-user"
+                    onclick="cancelTryOut('GETapi-task-assignment-items-stats-by-user');" hidden>Cancel 🛑
+            </button>&nbsp;&nbsp;
+            <button type="submit"
+                    style="background-color: #6ac174; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-executetryout-GETapi-task-assignment-items-stats-by-user"
+                    data-initial-text="Send Request 💥"
+                    data-loading-text="⏱ Sending..."
+                    hidden>Send Request 💥
+            </button>
+            </h3>
+            <p>
+            <small class="badge badge-green">GET</small>
+            <b><code>api/task-assignment-items/stats-by-user</code></b>
+        </p>
+                <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Authorization" class="auth-value"               data-endpoint="GETapi-task-assignment-items-stats-by-user"
+               value="Bearer Bearer {YOUR_ACCESS_TOKEN}"
+               data-component="header">
+    <br>
+<p>Example: <code>Bearer Bearer {YOUR_ACCESS_TOKEN}</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>X-Organization-Id</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="X-Organization-Id"                data-endpoint="GETapi-task-assignment-items-stats-by-user"
+               value="ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1"
+               data-component="header">
+    <br>
+<p>Example: <code>ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Content-Type"                data-endpoint="GETapi-task-assignment-items-stats-by-user"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Accept"                data-endpoint="GETapi-task-assignment-items-stats-by-user"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                            <h4 class="fancy-heading-panel"><b>Query Parameters</b></h4>
+                                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>department_id</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="department_id"                data-endpoint="GETapi-task-assignment-items-stats-by-user"
+               value="1"
+               data-component="query">
+    <br>
+<p>Lọc theo phòng ban. Example: <code>1</code></p>
+            </div>
+                                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>processing_status</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="processing_status"                data-endpoint="GETapi-task-assignment-items-stats-by-user"
+               value="architecto"
+               data-component="query">
+    <br>
+<p>Lọc theo trạng thái xử lý. Example: <code>architecto</code></p>
+            </div>
+                                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>priority</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="priority"                data-endpoint="GETapi-task-assignment-items-stats-by-user"
+               value="architecto"
+               data-component="query">
+    <br>
+<p>Lọc theo mức độ ưu tiên. Example: <code>architecto</code></p>
+            </div>
+                                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>from_date</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="from_date"                data-endpoint="GETapi-task-assignment-items-stats-by-user"
+               value="2026-01-01"
+               data-component="query">
+    <br>
+<p>date Từ ngày (Y-m-d). Example: <code>2026-01-01</code></p>
+            </div>
+                                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>to_date</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="to_date"                data-endpoint="GETapi-task-assignment-items-stats-by-user"
+               value="2026-12-31"
+               data-component="query">
+    <br>
+<p>date Đến ngày (Y-m-d). Example: <code>2026-12-31</code></p>
+            </div>
+                        <h4 class="fancy-heading-panel"><b>Body Parameters</b></h4>
+        <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>processing_status</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="processing_status"                data-endpoint="GETapi-task-assignment-items-stats-by-user"
+               value="architecto"
+               data-component="body">
+    <br>
+<p>Example: <code>architecto</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>priority</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="priority"                data-endpoint="GETapi-task-assignment-items-stats-by-user"
+               value="architecto"
+               data-component="body">
+    <br>
+<p>Example: <code>architecto</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>deadline_type</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="deadline_type"                data-endpoint="GETapi-task-assignment-items-stats-by-user"
+               value="architecto"
+               data-component="body">
+    <br>
+<p>Example: <code>architecto</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>from_date</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="from_date"                data-endpoint="GETapi-task-assignment-items-stats-by-user"
+               value="2026-04-03T01:16:39"
+               data-component="body">
+    <br>
+<p>Must be a valid date. Example: <code>2026-04-03T01:16:39</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>to_date</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="to_date"                data-endpoint="GETapi-task-assignment-items-stats-by-user"
+               value="2052-04-26"
+               data-component="body">
+    <br>
+<p>Must be a valid date. Must be a date after or equal to <code>from_date</code>. Example: <code>2052-04-26</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>task_assignment_item_type_id</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="task_assignment_item_type_id"                data-endpoint="GETapi-task-assignment-items-stats-by-user"
+               value="16"
+               data-component="body">
+    <br>
+<p>The <code>id</code> of an existing record in the task_assignment_item_types table. Example: <code>16</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>department_id</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="department_id"                data-endpoint="GETapi-task-assignment-items-stats-by-user"
+               value="16"
+               data-component="body">
+    <br>
+<p>The <code>id</code> of an existing record in the task_assignment_departments table. Example: <code>16</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>user_id</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="user_id"                data-endpoint="GETapi-task-assignment-items-stats-by-user"
+               value="16"
+               data-component="body">
+    <br>
+<p>The <code>id</code> of an existing record in the users table. Example: <code>16</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>sort_by</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="sort_by"                data-endpoint="GETapi-task-assignment-items-stats-by-user"
+               value="architecto"
+               data-component="body">
+    <br>
+<p>Example: <code>architecto</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>sort_order</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="sort_order"                data-endpoint="GETapi-task-assignment-items-stats-by-user"
+               value="desc"
+               data-component="body">
+    <br>
+<p>Example: <code>desc</code></p>
+Must be one of:
+<ul style="list-style-type: square;"><li><code>asc</code></li> <li><code>desc</code></li></ul>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>limit</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="limit"                data-endpoint="GETapi-task-assignment-items-stats-by-user"
+               value="22"
+               data-component="body">
+    <br>
+<p>Must be at least 1. Must not be greater than 100. Example: <code>22</code></p>
+        </div>
+        </form>
+
+                    <h2 id="taskassignment-cong-viec-GETapi-task-assignment-items-stats-by-time">Thống kê công việc theo thời gian (tháng)</h2>
+
+<p>
+<small class="badge badge-darkred">requires authentication</small>
+</p>
+
+
+
+<span id="example-requests-GETapi-task-assignment-items-stats-by-time">
+<blockquote>Example request:</blockquote>
+
+
+<div class="bash-example">
+    <pre><code class="language-bash">curl --request GET \
+    --get "http://localhost/api/task-assignment-items/stats-by-time?from_date=2026-01-01&amp;to_date=2026-12-31&amp;department_id=1&amp;user_id=1&amp;processing_status=architecto" \
+    --header "Authorization: Bearer Bearer {YOUR_ACCESS_TOKEN}" \
+    --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
+    --header "Content-Type: application/json" \
+    --header "Accept: application/json" \
+    --data "{
+    \"from_date\": \"2026-04-03T01:16:39\",
+    \"to_date\": \"2052-04-26\",
+    \"department_id\": 16,
+    \"user_id\": 16,
+    \"processing_status\": \"architecto\"
+}"
+</code></pre></div>
+
+
+<div class="javascript-example">
+    <pre><code class="language-javascript">const url = new URL(
+    "http://localhost/api/task-assignment-items/stats-by-time"
+);
+
+const params = {
+    "from_date": "2026-01-01",
+    "to_date": "2026-12-31",
+    "department_id": "1",
+    "user_id": "1",
+    "processing_status": "architecto",
+};
+Object.keys(params)
+    .forEach(key =&gt; url.searchParams.append(key, params[key]));
+
+const headers = {
+    "Authorization": "Bearer Bearer {YOUR_ACCESS_TOKEN}",
+    "X-Organization-Id": "ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1",
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+};
+
+let body = {
+    "from_date": "2026-04-03T01:16:39",
+    "to_date": "2052-04-26",
+    "department_id": 16,
+    "user_id": 16,
+    "processing_status": "architecto"
+};
+
+fetch(url, {
+    method: "GET",
+    headers,
+    body: JSON.stringify(body),
+}).then(response =&gt; response.json());</code></pre></div>
+
+
+<div class="php-example">
+    <pre><code class="language-php">$client = new \GuzzleHttp\Client();
+$url = 'http://localhost/api/task-assignment-items/stats-by-time';
+$response = $client-&gt;get(
+    $url,
+    [
+        'headers' =&gt; [
+            'Authorization' =&gt; 'Bearer Bearer {YOUR_ACCESS_TOKEN}',
+            'X-Organization-Id' =&gt; 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1',
+            'Content-Type' =&gt; 'application/json',
+            'Accept' =&gt; 'application/json',
+        ],
+        'query' =&gt; [
+            'from_date' =&gt; '2026-01-01',
+            'to_date' =&gt; '2026-12-31',
+            'department_id' =&gt; '1',
+            'user_id' =&gt; '1',
+            'processing_status' =&gt; 'architecto',
+        ],
+        'json' =&gt; [
+            'from_date' =&gt; '2026-04-03T01:16:39',
+            'to_date' =&gt; '2052-04-26',
+            'department_id' =&gt; 16,
+            'user_id' =&gt; 16,
+            'processing_status' =&gt; 'architecto',
+        ],
+    ]
+);
+$body = $response-&gt;getBody();
+print_r(json_decode((string) $body));</code></pre></div>
+
+</span>
+
+<span id="example-responses-GETapi-task-assignment-items-stats-by-time">
+            <blockquote>
+            <p>Example response (200):</p>
+        </blockquote>
+                <pre>
+
+<code class="language-json" style="max-height: 300px;">{
+    &quot;success&quot;: true,
+    &quot;data&quot;: [
+        {
+            &quot;month&quot;: &quot;2026-01&quot;,
+            &quot;total&quot;: 15,
+            &quot;done&quot;: 8,
+            &quot;overdue&quot;: 3,
+            &quot;new_tasks&quot;: 10
+        }
+    ]
+}</code>
+ </pre>
+    </span>
+<span id="execution-results-GETapi-task-assignment-items-stats-by-time" hidden>
+    <blockquote>Received response<span
+                id="execution-response-status-GETapi-task-assignment-items-stats-by-time"></span>:
+    </blockquote>
+    <pre class="json"><code id="execution-response-content-GETapi-task-assignment-items-stats-by-time"
+      data-empty-response-text="<Empty response>" style="max-height: 400px;"></code></pre>
+</span>
+<span id="execution-error-GETapi-task-assignment-items-stats-by-time" hidden>
+    <blockquote>Request failed with error:</blockquote>
+    <pre><code id="execution-error-message-GETapi-task-assignment-items-stats-by-time">
+
+Tip: Check that you&#039;re properly connected to the network.
+If you&#039;re a maintainer of ths API, verify that your API is running and you&#039;ve enabled CORS.
+You can check the Dev Tools console for debugging information.</code></pre>
+</span>
+<form id="form-GETapi-task-assignment-items-stats-by-time" data-method="GET"
+      data-path="api/task-assignment-items/stats-by-time"
+      data-authed="1"
+      data-hasfiles="0"
+      data-isarraybody="0"
+      autocomplete="off"
+      onsubmit="event.preventDefault(); executeTryOut('GETapi-task-assignment-items-stats-by-time', this);">
+    <h3>
+        Request&nbsp;&nbsp;&nbsp;
+                    <button type="button"
+                    style="background-color: #8fbcd4; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-tryout-GETapi-task-assignment-items-stats-by-time"
+                    onclick="tryItOut('GETapi-task-assignment-items-stats-by-time');">Try it out ⚡
+            </button>
+            <button type="button"
+                    style="background-color: #c97a7e; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-canceltryout-GETapi-task-assignment-items-stats-by-time"
+                    onclick="cancelTryOut('GETapi-task-assignment-items-stats-by-time');" hidden>Cancel 🛑
+            </button>&nbsp;&nbsp;
+            <button type="submit"
+                    style="background-color: #6ac174; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-executetryout-GETapi-task-assignment-items-stats-by-time"
+                    data-initial-text="Send Request 💥"
+                    data-loading-text="⏱ Sending..."
+                    hidden>Send Request 💥
+            </button>
+            </h3>
+            <p>
+            <small class="badge badge-green">GET</small>
+            <b><code>api/task-assignment-items/stats-by-time</code></b>
+        </p>
+                <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Authorization" class="auth-value"               data-endpoint="GETapi-task-assignment-items-stats-by-time"
+               value="Bearer Bearer {YOUR_ACCESS_TOKEN}"
+               data-component="header">
+    <br>
+<p>Example: <code>Bearer Bearer {YOUR_ACCESS_TOKEN}</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>X-Organization-Id</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="X-Organization-Id"                data-endpoint="GETapi-task-assignment-items-stats-by-time"
+               value="ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1"
+               data-component="header">
+    <br>
+<p>Example: <code>ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Content-Type"                data-endpoint="GETapi-task-assignment-items-stats-by-time"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Accept"                data-endpoint="GETapi-task-assignment-items-stats-by-time"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                            <h4 class="fancy-heading-panel"><b>Query Parameters</b></h4>
+                                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>from_date</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="from_date"                data-endpoint="GETapi-task-assignment-items-stats-by-time"
+               value="2026-01-01"
+               data-component="query">
+    <br>
+<p>date Từ ngày (Y-m-d). Example: <code>2026-01-01</code></p>
+            </div>
+                                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>to_date</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="to_date"                data-endpoint="GETapi-task-assignment-items-stats-by-time"
+               value="2026-12-31"
+               data-component="query">
+    <br>
+<p>date Đến ngày (Y-m-d, tối đa 12 tháng). Example: <code>2026-12-31</code></p>
+            </div>
+                                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>department_id</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="department_id"                data-endpoint="GETapi-task-assignment-items-stats-by-time"
+               value="1"
+               data-component="query">
+    <br>
+<p>Lọc theo phòng ban. Example: <code>1</code></p>
+            </div>
+                                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>user_id</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="user_id"                data-endpoint="GETapi-task-assignment-items-stats-by-time"
+               value="1"
+               data-component="query">
+    <br>
+<p>Lọc theo người dùng. Example: <code>1</code></p>
+            </div>
+                                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>processing_status</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="processing_status"                data-endpoint="GETapi-task-assignment-items-stats-by-time"
+               value="architecto"
+               data-component="query">
+    <br>
+<p>Lọc theo trạng thái xử lý. Example: <code>architecto</code></p>
+            </div>
+                        <h4 class="fancy-heading-panel"><b>Body Parameters</b></h4>
+        <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>from_date</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="from_date"                data-endpoint="GETapi-task-assignment-items-stats-by-time"
+               value="2026-04-03T01:16:39"
+               data-component="body">
+    <br>
+<p>Must be a valid date. Example: <code>2026-04-03T01:16:39</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>to_date</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="to_date"                data-endpoint="GETapi-task-assignment-items-stats-by-time"
+               value="2052-04-26"
+               data-component="body">
+    <br>
+<p>Must be a valid date. Must be a date after or equal to <code>from_date</code>. Example: <code>2052-04-26</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>department_id</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="department_id"                data-endpoint="GETapi-task-assignment-items-stats-by-time"
+               value="16"
+               data-component="body">
+    <br>
+<p>The <code>id</code> of an existing record in the task_assignment_departments table. Example: <code>16</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>user_id</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="user_id"                data-endpoint="GETapi-task-assignment-items-stats-by-time"
+               value="16"
+               data-component="body">
+    <br>
+<p>The <code>id</code> of an existing record in the users table. Example: <code>16</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>processing_status</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="processing_status"                data-endpoint="GETapi-task-assignment-items-stats-by-time"
+               value="architecto"
+               data-component="body">
+    <br>
+<p>Example: <code>architecto</code></p>
+        </div>
+        </form>
+
+                    <h2 id="taskassignment-cong-viec-GETapi-task-assignment-items-overdue">Danh sách công việc quá hạn</h2>
+
+<p>
+<small class="badge badge-darkred">requires authentication</small>
+</p>
+
+
+
+<span id="example-requests-GETapi-task-assignment-items-overdue">
+<blockquote>Example request:</blockquote>
+
+
+<div class="bash-example">
+    <pre><code class="language-bash">curl --request GET \
+    --get "http://localhost/api/task-assignment-items/overdue?department_id=1&amp;user_id=1&amp;priority=architecto&amp;sort_by=end_at&amp;sort_order=asc&amp;limit=10" \
+    --header "Authorization: Bearer Bearer {YOUR_ACCESS_TOKEN}" \
+    --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
+    --header "Content-Type: application/json" \
+    --header "Accept: application/json" \
+    --data "{
+    \"processing_status\": \"architecto\",
+    \"priority\": \"architecto\",
+    \"deadline_type\": \"architecto\",
+    \"from_date\": \"2026-04-03T01:16:39\",
+    \"to_date\": \"2052-04-26\",
+    \"task_assignment_item_type_id\": 16,
+    \"department_id\": 16,
+    \"user_id\": 16,
+    \"sort_by\": \"architecto\",
+    \"sort_order\": \"desc\",
+    \"limit\": 22
+}"
+</code></pre></div>
+
+
+<div class="javascript-example">
+    <pre><code class="language-javascript">const url = new URL(
+    "http://localhost/api/task-assignment-items/overdue"
+);
+
+const params = {
+    "department_id": "1",
+    "user_id": "1",
+    "priority": "architecto",
+    "sort_by": "end_at",
+    "sort_order": "asc",
+    "limit": "10",
+};
+Object.keys(params)
+    .forEach(key =&gt; url.searchParams.append(key, params[key]));
+
+const headers = {
+    "Authorization": "Bearer Bearer {YOUR_ACCESS_TOKEN}",
+    "X-Organization-Id": "ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1",
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+};
+
+let body = {
+    "processing_status": "architecto",
+    "priority": "architecto",
+    "deadline_type": "architecto",
+    "from_date": "2026-04-03T01:16:39",
+    "to_date": "2052-04-26",
+    "task_assignment_item_type_id": 16,
+    "department_id": 16,
+    "user_id": 16,
+    "sort_by": "architecto",
+    "sort_order": "desc",
+    "limit": 22
+};
+
+fetch(url, {
+    method: "GET",
+    headers,
+    body: JSON.stringify(body),
+}).then(response =&gt; response.json());</code></pre></div>
+
+
+<div class="php-example">
+    <pre><code class="language-php">$client = new \GuzzleHttp\Client();
+$url = 'http://localhost/api/task-assignment-items/overdue';
+$response = $client-&gt;get(
+    $url,
+    [
+        'headers' =&gt; [
+            'Authorization' =&gt; 'Bearer Bearer {YOUR_ACCESS_TOKEN}',
+            'X-Organization-Id' =&gt; 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1',
+            'Content-Type' =&gt; 'application/json',
+            'Accept' =&gt; 'application/json',
+        ],
+        'query' =&gt; [
+            'department_id' =&gt; '1',
+            'user_id' =&gt; '1',
+            'priority' =&gt; 'architecto',
+            'sort_by' =&gt; 'end_at',
+            'sort_order' =&gt; 'asc',
+            'limit' =&gt; '10',
+        ],
+        'json' =&gt; [
+            'processing_status' =&gt; 'architecto',
+            'priority' =&gt; 'architecto',
+            'deadline_type' =&gt; 'architecto',
+            'from_date' =&gt; '2026-04-03T01:16:39',
+            'to_date' =&gt; '2052-04-26',
+            'task_assignment_item_type_id' =&gt; 16,
+            'department_id' =&gt; 16,
+            'user_id' =&gt; 16,
+            'sort_by' =&gt; 'architecto',
+            'sort_order' =&gt; 'desc',
+            'limit' =&gt; 22,
+        ],
+    ]
+);
+$body = $response-&gt;getBody();
+print_r(json_decode((string) $body));</code></pre></div>
+
+</span>
+
+<span id="example-responses-GETapi-task-assignment-items-overdue">
+            <blockquote>
+            <p>Example response (200):</p>
+        </blockquote>
+                <pre>
+
+<code class="language-json" style="max-height: 300px;">{
+    &quot;data&quot;: [
+        {
+            &quot;id&quot;: 41,
+            &quot;name&quot;: &quot;Animi quos velit.&quot;,
+            &quot;description&quot;: &quot;Sunt nihil accusantium harum mollitia. Deserunt aut ab provident perspiciatis quo omnis nostrum. Adipisci quidem nostrum qui commodi incidunt iure.&quot;,
+            &quot;deadline_type&quot;: &quot;no_deadline&quot;,
+            &quot;start_at&quot;: null,
+            &quot;end_at&quot;: null,
+            &quot;processing_status&quot;: &quot;todo&quot;,
+            &quot;completion_percent&quot;: 0,
+            &quot;priority&quot;: &quot;medium&quot;,
+            &quot;completed_at&quot;: null,
+            &quot;created_by&quot;: &quot;N/A&quot;,
+            &quot;updated_by&quot;: &quot;N/A&quot;,
+            &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
+        },
+        {
+            &quot;id&quot;: 42,
+            &quot;name&quot;: &quot;Deleniti distinctio eum doloremque.&quot;,
+            &quot;description&quot;: &quot;Libero aliquam veniam corporis dolorem mollitia deleniti. Odit quia officia est dignissimos neque blanditiis odio. Excepturi doloribus delectus fugit qui repudiandae laboriosam.&quot;,
+            &quot;deadline_type&quot;: &quot;no_deadline&quot;,
+            &quot;start_at&quot;: null,
+            &quot;end_at&quot;: null,
+            &quot;processing_status&quot;: &quot;todo&quot;,
+            &quot;completion_percent&quot;: 0,
+            &quot;priority&quot;: &quot;medium&quot;,
+            &quot;completed_at&quot;: null,
+            &quot;created_by&quot;: &quot;N/A&quot;,
+            &quot;updated_by&quot;: &quot;N/A&quot;,
+            &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
+        }
+    ],
+    &quot;links&quot;: {
+        &quot;first&quot;: &quot;/?page=1&quot;,
+        &quot;last&quot;: &quot;/?page=1&quot;,
+        &quot;prev&quot;: null,
+        &quot;next&quot;: null
+    },
+    &quot;meta&quot;: {
+        &quot;current_page&quot;: 1,
+        &quot;from&quot;: 1,
+        &quot;last_page&quot;: 1,
+        &quot;links&quot;: [
+            {
+                &quot;url&quot;: null,
+                &quot;label&quot;: &quot;&amp;laquo; Previous&quot;,
+                &quot;page&quot;: null,
+                &quot;active&quot;: false
+            },
+            {
+                &quot;url&quot;: &quot;/?page=1&quot;,
+                &quot;label&quot;: &quot;1&quot;,
+                &quot;page&quot;: 1,
+                &quot;active&quot;: true
+            },
+            {
+                &quot;url&quot;: null,
+                &quot;label&quot;: &quot;Next &amp;raquo;&quot;,
+                &quot;page&quot;: null,
+                &quot;active&quot;: false
+            }
+        ],
+        &quot;path&quot;: &quot;/&quot;,
+        &quot;per_page&quot;: 10,
+        &quot;to&quot;: 2,
+        &quot;total&quot;: 2
+    },
+    &quot;success&quot;: &quot;true&quot;
+}</code>
+ </pre>
+    </span>
+<span id="execution-results-GETapi-task-assignment-items-overdue" hidden>
+    <blockquote>Received response<span
+                id="execution-response-status-GETapi-task-assignment-items-overdue"></span>:
+    </blockquote>
+    <pre class="json"><code id="execution-response-content-GETapi-task-assignment-items-overdue"
+      data-empty-response-text="<Empty response>" style="max-height: 400px;"></code></pre>
+</span>
+<span id="execution-error-GETapi-task-assignment-items-overdue" hidden>
+    <blockquote>Request failed with error:</blockquote>
+    <pre><code id="execution-error-message-GETapi-task-assignment-items-overdue">
+
+Tip: Check that you&#039;re properly connected to the network.
+If you&#039;re a maintainer of ths API, verify that your API is running and you&#039;ve enabled CORS.
+You can check the Dev Tools console for debugging information.</code></pre>
+</span>
+<form id="form-GETapi-task-assignment-items-overdue" data-method="GET"
+      data-path="api/task-assignment-items/overdue"
+      data-authed="1"
+      data-hasfiles="0"
+      data-isarraybody="0"
+      autocomplete="off"
+      onsubmit="event.preventDefault(); executeTryOut('GETapi-task-assignment-items-overdue', this);">
+    <h3>
+        Request&nbsp;&nbsp;&nbsp;
+                    <button type="button"
+                    style="background-color: #8fbcd4; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-tryout-GETapi-task-assignment-items-overdue"
+                    onclick="tryItOut('GETapi-task-assignment-items-overdue');">Try it out ⚡
+            </button>
+            <button type="button"
+                    style="background-color: #c97a7e; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-canceltryout-GETapi-task-assignment-items-overdue"
+                    onclick="cancelTryOut('GETapi-task-assignment-items-overdue');" hidden>Cancel 🛑
+            </button>&nbsp;&nbsp;
+            <button type="submit"
+                    style="background-color: #6ac174; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-executetryout-GETapi-task-assignment-items-overdue"
+                    data-initial-text="Send Request 💥"
+                    data-loading-text="⏱ Sending..."
+                    hidden>Send Request 💥
+            </button>
+            </h3>
+            <p>
+            <small class="badge badge-green">GET</small>
+            <b><code>api/task-assignment-items/overdue</code></b>
+        </p>
+                <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Authorization" class="auth-value"               data-endpoint="GETapi-task-assignment-items-overdue"
+               value="Bearer Bearer {YOUR_ACCESS_TOKEN}"
+               data-component="header">
+    <br>
+<p>Example: <code>Bearer Bearer {YOUR_ACCESS_TOKEN}</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>X-Organization-Id</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="X-Organization-Id"                data-endpoint="GETapi-task-assignment-items-overdue"
+               value="ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1"
+               data-component="header">
+    <br>
+<p>Example: <code>ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Content-Type"                data-endpoint="GETapi-task-assignment-items-overdue"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Accept"                data-endpoint="GETapi-task-assignment-items-overdue"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                            <h4 class="fancy-heading-panel"><b>Query Parameters</b></h4>
+                                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>department_id</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="department_id"                data-endpoint="GETapi-task-assignment-items-overdue"
+               value="1"
+               data-component="query">
+    <br>
+<p>Lọc theo phòng ban. Example: <code>1</code></p>
+            </div>
+                                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>user_id</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="user_id"                data-endpoint="GETapi-task-assignment-items-overdue"
+               value="1"
+               data-component="query">
+    <br>
+<p>Lọc theo người dùng. Example: <code>1</code></p>
+            </div>
+                                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>priority</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="priority"                data-endpoint="GETapi-task-assignment-items-overdue"
+               value="architecto"
+               data-component="query">
+    <br>
+<p>Lọc theo mức độ ưu tiên. Example: <code>architecto</code></p>
+            </div>
+                                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>sort_by</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="sort_by"                data-endpoint="GETapi-task-assignment-items-overdue"
+               value="end_at"
+               data-component="query">
+    <br>
+<p>Sắp xếp theo: end_at, priority, created_at. Example: <code>end_at</code></p>
+            </div>
+                                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>sort_order</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="sort_order"                data-endpoint="GETapi-task-assignment-items-overdue"
+               value="asc"
+               data-component="query">
+    <br>
+<p>Thứ tự: asc, desc. Example: <code>asc</code></p>
+            </div>
+                                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>limit</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="limit"                data-endpoint="GETapi-task-assignment-items-overdue"
+               value="10"
+               data-component="query">
+    <br>
+<p>Số bản ghi mỗi trang. Example: <code>10</code></p>
+            </div>
+                        <h4 class="fancy-heading-panel"><b>Body Parameters</b></h4>
+        <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>processing_status</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="processing_status"                data-endpoint="GETapi-task-assignment-items-overdue"
+               value="architecto"
+               data-component="body">
+    <br>
+<p>Example: <code>architecto</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>priority</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="priority"                data-endpoint="GETapi-task-assignment-items-overdue"
+               value="architecto"
+               data-component="body">
+    <br>
+<p>Example: <code>architecto</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>deadline_type</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="deadline_type"                data-endpoint="GETapi-task-assignment-items-overdue"
+               value="architecto"
+               data-component="body">
+    <br>
+<p>Example: <code>architecto</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>from_date</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="from_date"                data-endpoint="GETapi-task-assignment-items-overdue"
+               value="2026-04-03T01:16:39"
+               data-component="body">
+    <br>
+<p>Must be a valid date. Example: <code>2026-04-03T01:16:39</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>to_date</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="to_date"                data-endpoint="GETapi-task-assignment-items-overdue"
+               value="2052-04-26"
+               data-component="body">
+    <br>
+<p>Must be a valid date. Must be a date after or equal to <code>from_date</code>. Example: <code>2052-04-26</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>task_assignment_item_type_id</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="task_assignment_item_type_id"                data-endpoint="GETapi-task-assignment-items-overdue"
+               value="16"
+               data-component="body">
+    <br>
+<p>The <code>id</code> of an existing record in the task_assignment_item_types table. Example: <code>16</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>department_id</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="department_id"                data-endpoint="GETapi-task-assignment-items-overdue"
+               value="16"
+               data-component="body">
+    <br>
+<p>The <code>id</code> of an existing record in the task_assignment_departments table. Example: <code>16</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>user_id</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="user_id"                data-endpoint="GETapi-task-assignment-items-overdue"
+               value="16"
+               data-component="body">
+    <br>
+<p>The <code>id</code> of an existing record in the users table. Example: <code>16</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>sort_by</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="sort_by"                data-endpoint="GETapi-task-assignment-items-overdue"
+               value="architecto"
+               data-component="body">
+    <br>
+<p>Example: <code>architecto</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>sort_order</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="sort_order"                data-endpoint="GETapi-task-assignment-items-overdue"
+               value="desc"
+               data-component="body">
+    <br>
+<p>Example: <code>desc</code></p>
+Must be one of:
+<ul style="list-style-type: square;"><li><code>asc</code></li> <li><code>desc</code></li></ul>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>limit</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="limit"                data-endpoint="GETapi-task-assignment-items-overdue"
+               value="22"
+               data-component="body">
+    <br>
+<p>Must be at least 1. Must not be greater than 100. Example: <code>22</code></p>
+        </div>
+        </form>
+
+                    <h2 id="taskassignment-cong-viec-GETapi-task-assignment-items-upcoming-deadline">Danh sách công việc sắp đến hạn</h2>
+
+<p>
+<small class="badge badge-darkred">requires authentication</small>
+</p>
+
+
+
+<span id="example-requests-GETapi-task-assignment-items-upcoming-deadline">
+<blockquote>Example request:</blockquote>
+
+
+<div class="bash-example">
+    <pre><code class="language-bash">curl --request GET \
+    --get "http://localhost/api/task-assignment-items/upcoming-deadline?days=3&amp;department_id=1&amp;user_id=1&amp;priority=architecto&amp;limit=10" \
+    --header "Authorization: Bearer Bearer {YOUR_ACCESS_TOKEN}" \
+    --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
+    --header "Content-Type: application/json" \
+    --header "Accept: application/json" \
+    --data "{
+    \"days\": 1,
+    \"department_id\": 16,
+    \"user_id\": 16,
+    \"priority\": \"architecto\",
+    \"sort_by\": \"architecto\",
+    \"sort_order\": \"desc\",
+    \"limit\": 22
+}"
+</code></pre></div>
+
+
+<div class="javascript-example">
+    <pre><code class="language-javascript">const url = new URL(
+    "http://localhost/api/task-assignment-items/upcoming-deadline"
+);
+
+const params = {
+    "days": "3",
+    "department_id": "1",
+    "user_id": "1",
+    "priority": "architecto",
+    "limit": "10",
+};
+Object.keys(params)
+    .forEach(key =&gt; url.searchParams.append(key, params[key]));
+
+const headers = {
+    "Authorization": "Bearer Bearer {YOUR_ACCESS_TOKEN}",
+    "X-Organization-Id": "ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1",
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+};
+
+let body = {
+    "days": 1,
+    "department_id": 16,
+    "user_id": 16,
+    "priority": "architecto",
+    "sort_by": "architecto",
+    "sort_order": "desc",
+    "limit": 22
+};
+
+fetch(url, {
+    method: "GET",
+    headers,
+    body: JSON.stringify(body),
+}).then(response =&gt; response.json());</code></pre></div>
+
+
+<div class="php-example">
+    <pre><code class="language-php">$client = new \GuzzleHttp\Client();
+$url = 'http://localhost/api/task-assignment-items/upcoming-deadline';
+$response = $client-&gt;get(
+    $url,
+    [
+        'headers' =&gt; [
+            'Authorization' =&gt; 'Bearer Bearer {YOUR_ACCESS_TOKEN}',
+            'X-Organization-Id' =&gt; 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1',
+            'Content-Type' =&gt; 'application/json',
+            'Accept' =&gt; 'application/json',
+        ],
+        'query' =&gt; [
+            'days' =&gt; '3',
+            'department_id' =&gt; '1',
+            'user_id' =&gt; '1',
+            'priority' =&gt; 'architecto',
+            'limit' =&gt; '10',
+        ],
+        'json' =&gt; [
+            'days' =&gt; 1,
+            'department_id' =&gt; 16,
+            'user_id' =&gt; 16,
+            'priority' =&gt; 'architecto',
+            'sort_by' =&gt; 'architecto',
+            'sort_order' =&gt; 'desc',
+            'limit' =&gt; 22,
+        ],
+    ]
+);
+$body = $response-&gt;getBody();
+print_r(json_decode((string) $body));</code></pre></div>
+
+</span>
+
+<span id="example-responses-GETapi-task-assignment-items-upcoming-deadline">
+            <blockquote>
+            <p>Example response (200):</p>
+        </blockquote>
+                <pre>
+
+<code class="language-json" style="max-height: 300px;">{
+    &quot;data&quot;: [
+        {
+            &quot;id&quot;: 43,
+            &quot;name&quot;: &quot;Animi quos velit.&quot;,
+            &quot;description&quot;: &quot;Sunt nihil accusantium harum mollitia. Deserunt aut ab provident perspiciatis quo omnis nostrum. Adipisci quidem nostrum qui commodi incidunt iure.&quot;,
+            &quot;deadline_type&quot;: &quot;no_deadline&quot;,
+            &quot;start_at&quot;: null,
+            &quot;end_at&quot;: null,
+            &quot;processing_status&quot;: &quot;todo&quot;,
+            &quot;completion_percent&quot;: 0,
+            &quot;priority&quot;: &quot;medium&quot;,
+            &quot;completed_at&quot;: null,
+            &quot;created_by&quot;: &quot;N/A&quot;,
+            &quot;updated_by&quot;: &quot;N/A&quot;,
+            &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
+        },
+        {
+            &quot;id&quot;: 44,
+            &quot;name&quot;: &quot;Deleniti distinctio eum doloremque.&quot;,
+            &quot;description&quot;: &quot;Libero aliquam veniam corporis dolorem mollitia deleniti. Odit quia officia est dignissimos neque blanditiis odio. Excepturi doloribus delectus fugit qui repudiandae laboriosam.&quot;,
+            &quot;deadline_type&quot;: &quot;no_deadline&quot;,
+            &quot;start_at&quot;: null,
+            &quot;end_at&quot;: null,
+            &quot;processing_status&quot;: &quot;todo&quot;,
+            &quot;completion_percent&quot;: 0,
+            &quot;priority&quot;: &quot;medium&quot;,
+            &quot;completed_at&quot;: null,
+            &quot;created_by&quot;: &quot;N/A&quot;,
+            &quot;updated_by&quot;: &quot;N/A&quot;,
+            &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
+        }
+    ],
+    &quot;links&quot;: {
+        &quot;first&quot;: &quot;/?page=1&quot;,
+        &quot;last&quot;: &quot;/?page=1&quot;,
+        &quot;prev&quot;: null,
+        &quot;next&quot;: null
+    },
+    &quot;meta&quot;: {
+        &quot;current_page&quot;: 1,
+        &quot;from&quot;: 1,
+        &quot;last_page&quot;: 1,
+        &quot;links&quot;: [
+            {
+                &quot;url&quot;: null,
+                &quot;label&quot;: &quot;&amp;laquo; Previous&quot;,
+                &quot;page&quot;: null,
+                &quot;active&quot;: false
+            },
+            {
+                &quot;url&quot;: &quot;/?page=1&quot;,
+                &quot;label&quot;: &quot;1&quot;,
+                &quot;page&quot;: 1,
+                &quot;active&quot;: true
+            },
+            {
+                &quot;url&quot;: null,
+                &quot;label&quot;: &quot;Next &amp;raquo;&quot;,
+                &quot;page&quot;: null,
+                &quot;active&quot;: false
+            }
+        ],
+        &quot;path&quot;: &quot;/&quot;,
+        &quot;per_page&quot;: 10,
+        &quot;to&quot;: 2,
+        &quot;total&quot;: 2
+    },
+    &quot;success&quot;: &quot;true&quot;
+}</code>
+ </pre>
+    </span>
+<span id="execution-results-GETapi-task-assignment-items-upcoming-deadline" hidden>
+    <blockquote>Received response<span
+                id="execution-response-status-GETapi-task-assignment-items-upcoming-deadline"></span>:
+    </blockquote>
+    <pre class="json"><code id="execution-response-content-GETapi-task-assignment-items-upcoming-deadline"
+      data-empty-response-text="<Empty response>" style="max-height: 400px;"></code></pre>
+</span>
+<span id="execution-error-GETapi-task-assignment-items-upcoming-deadline" hidden>
+    <blockquote>Request failed with error:</blockquote>
+    <pre><code id="execution-error-message-GETapi-task-assignment-items-upcoming-deadline">
+
+Tip: Check that you&#039;re properly connected to the network.
+If you&#039;re a maintainer of ths API, verify that your API is running and you&#039;ve enabled CORS.
+You can check the Dev Tools console for debugging information.</code></pre>
+</span>
+<form id="form-GETapi-task-assignment-items-upcoming-deadline" data-method="GET"
+      data-path="api/task-assignment-items/upcoming-deadline"
+      data-authed="1"
+      data-hasfiles="0"
+      data-isarraybody="0"
+      autocomplete="off"
+      onsubmit="event.preventDefault(); executeTryOut('GETapi-task-assignment-items-upcoming-deadline', this);">
+    <h3>
+        Request&nbsp;&nbsp;&nbsp;
+                    <button type="button"
+                    style="background-color: #8fbcd4; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-tryout-GETapi-task-assignment-items-upcoming-deadline"
+                    onclick="tryItOut('GETapi-task-assignment-items-upcoming-deadline');">Try it out ⚡
+            </button>
+            <button type="button"
+                    style="background-color: #c97a7e; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-canceltryout-GETapi-task-assignment-items-upcoming-deadline"
+                    onclick="cancelTryOut('GETapi-task-assignment-items-upcoming-deadline');" hidden>Cancel 🛑
+            </button>&nbsp;&nbsp;
+            <button type="submit"
+                    style="background-color: #6ac174; padding: 5px 10px; border-radius: 5px; border-width: thin;"
+                    id="btn-executetryout-GETapi-task-assignment-items-upcoming-deadline"
+                    data-initial-text="Send Request 💥"
+                    data-loading-text="⏱ Sending..."
+                    hidden>Send Request 💥
+            </button>
+            </h3>
+            <p>
+            <small class="badge badge-green">GET</small>
+            <b><code>api/task-assignment-items/upcoming-deadline</code></b>
+        </p>
+                <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Authorization" class="auth-value"               data-endpoint="GETapi-task-assignment-items-upcoming-deadline"
+               value="Bearer Bearer {YOUR_ACCESS_TOKEN}"
+               data-component="header">
+    <br>
+<p>Example: <code>Bearer Bearer {YOUR_ACCESS_TOKEN}</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>X-Organization-Id</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="X-Organization-Id"                data-endpoint="GETapi-task-assignment-items-upcoming-deadline"
+               value="ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1"
+               data-component="header">
+    <br>
+<p>Example: <code>ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Content-Type"                data-endpoint="GETapi-task-assignment-items-upcoming-deadline"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Accept</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Accept"                data-endpoint="GETapi-task-assignment-items-upcoming-deadline"
+               value="application/json"
+               data-component="header">
+    <br>
+<p>Example: <code>application/json</code></p>
+            </div>
+                            <h4 class="fancy-heading-panel"><b>Query Parameters</b></h4>
+                                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>days</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="days"                data-endpoint="GETapi-task-assignment-items-upcoming-deadline"
+               value="3"
+               data-component="query">
+    <br>
+<p>Số ngày (1-30, mặc định 3). Example: <code>3</code></p>
+            </div>
+                                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>department_id</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="department_id"                data-endpoint="GETapi-task-assignment-items-upcoming-deadline"
+               value="1"
+               data-component="query">
+    <br>
+<p>Lọc theo phòng ban. Example: <code>1</code></p>
+            </div>
+                                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>user_id</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="user_id"                data-endpoint="GETapi-task-assignment-items-upcoming-deadline"
+               value="1"
+               data-component="query">
+    <br>
+<p>Lọc theo người dùng. Example: <code>1</code></p>
+            </div>
+                                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>priority</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="priority"                data-endpoint="GETapi-task-assignment-items-upcoming-deadline"
+               value="architecto"
+               data-component="query">
+    <br>
+<p>Lọc theo mức độ ưu tiên. Example: <code>architecto</code></p>
+            </div>
+                                    <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>limit</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="limit"                data-endpoint="GETapi-task-assignment-items-upcoming-deadline"
+               value="10"
+               data-component="query">
+    <br>
+<p>Số bản ghi mỗi trang. Example: <code>10</code></p>
+            </div>
+                        <h4 class="fancy-heading-panel"><b>Body Parameters</b></h4>
+        <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>days</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="days"                data-endpoint="GETapi-task-assignment-items-upcoming-deadline"
+               value="1"
+               data-component="body">
+    <br>
+<p>Must be at least 1. Must not be greater than 30. Example: <code>1</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>department_id</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="department_id"                data-endpoint="GETapi-task-assignment-items-upcoming-deadline"
+               value="16"
+               data-component="body">
+    <br>
+<p>The <code>id</code> of an existing record in the task_assignment_departments table. Example: <code>16</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>user_id</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="user_id"                data-endpoint="GETapi-task-assignment-items-upcoming-deadline"
+               value="16"
+               data-component="body">
+    <br>
+<p>The <code>id</code> of an existing record in the users table. Example: <code>16</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>priority</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="priority"                data-endpoint="GETapi-task-assignment-items-upcoming-deadline"
+               value="architecto"
+               data-component="body">
+    <br>
+<p>Example: <code>architecto</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>sort_by</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="sort_by"                data-endpoint="GETapi-task-assignment-items-upcoming-deadline"
+               value="architecto"
+               data-component="body">
+    <br>
+<p>Example: <code>architecto</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>sort_order</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="sort_order"                data-endpoint="GETapi-task-assignment-items-upcoming-deadline"
+               value="desc"
+               data-component="body">
+    <br>
+<p>Example: <code>desc</code></p>
+Must be one of:
+<ul style="list-style-type: square;"><li><code>asc</code></li> <li><code>desc</code></li></ul>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>limit</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="limit"                data-endpoint="GETapi-task-assignment-items-upcoming-deadline"
+               value="22"
+               data-component="body">
+    <br>
+<p>Must be at least 1. Must not be greater than 100. Example: <code>22</code></p>
+        </div>
+        </form>
+
                     <h2 id="taskassignment-cong-viec-GETapi-task-assignment-items">Danh sách công việc</h2>
 
 <p>
@@ -19929,7 +22099,7 @@ print_r(json_decode((string) $body));</code></pre></div>
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: [
         {
-            &quot;id&quot;: 1,
+            &quot;id&quot;: 45,
             &quot;name&quot;: &quot;Et animi quos velit.&quot;,
             &quot;description&quot;: &quot;Sunt nihil accusantium harum mollitia. Deserunt aut ab provident perspiciatis quo omnis nostrum. Adipisci quidem nostrum qui commodi incidunt iure.&quot;,
             &quot;deadline_type&quot;: &quot;no_deadline&quot;,
@@ -19941,11 +22111,11 @@ print_r(json_decode((string) $body));</code></pre></div>
             &quot;completed_at&quot;: null,
             &quot;created_by&quot;: &quot;N/A&quot;,
             &quot;updated_by&quot;: &quot;N/A&quot;,
-            &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
         },
         {
-            &quot;id&quot;: 2,
+            &quot;id&quot;: 46,
             &quot;name&quot;: &quot;Deleniti distinctio eum doloremque.&quot;,
             &quot;description&quot;: &quot;Libero aliquam veniam corporis dolorem mollitia deleniti. Odit quia officia est dignissimos neque blanditiis odio. Excepturi doloribus delectus fugit qui repudiandae laboriosam.&quot;,
             &quot;deadline_type&quot;: &quot;no_deadline&quot;,
@@ -19957,8 +22127,8 @@ print_r(json_decode((string) $body));</code></pre></div>
             &quot;completed_at&quot;: null,
             &quot;created_by&quot;: &quot;N/A&quot;,
             &quot;updated_by&quot;: &quot;N/A&quot;,
-            &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
         }
     ],
     &quot;links&quot;: {
@@ -20220,7 +22390,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request GET \
-    --get "http://localhost/api/task-assignment-items/16" \
+    --get "http://localhost/api/task-assignment-items/30" \
     --header "Authorization: Bearer Bearer {YOUR_ACCESS_TOKEN}" \
     --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
     --header "Content-Type: application/json" \
@@ -20229,7 +22399,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/task-assignment-items/16"
+    "http://localhost/api/task-assignment-items/30"
 );
 
 const headers = {
@@ -20248,7 +22418,7 @@ fetch(url, {
 
 <div class="php-example">
     <pre><code class="language-php">$client = new \GuzzleHttp\Client();
-$url = 'http://localhost/api/task-assignment-items/16';
+$url = 'http://localhost/api/task-assignment-items/30';
 $response = $client-&gt;get(
     $url,
     [
@@ -20273,7 +22443,7 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 3,
+        &quot;id&quot;: 47,
         &quot;name&quot;: &quot;Adipisci quidem nostrum qui commodi.&quot;,
         &quot;description&quot;: &quot;Odit et et modi. Nostrum omnis autem et consequatur aut. Enim non facere tempora ex voluptatem laboriosam praesentium. Adipisci molestias fugit deleniti distinctio eum doloremque id.&quot;,
         &quot;deadline_type&quot;: &quot;no_deadline&quot;,
@@ -20285,8 +22455,8 @@ print_r(json_decode((string) $body));</code></pre></div>
         &quot;completed_at&quot;: null,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;
 }</code>
@@ -20395,10 +22565,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="taskAssignmentItem_id"                data-endpoint="GETapi-task-assignment-items--taskAssignmentItem_id-"
-               value="16"
+               value="30"
                data-component="url">
     <br>
-<p>The ID of the taskAssignmentItem. Example: <code>16</code></p>
+<p>The ID of the taskAssignmentItem. Example: <code>30</code></p>
             </div>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>taskAssignmentItem</code></b>&nbsp;&nbsp;
@@ -20585,7 +22755,7 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 4,
+        &quot;id&quot;: 48,
         &quot;name&quot;: &quot;Sunt nihil accusantium harum.&quot;,
         &quot;description&quot;: &quot;Deserunt aut ab provident perspiciatis quo omnis nostrum. Adipisci quidem nostrum qui commodi incidunt iure. Et et modi ipsum nostrum.&quot;,
         &quot;deadline_type&quot;: &quot;no_deadline&quot;,
@@ -20597,8 +22767,8 @@ print_r(json_decode((string) $body));</code></pre></div>
         &quot;completed_at&quot;: null,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;C&ocirc;ng việc đ&atilde; được tạo th&agrave;nh c&ocirc;ng!&quot;
@@ -21005,7 +23175,7 @@ Must be one of:
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request PUT \
-    "http://localhost/api/task-assignment-items/16" \
+    "http://localhost/api/task-assignment-items/30" \
     --header "Authorization: Bearer Bearer {YOUR_ACCESS_TOKEN}" \
     --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
     --header "Content-Type: application/json" \
@@ -21046,7 +23216,7 @@ Must be one of:
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/task-assignment-items/16"
+    "http://localhost/api/task-assignment-items/30"
 );
 
 const headers = {
@@ -21097,7 +23267,7 @@ fetch(url, {
 
 <div class="php-example">
     <pre><code class="language-php">$client = new \GuzzleHttp\Client();
-$url = 'http://localhost/api/task-assignment-items/16';
+$url = 'http://localhost/api/task-assignment-items/30';
 $response = $client-&gt;put(
     $url,
     [
@@ -21153,7 +23323,7 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 5,
+        &quot;id&quot;: 49,
         &quot;name&quot;: &quot;Et animi quos velit.&quot;,
         &quot;description&quot;: &quot;Sunt nihil accusantium harum mollitia. Deserunt aut ab provident perspiciatis quo omnis nostrum. Adipisci quidem nostrum qui commodi incidunt iure.&quot;,
         &quot;deadline_type&quot;: &quot;no_deadline&quot;,
@@ -21165,8 +23335,8 @@ print_r(json_decode((string) $body));</code></pre></div>
         &quot;completed_at&quot;: null,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;C&ocirc;ng việc đ&atilde; được cập nhật!&quot;
@@ -21276,10 +23446,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="taskAssignmentItem_id"                data-endpoint="PUTapi-task-assignment-items--taskAssignmentItem_id-"
-               value="16"
+               value="30"
                data-component="url">
     <br>
-<p>The ID of the taskAssignmentItem. Example: <code>16</code></p>
+<p>The ID of the taskAssignmentItem. Example: <code>30</code></p>
             </div>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>taskAssignmentItem</code></b>&nbsp;&nbsp;
@@ -21574,7 +23744,7 @@ Must be one of:
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request PATCH \
-    "http://localhost/api/task-assignment-items/16" \
+    "http://localhost/api/task-assignment-items/30" \
     --header "Authorization: Bearer Bearer {YOUR_ACCESS_TOKEN}" \
     --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
     --header "Content-Type: application/json" \
@@ -21615,7 +23785,7 @@ Must be one of:
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/task-assignment-items/16"
+    "http://localhost/api/task-assignment-items/30"
 );
 
 const headers = {
@@ -21666,7 +23836,7 @@ fetch(url, {
 
 <div class="php-example">
     <pre><code class="language-php">$client = new \GuzzleHttp\Client();
-$url = 'http://localhost/api/task-assignment-items/16';
+$url = 'http://localhost/api/task-assignment-items/30';
 $response = $client-&gt;patch(
     $url,
     [
@@ -21722,7 +23892,7 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 6,
+        &quot;id&quot;: 50,
         &quot;name&quot;: &quot;Et animi quos velit.&quot;,
         &quot;description&quot;: &quot;Sunt nihil accusantium harum mollitia. Deserunt aut ab provident perspiciatis quo omnis nostrum. Adipisci quidem nostrum qui commodi incidunt iure.&quot;,
         &quot;deadline_type&quot;: &quot;no_deadline&quot;,
@@ -21734,8 +23904,8 @@ print_r(json_decode((string) $body));</code></pre></div>
         &quot;completed_at&quot;: null,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;C&ocirc;ng việc đ&atilde; được cập nhật!&quot;
@@ -21845,10 +24015,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="taskAssignmentItem_id"                data-endpoint="PATCHapi-task-assignment-items--taskAssignmentItem_id-"
-               value="16"
+               value="30"
                data-component="url">
     <br>
-<p>The ID of the taskAssignmentItem. Example: <code>16</code></p>
+<p>The ID of the taskAssignmentItem. Example: <code>30</code></p>
             </div>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>taskAssignmentItem</code></b>&nbsp;&nbsp;
@@ -22143,7 +24313,7 @@ Must be one of:
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request DELETE \
-    "http://localhost/api/task-assignment-items/16" \
+    "http://localhost/api/task-assignment-items/30" \
     --header "Authorization: Bearer Bearer {YOUR_ACCESS_TOKEN}" \
     --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
     --header "Content-Type: application/json" \
@@ -22152,7 +24322,7 @@ Must be one of:
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/task-assignment-items/16"
+    "http://localhost/api/task-assignment-items/30"
 );
 
 const headers = {
@@ -22171,7 +24341,7 @@ fetch(url, {
 
 <div class="php-example">
     <pre><code class="language-php">$client = new \GuzzleHttp\Client();
-$url = 'http://localhost/api/task-assignment-items/16';
+$url = 'http://localhost/api/task-assignment-items/30';
 $response = $client-&gt;delete(
     $url,
     [
@@ -22303,10 +24473,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="taskAssignmentItem_id"                data-endpoint="DELETEapi-task-assignment-items--taskAssignmentItem_id-"
-               value="16"
+               value="30"
                data-component="url">
     <br>
-<p>The ID of the taskAssignmentItem. Example: <code>16</code></p>
+<p>The ID of the taskAssignmentItem. Example: <code>30</code></p>
             </div>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>taskAssignmentItem</code></b>&nbsp;&nbsp;
@@ -22336,7 +24506,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request PATCH \
-    "http://localhost/api/task-assignment-items/16/progress" \
+    "http://localhost/api/task-assignment-items/30/progress" \
     --header "Authorization: Bearer Bearer {YOUR_ACCESS_TOKEN}" \
     --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
     --header "Content-Type: application/json" \
@@ -22352,7 +24522,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/task-assignment-items/16/progress"
+    "http://localhost/api/task-assignment-items/30/progress"
 );
 
 const headers = {
@@ -22378,7 +24548,7 @@ fetch(url, {
 
 <div class="php-example">
     <pre><code class="language-php">$client = new \GuzzleHttp\Client();
-$url = 'http://localhost/api/task-assignment-items/16/progress';
+$url = 'http://localhost/api/task-assignment-items/30/progress';
 $response = $client-&gt;patch(
     $url,
     [
@@ -22409,7 +24579,7 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 7,
+        &quot;id&quot;: 51,
         &quot;name&quot;: &quot;Et animi quos velit.&quot;,
         &quot;description&quot;: &quot;Sunt nihil accusantium harum mollitia. Deserunt aut ab provident perspiciatis quo omnis nostrum. Adipisci quidem nostrum qui commodi incidunt iure.&quot;,
         &quot;deadline_type&quot;: &quot;no_deadline&quot;,
@@ -22421,8 +24591,8 @@ print_r(json_decode((string) $body));</code></pre></div>
         &quot;completed_at&quot;: null,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;Cập nhật tiến độ th&agrave;nh c&ocirc;ng!&quot;
@@ -22532,10 +24702,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="taskAssignmentItem_id"                data-endpoint="PATCHapi-task-assignment-items--taskAssignmentItem_id--progress"
-               value="16"
+               value="30"
                data-component="url">
     <br>
-<p>The ID of the taskAssignmentItem. Example: <code>16</code></p>
+<p>The ID of the taskAssignmentItem. Example: <code>30</code></p>
             </div>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>taskAssignmentItem</code></b>&nbsp;&nbsp;
@@ -22616,7 +24786,7 @@ Must be one of:
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request PATCH \
-    "http://localhost/api/task-assignment-items/16/status" \
+    "http://localhost/api/task-assignment-items/30/status" \
     --header "Authorization: Bearer Bearer {YOUR_ACCESS_TOKEN}" \
     --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
     --header "Content-Type: application/json" \
@@ -22629,7 +24799,7 @@ Must be one of:
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/task-assignment-items/16/status"
+    "http://localhost/api/task-assignment-items/30/status"
 );
 
 const headers = {
@@ -22652,7 +24822,7 @@ fetch(url, {
 
 <div class="php-example">
     <pre><code class="language-php">$client = new \GuzzleHttp\Client();
-$url = 'http://localhost/api/task-assignment-items/16/status';
+$url = 'http://localhost/api/task-assignment-items/30/status';
 $response = $client-&gt;patch(
     $url,
     [
@@ -22680,7 +24850,7 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 8,
+        &quot;id&quot;: 52,
         &quot;name&quot;: &quot;Adipisci quidem nostrum qui commodi.&quot;,
         &quot;description&quot;: &quot;Odit et et modi. Nostrum omnis autem et consequatur aut. Enim non facere tempora ex voluptatem laboriosam praesentium. Adipisci molestias fugit deleniti distinctio eum doloremque id.&quot;,
         &quot;deadline_type&quot;: &quot;no_deadline&quot;,
@@ -22692,8 +24862,8 @@ print_r(json_decode((string) $body));</code></pre></div>
         &quot;completed_at&quot;: null,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;Đổi trạng th&aacute;i th&agrave;nh c&ocirc;ng!&quot;
@@ -22803,10 +24973,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="taskAssignmentItem_id"                data-endpoint="PATCHapi-task-assignment-items--taskAssignmentItem_id--status"
-               value="16"
+               value="30"
                data-component="url">
     <br>
-<p>The ID of the taskAssignmentItem. Example: <code>16</code></p>
+<p>The ID of the taskAssignmentItem. Example: <code>30</code></p>
             </div>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>taskAssignmentItem</code></b>&nbsp;&nbsp;
@@ -22924,24 +25094,24 @@ print_r(json_decode((string) $body));</code></pre></div>
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: [
         {
-            &quot;id&quot;: 1,
+            &quot;id&quot;: 26,
             &quot;name&quot;: &quot;eius et animi&quot;,
             &quot;description&quot;: &quot;Velit et fugiat sunt nihil accusantium.&quot;,
             &quot;status&quot;: &quot;active&quot;,
             &quot;created_by&quot;: &quot;N/A&quot;,
             &quot;updated_by&quot;: &quot;N/A&quot;,
-            &quot;created_at&quot;: &quot;14:10:47 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:47 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:37 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:37 03/04/2026&quot;
         },
         {
-            &quot;id&quot;: 2,
+            &quot;id&quot;: 27,
             &quot;name&quot;: &quot;harum mollitia modi&quot;,
             &quot;description&quot;: &quot;Aut ab provident perspiciatis quo omnis nostrum aut.&quot;,
             &quot;status&quot;: &quot;active&quot;,
             &quot;created_by&quot;: &quot;N/A&quot;,
             &quot;updated_by&quot;: &quot;N/A&quot;,
-            &quot;created_at&quot;: &quot;14:10:47 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:47 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:37 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:37 03/04/2026&quot;
         }
     ],
     &quot;success&quot;: &quot;true&quot;
@@ -23203,12 +25373,12 @@ print_r(json_decode((string) $body));</code></pre></div>
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: [
         {
-            &quot;id&quot;: 3,
+            &quot;id&quot;: 28,
             &quot;name&quot;: &quot;eius et animi&quot;,
             &quot;description&quot;: &quot;Velit et fugiat sunt nihil accusantium.&quot;
         },
         {
-            &quot;id&quot;: 4,
+            &quot;id&quot;: 29,
             &quot;name&quot;: &quot;harum mollitia modi&quot;,
             &quot;description&quot;: &quot;Aut ab provident perspiciatis quo omnis nostrum aut.&quot;
         }
@@ -23688,7 +25858,7 @@ Must be one of:
     --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
     --header "Content-Type: multipart/form-data" \
     --header "Accept: application/json" \
-    --form "file=@C:\Users\tuanl\AppData\Local\Temp\php5F15.tmp" </code></pre></div>
+    --form "file=@/tmp/phpohaputrdgclhdLpKW4X" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -23728,7 +25898,7 @@ $response = $client-&gt;post(
         'multipart' =&gt; [
             [
                 'name' =&gt; 'file',
-                'contents' =&gt; fopen('C:\Users\tuanl\AppData\Local\Temp\php5F15.tmp', 'r')
+                'contents' =&gt; fopen('/tmp/phpohaputrdgclhdLpKW4X', 'r')
             ],
         ],
     ]
@@ -23856,7 +26026,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>File Excel (xlsx, xls, csv). Cột theo chuẩn export. Example: <code>C:\Users\tuanl\AppData\Local\Temp\php5F15.tmp</code></p>
+<p>File Excel (xlsx, xls, csv). Cột theo chuẩn export. Example: <code>/tmp/phpohaputrdgclhdLpKW4X</code></p>
         </div>
         </form>
 
@@ -24654,24 +26824,24 @@ print_r(json_decode((string) $body));</code></pre></div>
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: [
         {
-            &quot;id&quot;: 5,
+            &quot;id&quot;: 30,
             &quot;name&quot;: &quot;eius et animi&quot;,
             &quot;description&quot;: &quot;Velit et fugiat sunt nihil accusantium.&quot;,
             &quot;status&quot;: &quot;active&quot;,
             &quot;created_by&quot;: &quot;N/A&quot;,
             &quot;updated_by&quot;: &quot;N/A&quot;,
-            &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
         },
         {
-            &quot;id&quot;: 6,
+            &quot;id&quot;: 31,
             &quot;name&quot;: &quot;harum mollitia modi&quot;,
             &quot;description&quot;: &quot;Aut ab provident perspiciatis quo omnis nostrum aut.&quot;,
             &quot;status&quot;: &quot;active&quot;,
             &quot;created_by&quot;: &quot;N/A&quot;,
             &quot;updated_by&quot;: &quot;N/A&quot;,
-            &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
         }
     ],
     &quot;links&quot;: {
@@ -24909,7 +27079,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request GET \
-    --get "http://localhost/api/task-assignment-item-types/16" \
+    --get "http://localhost/api/task-assignment-item-types/24" \
     --header "Authorization: Bearer Bearer {YOUR_ACCESS_TOKEN}" \
     --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
     --header "Content-Type: application/json" \
@@ -24918,7 +27088,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/task-assignment-item-types/16"
+    "http://localhost/api/task-assignment-item-types/24"
 );
 
 const headers = {
@@ -24937,7 +27107,7 @@ fetch(url, {
 
 <div class="php-example">
     <pre><code class="language-php">$client = new \GuzzleHttp\Client();
-$url = 'http://localhost/api/task-assignment-item-types/16';
+$url = 'http://localhost/api/task-assignment-item-types/24';
 $response = $client-&gt;get(
     $url,
     [
@@ -24962,14 +27132,14 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 7,
+        &quot;id&quot;: 32,
         &quot;name&quot;: &quot;aut adipisci quidem&quot;,
         &quot;description&quot;: &quot;Qui commodi incidunt iure odit.&quot;,
         &quot;status&quot;: &quot;active&quot;,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;
 }</code>
@@ -25078,10 +27248,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="taskAssignmentItemType_id"                data-endpoint="GETapi-task-assignment-item-types--taskAssignmentItemType_id-"
-               value="16"
+               value="24"
                data-component="url">
     <br>
-<p>The ID of the taskAssignmentItemType. Example: <code>16</code></p>
+<p>The ID of the taskAssignmentItemType. Example: <code>24</code></p>
             </div>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>taskAssignmentItemType</code></b>&nbsp;&nbsp;
@@ -25181,14 +27351,14 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 8,
+        &quot;id&quot;: 33,
         &quot;name&quot;: &quot;fugiat sunt nihil&quot;,
         &quot;description&quot;: &quot;Harum mollitia modi deserunt aut ab provident perspiciatis quo.&quot;,
         &quot;status&quot;: &quot;active&quot;,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;Tạo loại c&ocirc;ng việc th&agrave;nh c&ocirc;ng!&quot;
@@ -25343,7 +27513,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request PUT \
-    "http://localhost/api/task-assignment-item-types/16" \
+    "http://localhost/api/task-assignment-item-types/24" \
     --header "Authorization: Bearer Bearer {YOUR_ACCESS_TOKEN}" \
     --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
     --header "Content-Type: application/json" \
@@ -25358,7 +27528,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/task-assignment-item-types/16"
+    "http://localhost/api/task-assignment-item-types/24"
 );
 
 const headers = {
@@ -25383,7 +27553,7 @@ fetch(url, {
 
 <div class="php-example">
     <pre><code class="language-php">$client = new \GuzzleHttp\Client();
-$url = 'http://localhost/api/task-assignment-item-types/16';
+$url = 'http://localhost/api/task-assignment-item-types/24';
 $response = $client-&gt;put(
     $url,
     [
@@ -25413,14 +27583,14 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 9,
+        &quot;id&quot;: 34,
         &quot;name&quot;: &quot;eius et animi&quot;,
         &quot;description&quot;: &quot;Velit et fugiat sunt nihil accusantium.&quot;,
         &quot;status&quot;: &quot;active&quot;,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;Cập nhật loại c&ocirc;ng việc th&agrave;nh c&ocirc;ng!&quot;
@@ -25530,10 +27700,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="taskAssignmentItemType_id"                data-endpoint="PUTapi-task-assignment-item-types--taskAssignmentItemType_id-"
-               value="16"
+               value="24"
                data-component="url">
     <br>
-<p>The ID of the taskAssignmentItemType. Example: <code>16</code></p>
+<p>The ID of the taskAssignmentItemType. Example: <code>24</code></p>
             </div>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>taskAssignmentItemType</code></b>&nbsp;&nbsp;
@@ -25600,7 +27770,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request PATCH \
-    "http://localhost/api/task-assignment-item-types/16" \
+    "http://localhost/api/task-assignment-item-types/24" \
     --header "Authorization: Bearer Bearer {YOUR_ACCESS_TOKEN}" \
     --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
     --header "Content-Type: application/json" \
@@ -25615,7 +27785,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/task-assignment-item-types/16"
+    "http://localhost/api/task-assignment-item-types/24"
 );
 
 const headers = {
@@ -25640,7 +27810,7 @@ fetch(url, {
 
 <div class="php-example">
     <pre><code class="language-php">$client = new \GuzzleHttp\Client();
-$url = 'http://localhost/api/task-assignment-item-types/16';
+$url = 'http://localhost/api/task-assignment-item-types/24';
 $response = $client-&gt;patch(
     $url,
     [
@@ -25670,14 +27840,14 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 10,
+        &quot;id&quot;: 35,
         &quot;name&quot;: &quot;eius et animi&quot;,
         &quot;description&quot;: &quot;Velit et fugiat sunt nihil accusantium.&quot;,
         &quot;status&quot;: &quot;active&quot;,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;Cập nhật loại c&ocirc;ng việc th&agrave;nh c&ocirc;ng!&quot;
@@ -25787,10 +27957,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="taskAssignmentItemType_id"                data-endpoint="PATCHapi-task-assignment-item-types--taskAssignmentItemType_id-"
-               value="16"
+               value="24"
                data-component="url">
     <br>
-<p>The ID of the taskAssignmentItemType. Example: <code>16</code></p>
+<p>The ID of the taskAssignmentItemType. Example: <code>24</code></p>
             </div>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>taskAssignmentItemType</code></b>&nbsp;&nbsp;
@@ -25857,7 +28027,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request DELETE \
-    "http://localhost/api/task-assignment-item-types/16" \
+    "http://localhost/api/task-assignment-item-types/24" \
     --header "Authorization: Bearer Bearer {YOUR_ACCESS_TOKEN}" \
     --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
     --header "Content-Type: application/json" \
@@ -25866,7 +28036,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/task-assignment-item-types/16"
+    "http://localhost/api/task-assignment-item-types/24"
 );
 
 const headers = {
@@ -25885,7 +28055,7 @@ fetch(url, {
 
 <div class="php-example">
     <pre><code class="language-php">$client = new \GuzzleHttp\Client();
-$url = 'http://localhost/api/task-assignment-item-types/16';
+$url = 'http://localhost/api/task-assignment-item-types/24';
 $response = $client-&gt;delete(
     $url,
     [
@@ -26017,10 +28187,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="taskAssignmentItemType_id"                data-endpoint="DELETEapi-task-assignment-item-types--taskAssignmentItemType_id-"
-               value="16"
+               value="24"
                data-component="url">
     <br>
-<p>The ID of the taskAssignmentItemType. Example: <code>16</code></p>
+<p>The ID of the taskAssignmentItemType. Example: <code>24</code></p>
             </div>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>taskAssignmentItemType</code></b>&nbsp;&nbsp;
@@ -26050,7 +28220,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request PATCH \
-    "http://localhost/api/task-assignment-item-types/16/status" \
+    "http://localhost/api/task-assignment-item-types/24/status" \
     --header "Authorization: Bearer Bearer {YOUR_ACCESS_TOKEN}" \
     --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
     --header "Content-Type: application/json" \
@@ -26063,7 +28233,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/task-assignment-item-types/16/status"
+    "http://localhost/api/task-assignment-item-types/24/status"
 );
 
 const headers = {
@@ -26086,7 +28256,7 @@ fetch(url, {
 
 <div class="php-example">
     <pre><code class="language-php">$client = new \GuzzleHttp\Client();
-$url = 'http://localhost/api/task-assignment-item-types/16/status';
+$url = 'http://localhost/api/task-assignment-item-types/24/status';
 $response = $client-&gt;patch(
     $url,
     [
@@ -26114,14 +28284,14 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 11,
+        &quot;id&quot;: 36,
         &quot;name&quot;: &quot;aut adipisci quidem&quot;,
         &quot;description&quot;: &quot;Qui commodi incidunt iure odit.&quot;,
         &quot;status&quot;: &quot;active&quot;,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;Đổi trạng th&aacute;i th&agrave;nh c&ocirc;ng!&quot;
@@ -26231,10 +28401,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="taskAssignmentItemType_id"                data-endpoint="PATCHapi-task-assignment-item-types--taskAssignmentItemType_id--status"
-               value="16"
+               value="24"
                data-component="url">
     <br>
-<p>The ID of the taskAssignmentItemType. Example: <code>16</code></p>
+<p>The ID of the taskAssignmentItemType. Example: <code>24</code></p>
             </div>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>taskAssignmentItemType</code></b>&nbsp;&nbsp;
@@ -26352,24 +28522,24 @@ print_r(json_decode((string) $body));</code></pre></div>
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: [
         {
-            &quot;id&quot;: 4,
+            &quot;id&quot;: 31,
             &quot;name&quot;: &quot;eius et animi&quot;,
             &quot;description&quot;: &quot;Velit et fugiat sunt nihil accusantium.&quot;,
             &quot;status&quot;: &quot;active&quot;,
             &quot;created_by&quot;: &quot;N/A&quot;,
             &quot;updated_by&quot;: &quot;N/A&quot;,
-            &quot;created_at&quot;: &quot;14:10:47 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:47 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:37 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:37 03/04/2026&quot;
         },
         {
-            &quot;id&quot;: 5,
+            &quot;id&quot;: 32,
             &quot;name&quot;: &quot;harum mollitia modi&quot;,
             &quot;description&quot;: &quot;Aut ab provident perspiciatis quo omnis nostrum aut.&quot;,
             &quot;status&quot;: &quot;active&quot;,
             &quot;created_by&quot;: &quot;N/A&quot;,
             &quot;updated_by&quot;: &quot;N/A&quot;,
-            &quot;created_at&quot;: &quot;14:10:47 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:47 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:37 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:37 03/04/2026&quot;
         }
     ],
     &quot;success&quot;: &quot;true&quot;
@@ -26631,12 +28801,12 @@ print_r(json_decode((string) $body));</code></pre></div>
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: [
         {
-            &quot;id&quot;: 6,
+            &quot;id&quot;: 33,
             &quot;name&quot;: &quot;eius et animi&quot;,
             &quot;description&quot;: &quot;Velit et fugiat sunt nihil accusantium.&quot;
         },
         {
-            &quot;id&quot;: 7,
+            &quot;id&quot;: 34,
             &quot;name&quot;: &quot;harum mollitia modi&quot;,
             &quot;description&quot;: &quot;Aut ab provident perspiciatis quo omnis nostrum aut.&quot;
         }
@@ -27116,7 +29286,7 @@ Must be one of:
     --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
     --header "Content-Type: multipart/form-data" \
     --header "Accept: application/json" \
-    --form "file=@C:\Users\tuanl\AppData\Local\Temp\php5E86.tmp" </code></pre></div>
+    --form "file=@/tmp/phpl8h4ijk6ejvpfIc9Pz5" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -27156,7 +29326,7 @@ $response = $client-&gt;post(
         'multipart' =&gt; [
             [
                 'name' =&gt; 'file',
-                'contents' =&gt; fopen('C:\Users\tuanl\AppData\Local\Temp\php5E86.tmp', 'r')
+                'contents' =&gt; fopen('/tmp/phpl8h4ijk6ejvpfIc9Pz5', 'r')
             ],
         ],
     ]
@@ -27284,7 +29454,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>File Excel (xlsx, xls, csv). Cột theo chuẩn export. Example: <code>C:\Users\tuanl\AppData\Local\Temp\php5E86.tmp</code></p>
+<p>File Excel (xlsx, xls, csv). Cột theo chuẩn export. Example: <code>/tmp/phpl8h4ijk6ejvpfIc9Pz5</code></p>
         </div>
         </form>
 
@@ -28082,24 +30252,24 @@ print_r(json_decode((string) $body));</code></pre></div>
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: [
         {
-            &quot;id&quot;: 8,
+            &quot;id&quot;: 35,
             &quot;name&quot;: &quot;eius et animi&quot;,
             &quot;description&quot;: &quot;Velit et fugiat sunt nihil accusantium.&quot;,
             &quot;status&quot;: &quot;active&quot;,
             &quot;created_by&quot;: &quot;N/A&quot;,
             &quot;updated_by&quot;: &quot;N/A&quot;,
-            &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
         },
         {
-            &quot;id&quot;: 9,
+            &quot;id&quot;: 36,
             &quot;name&quot;: &quot;harum mollitia modi&quot;,
             &quot;description&quot;: &quot;Aut ab provident perspiciatis quo omnis nostrum aut.&quot;,
             &quot;status&quot;: &quot;active&quot;,
             &quot;created_by&quot;: &quot;N/A&quot;,
             &quot;updated_by&quot;: &quot;N/A&quot;,
-            &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
         }
     ],
     &quot;links&quot;: {
@@ -28390,14 +30560,14 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 10,
+        &quot;id&quot;: 37,
         &quot;name&quot;: &quot;aut adipisci quidem&quot;,
         &quot;description&quot;: &quot;Qui commodi incidunt iure odit.&quot;,
         &quot;status&quot;: &quot;active&quot;,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;
 }</code>
@@ -28609,14 +30779,14 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 11,
+        &quot;id&quot;: 38,
         &quot;name&quot;: &quot;fugiat sunt nihil&quot;,
         &quot;description&quot;: &quot;Harum mollitia modi deserunt aut ab provident perspiciatis quo.&quot;,
         &quot;status&quot;: &quot;active&quot;,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;Tạo loại văn bản giao việc th&agrave;nh c&ocirc;ng!&quot;
@@ -28841,14 +31011,14 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 12,
+        &quot;id&quot;: 39,
         &quot;name&quot;: &quot;eius et animi&quot;,
         &quot;description&quot;: &quot;Velit et fugiat sunt nihil accusantium.&quot;,
         &quot;status&quot;: &quot;active&quot;,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;Cập nhật loại văn bản giao việc th&agrave;nh c&ocirc;ng!&quot;
@@ -29098,14 +31268,14 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 13,
+        &quot;id&quot;: 40,
         &quot;name&quot;: &quot;eius et animi&quot;,
         &quot;description&quot;: &quot;Velit et fugiat sunt nihil accusantium.&quot;,
         &quot;status&quot;: &quot;active&quot;,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;Cập nhật loại văn bản giao việc th&agrave;nh c&ocirc;ng!&quot;
@@ -29542,14 +31712,14 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 14,
+        &quot;id&quot;: 41,
         &quot;name&quot;: &quot;aut adipisci quidem&quot;,
         &quot;description&quot;: &quot;Qui commodi incidunt iure odit.&quot;,
         &quot;status&quot;: &quot;active&quot;,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;Đổi trạng th&aacute;i th&agrave;nh c&ocirc;ng!&quot;
@@ -29780,7 +31950,7 @@ print_r(json_decode((string) $body));</code></pre></div>
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: [
         {
-            &quot;id&quot;: 8,
+            &quot;id&quot;: 36,
             &quot;code&quot;: &quot;DEPT-171&quot;,
             &quot;name&quot;: &quot;Crooks LLC&quot;,
             &quot;description&quot;: &quot;Et fugiat sunt nihil accusantium.&quot;,
@@ -29788,11 +31958,11 @@ print_r(json_decode((string) $body));</code></pre></div>
             &quot;sort_order&quot;: 91,
             &quot;created_by&quot;: &quot;N/A&quot;,
             &quot;updated_by&quot;: &quot;N/A&quot;,
-            &quot;created_at&quot;: &quot;14:10:47 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:47 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:37 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:37 03/04/2026&quot;
         },
         {
-            &quot;id&quot;: 9,
+            &quot;id&quot;: 37,
             &quot;code&quot;: &quot;DEPT-954&quot;,
             &quot;name&quot;: &quot;Considine-Schuster&quot;,
             &quot;description&quot;: &quot;Provident perspiciatis quo omnis nostrum aut adipisci quidem.&quot;,
@@ -29800,8 +31970,8 @@ print_r(json_decode((string) $body));</code></pre></div>
             &quot;sort_order&quot;: 91,
             &quot;created_by&quot;: &quot;N/A&quot;,
             &quot;updated_by&quot;: &quot;N/A&quot;,
-            &quot;created_at&quot;: &quot;14:10:47 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:47 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:37 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:37 03/04/2026&quot;
         }
     ],
     &quot;success&quot;: &quot;true&quot;
@@ -30063,12 +32233,12 @@ print_r(json_decode((string) $body));</code></pre></div>
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: [
         {
-            &quot;id&quot;: 10,
+            &quot;id&quot;: 38,
             &quot;name&quot;: &quot;Okuneva, Rempel and Gulgowski&quot;,
             &quot;description&quot;: &quot;Sunt nihil accusantium harum mollitia.&quot;
         },
         {
-            &quot;id&quot;: 11,
+            &quot;id&quot;: 39,
             &quot;name&quot;: &quot;DuBuque Inc&quot;,
             &quot;description&quot;: &quot;Quo omnis nostrum aut adipisci.&quot;
         }
@@ -30548,7 +32718,7 @@ Must be one of:
     --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
     --header "Content-Type: multipart/form-data" \
     --header "Accept: application/json" \
-    --form "file=@C:\Users\tuanl\AppData\Local\Temp\php5DF8.tmp" </code></pre></div>
+    --form "file=@/tmp/php5h10f3lnpjb815a00Fe" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -30588,7 +32758,7 @@ $response = $client-&gt;post(
         'multipart' =&gt; [
             [
                 'name' =&gt; 'file',
-                'contents' =&gt; fopen('C:\Users\tuanl\AppData\Local\Temp\php5DF8.tmp', 'r')
+                'contents' =&gt; fopen('/tmp/php5h10f3lnpjb815a00Fe', 'r')
             ],
         ],
     ]
@@ -30716,7 +32886,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>File Excel (xlsx, xls, csv). Cột theo chuẩn export. Example: <code>C:\Users\tuanl\AppData\Local\Temp\php5DF8.tmp</code></p>
+<p>File Excel (xlsx, xls, csv). Cột theo chuẩn export. Example: <code>/tmp/php5h10f3lnpjb815a00Fe</code></p>
         </div>
         </form>
 
@@ -31514,7 +33684,7 @@ print_r(json_decode((string) $body));</code></pre></div>
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: [
         {
-            &quot;id&quot;: 12,
+            &quot;id&quot;: 40,
             &quot;code&quot;: &quot;DEPT-365&quot;,
             &quot;name&quot;: &quot;Rempel, Gulgowski and O&#039;Kon&quot;,
             &quot;description&quot;: &quot;Nihil accusantium harum mollitia modi deserunt.&quot;,
@@ -31522,11 +33692,11 @@ print_r(json_decode((string) $body));</code></pre></div>
             &quot;sort_order&quot;: 4,
             &quot;created_by&quot;: &quot;N/A&quot;,
             &quot;updated_by&quot;: &quot;N/A&quot;,
-            &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
         },
         {
-            &quot;id&quot;: 13,
+            &quot;id&quot;: 41,
             &quot;code&quot;: &quot;DEPT-196&quot;,
             &quot;name&quot;: &quot;Breitenberg Inc&quot;,
             &quot;description&quot;: &quot;Nostrum aut adipisci quidem nostrum.&quot;,
@@ -31534,8 +33704,8 @@ print_r(json_decode((string) $body));</code></pre></div>
             &quot;sort_order&quot;: 35,
             &quot;created_by&quot;: &quot;N/A&quot;,
             &quot;updated_by&quot;: &quot;N/A&quot;,
-            &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
         }
     ],
     &quot;links&quot;: {
@@ -31826,7 +33996,7 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 14,
+        &quot;id&quot;: 42,
         &quot;code&quot;: &quot;DEPT-680&quot;,
         &quot;name&quot;: &quot;Hirthe Inc&quot;,
         &quot;description&quot;: &quot;Commodi incidunt iure odit.&quot;,
@@ -31834,8 +34004,8 @@ print_r(json_decode((string) $body));</code></pre></div>
         &quot;sort_order&quot;: 45,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;
 }</code>
@@ -32053,7 +34223,7 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 15,
+        &quot;id&quot;: 43,
         &quot;code&quot;: &quot;DEPT-625&quot;,
         &quot;name&quot;: &quot;Dach-Gaylord&quot;,
         &quot;description&quot;: &quot;Mollitia modi deserunt aut ab provident perspiciatis quo.&quot;,
@@ -32061,8 +34231,8 @@ print_r(json_decode((string) $body));</code></pre></div>
         &quot;sort_order&quot;: 23,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;Tạo ph&ograve;ng ban giao việc th&agrave;nh c&ocirc;ng!&quot;
@@ -32317,7 +34487,7 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 16,
+        &quot;id&quot;: 44,
         &quot;code&quot;: &quot;DEPT-316&quot;,
         &quot;name&quot;: &quot;Gulgowski-O&#039;Kon&quot;,
         &quot;description&quot;: &quot;Nihil accusantium harum mollitia modi deserunt.&quot;,
@@ -32325,8 +34495,8 @@ print_r(json_decode((string) $body));</code></pre></div>
         &quot;sort_order&quot;: 4,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;Cập nhật ph&ograve;ng ban giao việc th&agrave;nh c&ocirc;ng!&quot;
@@ -32606,7 +34776,7 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 17,
+        &quot;id&quot;: 45,
         &quot;code&quot;: &quot;DEPT-564&quot;,
         &quot;name&quot;: &quot;O&#039;Kon and Sons&quot;,
         &quot;description&quot;: &quot;Accusantium harum mollitia modi deserunt aut ab.&quot;,
@@ -32614,8 +34784,8 @@ print_r(json_decode((string) $body));</code></pre></div>
         &quot;sort_order&quot;: 16,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;Cập nhật ph&ograve;ng ban giao việc th&agrave;nh c&ocirc;ng!&quot;
@@ -33076,7 +35246,7 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 18,
+        &quot;id&quot;: 46,
         &quot;code&quot;: &quot;DEPT-724&quot;,
         &quot;name&quot;: &quot;Cronin, Dare and Hauck&quot;,
         &quot;description&quot;: &quot;Iure odit et et modi ipsum nostrum omnis.&quot;,
@@ -33084,8 +35254,8 @@ print_r(json_decode((string) $body));</code></pre></div>
         &quot;sort_order&quot;: 41,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:48 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:48 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;Đổi trạng th&aacute;i th&agrave;nh c&ocirc;ng!&quot;
@@ -33544,7 +35714,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
     --header "Content-Type: multipart/form-data" \
     --header "Accept: application/json" \
-    --form "file=@C:\Users\tuanl\AppData\Local\Temp\php5FB3.tmp" </code></pre></div>
+    --form "file=@/tmp/phpsh399gpksfs006FNGVS" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -33584,7 +35754,7 @@ $response = $client-&gt;post(
         'multipart' =&gt; [
             [
                 'name' =&gt; 'file',
-                'contents' =&gt; fopen('C:\Users\tuanl\AppData\Local\Temp\php5FB3.tmp', 'r')
+                'contents' =&gt; fopen('/tmp/phpsh399gpksfs006FNGVS', 'r')
             ],
         ],
     ]
@@ -33712,7 +35882,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>File Excel (xlsx, xls, csv). Cột theo chuẩn export. Example: <code>C:\Users\tuanl\AppData\Local\Temp\php5FB3.tmp</code></p>
+<p>File Excel (xlsx, xls, csv). Cột theo chuẩn export. Example: <code>/tmp/phpsh399gpksfs006FNGVS</code></p>
         </div>
         </form>
 
@@ -34526,7 +36696,7 @@ print_r(json_decode((string) $body));</code></pre></div>
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: [
         {
-            &quot;id&quot;: 1,
+            &quot;id&quot;: 51,
             &quot;name&quot;: &quot;Et animi quos velit et.&quot;,
             &quot;summary&quot;: &quot;Nihil accusantium harum mollitia modi deserunt. Ab provident perspiciatis quo omnis nostrum aut adipisci. Nostrum qui commodi incidunt iure.&quot;,
             &quot;issue_date&quot;: &quot;16/02/1990&quot;,
@@ -34534,11 +36704,11 @@ print_r(json_decode((string) $body));</code></pre></div>
             &quot;issued_at&quot;: null,
             &quot;created_by&quot;: &quot;N/A&quot;,
             &quot;updated_by&quot;: &quot;N/A&quot;,
-            &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
         },
         {
-            &quot;id&quot;: 2,
+            &quot;id&quot;: 52,
             &quot;name&quot;: &quot;Et modi ipsum nostrum omnis autem et.&quot;,
             &quot;summary&quot;: &quot;Dolores enim non facere tempora. Voluptatem laboriosam praesentium quis adipisci. Fugit deleniti distinctio eum doloremque id aut libero. Veniam corporis dolorem mollitia.&quot;,
             &quot;issue_date&quot;: &quot;26/07/1989&quot;,
@@ -34546,8 +36716,8 @@ print_r(json_decode((string) $body));</code></pre></div>
             &quot;issued_at&quot;: null,
             &quot;created_by&quot;: &quot;N/A&quot;,
             &quot;updated_by&quot;: &quot;N/A&quot;,
-            &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-            &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+            &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+            &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
         }
     ],
     &quot;links&quot;: {
@@ -34797,7 +36967,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request GET \
-    --get "http://localhost/api/task-assignment-documents/16" \
+    --get "http://localhost/api/task-assignment-documents/44" \
     --header "Authorization: Bearer Bearer {YOUR_ACCESS_TOKEN}" \
     --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
     --header "Content-Type: application/json" \
@@ -34806,7 +36976,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/task-assignment-documents/16"
+    "http://localhost/api/task-assignment-documents/44"
 );
 
 const headers = {
@@ -34825,7 +36995,7 @@ fetch(url, {
 
 <div class="php-example">
     <pre><code class="language-php">$client = new \GuzzleHttp\Client();
-$url = 'http://localhost/api/task-assignment-documents/16';
+$url = 'http://localhost/api/task-assignment-documents/44';
 $response = $client-&gt;get(
     $url,
     [
@@ -34850,7 +37020,7 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 3,
+        &quot;id&quot;: 53,
         &quot;name&quot;: &quot;Adipisci quidem nostrum qui commodi incidunt.&quot;,
         &quot;summary&quot;: &quot;Et et modi ipsum nostrum. Autem et consequatur aut dolores enim non facere tempora.&quot;,
         &quot;issue_date&quot;: &quot;13/03/2020&quot;,
@@ -34858,8 +37028,8 @@ print_r(json_decode((string) $body));</code></pre></div>
         &quot;issued_at&quot;: null,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;
 }</code>
@@ -34968,10 +37138,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="taskAssignmentDocument_id"                data-endpoint="GETapi-task-assignment-documents--taskAssignmentDocument_id-"
-               value="16"
+               value="44"
                data-component="url">
     <br>
-<p>The ID of the taskAssignmentDocument. Example: <code>16</code></p>
+<p>The ID of the taskAssignmentDocument. Example: <code>44</code></p>
             </div>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>taskAssignmentDocument</code></b>&nbsp;&nbsp;
@@ -35013,7 +37183,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "status=draft"\
     --form "title=Quyết định giao việc tháng 4"\
     --form "type_id=1"\
-    --form "files[]=@C:\Users\tuanl\AppData\Local\Temp\php6013.tmp" </code></pre></div>
+    --form "files[]=@/tmp/phpieks1t3bg6e5ahTZl0N" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -35088,7 +37258,7 @@ $response = $client-&gt;post(
             ],
             [
                 'name' =&gt; 'files[]',
-                'contents' =&gt; fopen('C:\Users\tuanl\AppData\Local\Temp\php6013.tmp', 'r')
+                'contents' =&gt; fopen('/tmp/phpieks1t3bg6e5ahTZl0N', 'r')
             ],
         ],
     ]
@@ -35106,7 +37276,7 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 4,
+        &quot;id&quot;: 54,
         &quot;name&quot;: &quot;Eius et animi quos velit.&quot;,
         &quot;summary&quot;: &quot;Sunt nihil accusantium harum mollitia. Deserunt aut ab provident perspiciatis quo omnis nostrum. Adipisci quidem nostrum qui commodi incidunt iure.&quot;,
         &quot;issue_date&quot;: &quot;16/02/1990&quot;,
@@ -35114,8 +37284,8 @@ print_r(json_decode((string) $body));</code></pre></div>
         &quot;issued_at&quot;: null,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;Văn bản giao việc đ&atilde; được tạo th&agrave;nh c&ocirc;ng!&quot;
@@ -35312,7 +37482,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Tệp đính kèm (tối đa 10 tệp). Example: <code>C:\Users\tuanl\AppData\Local\Temp\php6013.tmp</code></p>
+<p>Tệp đính kèm (tối đa 10 tệp). Example: <code>/tmp/phpieks1t3bg6e5ahTZl0N</code></p>
         </div>
         </form>
 
@@ -35330,7 +37500,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request PUT \
-    "http://localhost/api/task-assignment-documents/16" \
+    "http://localhost/api/task-assignment-documents/44" \
     --header "Authorization: Bearer Bearer {YOUR_ACCESS_TOKEN}" \
     --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
     --header "Content-Type: multipart/form-data" \
@@ -35343,12 +37513,12 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "title=architecto"\
     --form "type_id=16"\
     --form "remove_attachment_ids[]=architecto"\
-    --form "files[]=@C:\Users\tuanl\AppData\Local\Temp\php6024.tmp" </code></pre></div>
+    --form "files[]=@/tmp/php6pa5antdrlad0YEffNv" </code></pre></div>
 
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/task-assignment-documents/16"
+    "http://localhost/api/task-assignment-documents/44"
 );
 
 const headers = {
@@ -35378,7 +37548,7 @@ fetch(url, {
 
 <div class="php-example">
     <pre><code class="language-php">$client = new \GuzzleHttp\Client();
-$url = 'http://localhost/api/task-assignment-documents/16';
+$url = 'http://localhost/api/task-assignment-documents/44';
 $response = $client-&gt;put(
     $url,
     [
@@ -35423,7 +37593,7 @@ $response = $client-&gt;put(
             ],
             [
                 'name' =&gt; 'files[]',
-                'contents' =&gt; fopen('C:\Users\tuanl\AppData\Local\Temp\php6024.tmp', 'r')
+                'contents' =&gt; fopen('/tmp/php6pa5antdrlad0YEffNv', 'r')
             ],
         ],
     ]
@@ -35441,7 +37611,7 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 5,
+        &quot;id&quot;: 55,
         &quot;name&quot;: &quot;Et animi quos velit et.&quot;,
         &quot;summary&quot;: &quot;Nihil accusantium harum mollitia modi deserunt. Ab provident perspiciatis quo omnis nostrum aut adipisci. Nostrum qui commodi incidunt iure.&quot;,
         &quot;issue_date&quot;: &quot;16/02/1990&quot;,
@@ -35449,8 +37619,8 @@ print_r(json_decode((string) $body));</code></pre></div>
         &quot;issued_at&quot;: null,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;Văn bản giao việc đ&atilde; được cập nhật!&quot;
@@ -35560,10 +37730,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="taskAssignmentDocument_id"                data-endpoint="PUTapi-task-assignment-documents--taskAssignmentDocument_id-"
-               value="16"
+               value="44"
                data-component="url">
     <br>
-<p>The ID of the taskAssignmentDocument. Example: <code>16</code></p>
+<p>The ID of the taskAssignmentDocument. Example: <code>44</code></p>
             </div>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>taskAssignmentDocument</code></b>&nbsp;&nbsp;
@@ -35672,7 +37842,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Tệp đính kèm mới (append). Example: <code>C:\Users\tuanl\AppData\Local\Temp\php6024.tmp</code></p>
+<p>Tệp đính kèm mới (append). Example: <code>/tmp/php6pa5antdrlad0YEffNv</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>remove_attachment_ids</code></b>&nbsp;&nbsp;
@@ -35704,7 +37874,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request PATCH \
-    "http://localhost/api/task-assignment-documents/16" \
+    "http://localhost/api/task-assignment-documents/44" \
     --header "Authorization: Bearer Bearer {YOUR_ACCESS_TOKEN}" \
     --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
     --header "Content-Type: multipart/form-data" \
@@ -35717,12 +37887,12 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --form "title=architecto"\
     --form "type_id=16"\
     --form "remove_attachment_ids[]=architecto"\
-    --form "files[]=@C:\Users\tuanl\AppData\Local\Temp\php6034.tmp" </code></pre></div>
+    --form "files[]=@/tmp/phps46e28kogsae5o7Bfoi" </code></pre></div>
 
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/task-assignment-documents/16"
+    "http://localhost/api/task-assignment-documents/44"
 );
 
 const headers = {
@@ -35752,7 +37922,7 @@ fetch(url, {
 
 <div class="php-example">
     <pre><code class="language-php">$client = new \GuzzleHttp\Client();
-$url = 'http://localhost/api/task-assignment-documents/16';
+$url = 'http://localhost/api/task-assignment-documents/44';
 $response = $client-&gt;patch(
     $url,
     [
@@ -35797,7 +37967,7 @@ $response = $client-&gt;patch(
             ],
             [
                 'name' =&gt; 'files[]',
-                'contents' =&gt; fopen('C:\Users\tuanl\AppData\Local\Temp\php6034.tmp', 'r')
+                'contents' =&gt; fopen('/tmp/phps46e28kogsae5o7Bfoi', 'r')
             ],
         ],
     ]
@@ -35815,7 +37985,7 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 6,
+        &quot;id&quot;: 56,
         &quot;name&quot;: &quot;Et animi quos velit et.&quot;,
         &quot;summary&quot;: &quot;Nihil accusantium harum mollitia modi deserunt. Ab provident perspiciatis quo omnis nostrum aut adipisci. Nostrum qui commodi incidunt iure.&quot;,
         &quot;issue_date&quot;: &quot;16/02/1990&quot;,
@@ -35823,8 +37993,8 @@ print_r(json_decode((string) $body));</code></pre></div>
         &quot;issued_at&quot;: null,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;Văn bản giao việc đ&atilde; được cập nhật!&quot;
@@ -35934,10 +38104,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="taskAssignmentDocument_id"                data-endpoint="PATCHapi-task-assignment-documents--taskAssignmentDocument_id-"
-               value="16"
+               value="44"
                data-component="url">
     <br>
-<p>The ID of the taskAssignmentDocument. Example: <code>16</code></p>
+<p>The ID of the taskAssignmentDocument. Example: <code>44</code></p>
             </div>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>taskAssignmentDocument</code></b>&nbsp;&nbsp;
@@ -36046,7 +38216,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Tệp đính kèm mới (append). Example: <code>C:\Users\tuanl\AppData\Local\Temp\php6034.tmp</code></p>
+<p>Tệp đính kèm mới (append). Example: <code>/tmp/phps46e28kogsae5o7Bfoi</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>remove_attachment_ids</code></b>&nbsp;&nbsp;
@@ -36078,7 +38248,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request DELETE \
-    "http://localhost/api/task-assignment-documents/16" \
+    "http://localhost/api/task-assignment-documents/44" \
     --header "Authorization: Bearer Bearer {YOUR_ACCESS_TOKEN}" \
     --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
     --header "Content-Type: application/json" \
@@ -36087,7 +38257,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/task-assignment-documents/16"
+    "http://localhost/api/task-assignment-documents/44"
 );
 
 const headers = {
@@ -36106,7 +38276,7 @@ fetch(url, {
 
 <div class="php-example">
     <pre><code class="language-php">$client = new \GuzzleHttp\Client();
-$url = 'http://localhost/api/task-assignment-documents/16';
+$url = 'http://localhost/api/task-assignment-documents/44';
 $response = $client-&gt;delete(
     $url,
     [
@@ -36238,10 +38408,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="taskAssignmentDocument_id"                data-endpoint="DELETEapi-task-assignment-documents--taskAssignmentDocument_id-"
-               value="16"
+               value="44"
                data-component="url">
     <br>
-<p>The ID of the taskAssignmentDocument. Example: <code>16</code></p>
+<p>The ID of the taskAssignmentDocument. Example: <code>44</code></p>
             </div>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>taskAssignmentDocument</code></b>&nbsp;&nbsp;
@@ -36271,7 +38441,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="bash-example">
     <pre><code class="language-bash">curl --request PATCH \
-    "http://localhost/api/task-assignment-documents/16/status" \
+    "http://localhost/api/task-assignment-documents/44/status" \
     --header "Authorization: Bearer Bearer {YOUR_ACCESS_TOKEN}" \
     --header "X-Organization-Id: ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1" \
     --header "Content-Type: application/json" \
@@ -36284,7 +38454,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 
 <div class="javascript-example">
     <pre><code class="language-javascript">const url = new URL(
-    "http://localhost/api/task-assignment-documents/16/status"
+    "http://localhost/api/task-assignment-documents/44/status"
 );
 
 const headers = {
@@ -36307,7 +38477,7 @@ fetch(url, {
 
 <div class="php-example">
     <pre><code class="language-php">$client = new \GuzzleHttp\Client();
-$url = 'http://localhost/api/task-assignment-documents/16/status';
+$url = 'http://localhost/api/task-assignment-documents/44/status';
 $response = $client-&gt;patch(
     $url,
     [
@@ -36335,7 +38505,7 @@ print_r(json_decode((string) $body));</code></pre></div>
 
 <code class="language-json" style="max-height: 300px;">{
     &quot;data&quot;: {
-        &quot;id&quot;: 7,
+        &quot;id&quot;: 57,
         &quot;name&quot;: &quot;Adipisci quidem nostrum qui commodi incidunt.&quot;,
         &quot;summary&quot;: &quot;Et et modi ipsum nostrum. Autem et consequatur aut dolores enim non facere tempora.&quot;,
         &quot;issue_date&quot;: &quot;13/03/2020&quot;,
@@ -36343,8 +38513,8 @@ print_r(json_decode((string) $body));</code></pre></div>
         &quot;issued_at&quot;: null,
         &quot;created_by&quot;: &quot;N/A&quot;,
         &quot;updated_by&quot;: &quot;N/A&quot;,
-        &quot;created_at&quot;: &quot;14:10:49 02/04/2026&quot;,
-        &quot;updated_at&quot;: &quot;14:10:49 02/04/2026&quot;
+        &quot;created_at&quot;: &quot;01:16:39 03/04/2026&quot;,
+        &quot;updated_at&quot;: &quot;01:16:39 03/04/2026&quot;
     },
     &quot;success&quot;: &quot;true&quot;,
     &quot;message&quot;: &quot;Cập nhật trạng th&aacute;i th&agrave;nh c&ocirc;ng!&quot;
@@ -36454,10 +38624,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="taskAssignmentDocument_id"                data-endpoint="PATCHapi-task-assignment-documents--taskAssignmentDocument_id--status"
-               value="16"
+               value="44"
                data-component="url">
     <br>
-<p>The ID of the taskAssignmentDocument. Example: <code>16</code></p>
+<p>The ID of the taskAssignmentDocument. Example: <code>44</code></p>
             </div>
                     <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>taskAssignmentDocument</code></b>&nbsp;&nbsp;

@@ -70,7 +70,9 @@ class TaskAssignmentItemReportController extends Controller
      * @bodyParam task_assignment_item_id integer required ID công việc. Example: 1
      * @bodyParam content string required Nội dung báo cáo. Example: Đã hoàn thành 50% khối lượng công việc.
      * @bodyParam progress integer Tiến độ tại thời điểm báo cáo (0-100). Example: 50
-     * @bodyParam files[] file Tệp đính kèm (tối đa 10 tệp).
+     * @bodyParam files[] file Tệp đính kèm (tối đa 10 tệp, multipart/form-data).
+     *
+     * **Xử lý file đính kèm:** gửi `multipart/form-data` với `files[]` để upload.
      *
      * @apiResource App\Modules\TaskAssignment\Resources\ReportResource status=201
      *
@@ -93,8 +95,13 @@ class TaskAssignmentItemReportController extends Controller
      *
      * @bodyParam content string Nội dung báo cáo.
      * @bodyParam progress integer Tiến độ tại thời điểm báo cáo (0-100).
-     * @bodyParam files[] file Tệp đính kèm mới (append).
+     * @bodyParam files[] file Tệp đính kèm mới (append, multipart/form-data).
      * @bodyParam remove_attachment_ids array Mảng ID đính kèm cần xóa.
+     *
+     * **Xử lý file đính kèm:**
+     * - `files[]` → upload file mới, thêm vào danh sách.
+     * - `remove_attachment_ids` → xóa file theo ID.
+     * - Không gửi → giữ nguyên.
      *
      * @apiResource App\Modules\TaskAssignment\Resources\ReportResource
      *

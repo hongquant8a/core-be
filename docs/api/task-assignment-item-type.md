@@ -164,6 +164,17 @@ Quản lý loại công việc trong hệ thống giao việc liên phòng ban: 
 
 ---
 
+## Tải mẫu import
+
+| | |
+|---|---|
+| **Method** | GET |
+| **Path** | `/api/task-assignment-item-types/import-template` |
+| **Auth** | Bắt buộc (permission: import). |
+| **Response** | File `import-item-types-template.xlsx` — chỉ có header row: `name`, `description`, `status`. |
+
+---
+
 ## Response mẫu (TaskAssignmentItemTypeResource)
 
 ```json

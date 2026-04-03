@@ -539,7 +539,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":[{"id":225,"name":"users.update.4027","guard_name":"web","description":null,"sort_order":95,"parent_id":null,"created_at":"14:10:48 02\/04\/2026","updated_at":"14:10:48 02\/04\/2026"},{"id":226,"name":"documents.index.6955","guard_name":"web","description":null,"sort_order":39,"parent_id":null,"created_at":"14:10:48 02\/04\/2026","updated_at":"14:10:48 02\/04\/2026"}],"links":{"first":"\/?page=1","last":"\/?page=1","prev":null,"next":null},"meta":{"current_page":1,"from":1,"last_page":1,"links":[{"url":null,"label":"&laquo; Previous","page":null,"active":false},{"url":"\/?page=1","label":"1","page":1,"active":true},{"url":null,"label":"Next &raquo;","page":null,"active":false}],"path":"\/","per_page":10,"to":2,"total":2},"success":"true"}'
+        content: '{"data":[{"id":254,"name":"users.update.4027","guard_name":"web","description":null,"sort_order":95,"parent_id":null,"created_at":"01:16:38 03\/04\/2026","updated_at":"01:16:38 03\/04\/2026"},{"id":255,"name":"documents.index.6955","guard_name":"web","description":null,"sort_order":39,"parent_id":null,"created_at":"01:16:38 03\/04\/2026","updated_at":"01:16:38 03\/04\/2026"}],"links":{"first":"\/?page=1","last":"\/?page=1","prev":null,"next":null},"meta":{"current_page":1,"from":1,"last_page":1,"links":[{"url":null,"label":"&laquo; Previous","page":null,"active":false},{"url":"\/?page=1","label":"1","page":1,"active":true},{"url":null,"label":"Next &raquo;","page":null,"active":false}],"path":"\/","per_page":10,"to":2,"total":2},"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -605,7 +605,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":228,"name":"users.index.4524","guard_name":"web","description":"Commodi incidunt iure odit.","sort_order":45,"parent_id":227,"parent":{"id":227,"name":"documents.show.967"},"children":[{"id":229,"name":"roles.destroy.1904","guard_name":"web","description":null,"sort_order":93,"parent_id":228,"created_at":"14:10:48 02\/04\/2026","updated_at":"14:10:48 02\/04\/2026"}],"created_at":"14:10:48 02\/04\/2026","updated_at":"14:10:48 02\/04\/2026"},"success":"true"}'
+        content: '{"data":{"id":257,"name":"users.index.4524","guard_name":"web","description":"Commodi incidunt iure odit.","sort_order":45,"parent_id":256,"parent":{"id":256,"name":"documents.show.967"},"children":[{"id":258,"name":"roles.destroy.1904","guard_name":"web","description":null,"sort_order":93,"parent_id":257,"created_at":"01:16:38 03\/04\/2026","updated_at":"01:16:38 03\/04\/2026"}],"created_at":"01:16:38 03\/04\/2026","updated_at":"01:16:38 03\/04\/2026"},"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -707,7 +707,7 @@ endpoints:
       -
         custom: []
         status: 201
-        content: '{"data":{"id":230,"name":"roles.index.660","guard_name":"web","description":"Et fugiat sunt nihil accusantium.","sort_order":91,"parent_id":null,"created_at":"14:10:48 02\/04\/2026","updated_at":"14:10:48 02\/04\/2026"},"success":"true","message":"Quy\u1ec1n \u0111\u00e3 \u0111\u01b0\u1ee3c t\u1ea1o th\u00e0nh c\u00f4ng!"}'
+        content: '{"data":{"id":259,"name":"roles.index.660","guard_name":"web","description":"Et fugiat sunt nihil accusantium.","sort_order":91,"parent_id":null,"created_at":"01:16:38 03\/04\/2026","updated_at":"01:16:38 03\/04\/2026"},"success":"true","message":"Quy\u1ec1n \u0111\u00e3 \u0111\u01b0\u1ee3c t\u1ea1o th\u00e0nh c\u00f4ng!"}'
         headers: []
         description: ''
     responseFields: []
@@ -833,7 +833,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":231,"name":"roles.index.4338","guard_name":"web","description":null,"sort_order":7,"parent_id":null,"created_at":"14:10:48 02\/04\/2026","updated_at":"14:10:48 02\/04\/2026"},"success":"true","message":"Quy\u1ec1n \u0111\u00e3 \u0111\u01b0\u1ee3c c\u1eadp nh\u1eadt!"}'
+        content: '{"data":{"id":260,"name":"roles.index.4338","guard_name":"web","description":null,"sort_order":7,"parent_id":null,"created_at":"01:16:38 03\/04\/2026","updated_at":"01:16:38 03\/04\/2026"},"success":"true","message":"Quy\u1ec1n \u0111\u00e3 \u0111\u01b0\u1ee3c c\u1eadp nh\u1eadt!"}'
         headers: []
         description: ''
     responseFields: []
@@ -959,7 +959,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":232,"name":"roles.index.3491","guard_name":"web","description":"Sunt nihil accusantium harum mollitia.","sort_order":86,"parent_id":null,"created_at":"14:10:48 02\/04\/2026","updated_at":"14:10:48 02\/04\/2026"},"success":"true","message":"Quy\u1ec1n \u0111\u00e3 \u0111\u01b0\u1ee3c c\u1eadp nh\u1eadt!"}'
+        content: '{"data":{"id":261,"name":"roles.index.3491","guard_name":"web","description":"Sunt nihil accusantium harum mollitia.","sort_order":86,"parent_id":null,"created_at":"01:16:38 03\/04\/2026","updated_at":"01:16:38 03\/04\/2026"},"success":"true","message":"Quy\u1ec1n \u0111\u00e3 \u0111\u01b0\u1ee3c c\u1eadp nh\u1eadt!"}'
         headers: []
         description: ''
     responseFields: []

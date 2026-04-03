@@ -29,5 +29,6 @@ class DatabaseSeeder extends Seeder
         // Gán created_by, updated_by (user 1 tự tham chiếu; các user khác tham chiếu user 1)
         User::where('id', 1)->update(['created_by' => 1, 'updated_by' => 1]);
         User::where('id', '>', 1)->update(['created_by' => 1, 'updated_by' => 1]);
+
     }
 }

@@ -256,4 +256,17 @@ class TaskAssignmentItemTypeController extends Controller
 
         return $this->success(null, 'Import loại công việc thành công.');
     }
+
+    /**
+     * Tải mẫu import loại công việc
+     *
+     * @response 200 scenario="File Excel mẫu"
+     */
+    public function importTemplate()
+    {
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Modules\Core\Exports\ImportTemplateExport(['name', 'description', 'status']),
+            'import-item-types-template.xlsx'
+        );
+    }
 }

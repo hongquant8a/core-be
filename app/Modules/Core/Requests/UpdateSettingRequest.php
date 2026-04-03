@@ -23,18 +23,30 @@ class UpdateSettingRequest extends FormRequest
             }
 
             $type = $validKeys[$key];
-            $rules[$key] = $this->ruleForType($type);
+            $rules[$key] = $this->ruleForType($type, $key);
         }
 
         return $rules;
     }
 
-    protected function ruleForType(string $type): array
+    protected function ruleForType(string $type, string $key): array
     {
+        if ($type === 'image') {
+            $value = $this->file($key) ?? $this->input($key);
+
+            // Nếu là file upload → validate image
+            if ($value instanceof \Illuminate\Http\UploadedFile) {
+                return ['nullable', 'image', 'mimes:jpg,jpeg,png,svg,webp,ico', 'max:5120'];
+            }
+
+            // Nếu là string (URL cũ hoặc rỗng) → accept string
+            return ['nullable', 'string'];
+        }
+
         return match ($type) {
             'integer' => ['nullable', 'integer', 'min:0'],
             'boolean' => ['nullable', 'boolean'],
-            'json' => ['nullable'], // Chấp nhận array hoặc JSON string
+            'json' => ['nullable'],
             default => ['nullable', 'string', 'max:65535'],
         };
     }

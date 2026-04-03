@@ -17,7 +17,7 @@ Quản lý báo cáo tiến độ/kết quả cho từng công việc: danh sác
 | **Method** | GET |
 | **Path** | `/api/task-assignment-item-reports` |
 | **Auth** | Bắt buộc. |
-| **Query** | `task_assignment_item_id` (required — ID công việc cần lấy báo cáo), `search` (trích yếu/nội dung), `sort_by` (id \| completed_at \| created_at), `sort_order` (asc \| desc), `limit` (1-100). |
+| **Query** | `task_assignment_item_id` (**required**, validated — ID công việc cần lấy báo cáo; request sẽ bị từ chối nếu thiếu), `search` (trích yếu/nội dung), `sort_by` (id \| completed_at \| created_at), `sort_order` (asc \| desc), `limit` (1-100). |
 | **Response** | Paginated collection; mỗi item kèm `reporter`, `attachments`. |
 
 ---

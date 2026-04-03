@@ -83,6 +83,42 @@ class MediaService
         }
     }
 
+    /**
+     * Decode base64 data URI thành UploadedFile.
+     * Input: "data:image/png;base64,iVBOR..." → UploadedFile
+     * Trả null nếu không phải base64 data URI.
+     */
+    public function decodeBase64ToFile(string $value): ?UploadedFile
+    {
+        if (! preg_match('/^data:([\w\/\+\-\.]+);base64,(.+)$/s', $value, $matches)) {
+            return null;
+        }
+
+        $mimeType = $matches[1];
+        $data = base64_decode($matches[2], true);
+
+        if ($data === false) {
+            return null;
+        }
+
+        $extensions = [
+            'image/png' => 'png',
+            'image/jpeg' => 'jpg',
+            'image/jpg' => 'jpg',
+            'image/gif' => 'gif',
+            'image/svg+xml' => 'svg',
+            'image/webp' => 'webp',
+            'image/x-icon' => 'ico',
+            'image/vnd.microsoft.icon' => 'ico',
+        ];
+
+        $ext = $extensions[$mimeType] ?? 'bin';
+        $tmpPath = tempnam(sys_get_temp_dir(), 'media_').'.'.$ext;
+        file_put_contents($tmpPath, $data);
+
+        return new UploadedFile($tmpPath, 'upload.'.$ext, $mimeType, null, true);
+    }
+
     private function assertFileValid(UploadedFile $file, array $options): void
     {
         $allowedMimes = $options['allowed_mimes'] ?? [];

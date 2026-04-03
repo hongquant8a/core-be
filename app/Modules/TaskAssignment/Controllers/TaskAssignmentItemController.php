@@ -237,6 +237,19 @@ class TaskAssignmentItemController extends Controller
     }
 
     /**
+     * Tải mẫu import công việc
+     *
+     * @response 200 scenario="File Excel mẫu"
+     */
+    public function importTemplate()
+    {
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Modules\Core\Exports\ImportTemplateExport(['name', 'description', 'deadline_type', 'start_at', 'end_at', 'processing_status', 'completion_percent', 'priority']),
+            'import-items-template.xlsx'
+        );
+    }
+
+    /**
      * Cập nhật tiến độ công việc
      *
      * @urlParam taskAssignmentItem integer required ID công việc. Example: 1

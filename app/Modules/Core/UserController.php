@@ -91,7 +91,13 @@ class UserController extends Controller
      * @bodyParam password string required Mật khẩu (tối thiểu 6 ký tự). Example: password123
      * @bodyParam password_confirmation string required Xác nhận mật khẩu.
      * @bodyParam status string Trạng thái: active, inactive, banned. Example: active
+     * @bodyParam avatar file Ảnh đại diện (jpg, png, svg, webp, max 5MB).
      * @bodyParam assignments array Danh sách gán vai trò theo tổ chức. Ví dụ: [{"role_id":1,"organization_ids":[2,3]},{"role_id":5,"organization_ids":[9]}]
+     *
+     * **Xử lý avatar:**
+     * - `multipart/form-data` + file blob → upload ảnh mới, trả URL.
+     * - `application/json` + chuỗi rỗng `""` → xóa ảnh, trả `null`.
+     * - Không gửi field avatar → giữ nguyên.
      *
      * @apiResource App\Modules\Core\Resources\UserResource status=201
      *
@@ -116,7 +122,13 @@ class UserController extends Controller
      * @bodyParam password string Mật khẩu mới (nếu muốn đổi).
      * @bodyParam password_confirmation string Xác nhận mật khẩu.
      * @bodyParam status string Trạng thái: active, inactive, banned.
+     * @bodyParam avatar file Ảnh đại diện (jpg, png, svg, webp, max 5MB).
      * @bodyParam assignments array Danh sách gán vai trò theo tổ chức. Khi gửi field này, hệ thống sẽ đồng bộ lại toàn bộ phân quyền của user.
+     *
+     * **Xử lý avatar:**
+     * - `multipart/form-data` + file blob → upload ảnh mới, xóa ảnh cũ, trả URL mới.
+     * - `application/json` + chuỗi rỗng `""` → xóa ảnh, trả `null`.
+     * - Không gửi field avatar → giữ nguyên.
      *
      * @apiResource App\Modules\Core\Resources\UserResource
      *
@@ -204,6 +216,19 @@ class UserController extends Controller
         $this->userService->import($request->file('file'));
 
         return $this->success(null, 'Import người dùng thành công.');
+    }
+
+    /**
+     * Tải mẫu import người dùng
+     *
+     * @response 200 scenario="File Excel mẫu"
+     */
+    public function importTemplate()
+    {
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Modules\Core\Exports\ImportTemplateExport(['name', 'email', 'user_name', 'password', 'status']),
+            'import-users-template.xlsx'
+        );
     }
 
     /**

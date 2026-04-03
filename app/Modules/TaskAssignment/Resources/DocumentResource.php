@@ -25,7 +25,7 @@ class DocumentResource extends JsonResource
                         'media_id' => $attachment->media_id,
                         'file_name' => $attachment->file_name,
                         'sort_order' => $attachment->sort_order,
-                        'url' => $attachment->media?->getUrl(),
+                        'url' => $attachment->media ? '/storage/'.$attachment->media->id.'/'.$attachment->media->file_name : null,
                         'original_name' => $attachment->media?->file_name,
                         'mime_type' => $attachment->media?->mime_type,
                         'size' => $attachment->media?->size,

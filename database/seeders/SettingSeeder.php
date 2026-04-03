@@ -16,18 +16,18 @@ class SettingSeeder extends Seeder
         ['key' => 'designed_by', 'value' => '', 'group' => 'general', 'is_public' => true, 'type' => 'string', 'label' => 'Thiết kế bởi', 'sort_order' => 2],
         ['key' => 'language', 'value' => 'vi', 'group' => 'general', 'is_public' => true, 'type' => 'string', 'label' => 'Ngôn ngữ', 'sort_order' => 3],
         ['key' => 'time_format', 'value' => 'H:i:s d/m/Y', 'group' => 'general', 'is_public' => true, 'type' => 'string', 'label' => 'Định dạng thời gian', 'sort_order' => 4],
-        ['key' => 'icon', 'value' => null, 'group' => 'general', 'is_public' => true, 'type' => 'string', 'label' => 'Biểu tượng favicon', 'sort_order' => 5],
-        ['key' => 'logo', 'value' => null, 'group' => 'general', 'is_public' => true, 'type' => 'string', 'label' => 'Logo trang', 'sort_order' => 6],
+        ['key' => 'icon', 'value' => null, 'group' => 'general', 'is_public' => true, 'type' => 'image', 'label' => 'Biểu tượng favicon', 'sort_order' => 5],
+        ['key' => 'logo', 'value' => null, 'group' => 'general', 'is_public' => true, 'type' => 'image', 'label' => 'Logo trang', 'sort_order' => 6],
         // Admin page
         ['key' => 'admin_app_name', 'value' => 'QuânDH Core', 'group' => 'admin_page', 'is_public' => true, 'type' => 'string', 'label' => 'Tên ứng dụng', 'sort_order' => 1],
         ['key' => 'admin_logo_title', 'value' => 'Hệ thống quản trị', 'group' => 'admin_page', 'is_public' => true, 'type' => 'string', 'label' => 'Tiêu đề logo', 'sort_order' => 2],
         ['key' => 'admin_welcome_title', 'value' => 'Chào mừng đến với hệ thống', 'group' => 'admin_page', 'is_public' => true, 'type' => 'string', 'label' => 'Tiêu đề chào mừng', 'sort_order' => 3],
         ['key' => 'admin_app_description', 'value' => '', 'group' => 'admin_page', 'is_public' => true, 'type' => 'text', 'label' => 'Mô tả ứng dụng', 'sort_order' => 4],
-        ['key' => 'admin_background_image', 'value' => null, 'group' => 'admin_page', 'is_public' => true, 'type' => 'string', 'label' => 'Ảnh nền', 'sort_order' => 5],
+        ['key' => 'admin_background_image', 'value' => null, 'group' => 'admin_page', 'is_public' => true, 'type' => 'image', 'label' => 'Ảnh nền', 'sort_order' => 5],
         // Org select page
         ['key' => 'org_select_title', 'value' => 'Chọn tổ chức', 'group' => 'org_select_page', 'is_public' => true, 'type' => 'string', 'label' => 'Tiêu đề trang chọn tổ chức', 'sort_order' => 1],
         ['key' => 'org_select_description', 'value' => '', 'group' => 'org_select_page', 'is_public' => true, 'type' => 'text', 'label' => 'Mô tả trang chọn tổ chức', 'sort_order' => 2],
-        ['key' => 'org_select_background_image', 'value' => null, 'group' => 'org_select_page', 'is_public' => true, 'type' => 'string', 'label' => 'Ảnh nền', 'sort_order' => 3],
+        ['key' => 'org_select_background_image', 'value' => null, 'group' => 'org_select_page', 'is_public' => true, 'type' => 'image', 'label' => 'Ảnh nền', 'sort_order' => 3],
         // Social
         ['key' => 'social_facebook', 'value' => null, 'group' => 'social', 'is_public' => true, 'type' => 'string', 'label' => 'Facebook', 'sort_order' => 1],
         ['key' => 'social_twitter', 'value' => null, 'group' => 'social', 'is_public' => true, 'type' => 'string', 'label' => 'Twitter', 'sort_order' => 2],

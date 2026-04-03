@@ -115,7 +115,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":[{"id":1,"name":"eius et animi","description":"Velit et fugiat sunt nihil accusantium.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"14:10:47 02\/04\/2026","updated_at":"14:10:47 02\/04\/2026"},{"id":2,"name":"harum mollitia modi","description":"Aut ab provident perspiciatis quo omnis nostrum aut.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"14:10:47 02\/04\/2026","updated_at":"14:10:47 02\/04\/2026"}],"success":"true"}'
+        content: '{"data":[{"id":26,"name":"eius et animi","description":"Velit et fugiat sunt nihil accusantium.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"01:16:37 03\/04\/2026","updated_at":"01:16:37 03\/04\/2026"},{"id":27,"name":"harum mollitia modi","description":"Aut ab provident perspiciatis quo omnis nostrum aut.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"01:16:37 03\/04\/2026","updated_at":"01:16:37 03\/04\/2026"}],"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -237,7 +237,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":[{"id":3,"name":"eius et animi","description":"Velit et fugiat sunt nihil accusantium."},{"id":4,"name":"harum mollitia modi","description":"Aut ab provident perspiciatis quo omnis nostrum aut."}],"success":"true"}'
+        content: '{"data":[{"id":28,"name":"eius et animi","description":"Velit et fugiat sunt nihil accusantium."},{"id":29,"name":"harum mollitia modi","description":"Aut ab provident perspiciatis quo omnis nostrum aut."}],"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -803,7 +803,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":[{"id":5,"name":"eius et animi","description":"Velit et fugiat sunt nihil accusantium.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"14:10:49 02\/04\/2026","updated_at":"14:10:49 02\/04\/2026"},{"id":6,"name":"harum mollitia modi","description":"Aut ab provident perspiciatis quo omnis nostrum aut.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"14:10:49 02\/04\/2026","updated_at":"14:10:49 02\/04\/2026"}],"links":{"first":"\/?page=1","last":"\/?page=1","prev":null,"next":null},"meta":{"current_page":1,"from":1,"last_page":1,"links":[{"url":null,"label":"&laquo; Previous","page":null,"active":false},{"url":"\/?page=1","label":"1","page":1,"active":true},{"url":null,"label":"Next &raquo;","page":null,"active":false}],"path":"\/","per_page":10,"to":2,"total":2},"success":"true"}'
+        content: '{"data":[{"id":30,"name":"eius et animi","description":"Velit et fugiat sunt nihil accusantium.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"01:16:39 03\/04\/2026","updated_at":"01:16:39 03\/04\/2026"},{"id":31,"name":"harum mollitia modi","description":"Aut ab provident perspiciatis quo omnis nostrum aut.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"01:16:39 03\/04\/2026","updated_at":"01:16:39 03\/04\/2026"}],"links":{"first":"\/?page=1","last":"\/?page=1","prev":null,"next":null},"meta":{"current_page":1,"from":1,"last_page":1,"links":[{"url":null,"label":"&laquo; Previous","page":null,"active":false},{"url":"\/?page=1","label":"1","page":1,"active":true},{"url":null,"label":"Next &raquo;","page":null,"active":false}],"path":"\/","per_page":10,"to":2,"total":2},"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -840,7 +840,7 @@ endpoints:
         name: taskAssignmentItemType_id
         description: 'The ID of the taskAssignmentItemType.'
         required: true
-        example: 16
+        example: 24
         type: integer
         enumValues: []
         exampleWasSpecified: false
@@ -858,7 +858,7 @@ endpoints:
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      taskAssignmentItemType_id: 16
+      taskAssignmentItemType_id: 24
       taskAssignmentItemType: 1
     queryParameters: []
     cleanQueryParameters: []
@@ -869,7 +869,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":7,"name":"aut adipisci quidem","description":"Qui commodi incidunt iure odit.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"14:10:49 02\/04\/2026","updated_at":"14:10:49 02\/04\/2026"},"success":"true"}'
+        content: '{"data":{"id":32,"name":"aut adipisci quidem","description":"Qui commodi incidunt iure odit.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"01:16:39 03\/04\/2026","updated_at":"01:16:39 03\/04\/2026"},"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -947,7 +947,7 @@ endpoints:
       -
         custom: []
         status: 201
-        content: '{"data":{"id":8,"name":"fugiat sunt nihil","description":"Harum mollitia modi deserunt aut ab provident perspiciatis quo.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"14:10:49 02\/04\/2026","updated_at":"14:10:49 02\/04\/2026"},"success":"true","message":"T\u1ea1o lo\u1ea1i c\u00f4ng vi\u1ec7c th\u00e0nh c\u00f4ng!"}'
+        content: '{"data":{"id":33,"name":"fugiat sunt nihil","description":"Harum mollitia modi deserunt aut ab provident perspiciatis quo.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"01:16:39 03\/04\/2026","updated_at":"01:16:39 03\/04\/2026"},"success":"true","message":"T\u1ea1o lo\u1ea1i c\u00f4ng vi\u1ec7c th\u00e0nh c\u00f4ng!"}'
         headers: []
         description: ''
     responseFields: []
@@ -984,7 +984,7 @@ endpoints:
         name: taskAssignmentItemType_id
         description: 'The ID of the taskAssignmentItemType.'
         required: true
-        example: 16
+        example: 24
         type: integer
         enumValues: []
         exampleWasSpecified: false
@@ -1002,7 +1002,7 @@ endpoints:
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      taskAssignmentItemType_id: 16
+      taskAssignmentItemType_id: 24
       taskAssignmentItemType: 1
     queryParameters: []
     cleanQueryParameters: []
@@ -1049,7 +1049,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":9,"name":"eius et animi","description":"Velit et fugiat sunt nihil accusantium.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"14:10:49 02\/04\/2026","updated_at":"14:10:49 02\/04\/2026"},"success":"true","message":"C\u1eadp nh\u1eadt lo\u1ea1i c\u00f4ng vi\u1ec7c th\u00e0nh c\u00f4ng!"}'
+        content: '{"data":{"id":34,"name":"eius et animi","description":"Velit et fugiat sunt nihil accusantium.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"01:16:39 03\/04\/2026","updated_at":"01:16:39 03\/04\/2026"},"success":"true","message":"C\u1eadp nh\u1eadt lo\u1ea1i c\u00f4ng vi\u1ec7c th\u00e0nh c\u00f4ng!"}'
         headers: []
         description: ''
     responseFields: []
@@ -1086,7 +1086,7 @@ endpoints:
         name: taskAssignmentItemType_id
         description: 'The ID of the taskAssignmentItemType.'
         required: true
-        example: 16
+        example: 24
         type: integer
         enumValues: []
         exampleWasSpecified: false
@@ -1104,7 +1104,7 @@ endpoints:
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      taskAssignmentItemType_id: 16
+      taskAssignmentItemType_id: 24
       taskAssignmentItemType: 1
     queryParameters: []
     cleanQueryParameters: []
@@ -1151,7 +1151,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":10,"name":"eius et animi","description":"Velit et fugiat sunt nihil accusantium.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"14:10:49 02\/04\/2026","updated_at":"14:10:49 02\/04\/2026"},"success":"true","message":"C\u1eadp nh\u1eadt lo\u1ea1i c\u00f4ng vi\u1ec7c th\u00e0nh c\u00f4ng!"}'
+        content: '{"data":{"id":35,"name":"eius et animi","description":"Velit et fugiat sunt nihil accusantium.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"01:16:39 03\/04\/2026","updated_at":"01:16:39 03\/04\/2026"},"success":"true","message":"C\u1eadp nh\u1eadt lo\u1ea1i c\u00f4ng vi\u1ec7c th\u00e0nh c\u00f4ng!"}'
         headers: []
         description: ''
     responseFields: []
@@ -1188,7 +1188,7 @@ endpoints:
         name: taskAssignmentItemType_id
         description: 'The ID of the taskAssignmentItemType.'
         required: true
-        example: 16
+        example: 24
         type: integer
         enumValues: []
         exampleWasSpecified: false
@@ -1206,7 +1206,7 @@ endpoints:
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      taskAssignmentItemType_id: 16
+      taskAssignmentItemType_id: 24
       taskAssignmentItemType: 1
     queryParameters: []
     cleanQueryParameters: []
@@ -1254,7 +1254,7 @@ endpoints:
         name: taskAssignmentItemType_id
         description: 'The ID of the taskAssignmentItemType.'
         required: true
-        example: 16
+        example: 24
         type: integer
         enumValues: []
         exampleWasSpecified: false
@@ -1272,7 +1272,7 @@ endpoints:
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      taskAssignmentItemType_id: 16
+      taskAssignmentItemType_id: 24
       taskAssignmentItemType: 1
     queryParameters: []
     cleanQueryParameters: []
@@ -1295,7 +1295,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":11,"name":"aut adipisci quidem","description":"Qui commodi incidunt iure odit.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"14:10:49 02\/04\/2026","updated_at":"14:10:49 02\/04\/2026"},"success":"true","message":"\u0110\u1ed5i tr\u1ea1ng th\u00e1i th\u00e0nh c\u00f4ng!"}'
+        content: '{"data":{"id":36,"name":"aut adipisci quidem","description":"Qui commodi incidunt iure odit.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"01:16:39 03\/04\/2026","updated_at":"01:16:39 03\/04\/2026"},"success":"true","message":"\u0110\u1ed5i tr\u1ea1ng th\u00e1i th\u00e0nh c\u00f4ng!"}'
         headers: []
         description: ''
     responseFields: []

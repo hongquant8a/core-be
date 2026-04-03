@@ -164,6 +164,17 @@ Quản lý loại văn bản trong hệ thống giao việc liên phòng ban: th
 
 ---
 
+## Tải mẫu import
+
+| | |
+|---|---|
+| **Method** | GET |
+| **Path** | `/api/task-assignment-types/import-template` |
+| **Auth** | Bắt buộc (permission: import). |
+| **Response** | File `import-types-template.xlsx` — chỉ có header row: `name`, `description`, `status`. |
+
+---
+
 ## Response mẫu (TaskAssignmentTypeResource)
 
 ```json

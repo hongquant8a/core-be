@@ -164,6 +164,17 @@ Quản lý phòng ban trong hệ thống giao việc liên phòng ban: thống k
 
 ---
 
+## Tải mẫu import
+
+| | |
+|---|---|
+| **Method** | GET |
+| **Path** | `/api/task-assignment-departments/import-template` |
+| **Auth** | Bắt buộc (permission: import). |
+| **Response** | File `import-departments-template.xlsx` — chỉ có header row: `code`, `name`, `description`, `status`, `sort_order`. |
+
+---
+
 ## Response mẫu (TaskAssignmentDepartmentResource)
 
 ```json

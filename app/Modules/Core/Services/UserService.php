@@ -7,6 +7,7 @@ use App\Modules\Core\Exports\UsersExport;
 use App\Modules\Core\Imports\UsersImport;
 use App\Modules\Core\Models\Role;
 use App\Modules\Core\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -15,6 +16,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class UserService
 {
+    public function __construct(private MediaService $mediaService) {}
     public function stats(array $filters): array
     {
         $base = User::filter($filters);
@@ -34,12 +36,14 @@ class UserService
     public function store(array $data): User
     {
         return DB::transaction(function () use ($data) {
+            $avatar = $data['avatar'] ?? null;
             $assignments = $this->normalizeAssignments($data['assignments'] ?? []);
-            unset($data['assignments']);
+            unset($data['assignments'], $data['avatar']);
             $data['password'] = Hash::make($data['password']);
 
             $user = User::create($data);
             $this->syncUserAssignments($user, $assignments);
+            $this->handleAvatar($user, $avatar);
 
             return $user;
         });
@@ -48,9 +52,11 @@ class UserService
     public function update(User $user, array $data): User
     {
         return DB::transaction(function () use ($user, $data) {
+            $avatar = $data['avatar'] ?? null;
+            $hasAvatar = array_key_exists('avatar', $data);
             $hasAssignments = array_key_exists('assignments', $data);
             $assignments = $this->normalizeAssignments($data['assignments'] ?? []);
-            unset($data['assignments']);
+            unset($data['assignments'], $data['avatar']);
 
             if (isset($data['password'])) {
                 $data['password'] = Hash::make($data['password']);
@@ -60,6 +66,10 @@ class UserService
 
             if ($hasAssignments) {
                 $this->syncUserAssignments($user, $assignments);
+            }
+
+            if ($hasAvatar) {
+                $this->handleAvatar($user, $avatar);
             }
 
             return $user;
@@ -153,6 +163,17 @@ class UserService
         }
 
         return $map;
+    }
+
+    protected function handleAvatar(User $user, mixed $value): void
+    {
+        if ($value instanceof UploadedFile) {
+            $user->clearMediaCollection('avatars');
+            $this->mediaService->uploadOne($user, $value, 'avatars', ['disk' => 'public']);
+        } elseif ($value === null || $value === '') {
+            $user->clearMediaCollection('avatars');
+        }
+        // string URL → giữ nguyên, không xử lý
     }
 
     protected function syncUserAssignments(User $user, array $assignments): void

@@ -18,6 +18,7 @@ class UserResource extends JsonResource
             'email' => $this->email,
             'user_name' => $this->user_name,
             'status' => $this->status,
+            'avatar' => ($avatar = $this->getFirstMedia('avatars')) ? '/storage/'.$avatar->id.'/'.$avatar->file_name : null,
             'created_by' => $this->creator?->name ?? 'N/A',
             'updated_by' => $this->editor?->name ?? 'N/A',
             'assignments' => $this->roleAssignments(),

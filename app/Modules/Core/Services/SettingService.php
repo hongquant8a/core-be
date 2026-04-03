@@ -3,11 +3,14 @@
 namespace App\Modules\Core\Services;
 
 use App\Modules\Core\Models\Setting;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class SettingService
 {
+    public function __construct(private MediaService $mediaService) {}
+
     /**
      * Lấy cấu hình công khai (is_public = true), nhóm theo group.
      */
@@ -19,10 +22,10 @@ class SettingService
                 ->orderBy('sort_order')
                 ->get()
                 ->groupBy('group')
-                ->map(fn ($items) => $items->pluck('value', 'key')->map(fn ($v, $k) => Setting::castValue(
-                    $v,
-                    $items->firstWhere('key', $k)?->type ?? 'string'
-                ))->all())
+                ->map(fn ($items) => $items->map(fn ($item) => [
+                    'key' => $item->key,
+                    'value' => $this->resolveValue($item),
+                ])->pluck('value', 'key')->all())
                 ->all();
         });
     }
@@ -37,10 +40,10 @@ class SettingService
                 ->orderBy('sort_order')
                 ->get()
                 ->groupBy('group')
-                ->map(fn ($items) => $items->pluck('value', 'key')->map(fn ($v, $k) => Setting::castValue(
-                    $v,
-                    $items->firstWhere('key', $k)?->type ?? 'string'
-                ))->all())
+                ->map(fn ($items) => $items->map(fn ($item) => [
+                    'key' => $item->key,
+                    'value' => $this->resolveValue($item),
+                ])->pluck('value', 'key')->all())
                 ->all();
         });
     }
@@ -58,7 +61,7 @@ class SettingService
 
         return [
             'key' => $setting->key,
-            'value' => Setting::castValue($setting->value, $setting->type),
+            'value' => $this->resolveValue($setting),
             'group' => $setting->group,
             'label' => $setting->label,
             'type' => $setting->type,
@@ -83,14 +86,62 @@ class SettingService
                     continue;
                 }
 
-                $setting->value = $this->stringifyValue($value, $setting->type);
-                $setting->save();
+                if ($setting->type === 'image') {
+                    $this->handleImageUpload($setting, $value);
+                } else {
+                    $setting->value = $this->stringifyValue($value, $setting->type);
+                    $setting->save();
+                }
             }
         });
 
         Setting::clearCache();
 
         return $this->getAll();
+    }
+
+    /**
+     * Resolve giá trị setting — nếu type=image thì trả URL từ Spatie media.
+     */
+    protected function resolveValue(Setting $setting): mixed
+    {
+        if ($setting->type === 'image') {
+            $media = $setting->getFirstMedia('settings');
+
+            return $media ? '/storage/'.$media->id.'/'.$media->file_name : null;
+        }
+
+        return Setting::castValue($setting->value, $setting->type);
+    }
+
+    /**
+     * Upload ảnh cho setting qua MediaService, xóa ảnh cũ nếu có.
+     */
+    protected function handleImageUpload(Setting $setting, mixed $value): void
+    {
+        // Nếu value = null hoặc rỗng → xóa ảnh
+        if (! $value || (is_string($value) && $value === '')) {
+            $setting->clearMediaCollection('settings');
+            $setting->value = null;
+            $setting->save();
+
+            return;
+        }
+
+        // Nếu value là file upload
+        if ($value instanceof UploadedFile) {
+            // Xóa ảnh cũ
+            $setting->clearMediaCollection('settings');
+
+            // Upload mới qua MediaService
+            $media = $this->mediaService->uploadOne($setting, $value, 'settings', ['disk' => 'public']);
+            $setting->value = '/storage/'.$media->id.'/'.$media->file_name;
+            $setting->save();
+
+            return;
+        }
+
+        // Nếu value là string (giữ nguyên URL cũ, không thay đổi)
     }
 
     /**

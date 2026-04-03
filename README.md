@@ -4,8 +4,7 @@ Hệ thống backend API xây dựng trên Laravel theo kiến trúc module tạ
 
 - `Auth`: đăng nhập, quên mật khẩu, đặt lại mật khẩu, chuyển tổ chức làm việc.
 - `Core`: người dùng, vai trò, quyền, tổ chức, cấu hình, log hoạt động.
-- `Post`: bài viết và danh mục bài viết.
-- `Document`: văn bản và các danh mục liên quan (lĩnh vực, loại, người ký, cấp/cơ quan ban hành).
+- `TaskAssignment`: quản lý giao việc liên phòng ban (văn bản, công việc, báo cáo, thống kê).
 
 ## Yêu cầu môi trường
 
@@ -42,7 +41,13 @@ cp .env.example .env
 ./vendor/bin/sail artisan migrate --seed
 ```
 
-5. Cài frontend dependencies:
+5. Tạo symlink storage (cần cho upload ảnh/file):
+
+```bash
+./vendor/bin/sail artisan storage:link
+```
+
+6. Cài frontend dependencies:
 
 ```bash
 ./vendor/bin/sail npm install

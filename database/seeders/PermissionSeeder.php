@@ -7,6 +7,7 @@ use App\Modules\Core\Models\Organization;
 use App\Modules\Core\Models\Permission;
 use App\Modules\Core\Models\Role;
 use App\Modules\Core\Models\User;
+use App\Modules\Core\Models\UserPreference;
 use Illuminate\Database\Seeder;
 
 /**
@@ -362,6 +363,22 @@ class PermissionSeeder extends Seeder
                 $user->syncRoles([$userData['role']]);
             }
         }
+
+        // Gán tất cả user chưa có role vào org "Default" với role "Nhân viên"
+        $allUsersWithoutRoles = User::whereDoesntHave('roles')->get();
+        foreach ($allUsersWithoutRoles as $u) {
+            if ($nhanVienRole) {
+                $u->syncRoles([$nhanVienRole]);
+            }
+        }
+
+        // Gán tất cả user vào organization "Default" qua user_preferences
+        User::all()->each(function ($u) use ($defaultOrganization) {
+            UserPreference::firstOrCreate(
+                ['user_id' => $u->id],
+                ['current_organization_id' => $defaultOrganization->id]
+            );
+        });
     }
 
     /** Lấy toàn bộ tên permission (resource.action). */

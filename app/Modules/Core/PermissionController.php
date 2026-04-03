@@ -206,4 +206,17 @@ class PermissionController extends Controller
 
         return $this->success(null, 'Import quyền thành công.');
     }
+
+    /**
+     * Tải mẫu import quyền
+     *
+     * @response 200 scenario="File Excel mẫu"
+     */
+    public function importTemplate()
+    {
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Modules\Core\Exports\ImportTemplateExport(['name', 'guard_name', 'description', 'sort_order', 'parent_id']),
+            'import-permissions-template.xlsx'
+        );
+    }
 }

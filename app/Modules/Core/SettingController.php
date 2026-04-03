@@ -68,8 +68,15 @@ class SettingController extends Controller
      *
      * Cập nhật một phần hoặc toàn bộ. Body là object key-value. Chỉ cập nhật các key tồn tại.
      *
+     * **Xử lý field ảnh (type=image: icon, logo, admin_background_image, org_select_background_image):**
+     * - `multipart/form-data` + file blob → upload ảnh mới, xóa ảnh cũ, trả URL mới.
+     * - `application/json` + URL string → giữ nguyên ảnh cũ, không thay đổi.
+     * - `application/json` + chuỗi rỗng `""` → xóa ảnh, trả `null`.
+     *
      * @bodyParam copyright string optional Thông tin bản quyền. Example: © 2026 QuânDH
      * @bodyParam language string optional Ngôn ngữ. Example: vi
+     * @bodyParam logo file optional Ảnh logo (jpg, png, svg, webp, ico, max 5MB).
+     * @bodyParam icon file optional Ảnh favicon (jpg, png, svg, webp, ico, max 5MB).
      * @bodyParam log_retention_days integer optional Số ngày giữ nhật ký. Example: 90
      *
      * @response 200 {"success": true, "data": {...}, "message": "Cấu hình đã được cập nhật!"}

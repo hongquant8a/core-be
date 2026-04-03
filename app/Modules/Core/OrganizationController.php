@@ -296,4 +296,17 @@ class OrganizationController extends Controller
 
         return $this->success(null, 'Import organization thành công.');
     }
+
+    /**
+     * Tải mẫu import tổ chức
+     *
+     * @response 200 scenario="File Excel mẫu"
+     */
+    public function importTemplate()
+    {
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Modules\Core\Exports\ImportTemplateExport(['name', 'slug', 'description', 'status', 'sort_order', 'parent_slug']),
+            'import-organizations-template.xlsx'
+        );
+    }
 }

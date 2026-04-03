@@ -142,7 +142,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":[{"id":1,"task_assignment_item_id":9,"completed_at":null,"report_document_number":"BC-71\/2026","report_document_excerpt":"Animi quos velit et fugiat.","report_document_content":"Accusantium harum mollitia modi deserunt aut ab. Perspiciatis quo omnis nostrum aut adipisci quidem nostrum qui. Incidunt iure odit et et modi ipsum.\n\nAutem et consequatur aut dolores enim non facere tempora. Voluptatem laboriosam praesentium quis adipisci.","created_at":"14:10:49 02\/04\/2026","updated_at":"14:10:49 02\/04\/2026"},{"id":2,"task_assignment_item_id":10,"completed_at":null,"report_document_number":"BC-42\/2026","report_document_excerpt":"Molestiae ut rem est esse.","report_document_content":"Molestiae sunt suscipit doloribus fugiat ut aut. Et error neque recusandae et. Dolorem et ut dicta.\n\nConsequatur ut et sunt quisquam sit repellendus ut. Alias ratione dolores sed rem. Ut aut deserunt sint quis in quod id aspernatur.","created_at":"14:10:49 02\/04\/2026","updated_at":"14:10:49 02\/04\/2026"}],"links":{"first":"\/?page=1","last":"\/?page=1","prev":null,"next":null},"meta":{"current_page":1,"from":1,"last_page":1,"links":[{"url":null,"label":"&laquo; Previous","page":null,"active":false},{"url":"\/?page=1","label":"1","page":1,"active":true},{"url":null,"label":"Next &raquo;","page":null,"active":false}],"path":"\/","per_page":10,"to":2,"total":2},"success":"true"}'
+        content: '{"data":[{"id":15,"task_assignment_item_id":53,"completed_at":null,"report_document_number":"BC-71\/2026","report_document_excerpt":"Animi quos velit et fugiat.","report_document_content":"Accusantium harum mollitia modi deserunt aut ab. Perspiciatis quo omnis nostrum aut adipisci quidem nostrum qui. Incidunt iure odit et et modi ipsum.\n\nAutem et consequatur aut dolores enim non facere tempora. Voluptatem laboriosam praesentium quis adipisci.","created_at":"01:16:39 03\/04\/2026","updated_at":"01:16:39 03\/04\/2026"},{"id":16,"task_assignment_item_id":54,"completed_at":null,"report_document_number":"BC-42\/2026","report_document_excerpt":"Molestiae ut rem est esse.","report_document_content":"Molestiae sunt suscipit doloribus fugiat ut aut. Et error neque recusandae et. Dolorem et ut dicta.\n\nConsequatur ut et sunt quisquam sit repellendus ut. Alias ratione dolores sed rem. Ut aut deserunt sint quis in quod id aspernatur.","created_at":"01:16:39 03\/04\/2026","updated_at":"01:16:39 03\/04\/2026"}],"links":{"first":"\/?page=1","last":"\/?page=1","prev":null,"next":null},"meta":{"current_page":1,"from":1,"last_page":1,"links":[{"url":null,"label":"&laquo; Previous","page":null,"active":false},{"url":"\/?page=1","label":"1","page":1,"active":true},{"url":null,"label":"Next &raquo;","page":null,"active":false}],"path":"\/","per_page":10,"to":2,"total":2},"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -294,7 +294,7 @@ endpoints:
       -
         custom: []
         status: 201
-        content: '{"data":{"id":3,"task_assignment_item_id":11,"completed_at":null,"report_document_number":"BC-75\/2026","report_document_excerpt":"Et animi quos velit et fugiat.","report_document_content":"Accusantium harum mollitia modi deserunt aut ab. Perspiciatis quo omnis nostrum aut adipisci quidem nostrum qui. Incidunt iure odit et et modi ipsum.\n\nAutem et consequatur aut dolores enim non facere tempora. Voluptatem laboriosam praesentium quis adipisci.","created_at":"14:10:49 02\/04\/2026","updated_at":"14:10:49 02\/04\/2026"},"success":"true","message":"B\u00e1o c\u00e1o \u0111\u00e3 \u0111\u01b0\u1ee3c t\u1ea1o th\u00e0nh c\u00f4ng!"}'
+        content: '{"data":{"id":17,"task_assignment_item_id":55,"completed_at":null,"report_document_number":"BC-75\/2026","report_document_excerpt":"Et animi quos velit et fugiat.","report_document_content":"Accusantium harum mollitia modi deserunt aut ab. Perspiciatis quo omnis nostrum aut adipisci quidem nostrum qui. Incidunt iure odit et et modi ipsum.\n\nAutem et consequatur aut dolores enim non facere tempora. Voluptatem laboriosam praesentium quis adipisci.","created_at":"01:16:39 03\/04\/2026","updated_at":"01:16:39 03\/04\/2026"},"success":"true","message":"B\u00e1o c\u00e1o \u0111\u00e3 \u0111\u01b0\u1ee3c t\u1ea1o th\u00e0nh c\u00f4ng!"}'
         headers: []
         description: ''
     responseFields: []
@@ -360,7 +360,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":4,"task_assignment_item_id":12,"completed_at":null,"report_document_number":"BC-80\/2026","report_document_excerpt":"Quidem nostrum qui commodi incidunt iure odit.","report_document_content":"Modi ipsum nostrum omnis autem et. Aut dolores enim non facere tempora ex voluptatem. Praesentium quis adipisci molestias fugit. Distinctio eum doloremque id aut libero aliquam veniam corporis.\n\nDeleniti nemo odit quia officia. Dignissimos neque blanditiis odio. Excepturi doloribus delectus fugit qui repudiandae laboriosam.","created_at":"14:10:49 02\/04\/2026","updated_at":"14:10:49 02\/04\/2026"},"success":"true"}'
+        content: '{"data":{"id":18,"task_assignment_item_id":56,"completed_at":null,"report_document_number":"BC-80\/2026","report_document_excerpt":"Quidem nostrum qui commodi incidunt iure odit.","report_document_content":"Modi ipsum nostrum omnis autem et. Aut dolores enim non facere tempora ex voluptatem. Praesentium quis adipisci molestias fugit. Distinctio eum doloremque id aut libero aliquam veniam corporis.\n\nDeleniti nemo odit quia officia. Dignissimos neque blanditiis odio. Excepturi doloribus delectus fugit qui repudiandae laboriosam.","created_at":"01:16:39 03\/04\/2026","updated_at":"01:16:39 03\/04\/2026"},"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -538,7 +538,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":5,"task_assignment_item_id":13,"completed_at":null,"report_document_number":"BC-71\/2026","report_document_excerpt":"Animi quos velit et fugiat.","report_document_content":"Accusantium harum mollitia modi deserunt aut ab. Perspiciatis quo omnis nostrum aut adipisci quidem nostrum qui. Incidunt iure odit et et modi ipsum.\n\nAutem et consequatur aut dolores enim non facere tempora. Voluptatem laboriosam praesentium quis adipisci.","created_at":"14:10:49 02\/04\/2026","updated_at":"14:10:49 02\/04\/2026"},"success":"true","message":"B\u00e1o c\u00e1o \u0111\u00e3 \u0111\u01b0\u1ee3c c\u1eadp nh\u1eadt!"}'
+        content: '{"data":{"id":19,"task_assignment_item_id":57,"completed_at":null,"report_document_number":"BC-71\/2026","report_document_excerpt":"Animi quos velit et fugiat.","report_document_content":"Accusantium harum mollitia modi deserunt aut ab. Perspiciatis quo omnis nostrum aut adipisci quidem nostrum qui. Incidunt iure odit et et modi ipsum.\n\nAutem et consequatur aut dolores enim non facere tempora. Voluptatem laboriosam praesentium quis adipisci.","created_at":"01:16:39 03\/04\/2026","updated_at":"01:16:39 03\/04\/2026"},"success":"true","message":"B\u00e1o c\u00e1o \u0111\u00e3 \u0111\u01b0\u1ee3c c\u1eadp nh\u1eadt!"}'
         headers: []
         description: ''
     responseFields: []
@@ -716,7 +716,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":6,"task_assignment_item_id":14,"completed_at":null,"report_document_number":"BC-71\/2026","report_document_excerpt":"Animi quos velit et fugiat.","report_document_content":"Accusantium harum mollitia modi deserunt aut ab. Perspiciatis quo omnis nostrum aut adipisci quidem nostrum qui. Incidunt iure odit et et modi ipsum.\n\nAutem et consequatur aut dolores enim non facere tempora. Voluptatem laboriosam praesentium quis adipisci.","created_at":"14:10:49 02\/04\/2026","updated_at":"14:10:49 02\/04\/2026"},"success":"true","message":"B\u00e1o c\u00e1o \u0111\u00e3 \u0111\u01b0\u1ee3c c\u1eadp nh\u1eadt!"}'
+        content: '{"data":{"id":20,"task_assignment_item_id":58,"completed_at":null,"report_document_number":"BC-71\/2026","report_document_excerpt":"Animi quos velit et fugiat.","report_document_content":"Accusantium harum mollitia modi deserunt aut ab. Perspiciatis quo omnis nostrum aut adipisci quidem nostrum qui. Incidunt iure odit et et modi ipsum.\n\nAutem et consequatur aut dolores enim non facere tempora. Voluptatem laboriosam praesentium quis adipisci.","created_at":"01:16:39 03\/04\/2026","updated_at":"01:16:39 03\/04\/2026"},"success":"true","message":"B\u00e1o c\u00e1o \u0111\u00e3 \u0111\u01b0\u1ee3c c\u1eadp nh\u1eadt!"}'
         headers: []
         description: ''
     responseFields: []

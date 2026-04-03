@@ -186,4 +186,17 @@ class RoleController extends Controller
 
         return $this->success(null, 'Import vai trò thành công.');
     }
+
+    /**
+     * Tải mẫu import vai trò
+     *
+     * @response 200 scenario="File Excel mẫu"
+     */
+    public function importTemplate()
+    {
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Modules\Core\Exports\ImportTemplateExport(['name', 'guard_name', 'organization_id']),
+            'import-roles-template.xlsx'
+        );
+    }
 }

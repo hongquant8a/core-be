@@ -141,6 +141,29 @@ Quản lý văn bản giao việc liên phòng ban: thống kê, danh sách, chi
 
 ---
 
+## Tải mẫu import
+
+| | |
+|---|---|
+| **Method** | GET |
+| **Path** | `/api/task-assignment-documents/import-template` |
+| **Auth** | Bắt buộc (permission: import). |
+| **Response** | File `import-documents-template.xlsx` — chỉ có header row: `name`, `summary`, `issue_date`, `type`, `status`. |
+
+---
+
+## Business Logic
+
+**Chuyển trạng thái sang `issued`:**
+- Phải có ít nhất 1 công việc (`items`) thuộc văn bản.
+- Tất cả công việc có thời hạn (`deadline_type = has_deadline`) phải có `end_at`.
+- Khi chuyển sang `issued`, hệ thống tự động ghi nhận `issued_at`.
+
+**Chỉnh sửa văn bản:**
+- Không thể chỉnh sửa văn bản đã ban hành (`issued`) — phải chuyển về `draft` trước.
+
+---
+
 ## Response mẫu (TaskAssignmentDocumentResource)
 
 ```json
