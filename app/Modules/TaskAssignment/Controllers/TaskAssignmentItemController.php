@@ -271,6 +271,21 @@ class TaskAssignmentItemController extends Controller
     }
 
     /**
+     * Thống kê công việc theo loại công việc
+     *
+     * @queryParam department_id integer Lọc theo phòng ban. Example: 1
+     * @queryParam priority string Lọc theo mức độ ưu tiên.
+     * @queryParam from_date date Từ ngày (Y-m-d). Example: 2026-01-01
+     * @queryParam to_date date Đến ngày (Y-m-d). Example: 2026-12-31
+     *
+     * @response 200 {"success": true, "data": [{"item_type_id": 1, "item_type_name": "TT Thành ủy giao", "total": 19, "todo": 5, "in_progress": 8, "done": 3, "overdue": 2, "paused": 1, "cancelled": 0}]}
+     */
+    public function statsByItemType(StatsFilterRequest $request)
+    {
+        return $this->success($this->itemService->statsByItemType($request->all()));
+    }
+
+    /**
      * Thống kê công việc theo phòng ban
      *
      * @queryParam processing_status string Lọc theo trạng thái xử lý.
@@ -301,6 +316,21 @@ class TaskAssignmentItemController extends Controller
     public function statsByUser(StatsFilterRequest $request)
     {
         return $this->success($this->itemService->statsByUser($request->all()));
+    }
+
+    /**
+     * Thống kê công việc theo văn bản giao việc
+     *
+     * @queryParam department_id integer Lọc theo phòng ban. Example: 1
+     * @queryParam task_assignment_type_id integer Lọc theo loại văn bản. Example: 1
+     * @queryParam from_date date Từ ngày ban hành (Y-m-d). Example: 2026-01-01
+     * @queryParam to_date date Đến ngày ban hành (Y-m-d). Example: 2026-12-31
+     *
+     * @response 200 {"success": true, "data": [{"document_id": 1, "document_name": "KH số 123", "issue_date": "2026-03-15", "total_items": 10, "done": 7, "in_progress": 2, "overdue": 1, "completion_rate": 70.0}]}
+     */
+    public function statsByDocument(StatsFilterRequest $request)
+    {
+        return $this->success($this->itemService->statsByDocument($request->all()));
     }
 
     /**

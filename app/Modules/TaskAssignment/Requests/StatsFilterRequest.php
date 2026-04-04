@@ -13,6 +13,7 @@ class StatsFilterRequest extends BaseRequest
             'from_date' => 'sometimes|date',
             'to_date' => 'sometimes|date|after_or_equal:from_date',
             'task_assignment_item_type_id' => 'sometimes|integer|exists:task_assignment_item_types,id',
+            'task_assignment_type_id' => 'sometimes|integer|exists:task_assignment_types,id',
             'department_id' => 'sometimes|integer|exists:task_assignment_departments,id',
             'user_id' => 'sometimes|integer|exists:users,id',
             'sort_by' => 'sometimes|string',

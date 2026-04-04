@@ -28,6 +28,39 @@ class TaskAssignmentDocumentService
         ];
     }
 
+    public function statsByTime(array $filters): array
+    {
+        $from = \Carbon\Carbon::parse($filters['from_date'])->startOfMonth();
+        $to = \Carbon\Carbon::parse($filters['to_date'])->endOfMonth();
+
+        $draft = TaskAssignmentDocumentStatusEnum::Draft->value;
+        $issued = TaskAssignmentDocumentStatusEnum::Issued->value;
+
+        $baseQuery = TaskAssignmentDocument::query()
+            ->when($filters['task_assignment_type_id'] ?? null, fn ($q, $v) => $q->where('task_assignment_type_id', $v));
+
+        $results = [];
+        $cursor = $from->copy();
+
+        while ($cursor->lte($to)) {
+            $monthStart = $cursor->copy()->startOfMonth();
+            $monthEnd = $cursor->copy()->endOfMonth();
+
+            $base = (clone $baseQuery)->whereBetween('issue_date', [$monthStart->toDateString(), $monthEnd->toDateString()]);
+
+            $results[] = [
+                'month' => $cursor->format('Y-m'),
+                'total' => (clone $base)->count(),
+                'draft' => (clone $base)->where('status', $draft)->count(),
+                'issued' => (clone $base)->where('status', $issued)->count(),
+            ];
+
+            $cursor->addMonth();
+        }
+
+        return $results;
+    }
+
     public function index(array $filters, int $limit)
     {
         return TaskAssignmentDocument::with(['type'])

@@ -8,6 +8,7 @@ use App\Modules\TaskAssignment\Models\TaskAssignmentDocument;
 use App\Modules\TaskAssignment\Requests\BulkDestroyDocumentRequest;
 use App\Modules\TaskAssignment\Requests\BulkUpdateStatusDocumentRequest;
 use App\Modules\TaskAssignment\Requests\ChangeDocumentStatusRequest;
+use App\Modules\TaskAssignment\Requests\DocumentStatsByTimeRequest;
 use App\Modules\TaskAssignment\Requests\ImportLookupRequest;
 use App\Modules\TaskAssignment\Requests\StoreDocumentRequest;
 use App\Modules\TaskAssignment\Requests\UpdateDocumentRequest;
@@ -42,6 +43,20 @@ class TaskAssignmentDocumentController extends Controller
     public function stats(FilterRequest $request)
     {
         return $this->success($this->documentService->stats($request->all()));
+    }
+
+    /**
+     * Thống kê văn bản giao việc theo thời gian (tháng)
+     *
+     * @queryParam from_date date required Từ ngày (Y-m-d). Example: 2026-01-01
+     * @queryParam to_date date required Đến ngày (Y-m-d, tối đa 12 tháng). Example: 2026-12-31
+     * @queryParam task_assignment_type_id integer Lọc theo loại văn bản. Example: 1
+     *
+     * @response 200 {"success": true, "data": [{"month": "2026-01", "total": 5, "draft": 1, "issued": 4}]}
+     */
+    public function statsByTime(DocumentStatsByTimeRequest $request)
+    {
+        return $this->success($this->documentService->statsByTime($request->all()));
     }
 
     /**

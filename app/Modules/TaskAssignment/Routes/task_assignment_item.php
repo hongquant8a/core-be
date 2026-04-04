@@ -12,6 +12,8 @@ Route::get('/stats', [TaskAssignmentItemController::class, 'stats'])->middleware
 Route::get('/stats-by-department', [TaskAssignmentItemController::class, 'statsByDepartment'])->middleware('permission:task-assignment-items.statsByDepartment,web');
 Route::get('/stats-by-user', [TaskAssignmentItemController::class, 'statsByUser'])->middleware('permission:task-assignment-items.statsByUser,web');
 Route::get('/stats-by-time', [TaskAssignmentItemController::class, 'statsByTime'])->middleware('permission:task-assignment-items.statsByTime,web');
+Route::get('/stats-by-item-type', [TaskAssignmentItemController::class, 'statsByItemType'])->middleware('permission:task-assignment-items.statsByItemType,web');
+Route::get('/stats-by-document', [TaskAssignmentItemController::class, 'statsByDocument'])->middleware('permission:task-assignment-items.statsByDocument,web');
 Route::get('/overdue', [TaskAssignmentItemController::class, 'overdue'])->middleware('permission:task-assignment-items.overdue,web');
 Route::get('/upcoming-deadline', [TaskAssignmentItemController::class, 'upcomingDeadline'])->middleware('permission:task-assignment-items.upcomingDeadline,web');
 Route::get('/', [TaskAssignmentItemController::class, 'index'])->middleware('permission:task-assignment-items.index,web');

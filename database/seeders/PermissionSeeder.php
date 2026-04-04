@@ -110,7 +110,7 @@ class PermissionSeeder extends Seeder
         ],
         // TaskAssignment - Văn bản giao việc
         'task-assignment-documents' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy',
+            'stats', 'statsByTime', 'index', 'show', 'store', 'update', 'destroy',
             'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
         ],
         // TaskAssignment - Công việc
@@ -119,6 +119,7 @@ class PermissionSeeder extends Seeder
             'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
             'updateProgress',
             'statsByDepartment', 'statsByUser', 'statsByTime', 'overdue', 'upcomingDeadline',
+            'statsByItemType', 'statsByDocument',
         ],
         // TaskAssignment - Báo cáo công việc
         'task-assignment-item-reports' => [
@@ -208,6 +209,8 @@ class PermissionSeeder extends Seeder
         'statsByTime' => 'Thống kê theo thời gian',
         'overdue' => 'Danh sách quá hạn',
         'upcomingDeadline' => 'Danh sách sắp đến hạn',
+        'statsByItemType' => 'Thống kê theo loại công việc',
+        'statsByDocument' => 'Thống kê theo văn bản giao việc',
     ];
 
     /** Tạo đầy đủ permission từ danh sách PERMISSIONS (kèm description, sort_order, parent_id). */
@@ -414,9 +417,12 @@ class PermissionSeeder extends Seeder
         }
 
         // Thống kê nâng cao (giai đoạn 2)
-        foreach (['statsByDepartment', 'statsByUser', 'statsByTime', 'overdue', 'upcomingDeadline'] as $action) {
+        foreach (['statsByDepartment', 'statsByUser', 'statsByTime', 'overdue', 'upcomingDeadline', 'statsByItemType', 'statsByDocument'] as $action) {
             $names[] = "task-assignment-items.{$action}";
         }
+
+        // Thống kê văn bản theo thời gian
+        $names[] = 'task-assignment-documents.statsByTime';
 
         // Xem báo cáo
         $names[] = 'task-assignment-item-reports.index';
@@ -452,6 +458,9 @@ class PermissionSeeder extends Seeder
             'task-assignment-items.statsByTime',
             'task-assignment-items.overdue',
             'task-assignment-items.upcomingDeadline',
+            'task-assignment-items.statsByItemType',
+            'task-assignment-items.statsByDocument',
+            'task-assignment-documents.statsByTime',
 
             // Báo cáo
             'task-assignment-item-reports.index',
