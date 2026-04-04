@@ -8,6 +8,7 @@ use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Modules\TaskAssignment\Requests\BulkDestroyItemRequest;
 use App\Modules\TaskAssignment\Requests\BulkUpdateStatusItemRequest;
 use App\Modules\TaskAssignment\Requests\ChangeStatusItemRequest;
+use App\Modules\TaskAssignment\Requests\ExportMonthlyReportRequest;
 use App\Modules\TaskAssignment\Requests\ImportItemRequest;
 use App\Modules\TaskAssignment\Requests\StatsFilterRequest;
 use App\Modules\TaskAssignment\Requests\StatsByTimeRequest;
@@ -112,7 +113,7 @@ class TaskAssignmentItemController extends Controller
      */
     public function store(StoreItemRequest $request)
     {
-        $item = $this->itemService->store($request->validated());
+        $item = $this->itemService->store($request->validated(), $request->file('attachments', []));
 
         return $this->successResource(new ItemResource($item), 'Công việc đã được tạo thành công!', 201);
     }
@@ -137,7 +138,12 @@ class TaskAssignmentItemController extends Controller
      */
     public function update(UpdateItemRequest $request, TaskAssignmentItem $taskAssignmentItem)
     {
-        $item = $this->itemService->update($taskAssignmentItem, $request->validated());
+        $item = $this->itemService->update(
+            $taskAssignmentItem,
+            $request->validated(),
+            $request->file('attachments', []),
+            $request->input('remove_attachment_ids', [])
+        );
 
         return $this->successResource(new ItemResource($item), 'Công việc đã được cập nhật!');
     }
@@ -217,6 +223,23 @@ class TaskAssignmentItemController extends Controller
     public function export(FilterRequest $request)
     {
         return $this->itemService->export($request->all());
+    }
+
+    /**
+     * Xuất báo cáo giao ban tháng (multi-sheet Excel)
+     *
+     * File Excel gồm nhiều sheet:
+     * - Sheet 1: Bảng tổng hợp (phòng ban × trạng thái × loại công việc)
+     * - Sheet 2-8: Chi tiết công việc từng phòng ban
+     * - Sheet cuối: Chương trình công tác tháng tiếp theo
+     *
+     * @queryParam month string required Tháng báo cáo (Y-m). Example: 2026-04
+     *
+     * @response 200 scenario="File Excel báo cáo giao ban"
+     */
+    public function exportMonthlyReport(ExportMonthlyReportRequest $request)
+    {
+        return $this->itemService->exportMonthlyReport($request->month);
     }
 
     /**

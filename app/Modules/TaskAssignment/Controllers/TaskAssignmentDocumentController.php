@@ -118,7 +118,7 @@ class TaskAssignmentDocumentController extends Controller
      */
     public function store(StoreDocumentRequest $request)
     {
-        $doc = $this->documentService->store($request->validated(), $request->file('files', []));
+        $doc = $this->documentService->store($request->validated(), $request->file('attachments', []));
 
         return $this->successResource(new DocumentResource($doc), 'Văn bản giao việc đã được tạo thành công!', 201);
     }
@@ -151,7 +151,7 @@ class TaskAssignmentDocumentController extends Controller
         $doc = $this->documentService->update(
             $taskAssignmentDocument,
             $request->validated(),
-            $request->file('files', []),
+            $request->file('attachments', []),
             $request->input('remove_attachment_ids', [])
         );
 

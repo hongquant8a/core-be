@@ -48,6 +48,20 @@ class ItemResource extends JsonResource
                     ];
                 });
             }),
+            'attachments' => $this->whenLoaded('attachments', function () {
+                return $this->attachments->map(function ($attachment) {
+                    return [
+                        'id' => $attachment->id,
+                        'media_id' => $attachment->media_id,
+                        'file_name' => $attachment->file_name,
+                        'sort_order' => $attachment->sort_order,
+                        'url' => $attachment->media ? '/storage/'.$attachment->media->id.'/'.$attachment->media->file_name : null,
+                        'original_name' => $attachment->media?->file_name,
+                        'mime_type' => $attachment->media?->mime_type,
+                        'size' => $attachment->media?->size,
+                    ];
+                });
+            }),
             'reports_count' => $this->whenCounted('reports'),
             'created_by' => $this->whenLoaded('creator', fn () => $this->creator?->name, 'N/A'),
             'updated_by' => $this->whenLoaded('editor', fn () => $this->editor?->name, 'N/A'),

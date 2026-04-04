@@ -5,10 +5,13 @@ namespace App\Modules\TaskAssignment\Models;
 use App\Modules\Core\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class TaskAssignmentItem extends Model
+class TaskAssignmentItem extends Model implements HasMedia
 {
     use HasFactory;
+    use InteractsWithMedia;
 
     protected static function newFactory()
     {
@@ -84,6 +87,16 @@ class TaskAssignmentItem extends Model
     public function editor()
     {
         return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    public function attachments()
+    {
+        return $this->hasMany(TaskAssignmentItemAttachment::class, 'task_assignment_item_id');
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('task-item-attachments');
     }
 
     public function scopeFilter($query, array $filters)

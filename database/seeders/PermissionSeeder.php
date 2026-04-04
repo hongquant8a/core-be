@@ -119,7 +119,7 @@ class PermissionSeeder extends Seeder
             'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
             'updateProgress',
             'statsByDepartment', 'statsByUser', 'statsByTime', 'overdue', 'upcomingDeadline',
-            'statsByItemType', 'statsByDocument',
+            'statsByItemType', 'statsByDocument', 'exportMonthlyReport',
         ],
         // TaskAssignment - Báo cáo công việc
         'task-assignment-item-reports' => [
@@ -211,6 +211,7 @@ class PermissionSeeder extends Seeder
         'upcomingDeadline' => 'Danh sách sắp đến hạn',
         'statsByItemType' => 'Thống kê theo loại công việc',
         'statsByDocument' => 'Thống kê theo văn bản giao việc',
+        'exportMonthlyReport' => 'Xuất báo cáo giao ban tháng',
     ];
 
     /** Tạo đầy đủ permission từ danh sách PERMISSIONS (kèm description, sort_order, parent_id). */
@@ -417,7 +418,7 @@ class PermissionSeeder extends Seeder
         }
 
         // Thống kê nâng cao (giai đoạn 2)
-        foreach (['statsByDepartment', 'statsByUser', 'statsByTime', 'overdue', 'upcomingDeadline', 'statsByItemType', 'statsByDocument'] as $action) {
+        foreach (['statsByDepartment', 'statsByUser', 'statsByTime', 'overdue', 'upcomingDeadline', 'statsByItemType', 'statsByDocument', 'exportMonthlyReport'] as $action) {
             $names[] = "task-assignment-items.{$action}";
         }
 
@@ -460,6 +461,7 @@ class PermissionSeeder extends Seeder
             'task-assignment-items.upcomingDeadline',
             'task-assignment-items.statsByItemType',
             'task-assignment-items.statsByDocument',
+            'task-assignment-items.exportMonthlyReport',
             'task-assignment-documents.statsByTime',
 
             // Báo cáo

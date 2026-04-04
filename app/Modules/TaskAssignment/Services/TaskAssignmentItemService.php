@@ -2,31 +2,40 @@
 
 namespace App\Modules\TaskAssignment\Services;
 
+use App\Modules\Core\Services\MediaService;
 use App\Modules\TaskAssignment\Enums\TaskDeadlineTypeEnum;
 use App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum;
 use App\Modules\TaskAssignment\Exports\ItemsExport;
 use App\Modules\TaskAssignment\Imports\ItemsImport;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDepartment;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
+use App\Modules\TaskAssignment\Models\TaskAssignmentItemAttachment;
 use Carbon\Carbon;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class TaskAssignmentItemService
 {
+    public function __construct(private MediaService $mediaService) {}
     public function stats(array $filters): array
     {
         $base = TaskAssignmentItem::filter($filters);
+
+        $done = TaskProgressStatusEnum::Done->value;
+        $cancelled = TaskProgressStatusEnum::Cancelled->value;
 
         return [
             'total' => (clone $base)->count(),
             'todo' => (clone $base)->where('processing_status', TaskProgressStatusEnum::Todo->value)->count(),
             'in_progress' => (clone $base)->where('processing_status', TaskProgressStatusEnum::InProgress->value)->count(),
-            'done' => (clone $base)->where('processing_status', TaskProgressStatusEnum::Done->value)->count(),
-            'overdue' => (clone $base)->where('processing_status', TaskProgressStatusEnum::Overdue->value)->count(),
+            'done' => (clone $base)->where('processing_status', $done)->count(),
+            'overdue' => (clone $base)->where('deadline_type', TaskDeadlineTypeEnum::HasDeadline->value)
+                ->where('end_at', '<', now())
+                ->whereNotIn('processing_status', [$done, $cancelled])->count(),
             'paused' => (clone $base)->where('processing_status', TaskProgressStatusEnum::Paused->value)->count(),
-            'cancelled' => (clone $base)->where('processing_status', TaskProgressStatusEnum::Cancelled->value)->count(),
+            'cancelled' => (clone $base)->where('processing_status', $cancelled)->count(),
         ];
     }
 
@@ -40,49 +49,71 @@ class TaskAssignmentItemService
 
     public function show(TaskAssignmentItem $item): TaskAssignmentItem
     {
-        return $item->load(['document', 'itemType', 'departments', 'users', 'reports', 'creator', 'editor']);
+        return $item->load(['document', 'itemType', 'departments', 'users', 'reports', 'attachments.media', 'creator', 'editor']);
     }
 
-    public function store(array $validated): TaskAssignmentItem
+    public function store(array $validated, array $files = []): TaskAssignmentItem
     {
-        return DB::transaction(function () use ($validated) {
-            $departments = $validated['departments'] ?? [];
-            $users = $validated['users'] ?? [];
+        $storedFiles = [];
 
-            $data = collect($validated)->except(['departments', 'users'])->all();
-            $item = TaskAssignmentItem::create($data);
+        try {
+            return DB::transaction(function () use ($validated, $files, &$storedFiles) {
+                $departments = $validated['departments'] ?? [];
+                $users = $validated['users'] ?? [];
 
-            if (! empty($departments)) {
-                $this->syncDepartments($item, $departments);
-            }
+                $data = collect($validated)->except(['departments', 'users', 'attachments', 'remove_attachment_ids'])->all();
+                $item = TaskAssignmentItem::create($data);
 
-            if (! empty($users)) {
-                $this->syncUsers($item, $users);
-            }
+                if (! empty($departments)) {
+                    $this->syncDepartments($item, $departments);
+                }
 
-            return $item->load(['document', 'itemType', 'departments', 'users', 'creator', 'editor']);
-        });
+                if (! empty($users)) {
+                    $this->syncUsers($item, $users);
+                }
+
+                $this->uploadAttachments($item, $files, $storedFiles);
+
+                return $item->load(['document', 'itemType', 'departments', 'users', 'attachments.media', 'creator', 'editor']);
+            });
+        } catch (\Throwable $exception) {
+            $this->mediaService->cleanupStoredFiles($storedFiles);
+            throw $exception;
+        }
     }
 
-    public function update(TaskAssignmentItem $item, array $validated): TaskAssignmentItem
+    public function update(TaskAssignmentItem $item, array $validated, array $files = [], array $removeAttachmentIds = []): TaskAssignmentItem
     {
-        return DB::transaction(function () use ($item, $validated) {
-            $departments = $validated['departments'] ?? null;
-            $users = $validated['users'] ?? null;
+        $storedFiles = [];
 
-            $data = collect($validated)->except(['departments', 'users'])->all();
-            $item->update($data);
+        try {
+            return DB::transaction(function () use ($item, $validated, $files, $removeAttachmentIds, &$storedFiles) {
+                $departments = $validated['departments'] ?? null;
+                $users = $validated['users'] ?? null;
 
-            if ($departments !== null) {
-                $this->syncDepartments($item, $departments);
-            }
+                $data = collect($validated)->except(['departments', 'users', 'attachments', 'remove_attachment_ids'])->all();
+                $item->update($data);
 
-            if ($users !== null) {
-                $this->syncUsers($item, $users);
-            }
+                if ($departments !== null) {
+                    $this->syncDepartments($item, $departments);
+                }
 
-            return $item->load(['document', 'itemType', 'departments', 'users', 'creator', 'editor']);
-        });
+                if ($users !== null) {
+                    $this->syncUsers($item, $users);
+                }
+
+                if (! empty($removeAttachmentIds)) {
+                    $this->removeAttachments($item, $removeAttachmentIds);
+                }
+
+                $this->uploadAttachments($item, $files, $storedFiles);
+
+                return $item->load(['document', 'itemType', 'departments', 'users', 'attachments.media', 'creator', 'editor']);
+            });
+        } catch (\Throwable $exception) {
+            $this->mediaService->cleanupStoredFiles($storedFiles);
+            throw $exception;
+        }
     }
 
     public function destroy(TaskAssignmentItem $item): void
@@ -128,6 +159,13 @@ class TaskAssignmentItemService
         return Excel::download(new ItemsExport($filters), 'task-assignment-items.xlsx');
     }
 
+    public function exportMonthlyReport(string $month): BinaryFileResponse
+    {
+        $filename = "bao-cao-giao-ban-{$month}.xlsx";
+
+        return Excel::download(new \App\Modules\TaskAssignment\Exports\MonthlyReportExport($month), $filename);
+    }
+
     public function import($file, int $documentId): void
     {
         Excel::import(new ItemsImport($documentId), $file);
@@ -170,6 +208,45 @@ class TaskAssignmentItemService
         }
 
         return $data;
+    }
+
+    private function uploadAttachments(TaskAssignmentItem $item, array $files, array &$storedFiles): void
+    {
+        foreach ($files as $file) {
+            if (! $file instanceof UploadedFile || ! $file->isValid()) {
+                continue;
+            }
+
+            $media = $this->mediaService->uploadOne($item, $file, 'task-item-attachments', ['disk' => 'public']);
+
+            $storedFiles[] = [
+                'disk' => $media->disk,
+                'path' => $media->getPathRelativeToRoot(),
+            ];
+
+            TaskAssignmentItemAttachment::create([
+                'task_assignment_item_id' => $item->id,
+                'media_id' => $media->id,
+                'file_name' => $file->getClientOriginalName(),
+                'sort_order' => 0,
+                'created_by' => auth()->id(),
+                'updated_by' => auth()->id(),
+            ]);
+        }
+    }
+
+    private function removeAttachments(TaskAssignmentItem $item, array $attachmentIds): void
+    {
+        $attachments = TaskAssignmentItemAttachment::where('task_assignment_item_id', $item->id)
+            ->whereIn('id', $attachmentIds)
+            ->get();
+
+        foreach ($attachments as $attachment) {
+            if ($attachment->media) {
+                $attachment->media->delete();
+            }
+            $attachment->delete();
+        }
     }
 
     private function syncDepartments(TaskAssignmentItem $item, array $departments): void
