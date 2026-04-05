@@ -20,7 +20,7 @@ class PermissionService
 
     public function index(array $filters, int $limit)
     {
-        return Permission::with('parent')
+        return Permission::with(['parent', 'roles:id,name'])
             ->filter($filters)
             ->treeOrder()
             ->paginate($limit);
