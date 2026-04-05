@@ -47,51 +47,10 @@ class PermissionSeeder extends Seeder
             'stats', 'index', 'tree', 'show', 'store', 'update', 'destroy',
             'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
         ],
-        // Post - Bài viết
-        'posts' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
-            'incrementView',
-        ],
-        // Post - Danh mục bài viết
-        'post-categories' => [
-            'stats', 'index', 'tree', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
-        ],
         // Core - Nhật ký truy cập
         'log-activities' => [
             'stats', 'index', 'show', 'export', 'destroy', 'bulkDestroy',
             'destroyByDate', 'destroyAll',
-        ],
-        // Document - Văn bản
-        'documents' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
-        ],
-        // Document - Loại văn bản
-        'document-types' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
-        ],
-        // Document - Cơ quan ban hành
-        'issuing-agencies' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
-        ],
-        // Document - Cấp ban hành
-        'issuing-levels' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
-        ],
-        // Document - Người ký
-        'document-signers' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
-        ],
-        // Document - Lĩnh vực
-        'document-fields' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
         ],
         // TaskAssignment - Phòng ban giao việc
         'task-assignment-departments' => [
@@ -168,15 +127,7 @@ class PermissionSeeder extends Seeder
         'permissions' => 'Quyền',
         'roles' => 'Vai trò',
         'organizations' => 'Tổ chức',
-        'posts' => 'Bài viết',
-        'post-categories' => 'Danh mục bài viết',
         'log-activities' => 'Nhật ký truy cập',
-        'documents' => 'Văn bản',
-        'document-types' => 'Loại văn bản',
-        'issuing-agencies' => 'Cơ quan ban hành',
-        'issuing-levels' => 'Cấp ban hành',
-        'document-signers' => 'Người ký',
-        'document-fields' => 'Lĩnh vực',
         'settings' => 'Cấu hình hệ thống',
         'task-assignment-departments' => 'Phòng ban giao việc',
         'task-assignment-types' => 'Loại văn bản giao việc',
@@ -200,7 +151,6 @@ class PermissionSeeder extends Seeder
         'changeStatus' => 'Đổi trạng thái',
         'export' => 'Xuất Excel',
         'import' => 'Nhập Excel',
-        'incrementView' => 'Tăng lượt xem',
         'destroyByDate' => 'Xóa theo khoảng thời gian',
         'destroyAll' => 'Xóa toàn bộ',
         'updateProgress' => 'Cập nhật tiến độ',
