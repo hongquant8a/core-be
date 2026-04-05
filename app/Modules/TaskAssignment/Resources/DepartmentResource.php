@@ -16,8 +16,8 @@ class DepartmentResource extends JsonResource
             'description' => $this->description,
             'status' => $this->status,
             'sort_order' => $this->sort_order,
-            'created_by' => $this->whenLoaded('creator', fn () => $this->creator?->name, 'N/A'),
-            'updated_by' => $this->whenLoaded('editor', fn () => $this->editor?->name, 'N/A'),
+            'created_by' => $this->whenLoaded('creator', fn () => $this->creator ? ['id' => $this->creator->id, 'name' => $this->creator->name] : null, null),
+            'updated_by' => $this->whenLoaded('editor', fn () => $this->editor ? ['id' => $this->editor->id, 'name' => $this->editor->name] : null, null),
             'created_at' => $this->created_at?->format('H:i:s d/m/Y'),
             'updated_at' => $this->updated_at?->format('H:i:s d/m/Y'),
         ];
