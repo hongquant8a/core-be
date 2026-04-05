@@ -134,6 +134,18 @@ Quản lý công việc trong hệ thống giao việc liên phòng ban: thống
 
 ---
 
+## Xuất báo cáo giao ban tháng (multi-sheet Excel)
+
+| | |
+|---|---|
+| **Method** | GET |
+| **Path** | `/api/task-assignment-items/export-monthly-report` |
+| **Auth** | Bắt buộc. |
+| **Query** | `month` (required, Y-m). Example: `2026-04`. |
+| **Response** | File Excel gồm nhiều sheet: Sheet 1 — Bảng tổng hợp (phòng ban x trạng thái x loại công việc); Sheet 2-8 — Chi tiết công việc từng phòng ban; Sheet cuối — Chương trình công tác tháng tiếp theo. |
+
+---
+
 ## Xuất Excel
 
 | | |
@@ -166,6 +178,30 @@ Quản lý công việc trong hệ thống giao việc liên phòng ban: thống
 | **Path** | `/api/task-assignment-items/import-template` |
 | **Auth** | Bắt buộc (permission: import). |
 | **Response** | File `import-items-template.xlsx` — chỉ có header row: `name`, `description`, `deadline_type`, `start_at`, `end_at`, `processing_status`, `completion_percent`, `priority`. |
+
+---
+
+## Thống kê theo loại công việc
+
+| | |
+|---|---|
+| **Method** | GET |
+| **Path** | `/api/task-assignment-items/stats-by-item-type` |
+| **Auth** | Bắt buộc. |
+| **Query** | `department_id`, `priority`, `from_date` (YYYY-MM-DD), `to_date` (YYYY-MM-DD). |
+| **Response** | Mảng `[{ "item_type_id": 1, "item_type_name": "TT Thành ủy giao", "total": 19, "todo": 5, "in_progress": 8, "done": 3, "overdue": 2, "paused": 1, "cancelled": 0 }]`. |
+
+---
+
+## Thống kê theo văn bản giao việc
+
+| | |
+|---|---|
+| **Method** | GET |
+| **Path** | `/api/task-assignment-items/stats-by-document` |
+| **Auth** | Bắt buộc. |
+| **Query** | `department_id`, `task_assignment_type_id` (ID loại văn bản), `from_date` (YYYY-MM-DD — lọc theo ngày ban hành), `to_date` (YYYY-MM-DD). |
+| **Response** | Mảng `[{ "document_id": 1, "document_name": "KH số 123", "issue_date": "2026-03-15", "total_items": 10, "done": 7, "in_progress": 2, "overdue": 1, "completion_rate": 70.0 }]`. |
 
 ---
 

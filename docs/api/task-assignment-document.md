@@ -22,6 +22,18 @@ Quản lý văn bản giao việc liên phòng ban: thống kê, danh sách, chi
 
 ---
 
+## Thống kê theo thời gian (tháng)
+
+| | |
+|---|---|
+| **Method** | GET |
+| **Path** | `/api/task-assignment-documents/stats-by-time` |
+| **Auth** | Bắt buộc. |
+| **Query** | `from_date` (required, YYYY-MM-DD), `to_date` (required, YYYY-MM-DD — tối đa cách `from_date` 12 tháng), `task_assignment_type_id` (optional, ID loại văn bản). |
+| **Response** | Mảng `[{ "month": "2026-01", "total": 5, "draft": 1, "issued": 4 }]`. |
+
+---
+
 ## Danh sách văn bản giao việc
 
 | | |

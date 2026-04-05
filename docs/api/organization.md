@@ -161,6 +161,17 @@ Quản lý organization (tổ chức) phân cấp theo `parent_id`: thống kê,
 
 ---
 
+## Tải mẫu import
+
+| | |
+|---|---|
+| **Method** | GET |
+| **Path** | `/api/organizations/import-template` |
+| **Auth** | Bắt buộc (permission: organizations.import). |
+| **Response** | File `import-organizations-template.xlsx` — chỉ có header row: `name`, `slug`, `description`, `status`, `sort_order`, `parent_slug`. |
+
+---
+
 ## Response mẫu (OrganizationResource)
 
 ```json

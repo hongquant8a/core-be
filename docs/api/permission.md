@@ -115,6 +115,17 @@ Quản lý quyền (permission): thống kê, danh sách, cây, chi tiết, CRUD
 
 ---
 
+## Tải mẫu import
+
+| | |
+|---|---|
+| **Method** | GET |
+| **Path** | `/api/permissions/import-template` |
+| **Auth** | Bắt buộc (permission: permissions.import). |
+| **Response** | File `import-permissions-template.xlsx` — chỉ có header row: `name`, `guard_name`, `description`, `sort_order`, `parent_id`. |
+
+---
+
 ## Response mẫu (PermissionResource)
 
 ```json

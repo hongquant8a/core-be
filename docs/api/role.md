@@ -99,8 +99,19 @@ Quản lý vai trò (role) theo chuẩn Spatie Laravel Permission: thống kê, 
 |---|---|
 | **Method** | POST |
 | **Path** | `/api/roles/import` |
-| **Body** | `file` (required) — xlsx, xls, csv. Cột: name, guard_name, team_id. |
+| **Body** | `file` (required) — xlsx, xls, csv. Cột: name, guard_name, organization_id. |
 | **Response** | `{ "message": "Import vai trò thành công." }`. |
+
+---
+
+## Tải mẫu import
+
+| | |
+|---|---|
+| **Method** | GET |
+| **Path** | `/api/roles/import-template` |
+| **Auth** | Bắt buộc (permission: roles.import). |
+| **Response** | File `import-roles-template.xlsx` — chỉ có header row: `name`, `guard_name`, `organization_id`. |
 
 ---
 

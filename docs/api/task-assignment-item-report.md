@@ -41,8 +41,8 @@ Quản lý báo cáo tiến độ/kết quả cho từng công việc: danh sác
 | **Method** | POST |
 | **Path** | `/api/task-assignment-item-reports` |
 | **Auth** | Bắt buộc. |
-| **Body** | `task_assignment_item_id` (required, ID công việc), `completed_at` (optional, YYYY-MM-DD HH:mm:ss — ngày hoàn thành theo báo cáo), `report_document_number` (optional, số văn bản báo cáo), `report_document_excerpt` (optional, trích yếu văn bản), `report_document_content` (optional, nội dung chi tiết), `attachments[]` (optional, tệp đính kèm, có thể nhiều file). Form-data hoặc JSON. |
-| **Response** | 201, object báo cáo (kèm attachments) + `"message": "Báo cáo công việc đã được tạo thành công!"`. |
+| **Body** | `task_assignment_item_id` (required, ID công việc), `content` (required, nội dung báo cáo), `progress` (optional, 0-100 — tiến độ tại thời điểm báo cáo), `files[]` (optional, tệp đính kèm, tối đa 10 tệp, multipart/form-data). |
+| **Response** | 201, object báo cáo (kèm attachments) + `"message": "Báo cáo đã được tạo thành công!"`. |
 
 ---
 
@@ -53,8 +53,13 @@ Quản lý báo cáo tiến độ/kết quả cho từng công việc: danh sác
 | **Method** | PUT / PATCH |
 | **Path** | `/api/task-assignment-item-reports/{id}` |
 | **Auth** | Bắt buộc. |
-| **Body** | Giống tạo (các trường tùy chọn, không bao gồm `task_assignment_item_id`). Thêm: `remove_attachment_ids` (mảng ID tệp đính kèm cần xóa), `attachments[]` (tệp mới append). |
-| **Response** | Object báo cáo đã cập nhật (kèm attachments). |
+| **Body** | `content` (optional, nội dung báo cáo), `progress` (optional, 0-100), `files[]` (optional, tệp đính kèm mới, append), `remove_attachment_ids` (optional, mảng ID đính kèm cần xóa). |
+| **Response** | Object báo cáo đã cập nhật (kèm attachments) + `"message": "Báo cáo đã được cập nhật!"`. |
+
+**Xử lý file đính kèm:**
+- `files[]` → upload file mới, thêm vào danh sách.
+- `remove_attachment_ids` → xóa file theo ID.
+- Không gửi → giữ nguyên.
 
 ---
 
@@ -65,7 +70,7 @@ Quản lý báo cáo tiến độ/kết quả cho từng công việc: danh sác
 | **Method** | DELETE |
 | **Path** | `/api/task-assignment-item-reports/{id}` |
 | **Auth** | Bắt buộc. |
-| **Response** | `{ "message": "Báo cáo công việc đã được xóa thành công!" }`. |
+| **Response** | `{ "message": "Báo cáo đã được xóa thành công!" }`. |
 
 ---
 
@@ -84,10 +89,8 @@ Quản lý báo cáo tiến độ/kết quả cho từng công việc: danh sác
     "name": "Nguyễn Văn A",
     "email": "a@example.com"
   },
-  "completed_at": "2026-03-31 17:00:00",
-  "report_document_number": "BC-NS-01/2026",
-  "report_document_excerpt": "Báo cáo tổng hợp nhân sự quý 1 năm 2026",
-  "report_document_content": "Nội dung chi tiết báo cáo...",
+  "content": "Đã hoàn thành 50% khối lượng công việc.",
+  "progress": 50,
   "attachments": [
     { "id": 1, "name": "bao-cao-nhan-su-q1.pdf", "url": "https://..." }
   ],

@@ -45,8 +45,13 @@ Quản lý tài khoản người dùng: thống kê, danh sách, chi tiết, CRU
 |---|---|
 | **Method** | POST |
 | **Path** | `/api/users` |
-| **Body** | `name` (required), `email` (required, unique), `password` (required, min 6, confirmed), `password_confirmation` (required), `status` (optional: active \| inactive \| banned), `assignments` (optional). |
+| **Body** | `name` (required), `email` (required, unique), `password` (required, min 6, confirmed), `password_confirmation` (required), `status` (optional: active \| inactive \| banned), `avatar` (optional, file: jpg, png, svg, webp, max 5MB), `assignments` (optional). |
 | **Response** | 201, object người dùng + `"message": "Tài khoản đã được tạo thành công!"`. |
+
+**Xử lý avatar:**
+- `multipart/form-data` + file blob → upload ảnh mới, trả URL.
+- `application/json` + chuỗi rỗng `""` → xóa ảnh, trả `null`.
+- Không gửi field avatar → giữ nguyên.
 
 **Mẫu assignments**
 ```json
@@ -64,8 +69,13 @@ Quản lý tài khoản người dùng: thống kê, danh sách, chi tiết, CRU
 |---|---|
 | **Method** | PUT / PATCH |
 | **Path** | `/api/users/{id}` |
-| **Body** | `name`, `email` (unique nếu đổi), `password` (optional, min 6, confirmed), `password_confirmation`, `status`, `assignments` (optional). Khi gửi `assignments`, hệ thống đồng bộ lại toàn bộ phân quyền theo tổ chức của user. |
+| **Body** | `name`, `email` (unique nếu đổi), `password` (optional, min 6, confirmed), `password_confirmation`, `status`, `avatar` (optional, file: jpg, png, svg, webp, max 5MB), `assignments` (optional). Khi gửi `assignments`, hệ thống đồng bộ lại toàn bộ phân quyền theo tổ chức của user. |
 | **Response** | Object người dùng đã cập nhật. |
+
+**Xử lý avatar:**
+- `multipart/form-data` + file blob → upload ảnh mới, xóa ảnh cũ, trả URL mới.
+- `application/json` + chuỗi rỗng `""` → xóa ảnh, trả `null`.
+- Không gửi field avatar → giữ nguyên.
 
 ---
 
@@ -129,5 +139,16 @@ Quản lý tài khoản người dùng: thống kê, danh sách, chi tiết, CRU
 |---|---|
 | **Method** | POST |
 | **Path** | `/api/users/import` |
-| **Body** | `file` (required) — xlsx, xls, csv. Cột theo chuẩn export. |
-| **Response** | `{ "message": "Users imported successfully." }`. |
+| **Body** | `file` (required) — xlsx, xls, csv. Cột bắt buộc: name, email. Cột không bắt buộc: user_name, password (mặc định "password"), status (mặc định "active"). |
+| **Response** | `{ "message": "Import người dùng thành công." }`. |
+
+---
+
+## Tải mẫu import
+
+| | |
+|---|---|
+| **Method** | GET |
+| **Path** | `/api/users/import-template` |
+| **Auth** | Bắt buộc (permission: users.import). |
+| **Response** | File `import-users-template.xlsx` — chỉ có header row: `name`, `email`, `user_name`, `password`, `status`. |
