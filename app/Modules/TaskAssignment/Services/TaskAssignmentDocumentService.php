@@ -63,7 +63,7 @@ class TaskAssignmentDocumentService
 
     public function index(array $filters, int $limit)
     {
-        return TaskAssignmentDocument::with(['type'])
+        return TaskAssignmentDocument::with(['type', 'creator', 'editor'])
             ->withCount('items')
             ->filter($filters)
             ->paginate($limit);
