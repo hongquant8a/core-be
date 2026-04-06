@@ -53,7 +53,7 @@ class OrganizationService
 
     public function index(array $filters, int $limit)
     {
-        return Organization::with(['creator', 'editor', 'parent'])
+        return Organization::with(['creator.media', 'editor.media', 'parent'])
             ->filter($filters)
             ->treeOrder()
             ->paginate($limit);
@@ -70,7 +70,7 @@ class OrganizationService
 
     public function show(Organization $organization): Organization
     {
-        return $organization->load(['creator', 'editor', 'parent', 'children' => fn ($q) => $q->orderBy('sort_order')]);
+        return $organization->load(['creator.media', 'editor.media', 'parent', 'children' => fn ($q) => $q->orderBy('sort_order')]);
     }
 
     public function store(array $data): Organization
@@ -137,7 +137,7 @@ class OrganizationService
 
     public function getFlatTreeOrdered(array $filters = []): Collection
     {
-        $all = Organization::with(['creator', 'editor'])->filter($filters)->get();
+        $all = Organization::with(['creator.media', 'editor.media'])->filter($filters)->get();
         $tree = $this->buildTree($all);
         $result = collect();
         $flatten = function ($nodes) use (&$flatten, &$result) {

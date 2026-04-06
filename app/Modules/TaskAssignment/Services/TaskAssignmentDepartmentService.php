@@ -48,26 +48,26 @@ class TaskAssignmentDepartmentService
 
     public function index(array $filters, int $limit)
     {
-        return TaskAssignmentDepartment::with(['creator', 'editor'])
+        return TaskAssignmentDepartment::with(['creator.media', 'editor.media'])
             ->filter($filters)
             ->paginate($limit);
     }
 
     public function show(TaskAssignmentDepartment $department): TaskAssignmentDepartment
     {
-        return $department->load(['creator', 'editor']);
+        return $department->load(['creator.media', 'editor.media']);
     }
 
     public function store(array $validated): TaskAssignmentDepartment
     {
-        return TaskAssignmentDepartment::create($validated)->load(['creator', 'editor']);
+        return TaskAssignmentDepartment::create($validated)->load(['creator.media', 'editor.media']);
     }
 
     public function update(TaskAssignmentDepartment $department, array $validated): TaskAssignmentDepartment
     {
         $department->update($validated);
 
-        return $department->load(['creator', 'editor']);
+        return $department->load(['creator.media', 'editor.media']);
     }
 
     public function destroy(TaskAssignmentDepartment $department): void
@@ -89,7 +89,7 @@ class TaskAssignmentDepartmentService
     {
         $department->update(['status' => $status]);
 
-        return $department->load(['creator', 'editor']);
+        return $department->load(['creator.media', 'editor.media']);
     }
 
     public function export(array $filters): BinaryFileResponse

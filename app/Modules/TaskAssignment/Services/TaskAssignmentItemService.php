@@ -41,7 +41,7 @@ class TaskAssignmentItemService
 
     public function index(array $filters, int $limit)
     {
-        return TaskAssignmentItem::with(['document', 'itemType', 'departments', 'users', 'creator', 'editor'])
+        return TaskAssignmentItem::with(['document', 'itemType', 'departments', 'users', 'creator.media', 'editor.media'])
             ->withCount('reports')
             ->filter($filters)
             ->paginate($limit);
@@ -49,7 +49,7 @@ class TaskAssignmentItemService
 
     public function show(TaskAssignmentItem $item): TaskAssignmentItem
     {
-        return $item->load(['document', 'itemType', 'departments', 'users', 'reports', 'attachments.media', 'creator', 'editor']);
+        return $item->load(['document', 'itemType', 'departments', 'users', 'reports', 'attachments.media', 'creator.media', 'editor.media']);
     }
 
     public function store(array $validated, array $files = []): TaskAssignmentItem
@@ -74,7 +74,7 @@ class TaskAssignmentItemService
 
                 $this->uploadAttachments($item, $files, $storedFiles);
 
-                return $item->load(['document', 'itemType', 'departments', 'users', 'attachments.media', 'creator', 'editor']);
+                return $item->load(['document', 'itemType', 'departments', 'users', 'attachments.media', 'creator.media', 'editor.media']);
             });
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);
@@ -108,7 +108,7 @@ class TaskAssignmentItemService
 
                 $this->uploadAttachments($item, $files, $storedFiles);
 
-                return $item->load(['document', 'itemType', 'departments', 'users', 'attachments.media', 'creator', 'editor']);
+                return $item->load(['document', 'itemType', 'departments', 'users', 'attachments.media', 'creator.media', 'editor.media']);
             });
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);
@@ -151,7 +151,7 @@ class TaskAssignmentItemService
 
         $item->update($data);
 
-        return $item->load(['document', 'itemType', 'departments', 'users', 'creator', 'editor']);
+        return $item->load(['document', 'itemType', 'departments', 'users', 'creator.media', 'editor.media']);
     }
 
     public function export(array $filters): BinaryFileResponse
@@ -195,7 +195,7 @@ class TaskAssignmentItemService
         $item->completion_percent = $percent;
         $item->save();
 
-        return $item->load(['document', 'itemType', 'departments', 'users', 'creator', 'editor']);
+        return $item->load(['document', 'itemType', 'departments', 'users', 'creator.media', 'editor.media']);
     }
 
     private function buildStatusUpdateData(string $status): array

@@ -4,12 +4,14 @@ namespace App\Modules\Core\Resources;
 
 use App\Modules\Core\Models\Organization;
 use App\Modules\Core\Models\Role;
+use App\Modules\Core\Resources\Concerns\FormatsUserSummary;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\DB;
 
 class UserResource extends JsonResource
 {
+    use FormatsUserSummary;
     public function toArray(Request $request): array
     {
         return [
@@ -19,8 +21,8 @@ class UserResource extends JsonResource
             'user_name' => $this->user_name,
             'status' => $this->status,
             'avatar' => ($avatar = $this->getFirstMedia('avatars')) ? '/storage/'.$avatar->id.'/'.$avatar->file_name : null,
-            'created_by' => $this->whenLoaded('creator', fn () => $this->creator ? ['id' => $this->creator->id, 'name' => $this->creator->name] : null, null),
-            'updated_by' => $this->whenLoaded('editor', fn () => $this->editor ? ['id' => $this->editor->id, 'name' => $this->editor->name] : null, null),
+            'created_by' => $this->whenLoaded('creator', fn () => $this->formatUserSummary($this->creator), null),
+            'updated_by' => $this->whenLoaded('editor', fn () => $this->formatUserSummary($this->editor), null),
             'assignments' => $this->roleAssignments(),
             'created_at' => $this->created_at?->format('d/m/Y H:i:s'),
             'updated_at' => $this->updated_at?->format('d/m/Y H:i:s'),

@@ -2,11 +2,13 @@
 
 namespace App\Modules\Core\Resources;
 
+use App\Modules\Core\Resources\Concerns\FormatsUserSummary;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class OrganizationResource extends JsonResource
 {
+    use FormatsUserSummary;
     public function toArray(Request $request): array
     {
         return [
@@ -18,8 +20,8 @@ class OrganizationResource extends JsonResource
             'parent_id' => $this->parent_id,
             'sort_order' => $this->sort_order,
             'depth' => $this->depth,
-            'created_by' => $this->whenLoaded('creator', fn () => $this->creator ? ['id' => $this->creator->id, 'name' => $this->creator->name] : null, null),
-            'updated_by' => $this->whenLoaded('editor', fn () => $this->editor ? ['id' => $this->editor->id, 'name' => $this->editor->name] : null, null),
+            'created_by' => $this->whenLoaded('creator', fn () => $this->formatUserSummary($this->creator), null),
+            'updated_by' => $this->whenLoaded('editor', fn () => $this->formatUserSummary($this->editor), null),
             'created_at' => $this->created_at?->format('H:i:s d/m/Y'),
             'updated_at' => $this->updated_at?->format('H:i:s d/m/Y'),
             'parent' => $this->whenLoaded('parent', fn () => new OrganizationResource($this->parent)),

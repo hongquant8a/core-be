@@ -272,7 +272,7 @@ class PermissionSeeder extends Seeder
         $superAdminUser = User::updateOrCreate(
             ['email' => 'admin@example.com'],
             [
-                'name' => 'admin',
+                'name' => 'Admin',
                 'user_name' => 'admin',
                 'password' => 'quandcore**11',
                 'status' => StatusEnum::Active->value,
@@ -294,9 +294,9 @@ class PermissionSeeder extends Seeder
         $nhanVienRole = Role::where('name', 'Nhân viên')->where('guard_name', self::GUARD)->first();
 
         foreach ([
-            ['email' => 'quantri@example.com', 'user_name' => 'quantri', 'name' => 'quantri', 'role' => $quanTriRole],
-            ['email' => 'truongphong@example.com', 'user_name' => 'truongphong', 'name' => 'truongphong', 'role' => $truongPhongRole],
-            ['email' => 'nhanvien@example.com', 'user_name' => 'nhanvien', 'name' => 'nhanvien', 'role' => $nhanVienRole],
+            ['email' => 'quantri@example.com', 'user_name' => 'quantri', 'name' => 'Quản trị', 'role' => $quanTriRole],
+            ['email' => 'truongphong@example.com', 'user_name' => 'truongphong', 'name' => 'Trưởng Phòng', 'role' => $truongPhongRole],
+            ['email' => 'nhanvien@example.com', 'user_name' => 'nhanvien', 'name' => 'Nhân viên', 'role' => $nhanVienRole],
         ] as $userData) {
             $user = User::updateOrCreate(
                 ['email' => $userData['email']],

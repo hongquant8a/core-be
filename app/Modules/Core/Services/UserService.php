@@ -30,7 +30,7 @@ class UserService
 
     public function index(array $filters, int $limit)
     {
-        return User::with(['creator', 'editor'])->filter($filters)->paginate($limit);
+        return User::with(['creator.media', 'editor.media'])->filter($filters)->paginate($limit);
     }
 
     public function store(array $data): User
@@ -45,7 +45,7 @@ class UserService
             $this->syncUserAssignments($user, $assignments);
             $this->handleAvatar($user, $avatar);
 
-            return $user->load(['creator', 'editor']);
+            return $user->load(['creator.media', 'editor.media']);
         });
     }
 
@@ -72,7 +72,7 @@ class UserService
                 $this->handleAvatar($user, $avatar);
             }
 
-            return $user->load(['creator', 'editor']);
+            return $user->load(['creator.media', 'editor.media']);
         });
     }
 
@@ -95,7 +95,7 @@ class UserService
     {
         $user->update(['status' => $status]);
 
-        return $user->load(['creator', 'editor']);
+        return $user->load(['creator.media', 'editor.media']);
     }
 
     public function export(array $filters): BinaryFileResponse

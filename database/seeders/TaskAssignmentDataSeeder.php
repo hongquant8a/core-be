@@ -9,110 +9,148 @@ use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItemReport;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItemType;
 use App\Modules\TaskAssignment\Models\TaskAssignmentType;
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Seed dữ liệu mẫu đầy đủ cho module TaskAssignment.
  *
- * Mục tiêu: tạo dữ liệu phủ hết các trạng thái, loại công việc, phòng ban
- * để Dashboard KPI và các API thống kê hiển thị đẹp và có ý nghĩa.
- *
- * Gồm:
- * - 7 phòng ban nội bộ (gán user vào phòng)
- * - 3 loại văn bản giao việc (A/B/C theo mô tả nghiệp vụ)
- * - 5 loại đầu việc
- * - 12 văn bản giao việc (trải 3 tháng: 02, 03, 04/2026)
- * - ~85 đầu việc phủ đều: done, in_progress, todo, overdue, paused, cancelled
- * - Báo cáo mẫu cho các việc đã hoàn thành
- * - User được gán đúng phòng ban
+ * - 7 phòng ban (gán user vào phòng)
+ * - 3 loại văn bản, 5 loại đầu việc
+ * - 12 văn bản trải 3 tháng (02–04/2026)
+ * - ~85 đầu việc phủ đều trạng thái
+ * - Báo cáo cho việc hoàn thành
+ * - created_at/updated_at khớp timeline thực tế
+ * - created_by/updated_by phân bổ đa dạng theo phòng ban
  */
 class TaskAssignmentDataSeeder extends Seeder
 {
+    /** Cache user IDs theo department. */
+    private $usersByDept = [];
+    private array $deptIds = [];
+    private array $typeIds = [];
+    private array $itemTypeIds = [];
+    private array $authorizedUserIds = [];
+    private array $categoryCreatorUserIds = [];
+
     public function run(): void
     {
+        // Đăng nhập tạm để model booted() không ghi đè created_by/updated_by = null
+        auth()->login(User::first());
+
         $this->seedDepartments();
         $this->seedTypes();
         $this->seedItemTypes();
         $this->assignUsersToDepartments();
         $this->seedDocumentsAndItems();
+
+        auth()->logout();
     }
+
+    // ─── Phòng ban ───────────────────────────────────────────────
 
     protected function seedDepartments(): void
     {
+        $now = Carbon::parse('2026-01-15 08:30:00');
+        $creatorId = $this->getCategoryCreatorId();
         $departments = [
             ['code' => 'TTBCXB', 'name' => 'Phòng Tuyên truyền, Báo chí - Xuất bản', 'sort_order' => 1],
-            ['code' => 'TTTH', 'name' => 'Phòng Thông tin - Tổng hợp', 'sort_order' => 2],
+            ['code' => 'TTTH',   'name' => 'Phòng Thông tin - Tổng hợp', 'sort_order' => 2],
             ['code' => 'DVDTTG', 'name' => 'Phòng Dân vận các CQNN, dân tộc, tôn giáo', 'sort_order' => 3],
-            ['code' => 'VP', 'name' => 'Văn phòng', 'sort_order' => 4],
-            ['code' => 'DTCH', 'name' => 'Phòng đoàn thể và các hội', 'sort_order' => 5],
-            ['code' => 'LLCTLSD', 'name' => 'Phòng Lý luận chính trị, lịch sử Đảng', 'sort_order' => 6],
+            ['code' => 'VP',     'name' => 'Văn phòng', 'sort_order' => 4],
+            ['code' => 'DTCH',   'name' => 'Phòng đoàn thể và các hội', 'sort_order' => 5],
+            ['code' => 'LLCTLSD','name' => 'Phòng Lý luận chính trị, lịch sử Đảng', 'sort_order' => 6],
             ['code' => 'KGVHVN', 'name' => 'Phòng Khoa giáo, Văn hoá - Văn nghệ', 'sort_order' => 7],
         ];
 
-        foreach ($departments as $dept) {
-            TaskAssignmentDepartment::firstOrCreate(
-                ['code' => $dept['code']],
-                ['name' => $dept['name'], 'status' => 'active', 'sort_order' => $dept['sort_order']]
+        foreach ($departments as $i => $dept) {
+            $ts = $now->copy()->addMinutes($i * 5);
+            $record = TaskAssignmentDepartment::unguarded(fn () =>
+                TaskAssignmentDepartment::firstOrCreate(
+                    ['code' => $dept['code']],
+                    ['name' => $dept['name'], 'status' => 'active', 'sort_order' => $dept['sort_order']]
+                )
             );
+            DB::table('task_assignment_departments')->where('id', $record->id)->update([
+                'created_by' => $creatorId, 'updated_by' => $creatorId,
+                'created_at' => $ts, 'updated_at' => $ts,
+            ]);
         }
     }
+
+    // ─── Loại văn bản ────────────────────────────────────────────
 
     protected function seedTypes(): void
     {
-        foreach (['Thường trực Thành ủy giao', 'Công việc chuyên môn', 'Công việc phát sinh'] as $name) {
-            TaskAssignmentType::firstOrCreate(['name' => $name], ['status' => 'active']);
+        $ts = Carbon::parse('2026-01-15 09:00:00');
+        $creatorId = $this->getCategoryCreatorId();
+
+        foreach (['Thường trực Thành ủy giao', 'Công việc chuyên môn', 'Công việc phát sinh'] as $i => $name) {
+            $t = $ts->copy()->addMinutes($i * 3);
+            $record = TaskAssignmentType::unguarded(fn () =>
+                TaskAssignmentType::firstOrCreate(['name' => $name], ['status' => 'active'])
+            );
+            DB::table('task_assignment_types')->where('id', $record->id)->update([
+                'created_by' => $creatorId, 'updated_by' => $creatorId,
+                'created_at' => $t, 'updated_at' => $t,
+            ]);
         }
     }
+
+    // ─── Loại đầu việc ──────────────────────────────────────────
 
     protected function seedItemTypes(): void
     {
-        $types = [
-            'Soạn thảo văn bản',
-            'Tổ chức sự kiện',
-            'Báo cáo định kỳ',
-            'Kiểm tra, giám sát',
-            'Nghiên cứu, khảo sát',
-        ];
+        $ts = Carbon::parse('2026-01-15 09:15:00');
+        $creatorId = $this->getCategoryCreatorId();
+        $types = ['Soạn thảo văn bản', 'Tổ chức sự kiện', 'Báo cáo định kỳ', 'Kiểm tra, giám sát', 'Nghiên cứu, khảo sát'];
 
-        foreach ($types as $name) {
-            TaskAssignmentItemType::unguarded(fn () =>
-                TaskAssignmentItemType::firstOrCreate(
-                    ['name' => $name],
-                    ['status' => 'active', 'created_by' => 1, 'updated_by' => 1]
-                )
+        foreach ($types as $i => $name) {
+            $t = $ts->copy()->addMinutes($i * 2);
+            $record = TaskAssignmentItemType::unguarded(fn () =>
+                TaskAssignmentItemType::firstOrCreate(['name' => $name], ['status' => 'active'])
             );
+            DB::table('task_assignment_item_types')->where('id', $record->id)->update([
+                'created_by' => $creatorId, 'updated_by' => $creatorId,
+                'created_at' => $t, 'updated_at' => $t,
+            ]);
         }
     }
 
-    /** Gán 14 user vào 7 phòng ban (2 user/phòng). */
+    // ─── Gán user vào phòng ban ──────────────────────────────────
+
     protected function assignUsersToDepartments(): void
     {
-        $deptIds = TaskAssignmentDepartment::orderBy('sort_order')->pluck('id')->all();
+        $this->deptIds = TaskAssignmentDepartment::orderBy('sort_order')->pluck('id', 'code')->all();
         $users = User::orderBy('id')->get();
 
+        $deptCodes = array_keys($this->deptIds);
         foreach ($users as $i => $user) {
-            $deptIndex = $i % count($deptIds);
-            $user->update(['task_assignment_department_id' => $deptIds[$deptIndex]]);
+            $code = $deptCodes[$i % count($deptCodes)];
+            $user->update(['task_assignment_department_id' => $this->deptIds[$code]]);
         }
+
+        $this->usersByDept = User::whereNotNull('task_assignment_department_id')
+            ->get()->groupBy('task_assignment_department_id');
+
+        $this->typeIds = TaskAssignmentType::pluck('id', 'name')->all();
+        $this->itemTypeIds = TaskAssignmentItemType::pluck('id', 'name')->all();
     }
+
+    // ─── Văn bản & đầu việc ─────────────────────────────────────
 
     protected function seedDocumentsAndItems(): void
     {
-        // Xóa dữ liệu cũ để seed lại sạch
         TaskAssignmentItemReport::query()->delete();
         TaskAssignmentItem::query()->delete();
         TaskAssignmentDocument::query()->delete();
 
-        $typeIds = TaskAssignmentType::pluck('id', 'name');
-        $itemTypeIds = TaskAssignmentItemType::pluck('id', 'name');
-        $deptIds = TaskAssignmentDepartment::pluck('id', 'code');
-        $usersByDept = User::whereNotNull('task_assignment_department_id')
-            ->get()
-            ->groupBy('task_assignment_department_id');
+        foreach ($this->getDocumentData() as $docData) {
+            $createdAt = Carbon::parse($docData['issue_date'])->subDays(rand(1, 3))->setTime(rand(7, 9), rand(0, 59));
+            $updatedAt = $docData['issued_at'] ? Carbon::parse($docData['issued_at']) : $createdAt->copy()->addHours(rand(1, 4));
+            $creatorId = $this->getAuthorizedUserId();
 
-        $documents = $this->getDocumentData();
-
-        foreach ($documents as $docData) {
             $doc = TaskAssignmentDocument::unguarded(fn () =>
                 TaskAssignmentDocument::create([
                     'name' => $docData['name'],
@@ -120,19 +158,31 @@ class TaskAssignmentDataSeeder extends Seeder
                     'issue_date' => $docData['issue_date'],
                     'status' => $docData['status'],
                     'issued_at' => $docData['issued_at'],
-                    'task_assignment_type_id' => $typeIds[$docData['type']],
-                    'created_by' => 1,
-                    'updated_by' => 1,
+                    'task_assignment_type_id' => $this->typeIds[$docData['type']],
+                    'created_by' => $creatorId,
+                    'updated_by' => $creatorId,
                 ])
             );
+            // Ghi đè timestamp đúng (booted hook set auth()->id() và Eloquent set now())
+            DB::table('task_assignment_documents')->where('id', $doc->id)->update([
+                'created_by' => $creatorId, 'updated_by' => $creatorId,
+                'created_at' => $createdAt, 'updated_at' => $updatedAt,
+            ]);
 
             foreach ($docData['items'] as $itemData) {
+                $itemCreatedAt = Carbon::parse($itemData['start_at'])->subDays(rand(0, 2))->setTime(rand(7, 9), rand(0, 59));
+                $itemUpdatedAt = ($itemData['completed_at'] ?? null)
+                    ? Carbon::parse($itemData['completed_at'])
+                    : $itemCreatedAt->copy()->addDays(rand(1, 5))->setTime(rand(8, 17), rand(0, 59));
+                $itemCreatorId = $this->getAuthorizedUserId();
+                $itemEditorId = $this->getAuthorizedUserId();
+
                 $item = TaskAssignmentItem::unguarded(fn () =>
                     TaskAssignmentItem::create([
                         'task_assignment_document_id' => $doc->id,
                         'name' => $itemData['name'],
                         'description' => $itemData['description'] ?? null,
-                        'task_assignment_item_type_id' => $itemTypeIds[$itemData['item_type']],
+                        'task_assignment_item_type_id' => $this->itemTypeIds[$itemData['item_type']],
                         'deadline_type' => $itemData['deadline_type'],
                         'start_at' => $itemData['start_at'],
                         'end_at' => $itemData['end_at'],
@@ -140,23 +190,25 @@ class TaskAssignmentDataSeeder extends Seeder
                         'completion_percent' => $itemData['completion_percent'],
                         'priority' => $itemData['priority'],
                         'completed_at' => $itemData['completed_at'] ?? null,
-                        'created_by' => 1,
-                        'updated_by' => 1,
                     ])
                 );
+                DB::table('task_assignment_items')->where('id', $item->id)->update([
+                    'created_by' => $itemCreatorId, 'updated_by' => $itemEditorId,
+                    'created_at' => $itemCreatedAt, 'updated_at' => $itemUpdatedAt,
+                ]);
 
                 // Gán phòng ban
                 foreach ($itemData['departments'] as $deptCode => $role) {
-                    if (isset($deptIds[$deptCode])) {
-                        $item->departments()->attach($deptIds[$deptCode], ['role' => $role]);
+                    if (isset($this->deptIds[$deptCode])) {
+                        $item->departments()->attach($this->deptIds[$deptCode], ['role' => $role]);
                     }
                 }
 
-                // Gán user từ đúng phòng ban chính
+                // Gán user
                 $mainDeptCode = array_key_first($itemData['departments']);
-                $mainDeptId = $deptIds[$mainDeptCode] ?? null;
-                if ($mainDeptId && isset($usersByDept[$mainDeptId])) {
-                    $deptUsers = $usersByDept[$mainDeptId]->values();
+                $mainDeptId = $this->deptIds[$mainDeptCode] ?? null;
+                if ($mainDeptId && isset($this->usersByDept[$mainDeptId])) {
+                    $deptUsers = $this->usersByDept[$mainDeptId]->values();
                     foreach ($deptUsers as $idx => $user) {
                         $item->users()->attach($user->id, [
                             'department_id' => $mainDeptId,
@@ -169,22 +221,65 @@ class TaskAssignmentDataSeeder extends Seeder
                     }
                 }
 
-                // Tạo báo cáo cho đầu việc đã hoàn thành
-                if ($itemData['processing_status'] === 'done' && $mainDeptId && isset($usersByDept[$mainDeptId])) {
-                    $reporter = $usersByDept[$mainDeptId]->first();
+                // Báo cáo cho việc hoàn thành
+                if ($itemData['processing_status'] === 'done' && $mainDeptId && isset($this->usersByDept[$mainDeptId])) {
+                    $reporter = $this->usersByDept[$mainDeptId]->first();
+                    $reportCreatedAt = Carbon::parse($itemData['completed_at'])->addHours(rand(1, 8));
                     TaskAssignmentItemReport::unguarded(fn () =>
                         TaskAssignmentItemReport::create([
                             'task_assignment_item_id' => $item->id,
                             'reporter_user_id' => $reporter->id,
                             'completed_at' => $itemData['completed_at'],
                             'report_document_number' => $this->fakeDocumentNumber($docData['issue_date']),
-                            'report_document_excerpt' => 'Báo cáo kết quả thực hiện: ' . $itemData['name'],
+                            'report_document_excerpt' => 'Báo cáo kết quả thực hiện: '.$itemData['name'],
                             'report_document_content' => 'Đã hoàn thành công việc theo đúng kế hoạch được giao.',
+                            'created_at' => $reportCreatedAt,
+                            'updated_at' => $reportCreatedAt,
                         ])
                     );
                 }
             }
         }
+    }
+
+    // ─── Helpers ─────────────────────────────────────────────────
+
+    /** Lấy ngẫu nhiên user có quyền tạo danh mục (Admin, Quản trị). */
+    private function getCategoryCreatorId(): int
+    {
+        if (empty($this->categoryCreatorUserIds)) {
+            $this->categoryCreatorUserIds = User::whereHas('roles', function ($q) {
+                $q->whereIn('name', ['Super Admin', 'Admin', 'Quản trị']);
+            })->pluck('id')->toArray();
+
+            if (empty($this->categoryCreatorUserIds)) {
+                $this->categoryCreatorUserIds = User::whereIn('user_name', ['admin', 'quantri'])->pluck('id')->toArray();
+            }
+            if (empty($this->categoryCreatorUserIds)) {
+                $this->categoryCreatorUserIds = [User::first()->id];
+            }
+        }
+
+        return $this->categoryCreatorUserIds[array_rand($this->categoryCreatorUserIds)];
+    }
+
+    /** Lấy ngẫu nhiên user có quyền tạo văn bản/công việc (Admin, Trưởng phòng). */
+    private function getAuthorizedUserId(): int
+    {
+        if (empty($this->authorizedUserIds)) {
+            $this->authorizedUserIds = User::whereHas('roles', function ($q) {
+                $q->whereIn('name', ['Super Admin', 'Admin', 'Trưởng phòng']);
+            })->pluck('id')->toArray();
+
+            if (empty($this->authorizedUserIds)) {
+                $this->authorizedUserIds = User::whereIn('user_name', ['admin', 'truongphong'])->pluck('id')->toArray();
+            }
+            if (empty($this->authorizedUserIds)) {
+                $this->authorizedUserIds = [User::first()->id];
+            }
+        }
+
+        return $this->authorizedUserIds[array_rand($this->authorizedUserIds)];
     }
 
     private function mapAssignmentStatus(string $processingStatus): string
@@ -199,27 +294,21 @@ class TaskAssignmentDataSeeder extends Seeder
 
     private function fakeDocumentNumber(string $issueDate): string
     {
-        $num = rand(100, 999);
-        $year = date('Y', strtotime($issueDate));
-
-        return "{$num}-BC/BTGTU-{$year}";
+        return rand(100, 999).'-BC/BTGTU-'.date('Y', strtotime($issueDate));
     }
 
     /**
-     * Dữ liệu 12 văn bản, ~85 đầu việc, trải 3 tháng.
-     * Phân bổ đều: done, in_progress, todo, overdue, paused, cancelled.
-     * Cover cả 3 loại VB (A/B/C) và 5 loại đầu việc.
+     * 12 văn bản, ~85 đầu việc, trải 3 tháng 02–04/2026.
+     * Phân bổ: done, in_progress, todo, overdue, paused, cancelled.
      */
     private function getDocumentData(): array
     {
         return [
-            // ===================== THÁNG 2/2026 =====================
+            // ═══════════════════ THÁNG 2/2026 ═══════════════════
             [
                 'name' => 'Kế hoạch tuyên truyền kỷ niệm 96 năm ngày thành lập Đảng',
                 'summary' => 'Triển khai kế hoạch tuyên truyền kỷ niệm 96 năm ngày thành lập Đảng Cộng sản Việt Nam (03/02/1930 - 03/02/2026).',
-                'issue_date' => '2026-02-01',
-                'status' => 'issued',
-                'issued_at' => '2026-02-01 08:00:00',
+                'issue_date' => '2026-02-01', 'status' => 'issued', 'issued_at' => '2026-02-01 08:00:00',
                 'type' => 'Thường trực Thành ủy giao',
                 'items' => [
                     ['name' => 'Soạn đề cương tuyên truyền kỷ niệm 96 năm thành lập Đảng', 'item_type' => 'Soạn thảo văn bản', 'deadline_type' => 'has_deadline', 'start_at' => '2026-02-01 08:00:00', 'end_at' => '2026-02-10 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'high', 'completed_at' => '2026-02-09 15:00:00', 'departments' => ['TTBCXB' => 'main']],
@@ -231,9 +320,7 @@ class TaskAssignmentDataSeeder extends Seeder
             [
                 'name' => 'Chương trình công tác dân vận tháng 2/2026',
                 'summary' => 'Triển khai chương trình dân vận tháng 2, tập trung công tác dân tộc, tôn giáo.',
-                'issue_date' => '2026-02-03',
-                'status' => 'issued',
-                'issued_at' => '2026-02-03 08:00:00',
+                'issue_date' => '2026-02-03', 'status' => 'issued', 'issued_at' => '2026-02-03 08:00:00',
                 'type' => 'Công việc chuyên môn',
                 'items' => [
                     ['name' => 'Khảo sát tình hình tôn giáo tại quận Sơn Trà', 'item_type' => 'Nghiên cứu, khảo sát', 'deadline_type' => 'has_deadline', 'start_at' => '2026-02-05 08:00:00', 'end_at' => '2026-02-20 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'medium', 'completed_at' => '2026-02-19 16:00:00', 'departments' => ['DVDTTG' => 'main']],
@@ -245,9 +332,7 @@ class TaskAssignmentDataSeeder extends Seeder
             [
                 'name' => 'Kế hoạch đào tạo bồi dưỡng lý luận chính trị năm 2026',
                 'summary' => 'Xây dựng kế hoạch tổng thể đào tạo, bồi dưỡng lý luận chính trị cho cán bộ, đảng viên.',
-                'issue_date' => '2026-02-10',
-                'status' => 'issued',
-                'issued_at' => '2026-02-10 08:00:00',
+                'issue_date' => '2026-02-10', 'status' => 'issued', 'issued_at' => '2026-02-10 08:00:00',
                 'type' => 'Công việc chuyên môn',
                 'items' => [
                     ['name' => 'Tổng hợp nhu cầu đào tạo từ các quận huyện', 'item_type' => 'Nghiên cứu, khảo sát', 'deadline_type' => 'has_deadline', 'start_at' => '2026-02-10 08:00:00', 'end_at' => '2026-02-25 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'medium', 'completed_at' => '2026-02-23 14:00:00', 'departments' => ['LLCTLSD' => 'main']],
@@ -256,13 +341,11 @@ class TaskAssignmentDataSeeder extends Seeder
                 ],
             ],
 
-            // ===================== THÁNG 3/2026 =====================
+            // ═══════════════════ THÁNG 3/2026 ═══════════════════
             [
                 'name' => 'Kế hoạch tuyên truyền Đại hội Đảng bộ thành phố lần thứ XVIII',
                 'summary' => 'Triển khai kế hoạch tuyên truyền trước, trong và sau Đại hội Đảng bộ thành phố.',
-                'issue_date' => '2026-03-01',
-                'status' => 'issued',
-                'issued_at' => '2026-03-01 08:00:00',
+                'issue_date' => '2026-03-01', 'status' => 'issued', 'issued_at' => '2026-03-01 08:00:00',
                 'type' => 'Thường trực Thành ủy giao',
                 'items' => [
                     ['name' => 'Soạn thảo đề cương tuyên truyền Đại hội lần thứ XVIII', 'item_type' => 'Soạn thảo văn bản', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-01 08:00:00', 'end_at' => '2026-03-20 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'high', 'completed_at' => '2026-03-18 15:00:00', 'departments' => ['TTBCXB' => 'main', 'TTTH' => 'supporting']],
@@ -274,9 +357,7 @@ class TaskAssignmentDataSeeder extends Seeder
             [
                 'name' => 'Chương trình công tác đoàn thể quý I/2026',
                 'summary' => 'Triển khai công tác đoàn thể, hội quần chúng quý I năm 2026.',
-                'issue_date' => '2026-03-05',
-                'status' => 'issued',
-                'issued_at' => '2026-03-05 08:00:00',
+                'issue_date' => '2026-03-05', 'status' => 'issued', 'issued_at' => '2026-03-05 08:00:00',
                 'type' => 'Công việc chuyên môn',
                 'items' => [
                     ['name' => 'Tổ chức hội nghị sơ kết phong trào thi đua yêu nước', 'item_type' => 'Tổ chức sự kiện', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-05 08:00:00', 'end_at' => '2026-03-20 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'high', 'completed_at' => '2026-03-19 16:00:00', 'departments' => ['DTCH' => 'main']],
@@ -290,9 +371,7 @@ class TaskAssignmentDataSeeder extends Seeder
             [
                 'name' => 'Kế hoạch công tác khoa giáo tháng 3/2026',
                 'summary' => 'Triển khai các nhiệm vụ khoa giáo, giáo dục, y tế, thể dục thể thao tháng 3.',
-                'issue_date' => '2026-03-03',
-                'status' => 'issued',
-                'issued_at' => '2026-03-03 08:00:00',
+                'issue_date' => '2026-03-03', 'status' => 'issued', 'issued_at' => '2026-03-03 08:00:00',
                 'type' => 'Công việc chuyên môn',
                 'items' => [
                     ['name' => 'Kiểm tra công tác phòng chống dịch bệnh mùa hè', 'item_type' => 'Kiểm tra, giám sát', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-05 08:00:00', 'end_at' => '2026-03-20 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'high', 'completed_at' => '2026-03-19 15:00:00', 'departments' => ['KGVHVN' => 'main']],
@@ -306,9 +385,7 @@ class TaskAssignmentDataSeeder extends Seeder
             [
                 'name' => 'Xử lý phản ánh tình hình tư tưởng cán bộ tại cơ sở',
                 'summary' => 'Tiếp nhận và xử lý thông tin phản ánh liên quan đến tư tưởng cán bộ tháng 3.',
-                'issue_date' => '2026-03-10',
-                'status' => 'issued',
-                'issued_at' => '2026-03-10 08:00:00',
+                'issue_date' => '2026-03-10', 'status' => 'issued', 'issued_at' => '2026-03-10 08:00:00',
                 'type' => 'Công việc phát sinh',
                 'items' => [
                     ['name' => 'Tổng hợp thông tin phản ánh từ các quận huyện tháng 3', 'item_type' => 'Báo cáo định kỳ', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-10 08:00:00', 'end_at' => '2026-03-20 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'high', 'completed_at' => '2026-03-19 15:00:00', 'departments' => ['TTTH' => 'main', 'DTCH' => 'supporting']],
@@ -317,13 +394,11 @@ class TaskAssignmentDataSeeder extends Seeder
                 ],
             ],
 
-            // ===================== THÁNG 4/2026 =====================
+            // ═══════════════════ THÁNG 4/2026 ═══════════════════
             [
                 'name' => 'Đề án Văn hóa - Văn nghệ phục vụ kỷ niệm ngày 30/4',
                 'summary' => 'Xây dựng và triển khai đề án tổ chức các hoạt động văn hóa văn nghệ chào mừng ngày 30/4.',
-                'issue_date' => '2026-04-01',
-                'status' => 'issued',
-                'issued_at' => '2026-04-01 08:00:00',
+                'issue_date' => '2026-04-01', 'status' => 'issued', 'issued_at' => '2026-04-01 08:00:00',
                 'type' => 'Thường trực Thành ủy giao',
                 'items' => [
                     ['name' => 'Lên kịch bản chương trình văn nghệ chào mừng 30/4', 'item_type' => 'Soạn thảo văn bản', 'deadline_type' => 'has_deadline', 'start_at' => '2026-04-01 08:00:00', 'end_at' => '2026-04-15 17:00:00', 'processing_status' => 'in_progress', 'completion_percent' => 45, 'priority' => 'high', 'departments' => ['KGVHVN' => 'main']],
@@ -335,9 +410,7 @@ class TaskAssignmentDataSeeder extends Seeder
             [
                 'name' => 'Chương trình công tác tháng 4/2026 của Văn phòng',
                 'summary' => 'Triển khai nhiệm vụ hành chính, hậu cần, tổng hợp tháng 4 của Văn phòng Ban.',
-                'issue_date' => '2026-04-01',
-                'status' => 'issued',
-                'issued_at' => '2026-04-01 08:00:00',
+                'issue_date' => '2026-04-01', 'status' => 'issued', 'issued_at' => '2026-04-01 08:00:00',
                 'type' => 'Công việc chuyên môn',
                 'items' => [
                     ['name' => 'Chuẩn bị nội dung cuộc họp giao ban tháng 4', 'item_type' => 'Soạn thảo văn bản', 'deadline_type' => 'has_deadline', 'start_at' => '2026-04-01 08:00:00', 'end_at' => '2026-04-03 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'high', 'completed_at' => '2026-04-03 11:00:00', 'departments' => ['VP' => 'main']],
@@ -350,9 +423,7 @@ class TaskAssignmentDataSeeder extends Seeder
             [
                 'name' => 'Kế hoạch nghiên cứu lịch sử Đảng bộ thành phố giai đoạn 2020-2025',
                 'summary' => 'Nghiên cứu, biên soạn lịch sử Đảng bộ thành phố giai đoạn 2020-2025.',
-                'issue_date' => '2026-04-02',
-                'status' => 'issued',
-                'issued_at' => '2026-04-02 08:00:00',
+                'issue_date' => '2026-04-02', 'status' => 'issued', 'issued_at' => '2026-04-02 08:00:00',
                 'type' => 'Công việc chuyên môn',
                 'items' => [
                     ['name' => 'Thu thập tư liệu lịch sử Đảng bộ TP giai đoạn 2020-2025', 'item_type' => 'Nghiên cứu, khảo sát', 'deadline_type' => 'has_deadline', 'start_at' => '2026-04-02 08:00:00', 'end_at' => '2026-05-30 17:00:00', 'processing_status' => 'in_progress', 'completion_percent' => 10, 'priority' => 'medium', 'departments' => ['LLCTLSD' => 'main']],
@@ -364,9 +435,7 @@ class TaskAssignmentDataSeeder extends Seeder
             [
                 'name' => 'Xử lý vấn đề phát sinh trên mạng xã hội tháng 4',
                 'summary' => 'Theo dõi, xử lý các thông tin sai lệch, xuyên tạc trên mạng xã hội.',
-                'issue_date' => '2026-04-03',
-                'status' => 'issued',
-                'issued_at' => '2026-04-03 08:00:00',
+                'issue_date' => '2026-04-03', 'status' => 'issued', 'issued_at' => '2026-04-03 08:00:00',
                 'type' => 'Công việc phát sinh',
                 'items' => [
                     ['name' => 'Rà soát các trang mạng xã hội có nội dung xuyên tạc', 'item_type' => 'Nghiên cứu, khảo sát', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-28 08:00:00', 'end_at' => '2026-04-03 17:00:00', 'processing_status' => 'in_progress', 'completion_percent' => 50, 'priority' => 'high', 'departments' => ['TTBCXB' => 'main', 'TTTH' => 'supporting']],
@@ -377,9 +446,7 @@ class TaskAssignmentDataSeeder extends Seeder
             [
                 'name' => 'Chương trình công tác dân vận tháng 4/2026',
                 'summary' => 'Triển khai nhiệm vụ dân vận, dân tộc, tôn giáo tháng 4.',
-                'issue_date' => '2026-04-01',
-                'status' => 'draft',
-                'issued_at' => null,
+                'issue_date' => '2026-04-01', 'status' => 'draft', 'issued_at' => null,
                 'type' => 'Công việc chuyên môn',
                 'items' => [
                     ['name' => 'Kiểm tra công tác dân tộc tại huyện Hòa Vang', 'item_type' => 'Kiểm tra, giám sát', 'deadline_type' => 'has_deadline', 'start_at' => '2026-04-10 08:00:00', 'end_at' => '2026-04-20 17:00:00', 'processing_status' => 'todo', 'completion_percent' => 0, 'priority' => 'medium', 'departments' => ['DVDTTG' => 'main']],

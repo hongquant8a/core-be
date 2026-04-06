@@ -63,7 +63,7 @@ class TaskAssignmentDocumentService
 
     public function index(array $filters, int $limit)
     {
-        return TaskAssignmentDocument::with(['type', 'creator', 'editor'])
+        return TaskAssignmentDocument::with(['type', 'creator.media', 'editor.media'])
             ->withCount('items')
             ->filter($filters)
             ->paginate($limit);
@@ -71,7 +71,7 @@ class TaskAssignmentDocumentService
 
     public function show(TaskAssignmentDocument $document): TaskAssignmentDocument
     {
-        return $document->load(['type', 'items', 'attachments.media', 'creator', 'editor']);
+        return $document->load(['type', 'items', 'attachments.media', 'creator.media', 'editor.media']);
     }
 
     public function store(array $validated, array $files = []): TaskAssignmentDocument
@@ -105,7 +105,7 @@ class TaskAssignmentDocumentService
                     ]);
                 }
 
-                return $document->load(['type', 'items', 'attachments.media', 'creator', 'editor']);
+                return $document->load(['type', 'items', 'attachments.media', 'creator.media', 'editor.media']);
             });
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);
@@ -154,7 +154,7 @@ class TaskAssignmentDocumentService
                     ]);
                 }
 
-                return $document->load(['type', 'items', 'attachments.media', 'creator', 'editor']);
+                return $document->load(['type', 'items', 'attachments.media', 'creator.media', 'editor.media']);
             });
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);
@@ -208,7 +208,7 @@ class TaskAssignmentDocumentService
             $document->update(['status' => $status, 'issued_at' => null]);
         }
 
-        return $document->load(['type', 'attachments.media', 'creator', 'editor']);
+        return $document->load(['type', 'attachments.media', 'creator.media', 'editor.media']);
     }
 
     public function export(array $filters): BinaryFileResponse
