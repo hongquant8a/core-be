@@ -8,8 +8,9 @@ use App\Modules\Core\Services\OrganizationService;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Concerns\WithValidation;
 
-class OrganizationsImport implements ToModel, WithHeadingRow
+class OrganizationsImport implements ToModel, WithHeadingRow, WithValidation
 {
     public function model(array $row)
     {
@@ -26,5 +27,36 @@ class OrganizationsImport implements ToModel, WithHeadingRow
             'parent_id' => $parent?->id,
             'sort_order' => (int) ($row['sort_order'] ?? 0),
         ]);
+    }
+
+    public function rules(): array
+    {
+        return [
+            'name' => 'required|string|max:255',
+            'status' => 'nullable|string|in:'.implode(',', StatusEnum::values()),
+            'sort_order' => 'nullable|integer',
+        ];
+    }
+
+    public function customValidationMessages(): array
+    {
+        return [
+            'name.required' => 'Tên tổ chức không được để trống.',
+            'name.string' => 'Tên tổ chức phải là một chuỗi ký tự.',
+            'status.in' => 'Trạng thái không hợp lệ (:input).',
+            'sort_order.integer' => 'Thứ tự sắp xếp phải là số nguyên.',
+        ];
+    }
+
+    public function customValidationAttributes(): array
+    {
+        return [
+            'name' => 'Tên tổ chức',
+            'slug' => 'Slug',
+            'description' => 'Mô tả',
+            'status' => 'Trạng thái',
+            'parent_slug' => 'Slug của tổ chức cha',
+            'sort_order' => 'Thứ tự sắp xếp',
+        ];
     }
 }

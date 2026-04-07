@@ -44,8 +44,24 @@ class ItemsImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFai
     public function customValidationMessages(): array
     {
         return [
-            'name.required' => 'Tên công việc là bắt buộc.',
+            'name.required' => 'Tên công việc không được để trống.',
+            'name.string' => 'Tên công việc phải là một chuỗi ký tự.',
+            'name.max' => 'Tên công việc không được vượt quá 255 ký tự.',
             'end_at.required_if' => 'Công việc có thời hạn phải có ngày kết thúc.',
+        ];
+    }
+
+    public function customValidationAttributes(): array
+    {
+        return [
+            'name' => 'Tên công việc',
+            'description' => 'Mô tả',
+            'deadline_type' => 'Loại thời hạn',
+            'start_at' => 'Ngày bắt đầu',
+            'end_at' => 'Ngày kết thúc',
+            'processing_status' => 'Trạng thái',
+            'completion_percent' => 'Hoàn thành (%)',
+            'priority' => 'Độ ưu tiên',
         ];
     }
 }

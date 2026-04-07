@@ -34,4 +34,28 @@ class DepartmentImport implements ToModel, WithHeadingRow, WithValidation, Skips
             'name' => 'required|string|max:255',
         ];
     }
+
+    public function customValidationMessages(): array
+    {
+        return [
+            'code.required' => 'Mã phòng ban không được để trống.',
+            'code.string' => 'Mã phòng ban phải là một chuỗi ký tự.',
+            'code.max' => 'Mã phòng ban không được vượt quá 50 ký tự.',
+            'code.unique' => 'Mã phòng ban :input đã tồn tại.',
+            'name.required' => 'Tên phòng ban không được để trống.',
+            'name.string' => 'Tên phòng ban phải là một chuỗi ký tự.',
+            'name.max' => 'Tên phòng ban không được vượt quá 255 ký tự.',
+        ];
+    }
+
+    public function customValidationAttributes(): array
+    {
+        return [
+            'code' => 'Mã phòng ban',
+            'name' => 'Tên phòng ban',
+            'description' => 'Mô tả',
+            'status' => 'Trạng thái',
+            'sort_order' => 'Thứ tự',
+        ];
+    }
 }

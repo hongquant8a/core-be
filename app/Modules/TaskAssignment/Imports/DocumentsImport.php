@@ -45,7 +45,20 @@ class DocumentsImport implements ToModel, WithHeadingRow, WithValidation, SkipsO
     public function customValidationMessages(): array
     {
         return [
-            'name.required' => 'Tên văn bản là bắt buộc.',
+            'name.required' => 'Tên văn bản không được để trống.',
+            'name.string' => 'Tên văn bản phải là một chuỗi ký tự.',
+            'name.max' => 'Tên văn bản không được vượt quá 255 ký tự.',
+        ];
+    }
+
+    public function customValidationAttributes(): array
+    {
+        return [
+            'name' => 'Tên văn bản',
+            'summary' => 'Tóm tắt',
+            'issue_date' => 'Ngày ban hành',
+            'task_assignment_type_id' => 'Loại văn bản',
+            'status' => 'Trạng thái',
         ];
     }
 }

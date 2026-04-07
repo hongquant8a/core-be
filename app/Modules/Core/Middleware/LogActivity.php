@@ -61,6 +61,13 @@ class LogActivity
             $userId = $user?->id;
             $organizationId = function_exists('getPermissionsTeamId') ? getPermissionsTeamId() : null;
 
+            if (! $organizationId) {
+                $headerOrg = $request->header('X-Organization-Id') ?? $request->header('x-organization-id');
+                if (is_numeric($headerOrg)) {
+                    $organizationId = (int) $headerOrg;
+                }
+            }
+
             LogActivityModel::create([
                 'description' => $this->buildDescription($request),
                 'user_type' => $userType,

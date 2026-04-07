@@ -5,8 +5,9 @@ namespace App\Modules\Core\Imports;
 use App\Modules\Core\Models\Permission;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Concerns\WithValidation;
 
-class PermissionsImport implements ToModel, WithHeadingRow
+class PermissionsImport implements ToModel, WithHeadingRow, WithValidation
 {
     public function model(array $row)
     {
@@ -20,5 +21,35 @@ class PermissionsImport implements ToModel, WithHeadingRow
             'sort_order' => isset($row['sort_order']) ? (int) $row['sort_order'] : 0,
             'parent_id' => $parentId,
         ]);
+    }
+
+    public function rules(): array
+    {
+        return [
+            'name' => 'required|string|max:255',
+            'guard_name' => 'nullable|string|max:255',
+            'parent_id' => 'nullable|integer|exists:permissions,id',
+        ];
+    }
+
+    public function customValidationMessages(): array
+    {
+        return [
+            'name.required' => 'Tên quyền không được để trống.',
+            'name.string' => 'Tên quyền phải là một chuỗi ký tự.',
+            'parent_id.exists' => 'ID quyền cha không tồn tại.',
+            'parent_id.integer' => 'ID quyền cha phải là số nguyên.',
+        ];
+    }
+
+    public function customValidationAttributes(): array
+    {
+        return [
+            'name' => 'Tên quyền',
+            'guard_name' => 'Guard name',
+            'parent_id' => 'Quyền cha',
+            'description' => 'Mô tả',
+            'sort_order' => 'Thứ tự',
+        ];
     }
 }

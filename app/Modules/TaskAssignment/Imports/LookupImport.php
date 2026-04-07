@@ -34,4 +34,22 @@ class LookupImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFa
             'name' => 'required|string|max:255',
         ];
     }
+
+    public function customValidationMessages(): array
+    {
+        return [
+            'name.required' => 'Tên không được để trống.',
+            'name.string' => 'Tên phải là một chuỗi ký tự.',
+            'name.max' => 'Tên không được vượt quá 255 ký tự.',
+        ];
+    }
+
+    public function customValidationAttributes(): array
+    {
+        return [
+            'name' => 'Tên',
+            'description' => 'Mô tả',
+            'status' => 'Trạng thái',
+        ];
+    }
 }

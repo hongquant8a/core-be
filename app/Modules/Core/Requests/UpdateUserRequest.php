@@ -42,7 +42,9 @@ class UpdateUserRequest extends FormRequest
             'name.max' => 'Tên người dùng không được vượt quá 255 ký tự.',
             'email.email' => 'Email không hợp lệ.',
             'email.unique' => 'Email đã tồn tại.',
-            'user_name.unique' => 'Tên đăng nhập đã tồn tại.',
+            'user_name.unique' => 'Tên đăng nhập :input đã tồn tại.',
+            'user_name.string' => 'Tên đăng nhập phải là một chuỗi ký tự.',
+            'user_name.max' => 'Tên đăng nhập không được vượt quá 100 ký tự.',
             'user_name.regex' => 'Tên đăng nhập chỉ chấp nhận chữ, số, dấu chấm, gạch dưới, gạch ngang.',
             'password.string' => 'Mật khẩu phải là một chuỗi ký tự.',
             'password.min' => 'Mật khẩu phải có ít nhất 6 ký tự.',
@@ -96,6 +98,19 @@ class UpdateUserRequest extends FormRequest
                     ['role_id' => 5, 'organization_ids' => [9]],
                 ],
             ],
+        ];
+    }
+
+    public function attributes(): array
+    {
+        return [
+            'name' => 'Tên người dùng',
+            'email' => 'Email',
+            'user_name' => 'Tên đăng nhập',
+            'password' => 'Mật khẩu',
+            'status' => 'Trạng thái',
+            'avatar' => 'Ảnh đại diện',
+            'assignments' => 'Gán vai trò',
         ];
     }
 }
