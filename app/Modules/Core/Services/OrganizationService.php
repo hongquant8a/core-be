@@ -209,10 +209,14 @@ class OrganizationService
 
     private function isDescendantOf(int $candidateId, int $id): bool
     {
-        $current = Organization::find($id);
+        if ($candidateId === $id) {
+            return true;
+        }
+
+        $current = Organization::find($candidateId);
 
         while ($current && $current->parent_id) {
-            if ($current->parent_id === $candidateId) {
+            if ($current->parent_id === $id) {
                 return true;
             }
 
