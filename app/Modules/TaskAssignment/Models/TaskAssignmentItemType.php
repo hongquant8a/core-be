@@ -3,12 +3,13 @@
 namespace App\Modules\TaskAssignment\Models;
 
 use App\Modules\Core\Models\User;
+use App\Modules\Core\Traits\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class TaskAssignmentItemType extends Model
 {
-    use HasFactory;
+    use HasFactory, HasOrganizationScope;
 
     protected static function newFactory()
     {

@@ -3,6 +3,7 @@
 namespace App\Modules\TaskAssignment\Models;
 
 use App\Modules\Core\Models\User;
+use App\Modules\Core\Traits\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
@@ -10,7 +11,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 
 class TaskAssignmentItemReport extends Model implements HasMedia
 {
-    use HasFactory;
+    use HasFactory, HasOrganizationScope;
     use InteractsWithMedia;
 
     protected static function newFactory()

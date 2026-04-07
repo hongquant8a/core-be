@@ -39,6 +39,11 @@ class TaskAssignmentDataSeeder extends Seeder
         // Đăng nhập tạm để model booted() không ghi đè created_by/updated_by = null
         auth()->login(User::first());
 
+        // Đặt organization_id = 1 cho Spatie Permission và Global Scope của model
+        if (function_exists('setPermissionsTeamId')) {
+            setPermissionsTeamId(1);
+        }
+
         $this->seedDepartments();
         $this->seedTypes();
         $this->seedItemTypes();
@@ -67,12 +72,13 @@ class TaskAssignmentDataSeeder extends Seeder
         foreach ($departments as $i => $dept) {
             $ts = $now->copy()->addMinutes($i * 5);
             $record = TaskAssignmentDepartment::unguarded(fn () =>
-                TaskAssignmentDepartment::firstOrCreate(
+                TaskAssignmentDepartment::withoutGlobalScopes()->firstOrCreate(
                     ['code' => $dept['code']],
-                    ['name' => $dept['name'], 'status' => 'active', 'sort_order' => $dept['sort_order']]
+                    ['name' => $dept['name'], 'status' => 'active', 'sort_order' => $dept['sort_order'], 'organization_id' => 1]
                 )
             );
             DB::table('task_assignment_departments')->where('id', $record->id)->update([
+                'organization_id' => 1,
                 'created_by' => $creatorId, 'updated_by' => $creatorId,
                 'created_at' => $ts, 'updated_at' => $ts,
             ]);
@@ -89,9 +95,10 @@ class TaskAssignmentDataSeeder extends Seeder
         foreach (['Thường trực Thành ủy giao', 'Công việc chuyên môn', 'Công việc phát sinh'] as $i => $name) {
             $t = $ts->copy()->addMinutes($i * 3);
             $record = TaskAssignmentType::unguarded(fn () =>
-                TaskAssignmentType::firstOrCreate(['name' => $name], ['status' => 'active'])
+                TaskAssignmentType::withoutGlobalScopes()->firstOrCreate(['name' => $name], ['status' => 'active', 'organization_id' => 1])
             );
             DB::table('task_assignment_types')->where('id', $record->id)->update([
+                'organization_id' => 1,
                 'created_by' => $creatorId, 'updated_by' => $creatorId,
                 'created_at' => $t, 'updated_at' => $t,
             ]);
@@ -109,9 +116,10 @@ class TaskAssignmentDataSeeder extends Seeder
         foreach ($types as $i => $name) {
             $t = $ts->copy()->addMinutes($i * 2);
             $record = TaskAssignmentItemType::unguarded(fn () =>
-                TaskAssignmentItemType::firstOrCreate(['name' => $name], ['status' => 'active'])
+                TaskAssignmentItemType::withoutGlobalScopes()->firstOrCreate(['name' => $name], ['status' => 'active', 'organization_id' => 1])
             );
             DB::table('task_assignment_item_types')->where('id', $record->id)->update([
+                'organization_id' => 1,
                 'created_by' => $creatorId, 'updated_by' => $creatorId,
                 'created_at' => $t, 'updated_at' => $t,
             ]);
@@ -159,12 +167,14 @@ class TaskAssignmentDataSeeder extends Seeder
                     'status' => $docData['status'],
                     'issued_at' => $docData['issued_at'],
                     'task_assignment_type_id' => $this->typeIds[$docData['type']],
+                    'organization_id' => 1,
                     'created_by' => $creatorId,
                     'updated_by' => $creatorId,
                 ])
             );
             // Ghi đè timestamp đúng (booted hook set auth()->id() và Eloquent set now())
             DB::table('task_assignment_documents')->where('id', $doc->id)->update([
+                'organization_id' => 1,
                 'created_by' => $creatorId, 'updated_by' => $creatorId,
                 'created_at' => $createdAt, 'updated_at' => $updatedAt,
             ]);
@@ -190,9 +200,11 @@ class TaskAssignmentDataSeeder extends Seeder
                         'completion_percent' => $itemData['completion_percent'],
                         'priority' => $itemData['priority'],
                         'completed_at' => $itemData['completed_at'] ?? null,
+                        'organization_id' => 1,
                     ])
                 );
                 DB::table('task_assignment_items')->where('id', $item->id)->update([
+                    'organization_id' => 1,
                     'created_by' => $itemCreatorId, 'updated_by' => $itemEditorId,
                     'created_at' => $itemCreatedAt, 'updated_at' => $itemUpdatedAt,
                 ]);
@@ -233,6 +245,7 @@ class TaskAssignmentDataSeeder extends Seeder
                             'report_document_number' => $this->fakeDocumentNumber($docData['issue_date']),
                             'report_document_excerpt' => 'Báo cáo kết quả thực hiện: '.$itemData['name'],
                             'report_document_content' => 'Đã hoàn thành công việc theo đúng kế hoạch được giao.',
+                            'organization_id' => 1,
                             'created_at' => $reportCreatedAt,
                             'updated_at' => $reportCreatedAt,
                         ])
