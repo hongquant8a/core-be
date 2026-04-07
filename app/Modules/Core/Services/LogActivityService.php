@@ -11,9 +11,23 @@ class LogActivityService
 {
     public function stats(array $filters): array
     {
-        $base = LogActivity::filter($filters);
+        $stats = LogActivity::filter($filters)
+            ->selectRaw("
+                count(*) as total,
+                count(case when method_type = 'GET' then 1 end) as views,
+                count(case when method_type = 'POST' then 1 end) as creates,
+                count(case when (method_type = 'PUT' or method_type = 'PATCH') then 1 end) as updates,
+                count(case when method_type = 'DELETE' then 1 end) as deletes
+            ")
+            ->first();
 
-        return ['total' => (clone $base)->count()];
+        return [
+            'total' => (int) $stats->total,
+            'views' => (int) $stats->views,
+            'creates' => (int) $stats->creates,
+            'updates' => (int) $stats->updates,
+            'deletes' => (int) $stats->deletes,
+        ];
     }
 
     public function index(array $filters, int $limit)

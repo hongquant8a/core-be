@@ -21,13 +21,14 @@ class RoleService
     public function index(array $filters, int $limit)
     {
         return Role::with(['organization', 'permissions'])
+            ->withCount('users')
             ->filter($filters)
             ->paginate($limit);
     }
 
     public function show(Role $role): Role
     {
-        return $role->load(['organization', 'permissions']);
+        return $role->load(['organization', 'permissions'])->loadCount('users');
     }
 
     public function store(array $data): Role

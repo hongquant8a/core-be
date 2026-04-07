@@ -49,4 +49,18 @@ class Role extends SpatieRole
     {
         return $this->belongsTo(Organization::class, 'organization_id');
     }
+
+    /**
+     * Định nghĩa lại users() để tránh lỗi Spatie không tìm thấy User class khi dùng withCount.
+     */
+    public function users(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->morphedByMany(
+            User::class,
+            'model',
+            config('permission.table_names.model_has_roles'),
+            config('permission.column_names.role_pivot_key'),
+            config('permission.column_names.model_morph_key')
+        );
+    }
 }

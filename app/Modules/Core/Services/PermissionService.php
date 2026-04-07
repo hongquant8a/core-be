@@ -15,14 +15,18 @@ class PermissionService
     {
         $base = Permission::filter($filters);
 
-        return ['total' => (clone $base)->count()];
+        return [
+            'total_groups' => (clone $base)->whereNull('parent_id')->count(),
+            'total_permissions' => (clone $base)->count(),
+        ];
     }
 
     public function index(array $filters, int $limit)
     {
-        return Permission::with(['parent', 'roles:id,name'])
-            ->filter($filters)
+        return Permission::query()
             ->treeOrder()
+            ->filter($filters)
+            ->with(['parent', 'roles:id,name'])
             ->paginate($limit);
     }
 

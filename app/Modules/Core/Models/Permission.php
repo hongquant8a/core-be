@@ -54,18 +54,24 @@ class Permission extends SpatiePermission
             $q->whereDate('created_at', '>=', $filters['from_date']);
         })->when(isset($filters['to_date']) && $filters['to_date'], function ($q, $v) use ($filters) {
             $q->whereDate('created_at', '<=', $filters['to_date']);
-        })->when($filters['sort_by'] ?? 'sort_order', function ($q, $sortBy) use ($filters) {
+        })->when($filters['sort_by'] ?? null, function ($q, $sortBy) use ($filters) {
             $allowed = ['id', 'name', 'guard_name', 'description', 'sort_order', 'parent_id', 'created_at', 'updated_at'];
-            $column = in_array($sortBy, $allowed) ? $sortBy : 'sort_order';
+            $column = in_array($sortBy, $allowed) ? $sortBy : 'id';
             $q->orderBy($column, $filters['sort_order'] ?? 'asc');
         });
 
         return $query;
     }
 
-    /** Sắp xếp theo cây: parent trước, rồi sort_order. */
+    /** Sắp xếp theo cây: Cha đứng trước, các con theo sau. */
     public function scopeTreeOrder($query)
     {
-        return $query->orderByRaw('COALESCE(parent_id, 0), sort_order, id');
+        // Nhóm theo ID (nếu là cha) hoặc parent_id (nếu là con).
+        // Cha đứng trước (parent_id is null), con theo sau.
+        // Trong nhóm con thì theo sort_order.
+        return $query->orderByRaw('COALESCE(parent_id, id) ASC')
+            ->orderByRaw('parent_id IS NOT NULL ASC')
+            ->orderBy('sort_order', 'asc')
+            ->orderBy('id', 'asc');
     }
 }
