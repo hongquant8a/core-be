@@ -28,6 +28,13 @@ class LookupImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFa
         ]);
     }
 
+    public function prepareForValidation($data, $index)
+    {
+        $data['name'] = isset($data['name']) ? (string) $data['name'] : null;
+
+        return $data;
+    }
+
     public function rules(): array
     {
         return [

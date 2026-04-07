@@ -33,6 +33,14 @@ class ItemsImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFai
         ]);
     }
 
+    public function prepareForValidation($data, $index)
+    {
+        $data['name'] = isset($data['name']) ? (string) $data['name'] : null;
+        $data['description'] = isset($data['description']) ? (string) $data['description'] : null;
+
+        return $data;
+    }
+
     public function rules(): array
     {
         return [

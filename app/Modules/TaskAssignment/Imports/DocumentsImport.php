@@ -35,6 +35,14 @@ class DocumentsImport implements ToModel, WithHeadingRow, WithValidation, SkipsO
         ]);
     }
 
+    public function prepareForValidation($data, $index)
+    {
+        $data['name'] = isset($data['name']) ? (string) $data['name'] : null;
+        $data['summary'] = isset($data['summary']) ? (string) $data['summary'] : null;
+
+        return $data;
+    }
+
     public function rules(): array
     {
         return [

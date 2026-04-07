@@ -21,6 +21,14 @@ class RolesImport implements ToModel, WithHeadingRow, WithValidation
         ]);
     }
 
+    public function prepareForValidation($data, $index)
+    {
+        $data['name'] = isset($data['name']) ? (string) $data['name'] : null;
+        $data['guard_name'] = isset($data['guard_name']) ? (string) $data['guard_name'] : null;
+
+        return $data;
+    }
+
     public function rules(): array
     {
         return [

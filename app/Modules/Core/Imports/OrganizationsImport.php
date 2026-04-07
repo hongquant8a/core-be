@@ -29,6 +29,14 @@ class OrganizationsImport implements ToModel, WithHeadingRow, WithValidation
         ]);
     }
 
+    public function prepareForValidation($data, $index)
+    {
+        $data['name'] = isset($data['name']) ? (string) $data['name'] : null;
+        $data['status'] = isset($data['status']) ? (string) $data['status'] : null;
+
+        return $data;
+    }
+
     public function rules(): array
     {
         return [

@@ -27,6 +27,14 @@ class DepartmentImport implements ToModel, WithHeadingRow, WithValidation, Skips
         ]);
     }
 
+    public function prepareForValidation($data, $index)
+    {
+        $data['code'] = isset($data['code']) ? (string) $data['code'] : null;
+        $data['name'] = isset($data['name']) ? (string) $data['name'] : null;
+
+        return $data;
+    }
+
     public function rules(): array
     {
         return [
