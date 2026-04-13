@@ -12,10 +12,15 @@ class ItemsExport implements FromCollection, WithHeadings
 
     public function collection()
     {
-        return TaskAssignmentItem::with(['document', 'itemType', 'departments', 'creator', 'editor'])
+        $deptIds = collect();
+        $items = TaskAssignmentItem::with(['document', 'itemType', 'users', 'creator', 'editor'])
             ->filter($this->filters)
-            ->get()
-            ->map(fn ($item) => [
+            ->get();
+
+        $deptIds = $items->flatMap(fn ($item) => $item->users->pluck('pivot.department_id'))->unique();
+        $depts = \App\Modules\TaskAssignment\Models\TaskAssignmentDepartment::whereIn('id', $deptIds)->pluck('name', 'id');
+
+        return $items->map(fn ($item) => [
                 'id' => $item->id,
                 'name' => $item->name,
                 'description' => $item->description,
@@ -28,7 +33,7 @@ class ItemsExport implements FromCollection, WithHeadings
                 'completion_percent' => $item->completion_percent,
                 'priority' => $item->priority,
                 'completed_at' => $item->completed_at?->format('H:i:s d/m/Y'),
-                'departments' => $item->departments->pluck('name')->join(', '),
+                'departments' => $item->users->pluck('pivot.department_id')->unique()->map(fn ($id) => $depts->get($id))->filter()->join(', '),
                 'created_by' => $item->creator?->name ?? 'N/A',
                 'updated_by' => $item->editor?->name ?? 'N/A',
                 'created_at' => $item->created_at?->format('H:i:s d/m/Y'),

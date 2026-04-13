@@ -23,12 +23,10 @@ class StoreItemRequest extends BaseRequest
             'processing_status' => ['nullable', TaskProgressStatusEnum::rule()],
             'completion_percent' => 'nullable|integer|min:0|max:100',
             'priority' => ['nullable', TaskPriorityEnum::rule()],
-            'departments' => 'nullable|array',
-            'departments.*.department_id' => 'required|integer|exists:task_assignment_departments,id',
-            'departments.*.role' => ['required', TaskAssignmentRoleEnum::rule()],
             'users' => 'nullable|array',
             'users.*.user_id' => 'required|integer|exists:users,id',
             'users.*.department_id' => 'required|integer|exists:task_assignment_departments,id',
+            'users.*.department_role' => ['required', TaskAssignmentRoleEnum::rule()],
             'users.*.assignment_role' => ['required', TaskUserAssignmentRoleEnum::rule()],
         ];
     }
@@ -76,21 +74,9 @@ class StoreItemRequest extends BaseRequest
                 'description' => 'Mức độ ưu tiên công việc.',
                 'example' => TaskPriorityEnum::Medium->value,
             ],
-            'departments' => [
-                'description' => 'Danh sách phòng ban được giao việc.',
-                'example' => [['department_id' => 1, 'role' => TaskAssignmentRoleEnum::Main->value]],
-            ],
-            'departments.*.department_id' => [
-                'description' => 'ID phòng ban.',
-                'example' => 1,
-            ],
-            'departments.*.role' => [
-                'description' => 'Vai trò của phòng ban trong công việc.',
-                'example' => TaskAssignmentRoleEnum::Main->value,
-            ],
             'users' => [
-                'description' => 'Danh sách người dùng được phân công.',
-                'example' => [['user_id' => 1, 'department_id' => 1, 'assignment_role' => TaskUserAssignmentRoleEnum::Main->value]],
+                'description' => 'Danh sách người thực hiện (Phòng ban → User → Vai trò).',
+                'example' => [['user_id' => 1, 'department_id' => 1, 'department_role' => TaskAssignmentRoleEnum::Main->value, 'assignment_role' => TaskUserAssignmentRoleEnum::Main->value]],
             ],
             'users.*.user_id' => [
                 'description' => 'ID người dùng.',
@@ -100,8 +86,12 @@ class StoreItemRequest extends BaseRequest
                 'description' => 'ID phòng ban của người dùng.',
                 'example' => 1,
             ],
+            'users.*.department_role' => [
+                'description' => 'Vai trò của phòng ban trong công việc (chủ trì/phối hợp).',
+                'example' => TaskAssignmentRoleEnum::Main->value,
+            ],
             'users.*.assignment_role' => [
-                'description' => 'Vai trò của người dùng trong công việc.',
+                'description' => 'Vai trò của người dùng trong công việc (chủ trì/hỗ trợ).',
                 'example' => TaskUserAssignmentRoleEnum::Main->value,
             ],
         ];

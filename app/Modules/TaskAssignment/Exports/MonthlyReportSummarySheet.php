@@ -107,7 +107,7 @@ class MonthlyReportSummarySheet implements FromArray, WithTitle, WithStyles, Sho
         $grandTotal = array_fill_keys(array_merge(['total'], $typeIds, $this->flatStatusTypeKeys($typeIds)), 0);
 
         foreach ($departments as $dept) {
-            $items = TaskAssignmentItem::whereHas('departments', fn ($q) => $q->where('department_id', $dept->id))
+            $items = TaskAssignmentItem::whereHas('users', fn ($q) => $q->where('task_assignment_item_user.department_id', $dept->id))
                 ->where('created_at', '<=', $monthEnd)
                 ->get();
 

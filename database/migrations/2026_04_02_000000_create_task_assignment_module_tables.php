@@ -123,20 +123,11 @@ return new class extends Migration
             $table->index('organization_id');
         });
 
-        Schema::create('task_assignment_item_department', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('task_assignment_item_id')->constrained('task_assignment_items')->cascadeOnDelete();
-            $table->foreignId('department_id')->constrained('task_assignment_departments')->cascadeOnDelete();
-            $table->string('role')->default('main');
-            $table->timestamps();
-
-            $table->unique(['task_assignment_item_id', 'department_id'], 'ta_item_dept_item_id_dept_id_unique');
-        });
-
         Schema::create('task_assignment_item_user', function (Blueprint $table) {
             $table->id();
             $table->foreignId('task_assignment_item_id')->constrained('task_assignment_items')->cascadeOnDelete();
             $table->foreignId('department_id')->constrained('task_assignment_departments')->cascadeOnDelete();
+            $table->string('department_role')->default('main');
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->string('assignment_role')->default('main');
             $table->string('assignment_status')->default('assigned');
@@ -209,7 +200,7 @@ return new class extends Migration
         Schema::dropIfExists('task_assignment_item_report_attachments');
         Schema::dropIfExists('task_assignment_item_reports');
         Schema::dropIfExists('task_assignment_item_user');
-        Schema::dropIfExists('task_assignment_item_department');
+
         Schema::dropIfExists('task_assignment_items');
         Schema::dropIfExists('task_assignment_document_attachments');
         Schema::dropIfExists('task_assignment_documents');

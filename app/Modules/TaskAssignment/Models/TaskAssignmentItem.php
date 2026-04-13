@@ -61,18 +61,18 @@ class TaskAssignmentItem extends Model implements HasMedia
         return $this->belongsTo(TaskAssignmentItemType::class, 'task_assignment_item_type_id');
     }
 
-    public function departments()
-    {
-        return $this->belongsToMany(TaskAssignmentDepartment::class, 'task_assignment_item_department', 'task_assignment_item_id', 'department_id')
-            ->withPivot('role')
-            ->withTimestamps();
-    }
-
     public function users()
     {
         return $this->belongsToMany(User::class, 'task_assignment_item_user', 'task_assignment_item_id', 'user_id')
-            ->withPivot('department_id', 'assignment_role', 'assignment_status', 'assigned_at', 'accepted_at', 'completed_at', 'note')
+            ->withPivot('department_id', 'department_role', 'assignment_role', 'assignment_status', 'assigned_at', 'accepted_at', 'completed_at', 'note')
             ->withTimestamps();
+    }
+
+    public function departments()
+    {
+        return $this->belongsToMany(TaskAssignmentDepartment::class, 'task_assignment_item_user', 'task_assignment_item_id', 'department_id')
+            ->withPivot('department_role')
+            ->distinct();
     }
 
     public function reports()
@@ -108,7 +108,7 @@ class TaskAssignmentItem extends Model implements HasMedia
             ->when($filters['deadline_type'] ?? null, fn ($q, $type) => $q->where('deadline_type', $type))
             ->when($filters['task_assignment_document_id'] ?? null, fn ($q, $docId) => $q->where('task_assignment_document_id', $docId))
             ->when($filters['task_assignment_item_type_id'] ?? null, fn ($q, $typeId) => $q->where('task_assignment_item_type_id', $typeId))
-            ->when($filters['department_id'] ?? null, fn ($q, $deptId) => $q->whereHas('departments', fn ($q2) => $q2->where('task_assignment_departments.id', $deptId)))
+            ->when($filters['department_id'] ?? null, fn ($q, $deptId) => $q->whereHas('users', fn ($q2) => $q2->where('task_assignment_item_user.department_id', $deptId)))
             ->when($filters['user_id'] ?? null, fn ($q, $userId) => $q->whereHas('users', fn ($q2) => $q2->where('users.id', $userId)))
             ->when($filters['assignment_role'] ?? null, fn ($q, $role) => $q->whereHas('users', fn ($q2) => $q2->where('task_assignment_item_user.assignment_role', $role)))
             ->when($filters['assignment_status'] ?? null, fn ($q, $status) => $q->whereHas('users', fn ($q2) => $q2->where('task_assignment_item_user.assignment_status', $status)))

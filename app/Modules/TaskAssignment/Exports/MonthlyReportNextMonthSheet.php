@@ -32,7 +32,7 @@ class MonthlyReportNextMonthSheet implements FromArray, WithTitle, WithStyles, S
         $nextStart = Carbon::parse($this->nextMonth . '-01')->startOfMonth();
         $nextEnd = $nextStart->copy()->endOfMonth();
 
-        $items = TaskAssignmentItem::with(['document', 'itemType', 'departments'])
+        $items = TaskAssignmentItem::with(['document', 'itemType', 'users'])
             ->where(function ($q) use ($nextStart, $nextEnd) {
                 $q->whereBetween('start_at', [$nextStart, $nextEnd])
                     ->orWhereBetween('end_at', [$nextStart, $nextEnd])
@@ -71,7 +71,8 @@ class MonthlyReportNextMonthSheet implements FromArray, WithTitle, WithStyles, S
         ];
 
         foreach ($items as $i => $item) {
-            $deptNames = $item->departments->pluck('name')->join(', ');
+            $deptIds = $item->users->pluck('pivot.department_id')->unique();
+            $deptNames = TaskAssignmentDepartment::whereIn('id', $deptIds)->pluck('name')->join(', ');
             $isCarryOver = $item->created_at < $nextStart;
 
             $rows[] = [

@@ -41,7 +41,7 @@ class TaskAssignmentItemService
 
     public function index(array $filters, int $limit)
     {
-        return TaskAssignmentItem::with(['document', 'itemType', 'departments', 'users', 'creator.media', 'editor.media'])
+        return TaskAssignmentItem::with(['document', 'itemType', 'users', 'creator.media', 'editor.media'])
             ->withCount('reports')
             ->filter($filters)
             ->paginate($limit);
@@ -49,7 +49,7 @@ class TaskAssignmentItemService
 
     public function show(TaskAssignmentItem $item): TaskAssignmentItem
     {
-        return $item->load(['document', 'itemType', 'departments', 'users', 'reports', 'attachments.media', 'creator.media', 'editor.media']);
+        return $item->load(['document', 'itemType', 'users', 'reports', 'attachments.media', 'creator.media', 'editor.media']);
     }
 
     public function store(array $validated, array $files = []): TaskAssignmentItem
@@ -58,15 +58,10 @@ class TaskAssignmentItemService
 
         try {
             return DB::transaction(function () use ($validated, $files, &$storedFiles) {
-                $departments = $validated['departments'] ?? [];
                 $users = $validated['users'] ?? [];
 
-                $data = collect($validated)->except(['departments', 'users', 'attachments', 'remove_attachment_ids'])->all();
+                $data = collect($validated)->except(['users', 'attachments', 'remove_attachment_ids'])->all();
                 $item = TaskAssignmentItem::create($data);
-
-                if (! empty($departments)) {
-                    $this->syncDepartments($item, $departments);
-                }
 
                 if (! empty($users)) {
                     $this->syncUsers($item, $users);
@@ -74,7 +69,7 @@ class TaskAssignmentItemService
 
                 $this->uploadAttachments($item, $files, $storedFiles);
 
-                return $item->load(['document', 'itemType', 'departments', 'users', 'attachments.media', 'creator.media', 'editor.media']);
+                return $item->load(['document', 'itemType', 'users', 'attachments.media', 'creator.media', 'editor.media']);
             });
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);
@@ -88,15 +83,10 @@ class TaskAssignmentItemService
 
         try {
             return DB::transaction(function () use ($item, $validated, $files, $removeAttachmentIds, &$storedFiles) {
-                $departments = $validated['departments'] ?? null;
                 $users = $validated['users'] ?? null;
 
-                $data = collect($validated)->except(['departments', 'users', 'attachments', 'remove_attachment_ids'])->all();
+                $data = collect($validated)->except(['users', 'attachments', 'remove_attachment_ids'])->all();
                 $item->update($data);
-
-                if ($departments !== null) {
-                    $this->syncDepartments($item, $departments);
-                }
 
                 if ($users !== null) {
                     $this->syncUsers($item, $users);
@@ -108,7 +98,7 @@ class TaskAssignmentItemService
 
                 $this->uploadAttachments($item, $files, $storedFiles);
 
-                return $item->load(['document', 'itemType', 'departments', 'users', 'attachments.media', 'creator.media', 'editor.media']);
+                return $item->load(['document', 'itemType', 'users', 'attachments.media', 'creator.media', 'editor.media']);
             });
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);
@@ -151,7 +141,7 @@ class TaskAssignmentItemService
 
         $item->update($data);
 
-        return $item->load(['document', 'itemType', 'departments', 'users', 'creator.media', 'editor.media']);
+        return $item->load(['document', 'itemType', 'users', 'creator.media', 'editor.media']);
     }
 
     public function export(array $filters): BinaryFileResponse
@@ -195,7 +185,7 @@ class TaskAssignmentItemService
         $item->completion_percent = $percent;
         $item->save();
 
-        return $item->load(['document', 'itemType', 'departments', 'users', 'creator.media', 'editor.media']);
+        return $item->load(['document', 'itemType', 'users', 'creator.media', 'editor.media']);
     }
 
     private function buildStatusUpdateData(string $status): array
@@ -249,21 +239,13 @@ class TaskAssignmentItemService
         }
     }
 
-    private function syncDepartments(TaskAssignmentItem $item, array $departments): void
-    {
-        $syncData = [];
-        foreach ($departments as $dept) {
-            $syncData[$dept['department_id']] = ['role' => $dept['role']];
-        }
-        $item->departments()->sync($syncData);
-    }
-
     private function syncUsers(TaskAssignmentItem $item, array $users): void
     {
         $syncData = [];
         foreach ($users as $user) {
             $syncData[$user['user_id']] = [
                 'department_id' => $user['department_id'],
+                'department_role' => $user['department_role'],
                 'assignment_role' => $user['assignment_role'],
                 'assignment_status' => 'assigned',
                 'assigned_at' => now(),
@@ -294,7 +276,7 @@ class TaskAssignmentItemService
 
         return $itemTypes->map(function ($type) use ($filters, $done, $cancelled, $hasDeadline) {
             $base = TaskAssignmentItem::where('task_assignment_item_type_id', $type->id)
-                ->when($filters['department_id'] ?? null, fn ($q, $v) => $q->whereHas('departments', fn ($dq) => $dq->where('department_id', $v)))
+                ->when($filters['department_id'] ?? null, fn ($q, $v) => $q->whereHas('users', fn ($uq) => $uq->where('task_assignment_item_user.department_id', $v)))
                 ->when($filters['priority'] ?? null, fn ($q, $v) => $q->where('priority', $v))
                 ->when($filters['from_date'] ?? null, fn ($q, $v) => $q->where('created_at', '>=', $v))
                 ->when($filters['to_date'] ?? null, fn ($q, $v) => $q->where('created_at', '<=', Carbon::parse($v)->endOfDay()));
@@ -328,7 +310,7 @@ class TaskAssignmentItemService
         $hasDeadline = TaskDeadlineTypeEnum::HasDeadline->value;
 
         return $departments->map(function ($dept) use ($filters, $done, $cancelled, $hasDeadline) {
-            $base = TaskAssignmentItem::whereHas('departments', fn ($q) => $q->where('department_id', $dept->id))
+            $base = TaskAssignmentItem::whereHas('users', fn ($q) => $q->where('task_assignment_item_user.department_id', $dept->id))
                 ->when($filters['processing_status'] ?? null, fn ($q, $v) => $q->where('processing_status', $v))
                 ->when($filters['priority'] ?? null, fn ($q, $v) => $q->where('priority', $v))
                 ->when($filters['deadline_type'] ?? null, fn ($q, $v) => $q->where('deadline_type', $v))
@@ -342,7 +324,7 @@ class TaskAssignmentItemService
             $toDate = $filters['to_date'] ?? null;
             $toDateEnd = $toDate ? Carbon::parse($toDate)->endOfDay() : null;
 
-            $deptItemBase = fn () => TaskAssignmentItem::whereHas('departments', fn ($q) => $q->where('department_id', $dept->id));
+            $deptItemBase = fn () => TaskAssignmentItem::whereHas('users', fn ($q) => $q->where('task_assignment_item_user.department_id', $dept->id));
 
             return [
                 'department_id' => $dept->id,
@@ -447,7 +429,7 @@ class TaskAssignmentItemService
         $hasDeadline = TaskDeadlineTypeEnum::HasDeadline->value;
 
         $baseQuery = TaskAssignmentItem::query()
-            ->when($filters['department_id'] ?? null, fn ($q, $v) => $q->whereHas('departments', fn ($dq) => $dq->where('department_id', $v)))
+            ->when($filters['department_id'] ?? null, fn ($q, $v) => $q->whereHas('users', fn ($uq) => $uq->where('task_assignment_item_user.department_id', $v)))
             ->when($filters['user_id'] ?? null, fn ($q, $v) => $q->whereHas('users', fn ($uq) => $uq->where('user_id', $v)));
 
         $results = [];
@@ -503,9 +485,9 @@ class TaskAssignmentItemService
             ->join('task_assignment_documents as td', 'td.id', '=', 'ti.task_assignment_document_id')
             ->when($filters['department_id'] ?? null, fn ($q, $v) => $q->whereExists(function ($sub) use ($v) {
                 $sub->select(DB::raw(1))
-                    ->from('task_assignment_item_department')
-                    ->whereColumn('task_assignment_item_department.task_assignment_item_id', 'ti.id')
-                    ->where('task_assignment_item_department.department_id', $v);
+                    ->from('task_assignment_item_user')
+                    ->whereColumn('task_assignment_item_user.task_assignment_item_id', 'ti.id')
+                    ->where('task_assignment_item_user.department_id', $v);
             }))
             ->when($filters['task_assignment_type_id'] ?? null, fn ($q, $v) => $q->where('td.task_assignment_type_id', $v))
             ->when($filters['from_date'] ?? null, fn ($q, $v) => $q->where('td.issue_date', '>=', $v))
@@ -536,12 +518,12 @@ class TaskAssignmentItemService
     {
         $filters = $this->applyDepartmentRestriction($filters);
 
-        return TaskAssignmentItem::with(['document', 'itemType', 'departments', 'users'])
+        return TaskAssignmentItem::with(['document', 'itemType', 'users'])
             ->withCount('reports')
             ->where('deadline_type', TaskDeadlineTypeEnum::HasDeadline->value)
             ->where('end_at', '<', now())
             ->whereNotIn('processing_status', [TaskProgressStatusEnum::Done->value, TaskProgressStatusEnum::Cancelled->value])
-            ->when($filters['department_id'] ?? null, fn ($q, $v) => $q->whereHas('departments', fn ($dq) => $dq->where('department_id', $v)))
+            ->when($filters['department_id'] ?? null, fn ($q, $v) => $q->whereHas('users', fn ($uq) => $uq->where('task_assignment_item_user.department_id', $v)))
             ->when($filters['user_id'] ?? null, fn ($q, $v) => $q->whereHas('users', fn ($uq) => $uq->where('user_id', $v)))
             ->when($filters['priority'] ?? null, fn ($q, $v) => $q->where('priority', $v))
             ->orderBy($filters['sort_by'] ?? 'end_at', $filters['sort_order'] ?? 'asc')
@@ -553,13 +535,13 @@ class TaskAssignmentItemService
         $filters = $this->applyDepartmentRestriction($filters);
         $days = (int) ($filters['days'] ?? 3);
 
-        return TaskAssignmentItem::with(['document', 'itemType', 'departments', 'users'])
+        return TaskAssignmentItem::with(['document', 'itemType', 'users'])
             ->withCount('reports')
             ->where('deadline_type', TaskDeadlineTypeEnum::HasDeadline->value)
             ->where('end_at', '>=', now())
             ->where('end_at', '<=', now()->addDays($days))
             ->whereNotIn('processing_status', [TaskProgressStatusEnum::Done->value, TaskProgressStatusEnum::Cancelled->value])
-            ->when($filters['department_id'] ?? null, fn ($q, $v) => $q->whereHas('departments', fn ($dq) => $dq->where('department_id', $v)))
+            ->when($filters['department_id'] ?? null, fn ($q, $v) => $q->whereHas('users', fn ($uq) => $uq->where('task_assignment_item_user.department_id', $v)))
             ->when($filters['user_id'] ?? null, fn ($q, $v) => $q->whereHas('users', fn ($uq) => $uq->where('user_id', $v)))
             ->when($filters['priority'] ?? null, fn ($q, $v) => $q->where('priority', $v))
             ->orderBy('end_at', 'asc')

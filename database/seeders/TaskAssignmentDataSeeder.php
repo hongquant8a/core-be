@@ -209,29 +209,26 @@ class TaskAssignmentDataSeeder extends Seeder
                     'created_at' => $itemCreatedAt, 'updated_at' => $itemUpdatedAt,
                 ]);
 
-                // Gán phòng ban
-                foreach ($itemData['departments'] as $deptCode => $role) {
-                    if (isset($this->deptIds[$deptCode])) {
-                        $item->departments()->attach($this->deptIds[$deptCode], ['role' => $role]);
+                // Gán user theo phòng ban
+                foreach ($itemData['departments'] as $deptCode => $deptRole) {
+                    $deptId = $this->deptIds[$deptCode] ?? null;
+                    if ($deptId && isset($this->usersByDept[$deptId])) {
+                        $deptUsers = $this->usersByDept[$deptId]->values();
+                        foreach ($deptUsers as $idx => $user) {
+                            $item->users()->attach($user->id, [
+                                'department_id' => $deptId,
+                                'department_role' => $deptRole,
+                                'assignment_role' => $idx === 0 ? 'main' : 'support',
+                                'assignment_status' => $this->mapAssignmentStatus($itemData['processing_status']),
+                                'assigned_at' => $itemData['start_at'],
+                                'accepted_at' => in_array($itemData['processing_status'], ['in_progress', 'done']) ? $itemData['start_at'] : null,
+                                'completed_at' => $itemData['processing_status'] === 'done' ? $itemData['completed_at'] : null,
+                            ]);
+                        }
                     }
                 }
-
-                // Gán user
                 $mainDeptCode = array_key_first($itemData['departments']);
                 $mainDeptId = $this->deptIds[$mainDeptCode] ?? null;
-                if ($mainDeptId && isset($this->usersByDept[$mainDeptId])) {
-                    $deptUsers = $this->usersByDept[$mainDeptId]->values();
-                    foreach ($deptUsers as $idx => $user) {
-                        $item->users()->attach($user->id, [
-                            'department_id' => $mainDeptId,
-                            'assignment_role' => $idx === 0 ? 'main' : 'support',
-                            'assignment_status' => $this->mapAssignmentStatus($itemData['processing_status']),
-                            'assigned_at' => $itemData['start_at'],
-                            'accepted_at' => in_array($itemData['processing_status'], ['in_progress', 'done']) ? $itemData['start_at'] : null,
-                            'completed_at' => $itemData['processing_status'] === 'done' ? $itemData['completed_at'] : null,
-                        ]);
-                    }
-                }
 
                 // Báo cáo cho việc hoàn thành
                 if ($itemData['processing_status'] === 'done' && $mainDeptId && isset($this->usersByDept[$mainDeptId])) {

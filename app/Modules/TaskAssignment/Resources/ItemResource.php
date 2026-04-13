@@ -24,15 +24,20 @@ class ItemResource extends JsonResource
             'completion_percent' => $this->completion_percent,
             'priority' => $this->priority,
             'completed_at' => $this->completed_at?->format('H:i:s d/m/Y'),
-            'departments' => $this->whenLoaded('departments', function () {
-                return $this->departments->map(function ($dept) {
+            'departments' => $this->whenLoaded('users', function () {
+                $deptIds = $this->users->pluck('pivot.department_id')->unique();
+                $depts = \App\Modules\TaskAssignment\Models\TaskAssignmentDepartment::whereIn('id', $deptIds)->get()->keyBy('id');
+
+                return $this->users->groupBy('pivot.department_id')->map(function ($group, $deptId) use ($depts) {
+                    $dept = $depts->get($deptId);
+
                     return [
-                        'id' => $dept->id,
-                        'code' => $dept->code,
-                        'name' => $dept->name,
-                        'role' => $dept->pivot->role,
+                        'id' => $dept?->id,
+                        'code' => $dept?->code,
+                        'name' => $dept?->name,
+                        'role' => $group->first()->pivot->department_role,
                     ];
-                });
+                })->values();
             }),
             'users' => $this->whenLoaded('users', function () {
                 return $this->users->map(function ($user) {
@@ -41,6 +46,7 @@ class ItemResource extends JsonResource
                         'name' => $user->name,
                         'email' => $user->email,
                         'department_id' => $user->pivot->department_id,
+                        'department_role' => $user->pivot->department_role,
                         'assignment_role' => $user->pivot->assignment_role,
                         'assignment_status' => $user->pivot->assignment_status,
                         'assigned_at' => $user->pivot->assigned_at ? \Carbon\Carbon::parse($user->pivot->assigned_at)->format('H:i:s d/m/Y') : null,

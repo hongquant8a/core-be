@@ -84,6 +84,8 @@ class User extends Authenticatable implements HasMedia
             });
         })->when($filters['status'] ?? null, function ($query, $status) {
             $query->where('status', $status);
+        })->when($filters['task_assignment_department_id'] ?? null, function ($query, $deptId) {
+            $query->where('task_assignment_department_id', $deptId);
         })->when($filters['sort_by'] ?? 'created_at', function ($query, $sortBy) use ($filters) {
             $allowed = ['id', 'name', 'email', 'user_name', 'created_at'];
             $column = in_array($sortBy, $allowed) ? $sortBy : 'created_at';

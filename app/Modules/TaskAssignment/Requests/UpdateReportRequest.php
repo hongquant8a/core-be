@@ -11,7 +11,7 @@ class UpdateReportRequest extends BaseRequest
             'report_document_number' => 'sometimes|nullable|string|max:255',
             'report_document_excerpt' => 'sometimes|nullable|string|max:65535',
             'report_document_content' => 'sometimes|nullable|string',
-            'files' => 'nullable|array|max:10',
+            'attachments' => 'nullable|array|max:10',
             'files.*' => 'file|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx|max:20480',
             'remove_attachment_ids' => 'nullable|array',
             'remove_attachment_ids.*' => 'integer',
@@ -37,7 +37,7 @@ class UpdateReportRequest extends BaseRequest
                 'description' => 'Nội dung chi tiết báo cáo.',
                 'example' => 'Nội dung báo cáo đầy đủ...',
             ],
-            'files' => [
+            'attachments' => [
                 'description' => 'Danh sách tệp đính kèm mới (tối đa 10 tệp, mỗi tệp tối đa 20MB).',
                 'example' => [],
             ],

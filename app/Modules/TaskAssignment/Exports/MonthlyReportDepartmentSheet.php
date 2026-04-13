@@ -36,7 +36,7 @@ class MonthlyReportDepartmentSheet implements FromArray, WithTitle, WithStyles, 
         $monthEnd = $monthStart->copy()->endOfMonth();
 
         $items = TaskAssignmentItem::with(['document', 'itemType', 'users', 'reports'])
-            ->whereHas('departments', fn ($q) => $q->where('department_id', $this->department->id))
+            ->whereHas('users', fn ($q) => $q->where('task_assignment_item_user.department_id', $this->department->id))
             ->where('created_at', '<=', $monthEnd)
             ->orderByRaw("FIELD(processing_status, 'in_progress', 'todo', 'done', 'overdue', 'paused', 'cancelled')")
             ->orderBy('end_at')
