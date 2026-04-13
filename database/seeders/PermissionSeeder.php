@@ -77,7 +77,7 @@ class PermissionSeeder extends Seeder
         'task-assignment-items' => [
             'stats', 'index', 'show', 'store', 'update', 'destroy',
             'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
-            'updateProgress',
+            'updateProgress', 'confirmDone',
             'statsByDepartment', 'statsByUser', 'statsByTime', 'overdue', 'upcomingDeadline',
             'statsByItemType', 'statsByDocument', 'exportMonthlyReport',
         ],

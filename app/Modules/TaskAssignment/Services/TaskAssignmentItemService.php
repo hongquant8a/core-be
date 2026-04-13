@@ -30,6 +30,7 @@ class TaskAssignmentItemService
             'total' => (clone $base)->count(),
             'todo' => (clone $base)->where('processing_status', TaskProgressStatusEnum::Todo->value)->count(),
             'in_progress' => (clone $base)->where('processing_status', TaskProgressStatusEnum::InProgress->value)->count(),
+            'reported' => (clone $base)->where('processing_status', TaskProgressStatusEnum::Reported->value)->count(),
             'done' => (clone $base)->where('processing_status', $done)->count(),
             'overdue' => (clone $base)->where('deadline_type', TaskDeadlineTypeEnum::HasDeadline->value)
                 ->where('end_at', '<', now())
@@ -41,7 +42,7 @@ class TaskAssignmentItemService
 
     public function index(array $filters, int $limit)
     {
-        return TaskAssignmentItem::with(['document', 'itemType', 'users', 'creator.media', 'editor.media'])
+        return TaskAssignmentItem::with(['document', 'itemType', 'users', 'assigner', 'confirmer', 'creator.media', 'editor.media'])
             ->withCount('reports')
             ->filter($filters)
             ->paginate($limit);
@@ -49,7 +50,7 @@ class TaskAssignmentItemService
 
     public function show(TaskAssignmentItem $item): TaskAssignmentItem
     {
-        return $item->load(['document', 'itemType', 'users', 'reports', 'attachments.media', 'creator.media', 'editor.media']);
+        return $item->load(['document', 'itemType', 'users', 'reports', 'attachments.media', 'assigner', 'confirmer', 'creator.media', 'editor.media']);
     }
 
     public function store(array $validated, array $files = []): TaskAssignmentItem
@@ -186,6 +187,19 @@ class TaskAssignmentItemService
         $item->save();
 
         return $item->load(['document', 'itemType', 'users', 'creator.media', 'editor.media']);
+    }
+
+    public function confirmDone(TaskAssignmentItem $item): TaskAssignmentItem
+    {
+        $item->update([
+            'processing_status' => TaskProgressStatusEnum::Done->value,
+            'completion_percent' => 100,
+            'completed_at' => $item->completed_at ?? now(),
+            'confirmed_by' => auth()->id(),
+            'confirmed_at' => now(),
+        ]);
+
+        return $item->load(['document', 'itemType', 'users', 'assigner', 'confirmer', 'creator.media', 'editor.media']);
     }
 
     private function buildStatusUpdateData(string $status): array

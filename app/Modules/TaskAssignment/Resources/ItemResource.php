@@ -72,6 +72,8 @@ class ItemResource extends JsonResource
             }),
             'reports_count' => $this->whenCounted('reports'),
             'assigned_by' => $this->whenLoaded('assigner', fn () => $this->formatUserSummary($this->assigner), null),
+            'confirmed_by' => $this->whenLoaded('confirmer', fn () => $this->formatUserSummary($this->confirmer), null),
+            'confirmed_at' => $this->confirmed_at?->format('H:i:s d/m/Y'),
             'created_by' => $this->whenLoaded('creator', fn () => $this->formatUserSummary($this->creator), null),
             'updated_by' => $this->whenLoaded('editor', fn () => $this->formatUserSummary($this->editor), null),
             'created_at' => $this->created_at?->format('H:i:s d/m/Y'),

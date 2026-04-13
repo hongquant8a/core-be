@@ -4,6 +4,7 @@ namespace App\Modules\TaskAssignment\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
+use App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Modules\TaskAssignment\Requests\BulkDestroyItemRequest;
 use App\Modules\TaskAssignment\Requests\BulkUpdateStatusItemRequest;
@@ -209,6 +210,31 @@ class TaskAssignmentItemController extends Controller
         $item = $this->itemService->changeStatus($taskAssignmentItem, $request->processing_status);
 
         return $this->successResource(new ItemResource($item), 'Đổi trạng thái thành công!');
+    }
+
+    /**
+     * Xác nhận hoàn thành công việc
+     *
+     * Chỉ áp dụng cho công việc có trạng thái "reported" (đã báo cáo).
+     * Người giao việc review báo cáo xong bấm xác nhận → chuyển sang "done".
+     *
+     * @urlParam taskAssignmentItem integer required ID công việc. Example: 1
+     *
+     * @apiResource App\Modules\TaskAssignment\Resources\ItemResource
+     *
+     * @apiResourceModel App\Modules\TaskAssignment\Models\TaskAssignmentItem
+     *
+     * @apiResourceAdditional success=true message="Xác nhận hoàn thành thành công!"
+     */
+    public function confirmDone(TaskAssignmentItem $taskAssignmentItem)
+    {
+        if ($taskAssignmentItem->processing_status !== TaskProgressStatusEnum::Reported->value) {
+            return $this->error("Chỉ có thể xác nhận công việc có trạng thái 'Đã báo cáo'.", 422);
+        }
+
+        $item = $this->itemService->confirmDone($taskAssignmentItem);
+
+        return $this->successResource(new ItemResource($item), 'Xác nhận hoàn thành thành công!');
     }
 
     /**

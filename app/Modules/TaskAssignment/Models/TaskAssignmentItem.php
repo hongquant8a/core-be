@@ -34,6 +34,8 @@ class TaskAssignmentItem extends Model implements HasMedia
         'priority',
         'completed_at',
         'assigned_by',
+        'confirmed_by',
+        'confirmed_at',
         'organization_id',
         'created_by',
         'updated_by',
@@ -43,6 +45,7 @@ class TaskAssignmentItem extends Model implements HasMedia
         'start_at'           => 'datetime',
         'end_at'             => 'datetime',
         'completed_at'       => 'datetime',
+        'confirmed_at'       => 'datetime',
         'completion_percent' => 'integer',
     ];
 
@@ -84,6 +87,11 @@ class TaskAssignmentItem extends Model implements HasMedia
     public function assigner()
     {
         return $this->belongsTo(User::class, 'assigned_by');
+    }
+
+    public function confirmer()
+    {
+        return $this->belongsTo(User::class, 'confirmed_by');
     }
 
     public function creator()
