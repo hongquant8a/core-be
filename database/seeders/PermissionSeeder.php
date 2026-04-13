@@ -88,6 +88,14 @@ class PermissionSeeder extends Seeder
         'settings' => [
             'index', 'show', 'update',
         ],
+        // Core - Dashboard
+        'dashboard' => [
+            'index',
+        ],
+        // TaskAssignment - Công việc của tôi
+        'my-task' => [
+            'index',
+        ],
     ];
 
     public function run(): void
@@ -135,6 +143,8 @@ class PermissionSeeder extends Seeder
         'task-assignment-documents' => 'Văn bản giao việc',
         'task-assignment-items' => 'Công việc',
         'task-assignment-item-reports' => 'Báo cáo công việc',
+        'dashboard' => 'Tổng quan',
+        'my-task' => 'Công việc của tôi',
     ];
 
     /** Nhãn action (để description). */
@@ -379,6 +389,10 @@ class PermissionSeeder extends Seeder
         $names[] = 'task-assignment-item-reports.index';
         $names[] = 'task-assignment-item-reports.show';
 
+        // Dashboard + Công việc của tôi
+        $names[] = 'dashboard.index';
+        $names[] = 'my-task.index';
+
         return $names;
     }
 
@@ -417,6 +431,10 @@ class PermissionSeeder extends Seeder
             // Báo cáo
             'task-assignment-item-reports.index',
             'task-assignment-item-reports.show',
+
+            // Dashboard + Công việc của tôi
+            'dashboard.index',
+            'my-task.index',
         ];
     }
 
@@ -442,6 +460,9 @@ class PermissionSeeder extends Seeder
             'task-assignment-item-reports.show',
             'task-assignment-item-reports.store',
             'task-assignment-item-reports.update',
+
+            // Công việc của tôi
+            'my-task.index',
         ];
     }
 }
