@@ -12,6 +12,7 @@ class LogActivityService
     public function stats(array $filters): array
     {
         $stats = LogActivity::filter($filters)
+            ->reorder()
             ->selectRaw("
                 count(*) as total,
                 count(case when method_type = 'GET' then 1 end) as views,
