@@ -258,7 +258,8 @@ class TaskAssignmentItemService
     {
         $user = auth()->user();
         if (! $user->hasAnyRole(['Quản trị', 'Super Admin', 'Admin'])) {
-            $filters['department_id'] = $user->task_assignment_department_id;
+            $taskAssignmentUser = $user->taskAssignmentUser;
+            $filters['department_id'] = $taskAssignmentUser?->task_assignment_department_id;
         }
 
         return $filters;

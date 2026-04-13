@@ -20,6 +20,7 @@ class UserResource extends JsonResource
             'email' => $this->email,
             'user_name' => $this->user_name,
             'status' => $this->status,
+            'task_assignment_department_id' => $this->whenLoaded('taskAssignmentUser', fn () => $this->taskAssignmentUser?->task_assignment_department_id),
             'avatar' => ($avatar = $this->getFirstMedia('avatars')) ? '/storage/'.$avatar->id.'/'.$avatar->file_name : null,
             'created_by' => $this->whenLoaded('creator', fn () => $this->formatUserSummary($this->creator), null),
             'updated_by' => $this->whenLoaded('editor', fn () => $this->formatUserSummary($this->editor), null),

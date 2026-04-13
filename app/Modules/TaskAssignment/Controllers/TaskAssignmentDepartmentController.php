@@ -10,6 +10,7 @@ use App\Modules\TaskAssignment\Requests\BulkUpdateStatusDepartmentRequest;
 use App\Modules\TaskAssignment\Requests\ChangeStatusDepartmentRequest;
 use App\Modules\TaskAssignment\Requests\ImportLookupRequest;
 use App\Modules\TaskAssignment\Requests\StoreDepartmentRequest;
+use App\Modules\TaskAssignment\Requests\SyncDepartmentUsersRequest;
 use App\Modules\TaskAssignment\Requests\UpdateDepartmentRequest;
 use App\Modules\TaskAssignment\Resources\DepartmentCollection;
 use App\Modules\TaskAssignment\Resources\DepartmentResource;
@@ -268,5 +269,60 @@ class TaskAssignmentDepartmentController extends Controller
             new \App\Modules\Core\Exports\ImportTemplateExport(['code', 'name', 'description', 'status', 'sort_order']),
             'import-departments-template.xlsx'
         );
+    }
+
+    /**
+     * Danh sách người dùng trong phòng ban
+     *
+     * @urlParam taskAssignmentDepartment integer required ID phòng ban. Example: 1
+     */
+    public function users(TaskAssignmentDepartment $taskAssignmentDepartment)
+    {
+        $items = $this->departmentService->getUsers($taskAssignmentDepartment);
+
+        return $this->success($items->map(function ($tau) {
+            $user = $tau->user;
+            $avatar = $user->getFirstMedia('avatars');
+
+            return [
+                'id' => $tau->id,
+                'user_id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'user_name' => $user->user_name,
+                'avatar' => $avatar ? '/storage/'.$avatar->id.'/'.$avatar->file_name : null,
+                'status' => $tau->status,
+            ];
+        }));
+    }
+
+    /**
+     * Đồng bộ danh sách người dùng trong phòng ban
+     *
+     * @urlParam taskAssignmentDepartment integer required ID phòng ban. Example: 1
+     * @bodyParam user_ids array required Danh sách ID người dùng. Example: [1,2,3]
+     *
+     * @response 200 {"success": true, "message": "Đồng bộ người dùng thành công!"}
+     */
+    public function syncUsers(SyncDepartmentUsersRequest $request, TaskAssignmentDepartment $taskAssignmentDepartment)
+    {
+        $this->departmentService->syncUsers($taskAssignmentDepartment, $request->user_ids);
+
+        return $this->success(null, 'Đồng bộ người dùng thành công!');
+    }
+
+    /**
+     * Xóa người dùng khỏi phòng ban
+     *
+     * @urlParam taskAssignmentDepartment integer required ID phòng ban. Example: 1
+     * @urlParam userId integer required ID người dùng. Example: 1
+     *
+     * @response 200 {"success": true, "message": "Xóa người dùng khỏi phòng ban thành công!"}
+     */
+    public function removeUser(TaskAssignmentDepartment $taskAssignmentDepartment, int $userId)
+    {
+        $this->departmentService->removeUser($taskAssignmentDepartment, $userId);
+
+        return $this->success(null, 'Xóa người dùng khỏi phòng ban thành công!');
     }
 }

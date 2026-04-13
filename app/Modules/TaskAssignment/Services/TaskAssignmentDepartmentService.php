@@ -6,6 +6,7 @@ use App\Modules\Core\Enums\StatusEnum;
 use App\Modules\TaskAssignment\Exports\DepartmentExport;
 use App\Modules\TaskAssignment\Imports\DepartmentImport;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDepartment;
+use App\Modules\TaskAssignment\Models\TaskAssignmentUser;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -100,5 +101,41 @@ class TaskAssignmentDepartmentService
     public function import($file): void
     {
         Excel::import(new DepartmentImport, $file);
+    }
+
+    public function getUsers(TaskAssignmentDepartment $department)
+    {
+        return $department->taskAssignmentUsers()
+            ->with('user.media')
+            ->where('status', 'active')
+            ->get();
+    }
+
+    public function syncUsers(TaskAssignmentDepartment $department, array $userIds): void
+    {
+        $orgId = getPermissionsTeamId();
+
+        // Xóa user cũ trong department này
+        TaskAssignmentUser::where('task_assignment_department_id', $department->id)
+            ->where('organization_id', $orgId)
+            ->delete();
+
+        // Thêm user mới
+        foreach ($userIds as $userId) {
+            TaskAssignmentUser::updateOrCreate(
+                ['user_id' => $userId, 'organization_id' => $orgId],
+                [
+                    'task_assignment_department_id' => $department->id,
+                    'status' => 'active',
+                ]
+            );
+        }
+    }
+
+    public function removeUser(TaskAssignmentDepartment $department, int $userId): void
+    {
+        TaskAssignmentUser::where('task_assignment_department_id', $department->id)
+            ->where('user_id', $userId)
+            ->delete();
     }
 }

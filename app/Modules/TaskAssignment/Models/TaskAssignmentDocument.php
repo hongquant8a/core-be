@@ -89,6 +89,8 @@ class TaskAssignmentDocument extends Model implements HasMedia
         $query->when($filters['search'] ?? null, fn ($q, $search) => $q->where('name', 'like', '%'.$search.'%'))
             ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
             ->when($filters['task_assignment_type_id'] ?? null, fn ($q, $typeId) => $q->where('task_assignment_type_id', $typeId))
+            ->when($filters['department_id'] ?? null, fn ($q, $deptId) => $q->whereHas('items', fn ($iq) => $iq->whereHas('users', fn ($uq) => $uq->where('task_assignment_item_user.department_id', $deptId))))
+            ->when($filters['user_id'] ?? null, fn ($q, $userId) => $q->whereHas('items', fn ($iq) => $iq->whereHas('users', fn ($uq) => $uq->where('users.id', $userId))))
             ->when($filters['from_date'] ?? null, fn ($q, $date) => $q->whereDate('issue_date', '>=', $date))
             ->when($filters['to_date'] ?? null, fn ($q, $date) => $q->whereDate('issue_date', '<=', $date))
             ->when($filters['created_from'] ?? null, fn ($q, $date) => $q->whereDate('created_at', '>=', $date))

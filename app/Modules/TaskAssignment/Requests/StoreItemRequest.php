@@ -23,6 +23,7 @@ class StoreItemRequest extends BaseRequest
             'processing_status' => ['nullable', TaskProgressStatusEnum::rule()],
             'completion_percent' => 'nullable|integer|min:0|max:100',
             'priority' => ['nullable', TaskPriorityEnum::rule()],
+            'assigned_by' => 'nullable|integer|exists:users,id',
             'users' => 'nullable|array',
             'users.*.user_id' => 'required|integer|exists:users,id',
             'users.*.department_id' => 'required|integer|exists:task_assignment_departments,id',
@@ -73,6 +74,10 @@ class StoreItemRequest extends BaseRequest
             'priority' => [
                 'description' => 'Mức độ ưu tiên công việc.',
                 'example' => TaskPriorityEnum::Medium->value,
+            ],
+            'assigned_by' => [
+                'description' => 'ID người giao việc (quản trị).',
+                'example' => 1,
             ],
             'users' => [
                 'description' => 'Danh sách người thực hiện (Phòng ban → User → Vai trò).',

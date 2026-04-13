@@ -33,6 +33,7 @@ class TaskAssignmentItem extends Model implements HasMedia
         'completion_percent',
         'priority',
         'completed_at',
+        'assigned_by',
         'organization_id',
         'created_by',
         'updated_by',
@@ -80,6 +81,11 @@ class TaskAssignmentItem extends Model implements HasMedia
         return $this->hasMany(TaskAssignmentItemReport::class, 'task_assignment_item_id');
     }
 
+    public function assigner()
+    {
+        return $this->belongsTo(User::class, 'assigned_by');
+    }
+
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
@@ -112,6 +118,7 @@ class TaskAssignmentItem extends Model implements HasMedia
             ->when($filters['user_id'] ?? null, fn ($q, $userId) => $q->whereHas('users', fn ($q2) => $q2->where('users.id', $userId)))
             ->when($filters['assignment_role'] ?? null, fn ($q, $role) => $q->whereHas('users', fn ($q2) => $q2->where('task_assignment_item_user.assignment_role', $role)))
             ->when($filters['assignment_status'] ?? null, fn ($q, $status) => $q->whereHas('users', fn ($q2) => $q2->where('task_assignment_item_user.assignment_status', $status)))
+            ->when($filters['assigned_by_or_created_by'] ?? null, fn ($q, $userId) => $q->where(fn ($q2) => $q2->where('assigned_by', $userId)->orWhere('created_by', $userId)))
             ->when($filters['start_from'] ?? null, fn ($q, $date) => $q->whereDate('start_at', '>=', $date))
             ->when($filters['start_to'] ?? null, fn ($q, $date) => $q->whereDate('start_at', '<=', $date))
             ->when($filters['end_from'] ?? null, fn ($q, $date) => $q->whereDate('end_at', '>=', $date))

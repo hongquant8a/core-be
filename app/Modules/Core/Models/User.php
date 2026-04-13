@@ -2,7 +2,7 @@
 
 namespace App\Modules\Core\Models;
 
-use App\Modules\TaskAssignment\Models\TaskAssignmentDepartment;
+use App\Modules\TaskAssignment\Models\TaskAssignmentUser;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -31,7 +31,6 @@ class User extends Authenticatable implements HasMedia
         'status',
         'created_by',
         'updated_by',
-        'task_assignment_department_id',
     ];
 
     protected $hidden = [
@@ -69,9 +68,9 @@ class User extends Authenticatable implements HasMedia
         return $this->hasOne(UserPreference::class);
     }
 
-    public function taskAssignmentDepartment()
+    public function taskAssignmentUser()
     {
-        return $this->belongsTo(TaskAssignmentDepartment::class, 'task_assignment_department_id');
+        return $this->hasOne(TaskAssignmentUser::class, 'user_id');
     }
 
     public function scopeFilter($query, array $filters)
@@ -85,7 +84,7 @@ class User extends Authenticatable implements HasMedia
         })->when($filters['status'] ?? null, function ($query, $status) {
             $query->where('status', $status);
         })->when($filters['task_assignment_department_id'] ?? null, function ($query, $deptId) {
-            $query->where('task_assignment_department_id', $deptId);
+            $query->whereHas('taskAssignmentUser', fn ($q) => $q->where('task_assignment_department_id', $deptId));
         })->when($filters['sort_by'] ?? 'created_at', function ($query, $sortBy) use ($filters) {
             $allowed = ['id', 'name', 'email', 'user_name', 'created_at'];
             $column = in_array($sortBy, $allowed) ? $sortBy : 'created_at';

@@ -40,6 +40,11 @@ class TaskAssignmentDepartment extends Model
         return $this->belongsTo(User::class, 'updated_by');
     }
 
+    public function taskAssignmentUsers()
+    {
+        return $this->hasMany(TaskAssignmentUser::class, 'task_assignment_department_id');
+    }
+
     public function scopeFilter($query, array $filters)
     {
         $query->when($filters['search'] ?? null, fn ($q, $search) => $q->where(fn ($q2) => $q2->where('name', 'like', '%'.$search.'%')->orWhere('code', 'like', '%'.$search.'%')))

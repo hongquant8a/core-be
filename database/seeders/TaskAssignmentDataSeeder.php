@@ -2,8 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Modules\Core\Models\Organization;
 use App\Modules\Core\Models\User;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDepartment;
+use App\Modules\TaskAssignment\Models\TaskAssignmentUser;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDocument;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItemReport;
@@ -132,15 +134,27 @@ class TaskAssignmentDataSeeder extends Seeder
     {
         $this->deptIds = TaskAssignmentDepartment::orderBy('sort_order')->pluck('id', 'code')->all();
         $users = User::orderBy('id')->get();
+        $orgId = getPermissionsTeamId() ?: Organization::first()?->id;
 
         $deptCodes = array_keys($this->deptIds);
         foreach ($users as $i => $user) {
             $code = $deptCodes[$i % count($deptCodes)];
-            $user->update(['task_assignment_department_id' => $this->deptIds[$code]]);
+            TaskAssignmentUser::updateOrCreate(
+                ['user_id' => $user->id, 'organization_id' => $orgId],
+                [
+                    'task_assignment_department_id' => $this->deptIds[$code],
+                    'status' => 'active',
+                    'created_by' => $user->id,
+                    'updated_by' => $user->id,
+                ]
+            );
         }
 
-        $this->usersByDept = User::whereNotNull('task_assignment_department_id')
-            ->get()->groupBy('task_assignment_department_id');
+        $this->usersByDept = TaskAssignmentUser::with('user')
+            ->where('organization_id', $orgId)
+            ->get()
+            ->groupBy('task_assignment_department_id')
+            ->map(fn ($items) => $items->pluck('user'));
 
         $this->typeIds = TaskAssignmentType::pluck('id', 'name')->all();
         $this->itemTypeIds = TaskAssignmentItemType::pluck('id', 'name')->all();

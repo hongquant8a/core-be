@@ -56,6 +56,7 @@ class PermissionSeeder extends Seeder
         'task-assignment-departments' => [
             'stats', 'index', 'show', 'store', 'update', 'destroy',
             'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
+            'users', 'syncUsers', 'removeUser',
         ],
         // TaskAssignment - Loại văn bản giao việc
         'task-assignment-types' => [
@@ -94,6 +95,10 @@ class PermissionSeeder extends Seeder
         ],
         // TaskAssignment - Công việc của tôi
         'my-task' => [
+            'index',
+        ],
+        // TaskAssignment - Dashboard phòng ban
+        'dashboard-department' => [
             'index',
         ],
     ];

@@ -18,6 +18,7 @@ class DepartmentResource extends JsonResource
             'description' => $this->description,
             'status' => $this->status,
             'sort_order' => $this->sort_order,
+            'users_count' => $this->whenCounted('taskAssignmentUsers'),
             'created_by' => $this->whenLoaded('creator', fn () => $this->formatUserSummary($this->creator), null),
             'updated_by' => $this->whenLoaded('editor', fn () => $this->formatUserSummary($this->editor), null),
             'created_at' => $this->created_at?->format('H:i:s d/m/Y'),
