@@ -93,12 +93,12 @@ class PermissionSeeder extends Seeder
         'dashboard' => [
             'index',
         ],
-        // TaskAssignment - Công việc của tôi
-        'my-task' => [
+        // TaskAssignment - Công việc được giao (cho nhân viên xem task của mình)
+        'my-received-tasks' => [
             'index',
         ],
-        // TaskAssignment - Dashboard phòng ban
-        'dashboard-department' => [
+        // TaskAssignment - Công việc đang giao (cho quản trị xem task mình đã giao)
+        'my-assigned-tasks' => [
             'index',
         ],
     ];
@@ -149,7 +149,8 @@ class PermissionSeeder extends Seeder
         'task-assignment-items' => 'Công việc',
         'task-assignment-item-reports' => 'Báo cáo công việc',
         'dashboard' => 'Tổng quan',
-        'my-task' => 'Công việc của tôi',
+        'my-received-tasks' => 'Công việc được giao',
+        'my-assigned-tasks' => 'Công việc đang giao',
     ];
 
     /** Nhãn action (để description). */
@@ -177,6 +178,10 @@ class PermissionSeeder extends Seeder
         'statsByItemType' => 'Thống kê theo loại công việc',
         'statsByDocument' => 'Thống kê theo văn bản giao việc',
         'exportMonthlyReport' => 'Xuất báo cáo giao ban tháng',
+        'users' => 'Danh sách người dùng',
+        'syncUsers' => 'Đồng bộ người dùng',
+        'removeUser' => 'Xóa người dùng',
+        'confirmDone' => 'Xác nhận hoàn thành',
     ];
 
     /** Tạo đầy đủ permission từ danh sách PERMISSIONS (kèm description, sort_order, parent_id). */
@@ -394,9 +399,10 @@ class PermissionSeeder extends Seeder
         $names[] = 'task-assignment-item-reports.index';
         $names[] = 'task-assignment-item-reports.show';
 
-        // Dashboard + Công việc của tôi
+        // Dashboard + 2 màn công việc cá nhân
         $names[] = 'dashboard.index';
-        $names[] = 'my-task.index';
+        $names[] = 'my-assigned-tasks.index';
+        $names[] = 'my-received-tasks.index';
 
         return $names;
     }
@@ -421,6 +427,7 @@ class PermissionSeeder extends Seeder
             'task-assignment-items.update',
             'task-assignment-items.changeStatus',
             'task-assignment-items.updateProgress',
+            'task-assignment-items.confirmDone',
 
             // Thống kê nâng cao (giai đoạn 2) - BE ép department_id phòng mình
             'task-assignment-items.statsByDepartment',
@@ -437,9 +444,10 @@ class PermissionSeeder extends Seeder
             'task-assignment-item-reports.index',
             'task-assignment-item-reports.show',
 
-            // Dashboard + Công việc của tôi
+            // Dashboard + 2 màn công việc cá nhân
             'dashboard.index',
-            'my-task.index',
+            'my-assigned-tasks.index',
+            'my-received-tasks.index',
         ];
     }
 
@@ -448,13 +456,16 @@ class PermissionSeeder extends Seeder
     {
         return [
             // Văn bản giao việc (chỉ xem)
+            'task-assignment-documents.stats',
             'task-assignment-documents.index',
             'task-assignment-documents.show',
 
             // Công việc (xem + cập nhật tiến độ)
+            'task-assignment-items.stats',
             'task-assignment-items.index',
             'task-assignment-items.show',
             'task-assignment-items.updateProgress',
+            'task-assignment-items.changeStatus',
 
             // Quá hạn + sắp đến hạn (giai đoạn 2) - BE ép department_id phòng mình
             'task-assignment-items.overdue',
@@ -466,8 +477,8 @@ class PermissionSeeder extends Seeder
             'task-assignment-item-reports.store',
             'task-assignment-item-reports.update',
 
-            // Công việc của tôi
-            'my-task.index',
+            // Công việc được giao (xem task cua minh)
+            'my-received-tasks.index',
         ];
     }
 }

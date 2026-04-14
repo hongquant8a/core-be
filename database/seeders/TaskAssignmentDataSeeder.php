@@ -223,26 +223,25 @@ class TaskAssignmentDataSeeder extends Seeder
                     'created_at' => $itemCreatedAt, 'updated_at' => $itemUpdatedAt,
                 ]);
 
-                // Gán user theo phòng ban
-                foreach ($itemData['departments'] as $deptCode => $deptRole) {
-                    $deptId = $this->deptIds[$deptCode] ?? null;
-                    if ($deptId && isset($this->usersByDept[$deptId])) {
-                        $deptUsers = $this->usersByDept[$deptId]->values();
-                        foreach ($deptUsers as $idx => $user) {
-                            $item->users()->attach($user->id, [
-                                'department_id' => $deptId,
-                                'department_role' => $deptRole,
-                                'assignment_role' => $idx === 0 ? 'main' : 'support',
-                                'assignment_status' => $this->mapAssignmentStatus($itemData['processing_status']),
-                                'assigned_at' => $itemData['start_at'],
-                                'accepted_at' => in_array($itemData['processing_status'], ['in_progress', 'done']) ? $itemData['start_at'] : null,
-                                'completed_at' => $itemData['processing_status'] === 'done' ? $itemData['completed_at'] : null,
-                            ]);
-                        }
+                // Gán đúng 1 phòng ban + 1 người đảm nhiệm (phòng ban chính = đầu tiên)
+                $mainDeptCode = array_key_first($itemData['departments']);
+                $mainDeptRole = $itemData['departments'][$mainDeptCode];
+                $mainDeptId = $this->deptIds[$mainDeptCode] ?? null;
+
+                if ($mainDeptId && isset($this->usersByDept[$mainDeptId])) {
+                    $assignee = $this->usersByDept[$mainDeptId]->first();
+                    if ($assignee) {
+                        $item->users()->attach($assignee->id, [
+                            'department_id' => $mainDeptId,
+                            'department_role' => $mainDeptRole,
+                            'assignment_role' => 'main',
+                            'assignment_status' => $this->mapAssignmentStatus($itemData['processing_status']),
+                            'assigned_at' => $itemData['start_at'],
+                            'accepted_at' => in_array($itemData['processing_status'], ['in_progress', 'done']) ? $itemData['start_at'] : null,
+                            'completed_at' => $itemData['processing_status'] === 'done' ? $itemData['completed_at'] : null,
+                        ]);
                     }
                 }
-                $mainDeptCode = array_key_first($itemData['departments']);
-                $mainDeptId = $this->deptIds[$mainDeptCode] ?? null;
 
                 // Báo cáo cho việc hoàn thành
                 if ($itemData['processing_status'] === 'done' && $mainDeptId && isset($this->usersByDept[$mainDeptId])) {
@@ -336,8 +335,8 @@ class TaskAssignmentDataSeeder extends Seeder
                 'type' => 'Thường trực Thành ủy giao',
                 'items' => [
                     ['name' => 'Soạn đề cương tuyên truyền kỷ niệm 96 năm thành lập Đảng', 'item_type' => 'Soạn thảo văn bản', 'deadline_type' => 'has_deadline', 'start_at' => '2026-02-01 08:00:00', 'end_at' => '2026-02-10 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'high', 'completed_at' => '2026-02-09 15:00:00', 'departments' => ['TTBCXB' => 'main']],
-                    ['name' => 'Tổ chức hội nghị báo cáo viên tháng 2', 'item_type' => 'Tổ chức sự kiện', 'deadline_type' => 'has_deadline', 'start_at' => '2026-02-05 08:00:00', 'end_at' => '2026-02-20 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'high', 'completed_at' => '2026-02-18 16:30:00', 'departments' => ['TTBCXB' => 'main', 'VP' => 'supporting']],
-                    ['name' => 'Kiểm tra công tác tuyên truyền tại quận Hải Châu', 'item_type' => 'Kiểm tra, giám sát', 'deadline_type' => 'has_deadline', 'start_at' => '2026-02-10 08:00:00', 'end_at' => '2026-02-25 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'medium', 'completed_at' => '2026-02-24 11:00:00', 'departments' => ['TTBCXB' => 'main', 'TTTH' => 'supporting']],
+                    ['name' => 'Tổ chức hội nghị báo cáo viên tháng 2', 'item_type' => 'Tổ chức sự kiện', 'deadline_type' => 'has_deadline', 'start_at' => '2026-02-05 08:00:00', 'end_at' => '2026-02-20 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'high', 'completed_at' => '2026-02-18 16:30:00', 'departments' => ['TTBCXB' => 'main']],
+                    ['name' => 'Kiểm tra công tác tuyên truyền tại quận Hải Châu', 'item_type' => 'Kiểm tra, giám sát', 'deadline_type' => 'has_deadline', 'start_at' => '2026-02-10 08:00:00', 'end_at' => '2026-02-25 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'medium', 'completed_at' => '2026-02-24 11:00:00', 'departments' => ['TTBCXB' => 'main']],
                     ['name' => 'Báo cáo tổng kết công tác tuyên truyền tháng 2', 'item_type' => 'Báo cáo định kỳ', 'deadline_type' => 'has_deadline', 'start_at' => '2026-02-20 08:00:00', 'end_at' => '2026-02-28 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'medium', 'completed_at' => '2026-02-27 14:00:00', 'departments' => ['TTBCXB' => 'main']],
                 ],
             ],
@@ -349,8 +348,8 @@ class TaskAssignmentDataSeeder extends Seeder
                 'items' => [
                     ['name' => 'Khảo sát tình hình tôn giáo tại quận Sơn Trà', 'item_type' => 'Nghiên cứu, khảo sát', 'deadline_type' => 'has_deadline', 'start_at' => '2026-02-05 08:00:00', 'end_at' => '2026-02-20 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'medium', 'completed_at' => '2026-02-19 16:00:00', 'departments' => ['DVDTTG' => 'main']],
                     ['name' => 'Soạn báo cáo tình hình dân tộc, tôn giáo quý I', 'item_type' => 'Báo cáo định kỳ', 'deadline_type' => 'has_deadline', 'start_at' => '2026-02-10 08:00:00', 'end_at' => '2026-02-28 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'medium', 'completed_at' => '2026-02-26 10:00:00', 'departments' => ['DVDTTG' => 'main']],
-                    ['name' => 'Tổ chức gặp mặt chức sắc tôn giáo nhân dịp Tết', 'item_type' => 'Tổ chức sự kiện', 'deadline_type' => 'has_deadline', 'start_at' => '2026-02-05 08:00:00', 'end_at' => '2026-02-15 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'high', 'completed_at' => '2026-02-14 17:00:00', 'departments' => ['DVDTTG' => 'main', 'VP' => 'supporting']],
-                    ['name' => 'Giám sát thực hiện QCDC ở cơ sở tại huyện Hòa Vang', 'item_type' => 'Kiểm tra, giám sát', 'deadline_type' => 'has_deadline', 'start_at' => '2026-02-15 08:00:00', 'end_at' => '2026-02-28 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'low', 'completed_at' => '2026-03-01 09:00:00', 'departments' => ['DVDTTG' => 'main', 'DTCH' => 'supporting']],
+                    ['name' => 'Tổ chức gặp mặt chức sắc tôn giáo nhân dịp Tết', 'item_type' => 'Tổ chức sự kiện', 'deadline_type' => 'has_deadline', 'start_at' => '2026-02-05 08:00:00', 'end_at' => '2026-02-15 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'high', 'completed_at' => '2026-02-14 17:00:00', 'departments' => ['DVDTTG' => 'main']],
+                    ['name' => 'Giám sát thực hiện QCDC ở cơ sở tại huyện Hòa Vang', 'item_type' => 'Kiểm tra, giám sát', 'deadline_type' => 'has_deadline', 'start_at' => '2026-02-15 08:00:00', 'end_at' => '2026-02-28 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'low', 'completed_at' => '2026-03-01 09:00:00', 'departments' => ['DVDTTG' => 'main']],
                 ],
             ],
             [
@@ -361,7 +360,7 @@ class TaskAssignmentDataSeeder extends Seeder
                 'items' => [
                     ['name' => 'Tổng hợp nhu cầu đào tạo từ các quận huyện', 'item_type' => 'Nghiên cứu, khảo sát', 'deadline_type' => 'has_deadline', 'start_at' => '2026-02-10 08:00:00', 'end_at' => '2026-02-25 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'medium', 'completed_at' => '2026-02-23 14:00:00', 'departments' => ['LLCTLSD' => 'main']],
                     ['name' => 'Soạn kế hoạch đào tạo LLCT năm 2026', 'item_type' => 'Soạn thảo văn bản', 'deadline_type' => 'has_deadline', 'start_at' => '2026-02-15 08:00:00', 'end_at' => '2026-03-05 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'high', 'completed_at' => '2026-03-04 16:00:00', 'departments' => ['LLCTLSD' => 'main']],
-                    ['name' => 'Phối hợp Trường Chính trị mở lớp Trung cấp LLCT', 'item_type' => 'Tổ chức sự kiện', 'deadline_type' => 'has_deadline', 'start_at' => '2026-02-20 08:00:00', 'end_at' => '2026-03-15 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'medium', 'completed_at' => '2026-03-12 10:00:00', 'departments' => ['LLCTLSD' => 'main', 'VP' => 'supporting']],
+                    ['name' => 'Phối hợp Trường Chính trị mở lớp Trung cấp LLCT', 'item_type' => 'Tổ chức sự kiện', 'deadline_type' => 'has_deadline', 'start_at' => '2026-02-20 08:00:00', 'end_at' => '2026-03-15 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'medium', 'completed_at' => '2026-03-12 10:00:00', 'departments' => ['LLCTLSD' => 'main']],
                 ],
             ],
 
@@ -372,9 +371,9 @@ class TaskAssignmentDataSeeder extends Seeder
                 'issue_date' => '2026-03-01', 'status' => 'issued', 'issued_at' => '2026-03-01 08:00:00',
                 'type' => 'Thường trực Thành ủy giao',
                 'items' => [
-                    ['name' => 'Soạn thảo đề cương tuyên truyền Đại hội lần thứ XVIII', 'item_type' => 'Soạn thảo văn bản', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-01 08:00:00', 'end_at' => '2026-03-20 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'high', 'completed_at' => '2026-03-18 15:00:00', 'departments' => ['TTBCXB' => 'main', 'TTTH' => 'supporting']],
-                    ['name' => 'Tổ chức hội nghị báo cáo viên tuyên truyền Đại hội', 'item_type' => 'Tổ chức sự kiện', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-15 08:00:00', 'end_at' => '2026-03-31 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'high', 'completed_at' => '2026-03-28 17:00:00', 'departments' => ['TTBCXB' => 'main', 'VP' => 'supporting']],
-                    ['name' => 'Kiểm tra công tác trang trí, khánh tiết Đại hội', 'item_type' => 'Kiểm tra, giám sát', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-20 08:00:00', 'end_at' => '2026-04-01 17:00:00', 'processing_status' => 'in_progress', 'completion_percent' => 70, 'priority' => 'high', 'departments' => ['TTBCXB' => 'main', 'KGVHVN' => 'supporting']],
+                    ['name' => 'Soạn thảo đề cương tuyên truyền Đại hội lần thứ XVIII', 'item_type' => 'Soạn thảo văn bản', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-01 08:00:00', 'end_at' => '2026-03-20 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'high', 'completed_at' => '2026-03-18 15:00:00', 'departments' => ['TTBCXB' => 'main']],
+                    ['name' => 'Tổ chức hội nghị báo cáo viên tuyên truyền Đại hội', 'item_type' => 'Tổ chức sự kiện', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-15 08:00:00', 'end_at' => '2026-03-31 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'high', 'completed_at' => '2026-03-28 17:00:00', 'departments' => ['TTBCXB' => 'main']],
+                    ['name' => 'Kiểm tra công tác trang trí, khánh tiết Đại hội', 'item_type' => 'Kiểm tra, giám sát', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-20 08:00:00', 'end_at' => '2026-04-01 17:00:00', 'processing_status' => 'in_progress', 'completion_percent' => 70, 'priority' => 'high', 'departments' => ['TTBCXB' => 'main']],
                     ['name' => 'Theo dõi dư luận xã hội trước Đại hội', 'description' => 'Nắm bắt, tổng hợp dư luận xã hội về Đại hội Đảng bộ TP.', 'item_type' => 'Nghiên cứu, khảo sát', 'deadline_type' => 'no_deadline', 'start_at' => '2026-03-01 08:00:00', 'end_at' => null, 'processing_status' => 'in_progress', 'completion_percent' => 50, 'priority' => 'medium', 'departments' => ['TTTH' => 'main']],
                 ],
             ],
@@ -387,7 +386,7 @@ class TaskAssignmentDataSeeder extends Seeder
                     ['name' => 'Tổ chức hội nghị sơ kết phong trào thi đua yêu nước', 'item_type' => 'Tổ chức sự kiện', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-05 08:00:00', 'end_at' => '2026-03-20 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'high', 'completed_at' => '2026-03-19 16:00:00', 'departments' => ['DTCH' => 'main']],
                     ['name' => 'Khảo sát hoạt động của Hội Liên hiệp Phụ nữ cơ sở', 'item_type' => 'Nghiên cứu, khảo sát', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-10 08:00:00', 'end_at' => '2026-03-25 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'medium', 'completed_at' => '2026-03-24 10:00:00', 'departments' => ['DTCH' => 'main']],
                     ['name' => 'Soạn báo cáo công tác đoàn thể quý I', 'item_type' => 'Báo cáo định kỳ', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-20 08:00:00', 'end_at' => '2026-03-31 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'medium', 'completed_at' => '2026-03-30 14:00:00', 'departments' => ['DTCH' => 'main']],
-                    ['name' => 'Kiểm tra việc thực hiện quy chế dân chủ ở cơ sở', 'item_type' => 'Kiểm tra, giám sát', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-10 08:00:00', 'end_at' => '2026-03-28 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'low', 'completed_at' => '2026-03-30 09:00:00', 'departments' => ['DTCH' => 'main', 'DVDTTG' => 'supporting']],
+                    ['name' => 'Kiểm tra việc thực hiện quy chế dân chủ ở cơ sở', 'item_type' => 'Kiểm tra, giám sát', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-10 08:00:00', 'end_at' => '2026-03-28 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'low', 'completed_at' => '2026-03-30 09:00:00', 'departments' => ['DTCH' => 'main']],
                     ['name' => 'Hướng dẫn tổ chức Đại hội Hội Nông dân cấp cơ sở', 'item_type' => 'Soạn thảo văn bản', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-15 08:00:00', 'end_at' => '2026-04-02 17:00:00', 'processing_status' => 'in_progress', 'completion_percent' => 60, 'priority' => 'medium', 'departments' => ['DTCH' => 'main']],
                     ['name' => 'Theo dõi hoạt động các hội quần chúng', 'item_type' => 'Kiểm tra, giám sát', 'deadline_type' => 'no_deadline', 'start_at' => '2026-03-05 08:00:00', 'end_at' => null, 'processing_status' => 'in_progress', 'completion_percent' => 40, 'priority' => 'low', 'departments' => ['DTCH' => 'main']],
                 ],
@@ -399,8 +398,8 @@ class TaskAssignmentDataSeeder extends Seeder
                 'type' => 'Công việc chuyên môn',
                 'items' => [
                     ['name' => 'Kiểm tra công tác phòng chống dịch bệnh mùa hè', 'item_type' => 'Kiểm tra, giám sát', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-05 08:00:00', 'end_at' => '2026-03-20 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'high', 'completed_at' => '2026-03-19 15:00:00', 'departments' => ['KGVHVN' => 'main']],
-                    ['name' => 'Soạn kế hoạch tổ chức Ngày sách và Văn hóa đọc', 'item_type' => 'Soạn thảo văn bản', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-05 08:00:00', 'end_at' => '2026-03-15 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'medium', 'completed_at' => '2026-03-14 16:00:00', 'departments' => ['KGVHVN' => 'main', 'TTBCXB' => 'supporting']],
-                    ['name' => 'Tổ chức Ngày sách và Văn hóa đọc Việt Nam (21/4)', 'item_type' => 'Tổ chức sự kiện', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-15 08:00:00', 'end_at' => '2026-04-21 17:00:00', 'processing_status' => 'in_progress', 'completion_percent' => 55, 'priority' => 'high', 'departments' => ['KGVHVN' => 'main', 'VP' => 'supporting']],
+                    ['name' => 'Soạn kế hoạch tổ chức Ngày sách và Văn hóa đọc', 'item_type' => 'Soạn thảo văn bản', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-05 08:00:00', 'end_at' => '2026-03-15 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'medium', 'completed_at' => '2026-03-14 16:00:00', 'departments' => ['KGVHVN' => 'main']],
+                    ['name' => 'Tổ chức Ngày sách và Văn hóa đọc Việt Nam (21/4)', 'item_type' => 'Tổ chức sự kiện', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-15 08:00:00', 'end_at' => '2026-04-21 17:00:00', 'processing_status' => 'in_progress', 'completion_percent' => 55, 'priority' => 'high', 'departments' => ['KGVHVN' => 'main']],
                     ['name' => 'Nghiên cứu mô hình giáo dục STEM tại các trường', 'item_type' => 'Nghiên cứu, khảo sát', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-10 08:00:00', 'end_at' => '2026-04-01 17:00:00', 'processing_status' => 'in_progress', 'completion_percent' => 35, 'priority' => 'low', 'departments' => ['KGVHVN' => 'main']],
                     ['name' => 'Báo cáo công tác khoa giáo tháng 3', 'item_type' => 'Báo cáo định kỳ', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-25 08:00:00', 'end_at' => '2026-03-31 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'medium', 'completed_at' => '2026-03-30 11:00:00', 'departments' => ['KGVHVN' => 'main']],
                     ['name' => 'Theo dõi tình hình giáo dục, y tế trên địa bàn', 'item_type' => 'Nghiên cứu, khảo sát', 'deadline_type' => 'no_deadline', 'start_at' => '2026-03-03 08:00:00', 'end_at' => null, 'processing_status' => 'in_progress', 'completion_percent' => 30, 'priority' => 'low', 'departments' => ['KGVHVN' => 'main']],
@@ -412,7 +411,7 @@ class TaskAssignmentDataSeeder extends Seeder
                 'issue_date' => '2026-03-10', 'status' => 'issued', 'issued_at' => '2026-03-10 08:00:00',
                 'type' => 'Công việc phát sinh',
                 'items' => [
-                    ['name' => 'Tổng hợp thông tin phản ánh từ các quận huyện tháng 3', 'item_type' => 'Báo cáo định kỳ', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-10 08:00:00', 'end_at' => '2026-03-20 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'high', 'completed_at' => '2026-03-19 15:00:00', 'departments' => ['TTTH' => 'main', 'DTCH' => 'supporting']],
+                    ['name' => 'Tổng hợp thông tin phản ánh từ các quận huyện tháng 3', 'item_type' => 'Báo cáo định kỳ', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-10 08:00:00', 'end_at' => '2026-03-20 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'high', 'completed_at' => '2026-03-19 15:00:00', 'departments' => ['TTTH' => 'main']],
                     ['name' => 'Xác minh phản ánh tại quận Thanh Khê', 'item_type' => 'Kiểm tra, giám sát', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-12 08:00:00', 'end_at' => '2026-03-22 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'high', 'completed_at' => '2026-03-21 14:00:00', 'departments' => ['TTTH' => 'main']],
                     ['name' => 'Xác minh phản ánh tại quận Liên Chiểu', 'item_type' => 'Kiểm tra, giám sát', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-15 08:00:00', 'end_at' => '2026-03-28 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'medium', 'completed_at' => '2026-03-29 10:00:00', 'departments' => ['TTTH' => 'main']],
                 ],
@@ -426,9 +425,9 @@ class TaskAssignmentDataSeeder extends Seeder
                 'type' => 'Thường trực Thành ủy giao',
                 'items' => [
                     ['name' => 'Lên kịch bản chương trình văn nghệ chào mừng 30/4', 'item_type' => 'Soạn thảo văn bản', 'deadline_type' => 'has_deadline', 'start_at' => '2026-04-01 08:00:00', 'end_at' => '2026-04-15 17:00:00', 'processing_status' => 'in_progress', 'completion_percent' => 45, 'priority' => 'high', 'departments' => ['KGVHVN' => 'main']],
-                    ['name' => 'Phối hợp tổ chức đêm biểu diễn văn nghệ', 'item_type' => 'Tổ chức sự kiện', 'deadline_type' => 'has_deadline', 'start_at' => '2026-04-15 08:00:00', 'end_at' => '2026-04-29 17:00:00', 'processing_status' => 'todo', 'completion_percent' => 0, 'priority' => 'high', 'departments' => ['KGVHVN' => 'main', 'VP' => 'supporting', 'TTBCXB' => 'supporting']],
+                    ['name' => 'Phối hợp tổ chức đêm biểu diễn văn nghệ', 'item_type' => 'Tổ chức sự kiện', 'deadline_type' => 'has_deadline', 'start_at' => '2026-04-15 08:00:00', 'end_at' => '2026-04-29 17:00:00', 'processing_status' => 'todo', 'completion_percent' => 0, 'priority' => 'high', 'departments' => ['KGVHVN' => 'main']],
                     ['name' => 'Tuyên truyền trên báo chí về các hoạt động 30/4', 'item_type' => 'Soạn thảo văn bản', 'deadline_type' => 'has_deadline', 'start_at' => '2026-04-10 08:00:00', 'end_at' => '2026-04-28 17:00:00', 'processing_status' => 'todo', 'completion_percent' => 0, 'priority' => 'medium', 'departments' => ['TTBCXB' => 'main']],
-                    ['name' => 'Kiểm tra công tác chuẩn bị lễ kỷ niệm 30/4', 'item_type' => 'Kiểm tra, giám sát', 'deadline_type' => 'has_deadline', 'start_at' => '2026-04-20 08:00:00', 'end_at' => '2026-04-28 17:00:00', 'processing_status' => 'todo', 'completion_percent' => 0, 'priority' => 'medium', 'departments' => ['VP' => 'main', 'KGVHVN' => 'supporting']],
+                    ['name' => 'Kiểm tra công tác chuẩn bị lễ kỷ niệm 30/4', 'item_type' => 'Kiểm tra, giám sát', 'deadline_type' => 'has_deadline', 'start_at' => '2026-04-20 08:00:00', 'end_at' => '2026-04-28 17:00:00', 'processing_status' => 'todo', 'completion_percent' => 0, 'priority' => 'medium', 'departments' => ['VP' => 'main']],
                 ],
             ],
             [
@@ -452,7 +451,7 @@ class TaskAssignmentDataSeeder extends Seeder
                 'items' => [
                     ['name' => 'Thu thập tư liệu lịch sử Đảng bộ TP giai đoạn 2020-2025', 'item_type' => 'Nghiên cứu, khảo sát', 'deadline_type' => 'has_deadline', 'start_at' => '2026-04-02 08:00:00', 'end_at' => '2026-05-30 17:00:00', 'processing_status' => 'in_progress', 'completion_percent' => 10, 'priority' => 'medium', 'departments' => ['LLCTLSD' => 'main']],
                     ['name' => 'Soạn đề cương biên soạn lịch sử Đảng bộ TP', 'item_type' => 'Soạn thảo văn bản', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-20 08:00:00', 'end_at' => '2026-04-02 17:00:00', 'processing_status' => 'in_progress', 'completion_percent' => 40, 'priority' => 'high', 'departments' => ['LLCTLSD' => 'main']],
-                    ['name' => 'Tổ chức hội thảo khoa học Lý luận chính trị năm 2026', 'item_type' => 'Tổ chức sự kiện', 'deadline_type' => 'has_deadline', 'start_at' => '2026-04-15 08:00:00', 'end_at' => '2026-05-15 17:00:00', 'processing_status' => 'todo', 'completion_percent' => 0, 'priority' => 'high', 'departments' => ['LLCTLSD' => 'main', 'VP' => 'supporting']],
+                    ['name' => 'Tổ chức hội thảo khoa học Lý luận chính trị năm 2026', 'item_type' => 'Tổ chức sự kiện', 'deadline_type' => 'has_deadline', 'start_at' => '2026-04-15 08:00:00', 'end_at' => '2026-05-15 17:00:00', 'processing_status' => 'todo', 'completion_percent' => 0, 'priority' => 'high', 'departments' => ['LLCTLSD' => 'main']],
                     ['name' => 'Tổ chức lớp bồi dưỡng chuyên đề cho cán bộ nguồn', 'item_type' => 'Tổ chức sự kiện', 'deadline_type' => 'has_deadline', 'start_at' => '2026-04-10 08:00:00', 'end_at' => '2026-04-30 17:00:00', 'processing_status' => 'in_progress', 'completion_percent' => 20, 'priority' => 'medium', 'departments' => ['LLCTLSD' => 'main']],
                 ],
             ],
@@ -462,7 +461,7 @@ class TaskAssignmentDataSeeder extends Seeder
                 'issue_date' => '2026-04-03', 'status' => 'issued', 'issued_at' => '2026-04-03 08:00:00',
                 'type' => 'Công việc phát sinh',
                 'items' => [
-                    ['name' => 'Rà soát các trang mạng xã hội có nội dung xuyên tạc', 'item_type' => 'Nghiên cứu, khảo sát', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-28 08:00:00', 'end_at' => '2026-04-03 17:00:00', 'processing_status' => 'in_progress', 'completion_percent' => 50, 'priority' => 'high', 'departments' => ['TTBCXB' => 'main', 'TTTH' => 'supporting']],
+                    ['name' => 'Rà soát các trang mạng xã hội có nội dung xuyên tạc', 'item_type' => 'Nghiên cứu, khảo sát', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-28 08:00:00', 'end_at' => '2026-04-03 17:00:00', 'processing_status' => 'in_progress', 'completion_percent' => 50, 'priority' => 'high', 'departments' => ['TTBCXB' => 'main']],
                     ['name' => 'Soạn bài viết phản bác thông tin sai lệch', 'item_type' => 'Soạn thảo văn bản', 'deadline_type' => 'has_deadline', 'start_at' => '2026-03-30 08:00:00', 'end_at' => '2026-04-03 17:00:00', 'processing_status' => 'todo', 'completion_percent' => 0, 'priority' => 'high', 'departments' => ['TTBCXB' => 'main']],
                     ['name' => 'Báo cáo nhanh tình hình thông tin mạng xã hội', 'item_type' => 'Báo cáo định kỳ', 'deadline_type' => 'has_deadline', 'start_at' => '2026-04-03 08:00:00', 'end_at' => '2026-04-05 17:00:00', 'processing_status' => 'done', 'completion_percent' => 100, 'priority' => 'high', 'completed_at' => '2026-04-04 16:00:00', 'departments' => ['TTTH' => 'main']],
                 ],
@@ -474,10 +473,10 @@ class TaskAssignmentDataSeeder extends Seeder
                 'type' => 'Công việc chuyên môn',
                 'items' => [
                     ['name' => 'Kiểm tra công tác dân tộc tại huyện Hòa Vang', 'item_type' => 'Kiểm tra, giám sát', 'deadline_type' => 'has_deadline', 'start_at' => '2026-04-10 08:00:00', 'end_at' => '2026-04-20 17:00:00', 'processing_status' => 'todo', 'completion_percent' => 0, 'priority' => 'medium', 'departments' => ['DVDTTG' => 'main']],
-                    ['name' => 'Tổ chức gặp mặt đồng bào dân tộc thiểu số', 'item_type' => 'Tổ chức sự kiện', 'deadline_type' => 'has_deadline', 'start_at' => '2026-04-15 08:00:00', 'end_at' => '2026-04-25 17:00:00', 'processing_status' => 'todo', 'completion_percent' => 0, 'priority' => 'medium', 'departments' => ['DVDTTG' => 'main', 'VP' => 'supporting']],
+                    ['name' => 'Tổ chức gặp mặt đồng bào dân tộc thiểu số', 'item_type' => 'Tổ chức sự kiện', 'deadline_type' => 'has_deadline', 'start_at' => '2026-04-15 08:00:00', 'end_at' => '2026-04-25 17:00:00', 'processing_status' => 'todo', 'completion_percent' => 0, 'priority' => 'medium', 'departments' => ['DVDTTG' => 'main']],
                     ['name' => 'Soạn báo cáo tình hình dân tộc, tôn giáo tháng 4', 'item_type' => 'Báo cáo định kỳ', 'deadline_type' => 'has_deadline', 'start_at' => '2026-04-25 08:00:00', 'end_at' => '2026-04-30 17:00:00', 'processing_status' => 'todo', 'completion_percent' => 0, 'priority' => 'low', 'departments' => ['DVDTTG' => 'main']],
                     ['name' => 'Theo dõi tình hình an ninh tôn giáo', 'item_type' => 'Nghiên cứu, khảo sát', 'deadline_type' => 'no_deadline', 'start_at' => '2026-04-01 08:00:00', 'end_at' => null, 'processing_status' => 'paused', 'completion_percent' => 15, 'priority' => 'low', 'departments' => ['DVDTTG' => 'main']],
-                    ['name' => 'Hội nghị tổng kết 10 năm Chỉ thị 18-CT/TW (đã hủy)', 'item_type' => 'Tổ chức sự kiện', 'deadline_type' => 'has_deadline', 'start_at' => '2026-04-20 08:00:00', 'end_at' => '2026-04-30 17:00:00', 'processing_status' => 'cancelled', 'completion_percent' => 0, 'priority' => 'medium', 'departments' => ['DVDTTG' => 'main', 'DTCH' => 'supporting']],
+                    ['name' => 'Hội nghị tổng kết 10 năm Chỉ thị 18-CT/TW (đã hủy)', 'item_type' => 'Tổ chức sự kiện', 'deadline_type' => 'has_deadline', 'start_at' => '2026-04-20 08:00:00', 'end_at' => '2026-04-30 17:00:00', 'processing_status' => 'cancelled', 'completion_percent' => 0, 'priority' => 'medium', 'departments' => ['DVDTTG' => 'main']],
                 ],
             ],
         ];

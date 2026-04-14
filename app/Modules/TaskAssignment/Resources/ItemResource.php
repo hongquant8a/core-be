@@ -45,6 +45,7 @@ class ItemResource extends JsonResource
                         'id' => $user->id,
                         'name' => $user->name,
                         'email' => $user->email,
+                        'avatar' => $user->avatar,
                         'department_id' => $user->pivot->department_id,
                         'department_role' => $user->pivot->department_role,
                         'assignment_role' => $user->pivot->assignment_role,

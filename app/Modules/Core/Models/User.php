@@ -85,6 +85,20 @@ class User extends Authenticatable implements HasMedia
             $query->where('status', $status);
         })->when($filters['task_assignment_department_id'] ?? null, function ($query, $deptId) {
             $query->whereHas('taskAssignmentUser', fn ($q) => $q->where('task_assignment_department_id', $deptId));
+        })->when(filter_var($filters['in_task_assignment'] ?? false, FILTER_VALIDATE_BOOLEAN), function ($query) {
+            $query->whereHas('taskAssignmentUser', fn ($q) => $q->where('status', 'active'));
+        })->when($filters['role_id'] ?? null, function ($query, $roleId) {
+            $teamId = function_exists('getPermissionsTeamId') ? getPermissionsTeamId() : null;
+            $query->whereExists(function ($sub) use ($roleId, $teamId) {
+                $sub->select(\DB::raw(1))
+                    ->from('model_has_roles')
+                    ->whereColumn('model_has_roles.model_id', 'users.id')
+                    ->where('model_has_roles.model_type', self::class)
+                    ->where('model_has_roles.role_id', $roleId);
+                if ($teamId) {
+                    $sub->where('model_has_roles.organization_id', $teamId);
+                }
+            });
         })->when($filters['sort_by'] ?? 'created_at', function ($query, $sortBy) use ($filters) {
             $allowed = ['id', 'name', 'email', 'user_name', 'created_at'];
             $column = in_array($sortBy, $allowed) ? $sortBy : 'created_at';

@@ -107,11 +107,16 @@ return new class extends Migration
             $table->unsignedTinyInteger('completion_percent')->default(0);
             $table->string('priority')->default('medium');
             $table->dateTime('completed_at')->nullable();
+            $table->unsignedBigInteger('assigned_by')->nullable();
+            $table->unsignedBigInteger('confirmed_by')->nullable();
+            $table->timestamp('confirmed_at')->nullable();
             $table->foreignId('organization_id')->nullable()->constrained('organizations')->nullOnDelete();
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();
 
+            $table->foreign('assigned_by')->references('id')->on('users')->nullOnDelete();
+            $table->foreign('confirmed_by')->references('id')->on('users')->nullOnDelete();
             $table->foreign('created_by')->references('id')->on('users')->nullOnDelete();
             $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
 
@@ -121,6 +126,7 @@ return new class extends Migration
             $table->index('task_assignment_item_type_id');
             $table->index('priority');
             $table->index('organization_id');
+            $table->index('assigned_by');
         });
 
         Schema::create('task_assignment_item_user', function (Blueprint $table) {
@@ -168,13 +174,20 @@ return new class extends Migration
             $table->unique(['task_assignment_item_report_id', 'media_id'], 'ta_item_report_attach_report_id_media_id_unique');
         });
 
-        // Thêm field task_assignment_department_id vào users (1 user thuộc 1 phòng ban)
-        Schema::table('users', function (Blueprint $table) {
-            $table->foreignId('task_assignment_department_id')
-                ->nullable()
-                ->after('status')
-                ->constrained('task_assignment_departments')
-                ->nullOnDelete();
+        // Bảng link user vào module TaskAssignment (thay vì gắn trực tiếp department_id trên users)
+        Schema::create('task_assignment_users', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('task_assignment_department_id')->constrained('task_assignment_departments')->cascadeOnDelete();
+            $table->string('status', 20)->default('active');
+            $table->foreignId('organization_id')->constrained('organizations')->cascadeOnDelete();
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+
+            $table->unique(['user_id', 'organization_id']);
+            $table->index(['task_assignment_department_id', 'status']);
+            $table->index('organization_id');
         });
 
         Schema::create('task_assignment_reminders', function (Blueprint $table) {
@@ -193,10 +206,8 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('task_assignment_department_id');
-        });
         Schema::dropIfExists('task_assignment_reminders');
+        Schema::dropIfExists('task_assignment_users');
         Schema::dropIfExists('task_assignment_item_report_attachments');
         Schema::dropIfExists('task_assignment_item_reports');
         Schema::dropIfExists('task_assignment_item_user');
