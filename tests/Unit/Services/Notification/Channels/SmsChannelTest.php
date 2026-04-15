@@ -13,11 +13,7 @@ use SoapFault;
 
 class SmsChannelTest extends TestCase
 {
-    protected function tearDown(): void
-    {
-        Mockery::close();
-        parent::tearDown();
-    }
+    use \Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 
     private function makeSettings(?string $server, ?string $user, ?string $pass): SettingService
     {

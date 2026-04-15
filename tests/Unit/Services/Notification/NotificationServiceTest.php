@@ -14,11 +14,7 @@ use RuntimeException;
 
 class NotificationServiceTest extends TestCase
 {
-    protected function tearDown(): void
-    {
-        Mockery::close();
-        parent::tearDown();
-    }
+    use \Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 
     private function fakeChannel(string $key, callable $impl): NotificationChannel
     {
