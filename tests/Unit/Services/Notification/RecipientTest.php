@@ -3,7 +3,7 @@
 namespace Tests\Unit\Services\Notification;
 
 use App\Services\Notification\DTOs\Recipient;
-use Tests\TestCase;
+use PHPUnit\Framework\TestCase;
 
 class RecipientTest extends TestCase
 {
