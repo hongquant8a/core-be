@@ -19,7 +19,7 @@ class NotificationService
     ) {}
 
     /**
-     * @return SendResult[]  one result per channel in $payload->channels, in order.
+     * @return SendResult[] one result per channel in $payload->channels, in order.
      */
     public function send(NotificationPayload $payload): array
     {
@@ -57,12 +57,12 @@ class NotificationService
         $context = [
             'channel' => $result->channel,
             'recipient' => [
-                'phone'    => $payload->recipient->phone,
-                'email'    => $payload->recipient->email,
-                'zalo_id'  => $payload->recipient->zaloId,
-                'name'     => $payload->recipient->name,
+                'phone' => $payload->recipient->phone,
+                'email' => $payload->recipient->email,
+                'zalo_id' => $payload->recipient->zaloId,
+                'name' => $payload->recipient->name,
             ],
-            'content_preview'  => substr($payload->content, 0, 100),
+            'content_preview' => substr($payload->content, 0, 100),
             'business_context' => $payload->context,
         ];
 

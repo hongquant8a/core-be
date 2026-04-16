@@ -14,12 +14,14 @@ use Throwable;
 class SmsChannel implements NotificationChannel
 {
     private ?string $server;
+
     private ?string $username;
+
     private ?string $password;
 
     public function __construct(private SmsClient $client, SettingService $settings)
     {
-        $this->server   = $settings->getByKey('sms_server')['value']   ?? null;
+        $this->server = $settings->getByKey('sms_server')['value'] ?? null;
         $this->username = $settings->getByKey('sms_username')['value'] ?? null;
         $this->password = $settings->getByKey('sms_password')['value'] ?? null;
     }

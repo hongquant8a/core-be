@@ -16,14 +16,14 @@ class NotificationServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(NotificationService::class, function ($app) {
-            $settings  = $app->make(SettingService::class);
+            $settings = $app->make(SettingService::class);
             $smsClient = $app->make(SmsClient::class);
 
             return new NotificationService(
                 channels: [
-                    'sms'  => new SmsChannel($smsClient, $settings),
-                    'mail' => new MailChannel(),
-                    'zalo' => new ZaloChannel(),
+                    'sms' => new SmsChannel($smsClient, $settings),
+                    'mail' => new MailChannel,
+                    'zalo' => new ZaloChannel,
                 ],
                 logger: Log::channel('notification'),
             );

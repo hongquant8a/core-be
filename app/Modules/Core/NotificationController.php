@@ -28,10 +28,10 @@ class NotificationController extends Controller
         $payload = new NotificationPayload(
             channels: $data['channels'],
             recipient: new Recipient(
-                phone:   $data['phone']   ?? null,
-                email:   $data['email']   ?? null,
-                zaloId:  $data['zalo_id'] ?? null,
-                name:    $data['name']    ?? null,
+                phone: $data['phone'] ?? null,
+                email: $data['email'] ?? null,
+                zaloId: $data['zalo_id'] ?? null,
+                name: $data['name'] ?? null,
             ),
             content: $data['content'],
             subject: $data['subject'] ?? null,
@@ -42,10 +42,10 @@ class NotificationController extends Controller
 
         return $this->success(
             array_map(fn ($r) => [
-                'channel'    => $r->channel,
-                'success'    => $r->success,
+                'channel' => $r->channel,
+                'success' => $r->success,
                 'message_id' => $r->messageId,
-                'error'      => $r->error,
+                'error' => $r->error,
             ], $results),
             'Gửi thông báo kiểm thử hoàn tất',
         );

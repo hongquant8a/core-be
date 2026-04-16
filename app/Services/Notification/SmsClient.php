@@ -18,25 +18,25 @@ class SmsClient
     {
         $client = new SoapClient(null, [
             'location' => $url,
-            'uri'      => 'http://tempuri.org/',
-            'trace'    => false,
+            'uri' => 'http://tempuri.org/',
+            'trace' => false,
             'exceptions' => true,
         ]);
 
         $response = $client->__soapCall('sendSMS', [
-            'userID'   => $user,
+            'userID' => $user,
             'password' => $pass,
-            'phoneNo'  => $phone,
-            'content'  => $content,
+            'phoneNo' => $phone,
+            'content' => $content,
         ]);
 
         // Response shape: { sendSMSResult: { result: long, message: string } }
         $result = is_object($response) ? (array) $response : $response;
-        $inner  = $result['sendSMSResult'] ?? $result;
-        $inner  = is_object($inner) ? (array) $inner : $inner;
+        $inner = $result['sendSMSResult'] ?? $result;
+        $inner = is_object($inner) ? (array) $inner : $inner;
 
         return [
-            'result'  => (int) ($inner['result'] ?? -999),
+            'result' => (int) ($inner['result'] ?? -999),
             'message' => (string) ($inner['message'] ?? ''),
         ];
     }
