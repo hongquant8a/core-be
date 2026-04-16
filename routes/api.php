@@ -20,7 +20,7 @@ Route::get('/task-assignment-departments/public', [\App\Modules\TaskAssignment\C
 Route::get('/task-assignment-departments/public-options', [\App\Modules\TaskAssignment\Controllers\TaskAssignmentDepartmentController::class, 'publicOptions'])->middleware('log.activity');
 
 // Route yêu cầu đăng nhập (Bearer token) và đặt ngữ cảnh team cho Spatie Permission
-Route::middleware(['auth:sanctum', 'set.permissions.team', 'log.activity'])->group(function () {
+Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'log.activity'])->group(function () {
     Route::get('/user', [AuthController::class, 'me']);
 
     Route::prefix('users')->group(function () {
@@ -40,6 +40,9 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'log.activity'])->gro
     });
     Route::prefix('settings')->group(function () {
         require base_path('app/Modules/Core/Routes/setting.php');
+    });
+    Route::prefix('notifications')->group(function () {
+        require base_path('app/Modules/Core/Routes/notification.php');
     });
 
     // TaskAssignment module - không scope organization_id

@@ -42,8 +42,7 @@
 | | api_deepseek_token | DeepSeek Token | string | ✗ |
 | | api_chatgpt_url | ChatGPT API URL | string | ✗ |
 | | api_chatgpt_token | ChatGPT Token | string | ✗ |
-| | api_firebase_url | Firebase API URL | string | ✗ |
-| | api_firebase_token | Firebase Token | string | ✗ |
+| | firebase_service_account | Firebase Service Account JSON | json | ✗ |
 | | api_firebase_enabled | Bật/tắt Firebase | boolean | ✗ |
 | | api_google_maps_url | Google Maps API URL | string | ✗ |
 | | api_google_maps_token | Google Maps Token | string | ✗ |
@@ -277,8 +276,7 @@ app/Modules/Core/
 | api_deepseek_token | null | string | false |
 | api_chatgpt_url | null | string | false |
 | api_chatgpt_token | null | string | false |
-| api_firebase_url | null | string | false |
-| api_firebase_token | null | string | false |
+| firebase_service_account | null | json | false |
 | api_firebase_enabled | false | boolean | false |
 | api_google_maps_url | null | string | false |
 | api_google_maps_token | null | string | false |

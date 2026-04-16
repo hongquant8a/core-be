@@ -93,6 +93,10 @@ class PermissionSeeder extends Seeder
         'dashboard' => [
             'index',
         ],
+        // Core - Thông báo kiểm thử (SMS/Mail/Zalo)
+        'notifications' => [
+            'test',
+        ],
         // TaskAssignment - Công việc được giao (cho nhân viên xem task của mình)
         'my-received-tasks' => [
             'index',
@@ -149,6 +153,7 @@ class PermissionSeeder extends Seeder
         'task-assignment-items' => 'Công việc',
         'task-assignment-item-reports' => 'Báo cáo công việc',
         'dashboard' => 'Tổng quan',
+        'notifications' => 'Thông báo',
         'my-received-tasks' => 'Công việc được giao',
         'my-assigned-tasks' => 'Công việc đang giao',
     ];
@@ -182,6 +187,7 @@ class PermissionSeeder extends Seeder
         'syncUsers' => 'Đồng bộ người dùng',
         'removeUser' => 'Xóa người dùng',
         'confirmDone' => 'Xác nhận hoàn thành',
+        'test' => 'Kiểm thử',
     ];
 
     /** Tạo đầy đủ permission từ danh sách PERMISSIONS (kèm description, sort_order, parent_id). */

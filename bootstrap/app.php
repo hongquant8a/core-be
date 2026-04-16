@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'set.permissions.team' => \App\Modules\Core\Middleware\SetPermissionsTeamId::class,
             'log.activity' => \App\Modules\Core\Middleware\LogActivity::class,
             'ensure.route.org' => \App\Modules\Core\Middleware\EnsureRouteModelsBelongToOrganization::class,
+            'sync.fcm.token' => \App\Modules\Core\Middleware\SyncFcmToken::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
