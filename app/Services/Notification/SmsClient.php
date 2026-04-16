@@ -24,10 +24,10 @@ class SmsClient
         ]);
 
         $response = $client->__soapCall('sendSMS', [
-            'userID' => $user,
-            'password' => $pass,
-            'phoneNo' => $phone,
-            'content' => $content,
+            new \SoapParam($user, 'userID'),
+            new \SoapParam($pass, 'password'),
+            new \SoapParam($phone, 'phoneNo'),
+            new \SoapParam($content, 'content'),
         ], ['soapaction' => 'http://tempuri.org/sendSMS']);
 
         // Response shape: { sendSMSResult: { result: long, message: string } }
