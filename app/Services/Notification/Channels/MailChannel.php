@@ -71,8 +71,16 @@ class MailChannel implements NotificationChannel
                 ],
             ]);
 
+            $html = view('emails.notification', [
+                'subject' => $subject,
+                'content' => $payload->content,
+                'recipientName' => $recipient->name,
+                'context' => $payload->context ?: [],
+                'senderName' => $this->senderName,
+            ])->render();
+
             Mail::mailer('notification_smtp')
-                ->raw($payload->content, function (Message $message) use ($recipient, $subject) {
+                ->html($html, function (Message $message) use ($recipient, $subject) {
                     $message->from($this->senderAddress, $this->senderName)
                         ->to($recipient->email, $recipient->name)
                         ->subject($subject);
