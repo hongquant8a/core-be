@@ -23,7 +23,7 @@ class NotificationServiceProvider extends ServiceProvider
                 channels: [
                     'sms' => new SmsChannel($smsClient, $settings),
                     'mail' => new MailChannel,
-                    'zalo' => new ZaloChannel,
+                    'zalo' => new ZaloChannel($settings),
                 ],
                 logger: Log::channel('notification'),
             );

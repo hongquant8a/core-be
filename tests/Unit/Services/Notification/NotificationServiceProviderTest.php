@@ -28,17 +28,21 @@ class NotificationServiceProviderTest extends TestCase
         $this->assertSame('Unknown channel: nonexistent', $results[0]->error);
     }
 
-    public function test_mail_and_zalo_channels_registered_as_stubs(): void
+    public function test_all_channels_registered(): void
     {
         $svc = app(NotificationService::class);
         $payload = new NotificationPayload(
-            channels: ['mail', 'zalo'],
+            channels: ['sms', 'mail', 'zalo'],
             recipient: new Recipient(phone: '0905112233', email: 'a@b.c', zaloId: 'z'),
             content: 'hi',
         );
         $results = $svc->send($payload);
-        $this->assertCount(2, $results);
-        $this->assertSame('Not implemented yet', $results[0]->error);
+        $this->assertCount(3, $results);
+        // All channels resolve (no "Unknown channel" errors)
+        foreach ($results as $r) {
+            $this->assertStringNotContainsString('Unknown channel', $r->error ?? '');
+        }
+        // Mail is still stub
         $this->assertSame('Not implemented yet', $results[1]->error);
     }
 }
