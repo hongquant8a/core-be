@@ -9,7 +9,7 @@ class RecipientTest extends TestCase
 {
     public function test_constructs_with_all_nullable_fields_defaulting_to_null(): void
     {
-        $r = new Recipient();
+        $r = new Recipient;
         $this->assertNull($r->phone);
         $this->assertNull($r->email);
         $this->assertNull($r->zaloId);

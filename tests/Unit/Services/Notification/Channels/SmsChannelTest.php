@@ -41,7 +41,7 @@ class SmsChannelTest extends TestCase
     private function send(SmsChannel $ch, ?string $phone, string $content): \App\Services\Notification\DTOs\SendResult
     {
         $recipient = new Recipient(phone: $phone);
-        $payload   = new NotificationPayload(['sms'], $recipient, $content);
+        $payload = new NotificationPayload(['sms'], $recipient, $content);
 
         return $ch->send($recipient, $payload);
     }

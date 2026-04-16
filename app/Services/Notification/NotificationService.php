@@ -61,6 +61,7 @@ class NotificationService
                 'email' => $payload->recipient->email,
                 'zalo_id' => $payload->recipient->zaloId,
                 'name' => $payload->recipient->name,
+                'fcm_token' => $payload->recipient->fcmToken,
             ],
             'content_preview' => substr($payload->content, 0, 100),
             'business_context' => $payload->context,

@@ -83,7 +83,7 @@ class NotificationServiceTest extends TestCase
     {
         $svc = new NotificationService(
             channels: [
-                'sms'  => $this->fakeChannel('sms',  fn () => new SendResult('sms', true, '1')),
+                'sms' => $this->fakeChannel('sms', fn () => new SendResult('sms', true, '1')),
                 'mail' => $this->fakeChannel('mail', fn () => new SendResult('mail', false, error: 'nope')),
             ],
             logger: $this->nullLogger(),

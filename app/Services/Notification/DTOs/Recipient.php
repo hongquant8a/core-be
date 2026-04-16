@@ -9,5 +9,6 @@ final readonly class Recipient
         public ?string $email = null,
         public ?string $zaloId = null,
         public ?string $name = null,
+        public ?string $fcmToken = null,
     ) {}
 }

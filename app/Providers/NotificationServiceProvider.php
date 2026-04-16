@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Modules\Core\Services\SettingService;
+use App\Services\Notification\Channels\FcmChannel;
 use App\Services\Notification\Channels\MailChannel;
 use App\Services\Notification\Channels\SmsChannel;
 use App\Services\Notification\Channels\ZaloChannel;
@@ -22,8 +23,9 @@ class NotificationServiceProvider extends ServiceProvider
             return new NotificationService(
                 channels: [
                     'sms' => new SmsChannel($smsClient, $settings),
-                    'mail' => new MailChannel,
+                    'mail' => new MailChannel($settings),
                     'zalo' => new ZaloChannel($settings),
+                    'fcm' => new FcmChannel($settings),
                 ],
                 logger: Log::channel('notification'),
             );

@@ -32,6 +32,7 @@ class NotificationController extends Controller
                 email: $data['email'] ?? null,
                 zaloId: $data['zalo_id'] ?? null,
                 name: $data['name'] ?? null,
+                fcmToken: $data['fcm_token'] ?? null,
             ),
             content: $data['content'],
             subject: $data['subject'] ?? null,
