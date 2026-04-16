@@ -41,6 +41,9 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'log.activity'])->gro
     Route::prefix('settings')->group(function () {
         require base_path('app/Modules/Core/Routes/setting.php');
     });
+    Route::prefix('notifications')->group(function () {
+        require base_path('app/Modules/Core/Routes/notification.php');
+    });
 
     // TaskAssignment module - không scope organization_id
     Route::prefix('task-assignment-departments')->group(function () {
