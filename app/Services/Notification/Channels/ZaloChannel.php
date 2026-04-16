@@ -13,6 +13,8 @@ use Throwable;
 
 class ZaloChannel implements NotificationChannel
 {
+    private bool $enabled;
+
     private ?string $server;
 
     private ?string $username;
@@ -27,6 +29,7 @@ class ZaloChannel implements NotificationChannel
 
     public function __construct(SettingService $settings)
     {
+        $this->enabled = (bool) ($settings->getByKey('zalo_enabled')['value'] ?? false);
         $this->server = $settings->getByKey('zalo_server')['value'] ?? null;
         $this->username = $settings->getByKey('zalo_username')['value'] ?? null;
         $this->password = $settings->getByKey('zalo_password')['value'] ?? null;
@@ -44,6 +47,10 @@ class ZaloChannel implements NotificationChannel
 
     public function send(Recipient $recipient, NotificationPayload $payload): SendResult
     {
+        if (! $this->enabled) {
+            return $this->fail('Zalo is disabled');
+        }
+
         if (! $this->server || ! $this->username || ! $this->password) {
             return $this->fail('Zalo not configured');
         }

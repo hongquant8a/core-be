@@ -270,8 +270,7 @@ Cấu hình trong trang **Cấu hình hệ thống** (`/api/settings`):
 
 | Setting key | Mô tả |
 |-------------|-------|
-| `api_firebase_url` | URL Firebase (`https://fcm.googleapis.com/fcm/send`) |
-| `api_firebase_token` | Server key (từ Firebase Console → Project Settings → Cloud Messaging) |
+| `firebase_service_account` | Firebase service account JSON object |
 | `api_firebase_enabled` | Bật/tắt FCM (`1` = bật, `0` = tắt) |
 
 ---

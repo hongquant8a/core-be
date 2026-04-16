@@ -7,22 +7,31 @@ use App\Services\Notification\Contracts\NotificationChannel;
 use App\Services\Notification\DTOs\NotificationPayload;
 use App\Services\Notification\DTOs\Recipient;
 use App\Services\Notification\DTOs\SendResult;
-use Illuminate\Support\Facades\Http;
+use Kreait\Firebase\Contract\Messaging as FirebaseMessaging;
+use Kreait\Firebase\Factory;
+use Kreait\Firebase\Messaging\CloudMessage;
+use Kreait\Firebase\Messaging\Notification as FirebaseNotification;
 use Throwable;
 
 class FcmChannel implements NotificationChannel
 {
-    private ?string $url;
+    private ?FirebaseMessaging $messaging = null;
 
-    private ?string $serverKey;
+    private bool $messagingInitAttempted = false;
 
     private bool $enabled;
 
-    public function __construct(SettingService $settings)
+    private array $serviceAccount = [];
+
+    private ?string $projectId = null;
+
+    public function __construct(SettingService $settings, ?FirebaseMessaging $messaging = null)
     {
-        $this->url = $settings->getByKey('api_firebase_url')['value'] ?? null;
-        $this->serverKey = $settings->getByKey('api_firebase_token')['value'] ?? null;
-        $this->enabled = (bool) ($settings->getByKey('api_firebase_enabled')['value'] ?? false);
+        $account = $settings->getByKey('firebase_service_account')['value'] ?? null;
+        $this->serviceAccount = is_array($account) ? $account : (is_string($account) ? json_decode($account, true) ?? [] : []);
+        $this->projectId = $this->serviceAccount['project_id'] ?? null;
+        $this->enabled = (bool) ($settings->getByKey('fcm_enabled')['value'] ?? false);
+        $this->messaging = $messaging;
     }
 
     public function key(): string
@@ -36,7 +45,12 @@ class FcmChannel implements NotificationChannel
             return $this->fail('FCM is disabled');
         }
 
-        if (! $this->url || ! $this->serverKey) {
+        if (! $this->messaging && ! $this->messagingInitAttempted) {
+            $this->messaging = $this->createMessaging();
+            $this->messagingInitAttempted = true;
+        }
+
+        if (! $this->messaging) {
             return $this->fail('FCM not configured');
         }
 
@@ -44,43 +58,43 @@ class FcmChannel implements NotificationChannel
             return $this->fail('Missing FCM device token');
         }
 
-        $body = [
-            'to' => $recipient->fcmToken,
-            'notification' => [
-                'title' => $payload->subject ?: 'Thông báo',
-                'body' => $payload->content,
-            ],
-        ];
+        $message = CloudMessage::new()
+            ->withToken($recipient->fcmToken)
+            ->withNotification(FirebaseNotification::create($payload->subject ?: 'Thông báo', $payload->content));
 
         if (! empty($payload->context)) {
-            $body['data'] = $payload->context;
+            $message = $message->withData(array_map(
+                fn ($value) => is_string($value) ? $value : json_encode($value),
+                $payload->context,
+            ));
         }
 
         try {
-            $response = Http::withHeaders([
-                'Authorization' => 'key='.$this->serverKey,
-            ])
-                ->acceptJson()
-                ->post($this->url, $body);
-
-            $data = $response->json();
+            $response = $this->messaging->send($message);
         } catch (Throwable $e) {
-            return $this->fail('HTTP error: '.$e->getMessage());
+            return $this->fail('FCM send failed: '.$e->getMessage());
         }
 
-        $success = ($data['success'] ?? 0) >= 1;
+        return new SendResult(
+            channel: 'fcm',
+            success: true,
+            messageId: $response['name'] ?? null,
+        );
+    }
 
-        if ($success) {
-            return new SendResult(
-                channel: 'fcm',
-                success: true,
-                messageId: $data['results'][0]['message_id'] ?? ($data['message_id'] ?? null),
-            );
+    protected function createMessaging(): ?FirebaseMessaging
+    {
+        if (! $this->projectId || empty($this->serviceAccount['private_key']) || empty($this->serviceAccount['client_email'])) {
+            return null;
         }
 
-        $error = $data['results'][0]['error'] ?? ($data['error'] ?? 'FCM send failed');
-
-        return $this->fail($error);
+        try {
+            return (new Factory())
+                ->withServiceAccount($this->serviceAccount)
+                ->createMessaging();
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     private function fail(string $error): SendResult

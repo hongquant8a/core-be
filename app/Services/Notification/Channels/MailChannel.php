@@ -13,6 +13,8 @@ use Throwable;
 
 class MailChannel implements NotificationChannel
 {
+    private bool $enabled;
+
     private ?string $host;
 
     private ?string $port;
@@ -29,6 +31,7 @@ class MailChannel implements NotificationChannel
 
     public function __construct(SettingService $settings)
     {
+        $this->enabled = (bool) ($settings->getByKey('email_enabled')['value'] ?? false);
         $this->host = $settings->getByKey('email_smtp_host')['value'] ?? null;
         $this->port = $settings->getByKey('email_smtp_port')['value'] ?? '587';
         $this->username = $settings->getByKey('email_smtp_username')['value'] ?? null;
@@ -45,6 +48,10 @@ class MailChannel implements NotificationChannel
 
     public function send(Recipient $recipient, NotificationPayload $payload): SendResult
     {
+        if (! $this->enabled) {
+            return $this->fail('Mail is disabled');
+        }
+
         if (! $this->host || ! $this->username || ! $this->password) {
             return $this->fail('Mail not configured');
         }

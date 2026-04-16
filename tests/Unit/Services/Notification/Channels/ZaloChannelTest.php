@@ -22,8 +22,10 @@ class ZaloChannelTest extends TestCase
         ?string $sender = 'oa123',
         ?string $templateId = 'tpl456',
         mixed $extraParams = null,
+        bool $enabled = true,
     ): SettingService {
         $m = Mockery::mock(SettingService::class);
+        $m->shouldReceive('getByKey')->with('zalo_enabled')->andReturn(['value' => $enabled ? '1' : '0']);
         $m->shouldReceive('getByKey')->with('zalo_server')->andReturn($server === null ? null : ['value' => $server]);
         $m->shouldReceive('getByKey')->with('zalo_username')->andReturn($user === null ? null : ['value' => $user]);
         $m->shouldReceive('getByKey')->with('zalo_password')->andReturn($pass === null ? null : ['value' => $pass]);

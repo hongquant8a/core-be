@@ -22,8 +22,10 @@ class MailChannelTest extends TestCase
         ?string $encryption = 'tls',
         ?string $senderAddress = 'noreply@test.com',
         ?string $senderName = 'Test',
+        bool $enabled = true,
     ): SettingService {
         $m = Mockery::mock(SettingService::class);
+        $m->shouldReceive('getByKey')->with('email_enabled')->andReturn(['value' => $enabled ? '1' : '0']);
         $m->shouldReceive('getByKey')->with('email_smtp_host')->andReturn($host === null ? null : ['value' => $host]);
         $m->shouldReceive('getByKey')->with('email_smtp_username')->andReturn($username === null ? null : ['value' => $username]);
         $m->shouldReceive('getByKey')->with('email_smtp_password')->andReturn($password === null ? null : ['value' => $password]);

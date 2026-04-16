@@ -15,9 +15,10 @@ class SmsChannelTest extends TestCase
 {
     use \Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 
-    private function makeSettings(?string $server, ?string $user, ?string $pass): SettingService
+    private function makeSettings(?string $server, ?string $user, ?string $pass, bool $enabled = true): SettingService
     {
         $m = Mockery::mock(SettingService::class);
+        $m->shouldReceive('getByKey')->with('sms_enabled')->andReturn(['value' => $enabled ? '1' : '0']);
         $m->shouldReceive('getByKey')->with('sms_server')->andReturn($server === null ? null : ['value' => $server]);
         $m->shouldReceive('getByKey')->with('sms_username')->andReturn($user === null ? null : ['value' => $user]);
         $m->shouldReceive('getByKey')->with('sms_password')->andReturn($pass === null ? null : ['value' => $pass]);

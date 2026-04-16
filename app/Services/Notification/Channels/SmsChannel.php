@@ -13,6 +13,8 @@ use Throwable;
 
 class SmsChannel implements NotificationChannel
 {
+    private bool $enabled;
+
     private ?string $server;
 
     private ?string $username;
@@ -21,6 +23,7 @@ class SmsChannel implements NotificationChannel
 
     public function __construct(private SmsClient $client, SettingService $settings)
     {
+        $this->enabled = (bool) ($settings->getByKey('sms_enabled')['value'] ?? false);
         $this->server = $settings->getByKey('sms_server')['value'] ?? null;
         $this->username = $settings->getByKey('sms_username')['value'] ?? null;
         $this->password = $settings->getByKey('sms_password')['value'] ?? null;
@@ -33,6 +36,10 @@ class SmsChannel implements NotificationChannel
 
     public function send(Recipient $recipient, NotificationPayload $payload): SendResult
     {
+        if (! $this->enabled) {
+            return $this->fail('SMS is disabled');
+        }
+
         if (! $this->server || ! $this->username || ! $this->password) {
             return $this->fail('SMS not configured');
         }

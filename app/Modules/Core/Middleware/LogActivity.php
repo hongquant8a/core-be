@@ -23,7 +23,7 @@ class LogActivity
         'password', 'password_confirmation', '_token', 'token',
         'email_smtp_password', 'sms_password', 'zalo_password', 'chat_api_key',
         'api_gemini_token', 'api_deepseek_token', 'api_chatgpt_token',
-        'api_firebase_token', 'api_google_maps_token',
+        'firebase_service_account', 'api_google_maps_token',
     ];
 
     /** Đường dẫn không ghi log (vd: health check). */
