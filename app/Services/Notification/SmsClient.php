@@ -28,7 +28,7 @@ class SmsClient
             'password' => $pass,
             'phoneNo' => $phone,
             'content' => $content,
-        ]);
+        ], ['soapaction' => 'http://tempuri.org/sendSMS']);
 
         // Response shape: { sendSMSResult: { result: long, message: string } }
         $result = is_object($response) ? (array) $response : $response;
