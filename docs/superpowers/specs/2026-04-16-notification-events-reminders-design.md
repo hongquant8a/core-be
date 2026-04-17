@@ -86,6 +86,46 @@ resources/views/notifications/                             (MỚI)
 
 ## 4. Database schema
 
+### Migration 0: `create_notifications_table` (POLYMORPHIC, for in-app list)
+
+Mỗi lần 1 event/reminder fire tới 1 user → 1 record. User xem list notification qua API.
+
+```sql
+notifications
+├─ id
+├─ user_id                              -- recipient FK
+├─ event_key VARCHAR(50)                -- 'document_issued', 'task_completed', 'reminder_before', ...
+├─ notifiable_type VARCHAR(255)         -- polymorphic: App\Modules\TaskAssignment\Models\TaskAssignmentItem
+├─ notifiable_id BIGINT UNSIGNED
+├─ title VARCHAR(255)
+├─ body TEXT                            -- short description, rendered for in-app display
+├─ context JSON                         -- extra data for frontend (vd url, action)
+├─ read_at DATETIME NULL                -- null = unread
+├─ timestamps
+├─ INDEX (user_id, read_at)
+├─ INDEX (notifiable_type, notifiable_id)
+```
+
+### Migration 0b: `create_notification_deliveries_table` (log của mỗi lượt push)
+
+Mỗi channel attempt → 1 record. FK tới `notifications` (parent). Cho phép audit "notification X đã đẩy qua bao nhiêu channel, thành công/fail thế nào".
+
+```sql
+notification_deliveries
+├─ id
+├─ notification_id                      -- FK notifications, cascade delete
+├─ channel VARCHAR(20)                  -- sms/mail/zalo/fcm
+├─ status ENUM('pending','sent','failed','skipped') DEFAULT 'pending'
+├─ message_id VARCHAR(255) NULL         -- ID từ provider
+├─ error_message TEXT NULL
+├─ sent_at DATETIME NULL
+├─ timestamps
+├─ INDEX (notification_id)
+├─ INDEX (status, created_at)
+```
+
+`status = skipped` khi recipient thiếu field (vd muốn gửi sms nhưng user không có phone).
+
 ### Migration 1: `create_notification_event_configs_table`
 
 ```sql
@@ -120,26 +160,38 @@ Seed mặc định vài rule phổ biến:
 - on, channels=[sms, mail, fcm]
 - after 1 ngày (1440 min), channels=[mail]
 
-### Migration 3: `extend_task_assignment_reminders_table`
+### Migration 3: RESTRUCTURE `task_assignment_reminders`
 
-Bảng đã có (`task_assignment_reminders`). Thêm:
+Bảng hiện tại pre-expanded theo (item × user × channel). Với thiết kế mới (notifications/deliveries riêng), reminder chỉ cần giữ **lịch hẹn ở item-level**. Fire time sẽ resolve users + channels từ config.
+
+**Drop & recreate** (bảng chưa có dữ liệu production — kiểm tra trước khi drop):
 
 ```sql
-ALTER TABLE task_assignment_reminders
-  ADD COLUMN moment ENUM('before','on','after') AFTER remind_at,
-  ADD COLUMN schedule_id BIGINT UNSIGNED NULL AFTER moment,        -- ref notification_schedules
-  ADD CONSTRAINT FOREIGN KEY (schedule_id) REFERENCES notification_schedules(id) ON DELETE SET NULL;
+DROP TABLE task_assignment_reminders;
 
--- Update enum status: add 'cancelled'
-ALTER TABLE task_assignment_reminders
-  MODIFY status ENUM('pending','sent','failed','cancelled') DEFAULT 'pending';
-
--- Update enum channel: add 'fcm'
-ALTER TABLE task_assignment_reminders
-  MODIFY channel ENUM('system','email','zalo','sms','fcm') NOT NULL;
+CREATE TABLE task_assignment_reminders (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  task_assignment_item_id BIGINT UNSIGNED NOT NULL,
+  notification_schedule_id BIGINT UNSIGNED NOT NULL,
+  moment ENUM('before','on','after') NOT NULL,
+  remind_at DATETIME NOT NULL,
+  status ENUM('pending','fired','cancelled') DEFAULT 'pending',
+  fired_at DATETIME NULL,
+  created_at DATETIME,
+  updated_at DATETIME,
+  FOREIGN KEY (task_assignment_item_id) REFERENCES task_assignment_items(id) ON DELETE CASCADE,
+  FOREIGN KEY (notification_schedule_id) REFERENCES notification_schedules(id) ON DELETE CASCADE,
+  INDEX (status, remind_at)
+);
 ```
 
-**Note:** Schema hiện tại có channel `system` (in-app notification, chưa implement). Giữ nguyên, không xóa.
+Khi reminder `fired`:
+- Load item → get assignees (`item.users`)
+- For each assignee × for each channel in `schedule.channels`:
+  - Create notification record (event_key = `reminder_before/on/after`)
+  - Create delivery record per channel
+  - Dispatch queued job
+- Mark reminder.status = `fired`, fired_at = now.
 
 ## 5. Event dispatch — integration points
 
@@ -181,7 +233,48 @@ event(new TaskConfirmed($item));
 - **Item updated** (end_at change) → `ReminderScheduler::reschedule($item)` — delete pending, create lại.
 - **Item status → done** → `TaskAssignmentReminder::where('item_id', $item->id)->where('status', 'pending')->update(['status' => 'cancelled'])`.
 
-## 6. Listeners (queued)
+## 6. Notification creation flow (shared cho events + reminders)
+
+Service `NotificationDispatcher` chịu trách nhiệm từ (event/reminder) → tạo notification + deliveries + dispatch job.
+
+```php
+class NotificationDispatcher
+{
+    public function dispatch(
+        string $eventKey,            // 'document_issued', 'reminder_before', ...
+        User $recipient,
+        Model $notifiable,           // TaskAssignmentItem hoặc model khác (polymorphic)
+        array $channels,             // ['sms','mail',...]
+        ContentBuilder $builder,     // builder riêng cho event
+        array $builderArgs = [],
+    ): Notification {
+        // 1. Create notification record (parent)
+        $notification = Notification::create([
+            'user_id' => $recipient->id,
+            'event_key' => $eventKey,
+            'notifiable_type' => get_class($notifiable),
+            'notifiable_id' => $notifiable->id,
+            'title' => $builder->title($recipient, ...$builderArgs),
+            'body' => $builder->shortBody($recipient, ...$builderArgs),
+            'context' => $builder->inAppContext($recipient, ...$builderArgs),
+        ]);
+
+        // 2. Create delivery records + dispatch jobs
+        foreach ($channels as $channelKey) {
+            $delivery = NotificationDelivery::create([
+                'notification_id' => $notification->id,
+                'channel' => $channelKey,
+                'status' => 'pending',
+            ]);
+            SendDeliveryJob::dispatch($delivery->id, $builderArgs)->onQueue('notifications');
+        }
+
+        return $notification;
+    }
+}
+```
+
+## 6b. Listeners (queued)
 
 ```php
 class SendDocumentIssuedNotifications implements ShouldQueue
@@ -193,16 +286,60 @@ class SendDocumentIssuedNotifications implements ShouldQueue
 
         $items = $event->document->items()->with('users')->get();
         $builder = app(DocumentIssuedContentBuilder::class);
+        $dispatcher = app(NotificationDispatcher::class);
 
         foreach ($items as $item) {
             foreach ($item->users as $user) {
-                foreach ($config->channels as $channelKey) {
-                    $payload = $builder->build($channelKey, $user, $item, $event->document);
-                    if ($payload === null) continue; // channel builder có thể skip
-                    app(NotificationService::class)->send($payload);
-                }
+                $dispatcher->dispatch(
+                    eventKey: 'document_issued',
+                    recipient: $user,
+                    notifiable: $item,
+                    channels: $config->channels,
+                    builder: $builder,
+                    builderArgs: [$item, $event->document],
+                );
             }
         }
+    }
+}
+```
+
+## 6c. SendDeliveryJob (mỗi delivery = 1 job)
+
+```php
+class SendDeliveryJob implements ShouldQueue
+{
+    public function __construct(public int $deliveryId, public array $builderArgs) {}
+
+    public function handle(): void
+    {
+        $delivery = NotificationDelivery::with('notification.user')->find($this->deliveryId);
+        if (! $delivery || $delivery->status !== 'pending') return;
+
+        $notification = $delivery->notification;
+        $recipient = $notification->user;
+        $builder = ContentBuilderRegistry::for($notification->event_key);
+
+        $payload = $builder->build(
+            channelKey: $delivery->channel,
+            recipient: $recipient,
+            ...$this->builderArgs,
+        );
+
+        if ($payload === null) {
+            $delivery->update(['status' => 'skipped', 'error_message' => 'Recipient missing field for channel']);
+            return;
+        }
+
+        $results = app(NotificationService::class)->send($payload);
+        $result = $results[0];
+
+        $delivery->update([
+            'status' => $result->success ? 'sent' : 'failed',
+            'message_id' => $result->messageId,
+            'error_message' => $result->error,
+            'sent_at' => $result->success ? now() : null,
+        ]);
     }
 }
 ```
@@ -329,7 +466,9 @@ public function handle(): void
 }
 ```
 
-## 9. API endpoints (admin config)
+## 9. API endpoints
+
+### Admin config
 
 | Method | Path | Permission | Mô tả |
 |--------|------|------------|-------|
@@ -339,6 +478,22 @@ public function handle(): void
 | POST | `/api/notifications/schedules` | `notifications.schedules.store` | Create |
 | PUT | `/api/notifications/schedules/{id}` | `notifications.schedules.update` | Update |
 | DELETE | `/api/notifications/schedules/{id}` | `notifications.schedules.destroy` | Delete |
+
+### User-facing (notification list)
+
+| Method | Path | Permission | Mô tả |
+|--------|------|------------|-------|
+| GET | `/api/notifications/me` | (none — authenticated only) | List notifications của user hiện tại (filter: `read`, pagination) |
+| GET | `/api/notifications/me/unread-count` | (none) | Đếm notification chưa đọc |
+| PATCH | `/api/notifications/me/{id}/read` | (none) | Mark 1 notification là đã đọc |
+| PATCH | `/api/notifications/me/read-all` | (none) | Mark all đã đọc |
+| DELETE | `/api/notifications/me/{id}` | (none) | Xóa 1 notification khỏi list (soft delete hoặc hard delete — phải không? MVP: hard) |
+
+### Admin audit (optional — xem delivery logs)
+
+| Method | Path | Permission | Mô tả |
+|--------|------|------------|-------|
+| GET | `/api/notifications/{id}/deliveries` | `notifications.audit.view` | Xem list delivery của 1 notification (audit push logs) |
 
 Body cho update event config:
 ```json
