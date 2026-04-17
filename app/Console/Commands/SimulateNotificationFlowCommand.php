@@ -155,7 +155,7 @@ class SimulateNotificationFlowCommand extends Command
                 $this->warn('Chạy: php artisan queue:work --queue=notifications,default');
             }
 
-            $this->info('Check log: storage/logs/notification-'.now()->format('Y-m-d').'.log');
+            $this->info('Xem chi tiết deliveries qua API: GET /api/notifications/logs');
         } finally {
             if (! $noCleanup) {
                 $this->newLine();
