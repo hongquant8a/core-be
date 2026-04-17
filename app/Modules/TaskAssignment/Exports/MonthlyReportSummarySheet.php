@@ -30,6 +30,38 @@ class MonthlyReportSummarySheet implements FromArray, WithTitle, WithStyles, Sho
     /** Row index nơi bảng dữ liệu bắt đầu (header row 1). */
     private int $tableStartRow = 6;
 
+    /**
+     * Classify an item into one of 4 buckets for the monthly report.
+     *
+     * Order matters: overdue is checked first so an in_progress task past its
+     * deadline falls into 'overdue', not 'in_flight'. Done is terminal —
+     * a completed task stays 'done' even if its deadline passed.
+     *
+     * @param  object  $item  Must expose processing_status, deadline_type, end_at (Carbon|string|null).
+     * @return 'in_flight'|'done'|'overdue'|'other'
+     */
+    public static function classify(object $item, Carbon $now): string
+    {
+        if ($item->processing_status === 'done') {
+            return 'done';
+        }
+
+        $isOverdue = $item->deadline_type === 'has_deadline'
+            && $item->end_at
+            && Carbon::parse($item->end_at)->lt($now)
+            && ! in_array($item->processing_status, ['done', 'cancelled'], true);
+
+        if ($isOverdue) {
+            return 'overdue';
+        }
+
+        if (in_array($item->processing_status, ['todo', 'in_progress'], true)) {
+            return 'in_flight';
+        }
+
+        return 'other';
+    }
+
     public function __construct(private string $month)
     {
         $this->itemTypes = TaskAssignmentItemType::where('status', 'active')
