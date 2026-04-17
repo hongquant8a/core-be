@@ -122,9 +122,7 @@ Mỗi thông báo gửi cho user được lưu trong hệ thống. User có tran
 
 ### Log gửi tin cho quản trị
 
-Mỗi lượt gửi qua kênh được lưu log với kết quả thành công/thất bại + mã lỗi. Quản trị có thể tra cứu khi cần audit hoặc xử lý sự cố (vd SMS không đến → check log thấy bị lỗi `Invalid phone number`).
-
-Ngoài ra có file log theo ngày tại server (`storage/logs/notification-YYYY-MM-DD.log`) — lưu 14 ngày rồi xoay vòng.
+Mỗi lượt gửi qua kênh được lưu đầy đủ trong bảng `notification_deliveries` (status, message_id, error_message, sent_at, channel). Quản trị tra cứu qua API `/api/notifications/logs` (list + filter + detail + stats). Log audit bất biến — không có endpoint xóa.
 
 ---
 

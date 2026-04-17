@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Modules\Core\Services\SettingService;
+use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
+use App\Modules\TaskAssignment\Observers\TaskAssignmentItemObserver;
 use App\Services\Notification\Channels\FcmChannel;
 use App\Services\Notification\Channels\MailChannel;
 use App\Services\Notification\Channels\SmsChannel;
@@ -14,8 +16,6 @@ use App\Services\Notification\ContentBuilders\TaskConfirmedContentBuilder;
 use App\Services\Notification\Events\DocumentIssued;
 use App\Services\Notification\Events\TaskCompleted;
 use App\Services\Notification\Events\TaskConfirmed;
-use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
-use App\Modules\TaskAssignment\Observers\TaskAssignmentItemObserver;
 use App\Services\Notification\Listeners\SendDocumentIssuedNotifications;
 use App\Services\Notification\Listeners\SendTaskCompletedNotifications;
 use App\Services\Notification\Listeners\SendTaskConfirmedNotifications;
@@ -23,7 +23,6 @@ use App\Services\Notification\NotificationService;
 use App\Services\Notification\Services\ContentBuilderRegistry;
 use App\Services\Notification\SmsClient;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 
 class NotificationServiceProvider extends ServiceProvider
@@ -43,7 +42,6 @@ class NotificationServiceProvider extends ServiceProvider
                     'zalo' => new ZaloChannel($settings),
                     'fcm' => new FcmChannel($settings),
                 ],
-                logger: Log::channel('notification'),
             );
         });
     }

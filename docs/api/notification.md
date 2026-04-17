@@ -279,7 +279,7 @@ Cấu hình trong trang **Cấu hình hệ thống** (`/api/settings`):
 
 - Số điện thoại `0xxx` tự động chuyển thành `84xxx` (SMS và Zalo).
 - Nội dung SMS tự động bỏ dấu và thêm prefix `Thong bao: ` nếu chưa có.
-- Log gửi thông báo: `storage/logs/notification-YYYY-MM-DD.log`.
+- Log gửi thông báo lưu trong bảng `notification_deliveries` (xem API `/api/notifications/logs`).
 - Mỗi kênh độc lập — 1 kênh fail không ảnh hưởng kênh khác.
 - Tất cả lỗi được bắt và trả về `SendResult` (không throw exception ra caller).
 

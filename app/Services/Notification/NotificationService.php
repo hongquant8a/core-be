@@ -5,9 +5,13 @@ namespace App\Services\Notification;
 use App\Services\Notification\Contracts\NotificationChannel;
 use App\Services\Notification\DTOs\NotificationPayload;
 use App\Services\Notification\DTOs\SendResult;
-use Psr\Log\LoggerInterface;
 use Throwable;
 
+/**
+ * Low-level channel dispatcher. Kết quả (success/error/message_id) được
+ * consumer (SendDeliveryJob) ghi vào bảng notification_deliveries — không
+ * cần file log nữa.
+ */
 class NotificationService
 {
     /**
@@ -15,7 +19,6 @@ class NotificationService
      */
     public function __construct(
         private array $channels,
-        private LoggerInterface $logger,
     ) {}
 
     /**
@@ -35,44 +38,13 @@ class NotificationService
     private function sendOne(string $key, NotificationPayload $payload): SendResult
     {
         if (! isset($this->channels[$key])) {
-            $result = new SendResult(channel: $key, success: false, error: "Unknown channel: {$key}");
-            $this->log($result, $payload);
-
-            return $result;
+            return new SendResult(channel: $key, success: false, error: "Unknown channel: {$key}");
         }
 
         try {
-            $result = $this->channels[$key]->send($payload->recipient, $payload);
+            return $this->channels[$key]->send($payload->recipient, $payload);
         } catch (Throwable $e) {
-            $result = new SendResult(channel: $key, success: false, error: 'Channel exception: '.$e->getMessage());
-        }
-
-        $this->log($result, $payload);
-
-        return $result;
-    }
-
-    private function log(SendResult $result, NotificationPayload $payload): void
-    {
-        $context = [
-            'channel' => $result->channel,
-            'recipient' => [
-                'phone' => $payload->recipient->phone,
-                'email' => $payload->recipient->email,
-                'zalo_id' => $payload->recipient->zaloId,
-                'name' => $payload->recipient->name,
-                'fcm_token' => $payload->recipient->fcmToken,
-            ],
-            'content_preview' => substr($payload->content, 0, 100),
-            'business_context' => $payload->context,
-        ];
-
-        if ($result->success) {
-            $context['message_id'] = $result->messageId;
-            $this->logger->info('notification.sent', $context);
-        } else {
-            $context['error'] = $result->error;
-            $this->logger->warning('notification.failed', $context);
+            return new SendResult(channel: $key, success: false, error: 'Channel exception: '.$e->getMessage());
         }
     }
 }

@@ -7,9 +7,7 @@ use App\Services\Notification\DTOs\NotificationPayload;
 use App\Services\Notification\DTOs\Recipient;
 use App\Services\Notification\DTOs\SendResult;
 use App\Services\Notification\NotificationService;
-use Mockery;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 class NotificationServiceTest extends TestCase
@@ -34,15 +32,6 @@ class NotificationServiceTest extends TestCase
         };
     }
 
-    private function nullLogger(): LoggerInterface
-    {
-        $m = Mockery::mock(LoggerInterface::class);
-        $m->shouldReceive('info')->byDefault();
-        $m->shouldReceive('warning')->byDefault();
-
-        return $m;
-    }
-
     private function payload(array $channels, string $content = 'hi'): NotificationPayload
     {
         return new NotificationPayload($channels, new Recipient(phone: '0905112233'), $content);
@@ -59,7 +48,6 @@ class NotificationServiceTest extends TestCase
                     return new SendResult('sms', true, '1');
                 }),
             ],
-            logger: $this->nullLogger(),
         );
 
         $results = $svc->send($this->payload(['sms']));
@@ -70,7 +58,7 @@ class NotificationServiceTest extends TestCase
 
     public function test_returns_failure_for_unknown_channel_without_throwing(): void
     {
-        $svc = new NotificationService(channels: [], logger: $this->nullLogger());
+        $svc = new NotificationService(channels: []);
         $results = $svc->send($this->payload(['ghost']));
 
         $this->assertCount(1, $results);
@@ -86,7 +74,6 @@ class NotificationServiceTest extends TestCase
                 'sms' => $this->fakeChannel('sms', fn () => new SendResult('sms', true, '1')),
                 'mail' => $this->fakeChannel('mail', fn () => new SendResult('mail', false, error: 'nope')),
             ],
-            logger: $this->nullLogger(),
         );
 
         $results = $svc->send($this->payload(['sms', 'mail']));
@@ -105,71 +92,11 @@ class NotificationServiceTest extends TestCase
                     throw new RuntimeException('boom');
                 }),
             ],
-            logger: $this->nullLogger(),
         );
 
         $results = $svc->send($this->payload(['sms']));
         $this->assertFalse($results[0]->success);
         $this->assertSame('sms', $results[0]->channel);
         $this->assertStringContainsString('boom', $results[0]->error);
-    }
-
-    public function test_logs_info_on_success(): void
-    {
-        $logger = Mockery::mock(LoggerInterface::class);
-        $logger->shouldReceive('info')->once()->with(
-            'notification.sent',
-            Mockery::on(fn ($ctx) => $ctx['channel'] === 'sms' && $ctx['message_id'] === '1'),
-        );
-        $logger->shouldReceive('warning')->never();
-
-        $svc = new NotificationService(
-            channels: ['sms' => $this->fakeChannel('sms', fn () => new SendResult('sms', true, '1'))],
-            logger: $logger,
-        );
-        $svc->send($this->payload(['sms']));
-    }
-
-    public function test_logs_warning_on_failure(): void
-    {
-        $logger = Mockery::mock(LoggerInterface::class);
-        $logger->shouldReceive('warning')->once()->with(
-            'notification.failed',
-            Mockery::on(fn ($ctx) => $ctx['channel'] === 'sms' && $ctx['error'] === 'nope'),
-        );
-        $logger->shouldReceive('info')->never();
-
-        $svc = new NotificationService(
-            channels: ['sms' => $this->fakeChannel('sms', fn () => new SendResult('sms', false, error: 'nope'))],
-            logger: $logger,
-        );
-        $svc->send($this->payload(['sms']));
-    }
-
-    public function test_log_context_includes_recipient_content_preview_and_business_context(): void
-    {
-        $longContent = str_repeat('a', 200);
-        $logger = Mockery::mock(LoggerInterface::class);
-        $logger->shouldReceive('info')->once()->with(
-            'notification.sent',
-            Mockery::on(function ($ctx) {
-                return $ctx['recipient']['phone'] === '0905112233'
-                    && strlen($ctx['content_preview']) === 100
-                    && $ctx['business_context'] === ['task_id' => 9];
-            }),
-        );
-
-        $svc = new NotificationService(
-            channels: ['sms' => $this->fakeChannel('sms', fn () => new SendResult('sms', true, '1'))],
-            logger: $logger,
-        );
-
-        $payload = new NotificationPayload(
-            channels: ['sms'],
-            recipient: new Recipient(phone: '0905112233'),
-            content: $longContent,
-            context: ['task_id' => 9],
-        );
-        $svc->send($payload);
     }
 }
