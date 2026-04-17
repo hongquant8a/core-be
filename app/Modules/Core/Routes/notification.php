@@ -3,7 +3,6 @@
 use App\Modules\Core\MyNotificationController;
 use App\Modules\Core\NotificationConfigController;
 use App\Modules\Core\NotificationController;
-use App\Modules\Core\NotificationLogController;
 use Illuminate\Support\Facades\Route;
 
 // Test endpoint
@@ -21,21 +20,12 @@ Route::delete('/me/{id}', [MyNotificationController::class, 'destroy'])->whereNu
 Route::get('/modules', [NotificationConfigController::class, 'modules'])
     ->middleware('permission:notifications.event-configs.index,web');
 
-// Admin logs — xem lịch sử gửi thông báo
-Route::get('/logs/stats', [NotificationLogController::class, 'stats'])
-    ->middleware('permission:notifications.logs.index,web');
-Route::get('/logs', [NotificationLogController::class, 'index'])
-    ->middleware('permission:notifications.logs.index,web');
-Route::get('/logs/{id}', [NotificationLogController::class, 'show'])
-    ->whereNumber('id')
-    ->middleware('permission:notifications.logs.show,web');
-
 // Schedule update/delete by id (id unique, module gắn cứng trong record)
 Route::put('/schedules/{schedule}', [NotificationConfigController::class, 'scheduleUpdate'])
     ->middleware('permission:notifications.schedules.update,web');
 Route::delete('/schedules/{schedule}', [NotificationConfigController::class, 'scheduleDestroy'])
     ->middleware('permission:notifications.schedules.destroy,web');
 
-// Note: module-scoped config (event-configs, schedules list/create) nằm trong
+// Note: module-scoped config (event-configs, schedules list/create, logs, stats) nằm trong
 // route file của từng module — vd app/Modules/TaskAssignment/Routes/notification_config.php.
 // Middleware `notification.module:{key}` auto set module_key cho controller.

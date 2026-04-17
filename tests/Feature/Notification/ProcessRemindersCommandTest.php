@@ -37,6 +37,7 @@ class ProcessRemindersCommandTest extends TestCase
         ]);
         $docId = DB::table('task_assignment_documents')->insertGetId([
             'task_assignment_type_id' => $typeId, 'name' => 'Doc', 'status' => 'issued',
+            'organization_id' => $this->resolveTestOrganization()->id,
             'created_at' => now(), 'updated_at' => now(),
         ]);
         $deptId = DB::table('task_assignment_departments')->insertGetId([

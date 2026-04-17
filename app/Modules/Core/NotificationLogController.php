@@ -5,19 +5,25 @@ namespace App\Modules\Core;
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Models\Notification;
 use App\Modules\Core\Models\NotificationDelivery;
+use App\Services\Notification\Enums\NotificationEventEnum;
+use App\Services\Notification\Enums\NotificationModuleEnum;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 /**
  * @group Core - Notification Logs (Admin)
  *
- * Admin xem lịch sử gửi thông báo toàn hệ thống.
+ * Xem lịch sử gửi thông báo trong phạm vi 1 module + 1 organization hiện tại.
+ * Module được set qua middleware `notification.module:{key}`.
+ * Organization lấy từ Spatie team context (getPermissionsTeamId()).
  */
 class NotificationLogController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Notification::with(['user:id,name,email', 'deliveries'])
+        $query = $this->scopedQuery($request)
+            ->with(['user:id,name,email', 'deliveries'])
             ->orderByDesc('id');
 
         $this->applyFilters($query, $request);
@@ -27,17 +33,19 @@ class NotificationLogController extends Controller
         return $this->success($query->paginate($limit));
     }
 
-    public function show(int $id)
+    public function show(Request $request, int $id)
     {
-        $notification = Notification::with(['user:id,name,email', 'deliveries'])
-            ->findOrFail($id);
+        $notification = $this->scopedQuery($request)
+            ->with(['user:id,name,email', 'deliveries'])
+            ->where('id', $id)
+            ->firstOrFail();
 
         return $this->success($notification);
     }
 
     public function stats(Request $request)
     {
-        $baseQuery = Notification::query();
+        $baseQuery = $this->scopedQuery($request);
         $this->applyFilters($baseQuery, $request);
 
         $total = (clone $baseQuery)->count();
@@ -49,7 +57,6 @@ class NotificationLogController extends Controller
             ->groupBy('event_key')
             ->pluck('count', 'event_key');
 
-        // Delivery-based aggregates (join deliveries)
         $deliveryQuery = NotificationDelivery::query()
             ->whereIn('notification_id', (clone $baseQuery)->select('id'));
 
@@ -71,6 +78,38 @@ class NotificationLogController extends Controller
             'by_status' => $byStatus,
             'by_channel' => $byChannel,
         ]);
+    }
+
+    /**
+     * Base query scoped theo module (event_key IN module events) + organization hiện tại.
+     */
+    private function scopedQuery(Request $request)
+    {
+        $moduleKey = $request->attributes->get('notification_module_key');
+        if (! $moduleKey) {
+            throw new RuntimeException('Notification module context missing (middleware notification.module chưa set).');
+        }
+
+        $module = NotificationModuleEnum::from($moduleKey);
+        $eventKeys = collect(NotificationEventEnum::cases())
+            ->filter(fn ($e) => $e->module() === $module)
+            ->map(fn ($e) => $e->value)
+            ->values()
+            ->all();
+
+        return Notification::query()
+            ->where('organization_id', $this->currentOrganizationId())
+            ->whereIn('event_key', $eventKeys);
+    }
+
+    private function currentOrganizationId(): int
+    {
+        $teamId = function_exists('getPermissionsTeamId') ? getPermissionsTeamId() : null;
+        if (! $teamId) {
+            throw new RuntimeException('Organization context required. Set X-Team-ID header or equivalent.');
+        }
+
+        return (int) $teamId;
     }
 
     /**

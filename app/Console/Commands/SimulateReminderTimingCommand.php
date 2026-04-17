@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Modules\Core\Models\Notification;
 use App\Modules\Core\Models\NotificationEventConfig;
 use App\Modules\Core\Models\NotificationSchedule;
+use App\Modules\Core\Models\Organization;
 use App\Modules\Core\Models\User;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDocument;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
@@ -19,6 +20,7 @@ class SimulateReminderTimingCommand extends Command
     protected $signature = 'notification:simulate-reminder
         {--manager-email= : Manager email (default: user id=1)}
         {--assignee-email= : Assignee email (default: user id=2)}
+        {--organization-id= : ID tổ chức (default: organization đầu tiên)}
         {--channels=mail : Channels (comma-separated)}
         {--deadline-min=5 : Deadline trong N phút (default 5)}
         {--before-min=2 : Nhắc trước deadline N phút (default 2)}
@@ -51,11 +53,15 @@ class SimulateReminderTimingCommand extends Command
         $this->line("Reminder after: {$afterMin} min sau deadline");
         $this->newLine();
 
+        $organization = $this->resolveOrganization();
+        setPermissionsTeamId($organization->id);
+        $this->line("Organization: #{$organization->id} {$organization->name}");
+
         $manager = $this->resolveUser($this->option('manager-email'), 'manager');
         $assignee = $this->resolveUser($this->option('assignee-email'), 'assignee');
 
         $this->info('Step 1: Replace reminder schedules với short intervals...');
-        $this->setupShortSchedules($channels, $beforeMin, $afterMin);
+        $this->setupShortSchedules($channels, $beforeMin, $afterMin, $organization->id);
         $this->newLine();
 
         $createdIds = ['document' => null, 'item' => null];
@@ -198,6 +204,28 @@ class SimulateReminderTimingCommand extends Command
         return self::SUCCESS;
     }
 
+    private function resolveOrganization(): Organization
+    {
+        $id = $this->option('organization-id');
+        if ($id) {
+            $org = Organization::find($id);
+            if (! $org) {
+                $this->error("Organization #{$id} not found");
+                exit(1);
+            }
+
+            return $org;
+        }
+
+        $org = Organization::orderBy('id')->first();
+        if (! $org) {
+            $this->error('Chưa có organization nào trong DB. Seed trước.');
+            exit(1);
+        }
+
+        return $org;
+    }
+
     private function resolveUser(?string $email, string $role): User
     {
         if ($email) {
@@ -218,14 +246,14 @@ class SimulateReminderTimingCommand extends Command
         return $u;
     }
 
-    private function setupShortSchedules(array $channels, int $beforeMin, int $afterMin): void
+    private function setupShortSchedules(array $channels, int $beforeMin, int $afterMin, int $organizationId): void
     {
         $moduleKey = NotificationModuleEnum::TaskAssignment->value;
 
         // Enable all reminder events
         foreach ([NotificationEventEnum::ReminderBefore, NotificationEventEnum::ReminderOn, NotificationEventEnum::ReminderAfter] as $event) {
             $config = NotificationEventConfig::firstOrCreate(
-                ['module_key' => $moduleKey, 'event_key' => $event->value],
+                ['module_key' => $moduleKey, 'event_key' => $event->value, 'organization_id' => $organizationId],
                 ['enabled' => true]
             );
             $config->update(['enabled' => true]);

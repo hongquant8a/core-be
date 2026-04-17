@@ -18,12 +18,13 @@ class SendTaskConfirmedNotifications implements ShouldQueue
 
     public function handle(TaskConfirmed $event): void
     {
-        $channels = $this->resolveChannels();
+        $item = $event->item->load(['users', 'document']);
+        $organizationId = (int) $item->document->organization_id;
+        $channels = $this->resolveChannels($organizationId);
         if (empty($channels)) {
             return;
         }
 
-        $item = $event->item->load('users');
         $builder = $this->registry->for('task_confirmed');
 
         foreach ($item->users as $user) {
@@ -33,14 +34,16 @@ class SendTaskConfirmedNotifications implements ShouldQueue
                 notifiable: $item,
                 channels: $channels,
                 builder: $builder,
+                organizationId: $organizationId,
             );
         }
     }
 
-    private function resolveChannels(): array
+    private function resolveChannels(int $organizationId): array
     {
         $config = NotificationEventConfig::with('schedules')
             ->where('module_key', NotificationModuleEnum::TaskAssignment->value)
+            ->where('organization_id', $organizationId)
             ->where('event_key', 'task_confirmed')
             ->first();
         if (! $config || ! $config->enabled) {

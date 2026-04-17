@@ -11,6 +11,7 @@ use App\Modules\Core\Requests\UpdateNotificationScheduleRequest;
 use App\Services\Notification\Enums\NotificationEventEnum;
 use App\Services\Notification\Enums\NotificationModuleEnum;
 use Illuminate\Http\Request;
+use RuntimeException;
 
 /**
  * @group Core - Notification Config
@@ -33,7 +34,7 @@ class NotificationConfigController extends Controller
     }
 
     /**
-     * List event configs kèm schedules eager-load.
+     * List event configs kèm schedules eager-load, scoped theo organization hiện tại.
      * Non-reminder event có 1 schedule instant; reminder event có N schedule.
      */
     public function eventConfigIndex(Request $request)
@@ -41,6 +42,7 @@ class NotificationConfigController extends Controller
         return $this->success(
             NotificationEventConfig::with('schedules')
                 ->forModule($this->moduleKey($request))
+                ->forOrganization($this->currentOrganizationId())
                 ->orderBy('event_key')
                 ->get()
         );
@@ -49,6 +51,7 @@ class NotificationConfigController extends Controller
     public function eventConfigUpdate(UpdateNotificationEventConfigRequest $request, string $eventKey)
     {
         $cfg = NotificationEventConfig::forModule($this->moduleKey($request))
+            ->forOrganization($this->currentOrganizationId())
             ->where('event_key', $eventKey)
             ->firstOrFail();
         $cfg->update($request->validated());
@@ -59,6 +62,7 @@ class NotificationConfigController extends Controller
     public function scheduleIndex(Request $request, string $eventKey)
     {
         $cfg = NotificationEventConfig::forModule($this->moduleKey($request))
+            ->forOrganization($this->currentOrganizationId())
             ->where('event_key', $eventKey)
             ->firstOrFail();
 
@@ -70,6 +74,7 @@ class NotificationConfigController extends Controller
     public function scheduleStore(StoreNotificationScheduleRequest $request, string $eventKey)
     {
         $cfg = NotificationEventConfig::forModule($this->moduleKey($request))
+            ->forOrganization($this->currentOrganizationId())
             ->where('event_key', $eventKey)
             ->firstOrFail();
 
@@ -88,6 +93,7 @@ class NotificationConfigController extends Controller
 
     public function scheduleUpdate(UpdateNotificationScheduleRequest $request, NotificationSchedule $schedule)
     {
+        $this->authorizeScheduleOrg($schedule);
         $schedule->update($request->validated());
 
         return $this->success($schedule->fresh());
@@ -95,6 +101,7 @@ class NotificationConfigController extends Controller
 
     public function scheduleDestroy(NotificationSchedule $schedule)
     {
+        $this->authorizeScheduleOrg($schedule);
         $schedule->delete();
 
         return $this->success(null, 'Đã xóa schedule');
@@ -108,5 +115,23 @@ class NotificationConfigController extends Controller
         }
 
         return $key;
+    }
+
+    private function currentOrganizationId(): int
+    {
+        $teamId = function_exists('getPermissionsTeamId') ? getPermissionsTeamId() : null;
+        if (! $teamId) {
+            throw new RuntimeException('Organization context required. Set X-Team-ID header or equivalent.');
+        }
+
+        return (int) $teamId;
+    }
+
+    private function authorizeScheduleOrg(NotificationSchedule $schedule): void
+    {
+        $schedule->loadMissing('eventConfig:id,organization_id');
+        if ((int) $schedule->eventConfig->organization_id !== $this->currentOrganizationId()) {
+            abort(404);
+        }
     }
 }

@@ -18,7 +18,8 @@ class SendDocumentIssuedNotifications implements ShouldQueue
 
     public function handle(DocumentIssued $event): void
     {
-        $channels = $this->resolveChannels();
+        $organizationId = (int) $event->document->organization_id;
+        $channels = $this->resolveChannels($organizationId);
         if (empty($channels)) {
             return;
         }
@@ -34,15 +35,17 @@ class SendDocumentIssuedNotifications implements ShouldQueue
                     notifiable: $item,
                     channels: $channels,
                     builder: $builder,
+                    organizationId: $organizationId,
                 );
             }
         }
     }
 
-    private function resolveChannels(): array
+    private function resolveChannels(int $organizationId): array
     {
         $config = NotificationEventConfig::with('schedules')
             ->where('module_key', NotificationModuleEnum::TaskAssignment->value)
+            ->where('organization_id', $organizationId)
             ->where('event_key', 'document_issued')
             ->first();
         if (! $config || ! $config->enabled) {

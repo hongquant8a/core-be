@@ -18,6 +18,7 @@ class NotificationEventConfig extends Model
 
     protected $fillable = [
         'module_key',
+        'organization_id',
         'event_key',
         'enabled',
     ];
@@ -31,19 +32,18 @@ class NotificationEventConfig extends Model
         return $this->hasMany(NotificationSchedule::class, 'notification_event_config_id');
     }
 
-    /**
-     * Scope: global configs (module_key = null).
-     */
-    public function scopeGlobal($query)
+    public function organization()
     {
-        return $query->whereNull('module_key');
+        return $this->belongsTo(Organization::class);
     }
 
-    /**
-     * Scope: configs của module cụ thể.
-     */
     public function scopeForModule($query, string $moduleKey)
     {
         return $query->where('module_key', $moduleKey);
+    }
+
+    public function scopeForOrganization($query, int $organizationId)
+    {
+        return $query->where('organization_id', $organizationId);
     }
 }

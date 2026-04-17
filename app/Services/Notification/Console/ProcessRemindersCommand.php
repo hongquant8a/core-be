@@ -18,7 +18,7 @@ class ProcessRemindersCommand extends Command
     {
         $count = 0;
 
-        TaskAssignmentReminder::with('item.users', 'schedule')
+        TaskAssignmentReminder::with(['item.users', 'item.document', 'schedule'])
             ->where('status', 'pending')
             ->where('remind_at', '<=', now())
             ->chunk(100, function ($reminders) use ($dispatcher, $registry, &$count) {
@@ -49,14 +49,21 @@ class ProcessRemindersCommand extends Command
             return;
         }
 
+        $organizationId = (int) ($item->document->organization_id ?? 0);
+        if ($organizationId === 0) {
+            $reminder->update(['status' => 'cancelled', 'fired_at' => now()]);
+
+            return;
+        }
+
         $eventKey = "reminder_{$reminder->moment}";
 
         // Channels lấy từ chính schedule của reminder (schedule là child của event_config).
-        // Check enabled của parent event_config trước.
+        // Check enabled của parent event_config trước — scope theo organization.
         $schedule = $reminder->schedule;
         $config = $schedule?->eventConfig;
 
-        if (! $config || ! $config->enabled || empty($schedule->channels)) {
+        if (! $config || (int) $config->organization_id !== $organizationId || ! $config->enabled || empty($schedule->channels)) {
             $reminder->update(['status' => 'cancelled', 'fired_at' => now()]);
 
             return;
@@ -73,6 +80,7 @@ class ProcessRemindersCommand extends Command
                 notifiable: $item,
                 channels: $channels,
                 builder: $builder,
+                organizationId: $organizationId,
             );
         }
 

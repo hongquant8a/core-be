@@ -5,19 +5,23 @@ namespace App\Modules\Core;
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Models\Notification;
 use Illuminate\Http\Request;
+use RuntimeException;
 
 /**
  * @group Core - My Notifications
  *
- * User-facing notification list (chỉ thao tác notifications của chính user đang đăng nhập).
- * Không cần permission gì khác ngoài auth:sanctum.
+ * User-facing notification list (chỉ thao tác notifications của chính user đang đăng nhập,
+ * scoped theo organization hiện tại qua Spatie team context).
  */
 class MyNotificationController extends Controller
 {
     public function index(Request $request)
     {
         $user = $request->user();
+        $orgId = $this->currentOrganizationId();
+
         $query = Notification::where('user_id', $user->id)
+            ->where('organization_id', $orgId)
             ->orderByDesc('id');
 
         if ($request->filled('read')) {
@@ -36,6 +40,7 @@ class MyNotificationController extends Controller
     public function unreadCount(Request $request)
     {
         $count = Notification::where('user_id', $request->user()->id)
+            ->where('organization_id', $this->currentOrganizationId())
             ->whereNull('read_at')
             ->count();
 
@@ -45,6 +50,7 @@ class MyNotificationController extends Controller
     public function markAsRead(Request $request, int $id)
     {
         $notification = Notification::where('user_id', $request->user()->id)
+            ->where('organization_id', $this->currentOrganizationId())
             ->where('id', $id)
             ->firstOrFail();
         if (! $notification->read_at) {
@@ -57,6 +63,7 @@ class MyNotificationController extends Controller
     public function markAllAsRead(Request $request)
     {
         $updated = Notification::where('user_id', $request->user()->id)
+            ->where('organization_id', $this->currentOrganizationId())
             ->whereNull('read_at')
             ->update(['read_at' => now()]);
 
@@ -66,10 +73,21 @@ class MyNotificationController extends Controller
     public function destroy(Request $request, int $id)
     {
         Notification::where('user_id', $request->user()->id)
+            ->where('organization_id', $this->currentOrganizationId())
             ->where('id', $id)
             ->firstOrFail()
             ->delete();
 
         return $this->success(null, 'Đã xóa thông báo');
+    }
+
+    private function currentOrganizationId(): int
+    {
+        $teamId = function_exists('getPermissionsTeamId') ? getPermissionsTeamId() : null;
+        if (! $teamId) {
+            throw new RuntimeException('Organization context required. Set X-Team-ID header or equivalent.');
+        }
+
+        return (int) $teamId;
     }
 }

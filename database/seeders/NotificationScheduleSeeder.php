@@ -14,26 +14,23 @@ class NotificationScheduleSeeder extends Seeder
     {
         $moduleKey = NotificationModuleEnum::TaskAssignment->value;
 
-        // Non-reminder: mỗi event có 1 schedule "instant" (moment=null, offset=null).
+        // Non-reminder: mỗi event có 1 schedule "instant" (moment=null, offset=null) — per org.
         $nonReminder = [
-            NotificationEventEnum::DocumentIssued,
-            NotificationEventEnum::TaskCompleted,
-            NotificationEventEnum::TaskConfirmed,
+            NotificationEventEnum::DocumentIssued->value,
+            NotificationEventEnum::TaskCompleted->value,
+            NotificationEventEnum::TaskConfirmed->value,
         ];
-        foreach ($nonReminder as $event) {
-            $config = NotificationEventConfig::where('module_key', $moduleKey)
-                ->where('event_key', $event->value)
-                ->first();
-            if (! $config) {
-                continue;
-            }
+        $configs = NotificationEventConfig::where('module_key', $moduleKey)
+            ->whereIn('event_key', $nonReminder)
+            ->get();
+        foreach ($configs as $config) {
             NotificationSchedule::firstOrCreate(
                 ['notification_event_config_id' => $config->id, 'moment' => null, 'offset_minutes' => null],
                 ['channels' => [], 'label' => 'Gửi tức thì', 'sort_order' => 0]
             );
         }
 
-        // Reminder events: N schedules/event với moment + offset.
+        // Reminder events: N schedules/event với moment + offset — per org.
         $reminderDefaults = [
             NotificationEventEnum::ReminderBefore->value => [
                 ['moment' => 'before', 'offset_minutes' => 1440, 'label' => 'Nhắc trước 1 ngày', 'sort_order' => 1],
@@ -48,17 +45,16 @@ class NotificationScheduleSeeder extends Seeder
         ];
 
         foreach ($reminderDefaults as $eventKey => $schedules) {
-            $config = NotificationEventConfig::where('module_key', $moduleKey)
+            $reminderConfigs = NotificationEventConfig::where('module_key', $moduleKey)
                 ->where('event_key', $eventKey)
-                ->first();
-            if (! $config) {
-                continue;
-            }
-            foreach ($schedules as $s) {
-                NotificationSchedule::firstOrCreate(
-                    ['notification_event_config_id' => $config->id, 'moment' => $s['moment'], 'offset_minutes' => $s['offset_minutes']],
-                    ['channels' => [], 'label' => $s['label'], 'sort_order' => $s['sort_order']]
-                );
+                ->get();
+            foreach ($reminderConfigs as $config) {
+                foreach ($schedules as $s) {
+                    NotificationSchedule::firstOrCreate(
+                        ['notification_event_config_id' => $config->id, 'moment' => $s['moment'], 'offset_minutes' => $s['offset_minutes']],
+                        ['channels' => [], 'label' => $s['label'], 'sort_order' => $s['sort_order']]
+                    );
+                }
             }
         }
     }

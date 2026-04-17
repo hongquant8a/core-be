@@ -35,6 +35,7 @@ class ReminderSchedulerTest extends TestCase
         ]);
         $docId = DB::table('task_assignment_documents')->insertGetId([
             'task_assignment_type_id' => $typeId, 'name' => 'Doc', 'status' => 'issued',
+            'organization_id' => $this->resolveTestOrganization()->id,
             'created_at' => now(), 'updated_at' => now(),
         ]);
         $id = DB::table('task_assignment_items')->insertGetId([
@@ -46,6 +47,7 @@ class ReminderSchedulerTest extends TestCase
             'end_at' => $endAt,
             'processing_status' => $status,
             'completion_percent' => 0,
+            'organization_id' => $this->resolveTestOrganization()->id,
             'created_at' => now(),
             'updated_at' => now(),
         ]);

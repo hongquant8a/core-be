@@ -13,16 +13,17 @@ class MyNotificationControllerTest extends TestCase
 {
     use RefreshDatabase;
 
+    private Organization $defaultOrg;
+
     protected function setUp(): void
     {
         parent::setUp();
         $this->seed(\Database\Seeders\PermissionSeeder::class);
 
-        $defaultOrg = Organization::where('slug', 'default')->first();
-        if ($defaultOrg) {
-            $this->withHeader('X-Organization-Id', (string) $defaultOrg->id);
-            setPermissionsTeamId($defaultOrg->id);
-        }
+        $this->defaultOrg = Organization::where('slug', 'default')->first()
+            ?? Organization::firstOrCreate(['slug' => 'default'], ['name' => 'Default', 'status' => 'active']);
+        $this->withHeader('X-Organization-Id', (string) $this->defaultOrg->id);
+        setPermissionsTeamId($this->defaultOrg->id);
     }
 
     private function createUser(): User
@@ -37,8 +38,8 @@ class MyNotificationControllerTest extends TestCase
     {
         $u1 = $this->createUser();
         $u2 = $this->createUser();
-        Notification::factory()->count(2)->create(['user_id' => $u1->id]);
-        Notification::factory()->count(5)->create(['user_id' => $u2->id]);
+        Notification::factory()->count(2)->create(['user_id' => $u1->id, 'organization_id' => $this->defaultOrg->id]);
+        Notification::factory()->count(5)->create(['user_id' => $u2->id, 'organization_id' => $this->defaultOrg->id]);
         Sanctum::actingAs($u1);
 
         $res = $this->getJson('/api/notifications/me');
@@ -50,8 +51,8 @@ class MyNotificationControllerTest extends TestCase
     public function test_unread_count(): void
     {
         $user = $this->createUser();
-        Notification::factory()->count(3)->unread()->create(['user_id' => $user->id]);
-        Notification::factory()->count(2)->read()->create(['user_id' => $user->id]);
+        Notification::factory()->count(3)->unread()->create(['user_id' => $user->id, 'organization_id' => $this->defaultOrg->id]);
+        Notification::factory()->count(2)->read()->create(['user_id' => $user->id, 'organization_id' => $this->defaultOrg->id]);
         Sanctum::actingAs($user);
 
         $res = $this->getJson('/api/notifications/me/unread-count');
@@ -63,7 +64,7 @@ class MyNotificationControllerTest extends TestCase
     public function test_mark_as_read(): void
     {
         $user = $this->createUser();
-        $n = Notification::factory()->unread()->create(['user_id' => $user->id]);
+        $n = Notification::factory()->unread()->create(['user_id' => $user->id, 'organization_id' => $this->defaultOrg->id]);
         Sanctum::actingAs($user);
 
         $res = $this->patchJson("/api/notifications/me/{$n->id}/read");
@@ -75,7 +76,7 @@ class MyNotificationControllerTest extends TestCase
     public function test_mark_all_read(): void
     {
         $user = $this->createUser();
-        Notification::factory()->count(3)->unread()->create(['user_id' => $user->id]);
+        Notification::factory()->count(3)->unread()->create(['user_id' => $user->id, 'organization_id' => $this->defaultOrg->id]);
         Sanctum::actingAs($user);
 
         $res = $this->patchJson('/api/notifications/me/read-all');
@@ -88,7 +89,7 @@ class MyNotificationControllerTest extends TestCase
     public function test_destroy_own_notification(): void
     {
         $user = $this->createUser();
-        $n = Notification::factory()->create(['user_id' => $user->id]);
+        $n = Notification::factory()->create(['user_id' => $user->id, 'organization_id' => $this->defaultOrg->id]);
         Sanctum::actingAs($user);
 
         $res = $this->deleteJson("/api/notifications/me/{$n->id}");
@@ -101,7 +102,7 @@ class MyNotificationControllerTest extends TestCase
     {
         $u1 = $this->createUser();
         $u2 = $this->createUser();
-        $n = Notification::factory()->unread()->create(['user_id' => $u2->id]);
+        $n = Notification::factory()->unread()->create(['user_id' => $u2->id, 'organization_id' => $this->defaultOrg->id]);
         Sanctum::actingAs($u1);
 
         $res = $this->patchJson("/api/notifications/me/{$n->id}/read");

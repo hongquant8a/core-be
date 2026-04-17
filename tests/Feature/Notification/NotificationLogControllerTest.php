@@ -14,17 +14,18 @@ class NotificationLogControllerTest extends TestCase
 {
     use RefreshDatabase;
 
+    private Organization $defaultOrg;
+
     protected function setUp(): void
     {
         parent::setUp();
         $this->seed(\Database\Seeders\PermissionSeeder::class);
 
         // Set X-Organization-Id header (required by SetPermissionsTeamId middleware)
-        $defaultOrg = Organization::where('slug', 'default')->first();
-        if ($defaultOrg) {
-            $this->withHeader('X-Organization-Id', (string) $defaultOrg->id);
-            setPermissionsTeamId($defaultOrg->id);
-        }
+        $this->defaultOrg = Organization::where('slug', 'default')->first()
+            ?? Organization::firstOrCreate(['slug' => 'default'], ['name' => 'Default', 'status' => 'active']);
+        $this->withHeader('X-Organization-Id', (string) $this->defaultOrg->id);
+        setPermissionsTeamId($this->defaultOrg->id);
     }
 
     private function actingAsSuperAdmin(): User
@@ -39,9 +40,9 @@ class NotificationLogControllerTest extends TestCase
     public function test_index_returns_notifications_paginated(): void
     {
         $this->actingAsSuperAdmin();
-        Notification::factory()->count(3)->create();
+        Notification::factory()->count(3)->create(['organization_id' => $this->defaultOrg->id]);
 
-        $res = $this->getJson('/api/notifications/logs');
+        $res = $this->getJson('/api/task-assignment/notification-config/logs');
 
         $res->assertOk();
         $this->assertSame(3, $res->json('data.total'));
@@ -52,10 +53,10 @@ class NotificationLogControllerTest extends TestCase
         $this->actingAsSuperAdmin();
         $u1 = User::factory()->create();
         $u2 = User::factory()->create();
-        Notification::factory()->count(2)->create(['user_id' => $u1->id]);
-        Notification::factory()->count(3)->create(['user_id' => $u2->id]);
+        Notification::factory()->count(2)->create(['user_id' => $u1->id, 'organization_id' => $this->defaultOrg->id]);
+        Notification::factory()->count(3)->create(['user_id' => $u2->id, 'organization_id' => $this->defaultOrg->id]);
 
-        $res = $this->getJson("/api/notifications/logs?user_id={$u1->id}");
+        $res = $this->getJson("/api/task-assignment/notification-config/logs?user_id={$u1->id}");
 
         $res->assertOk();
         $this->assertSame(2, $res->json('data.total'));
@@ -64,11 +65,11 @@ class NotificationLogControllerTest extends TestCase
     public function test_index_filters_by_event_key_and_date_range(): void
     {
         $this->actingAsSuperAdmin();
-        Notification::factory()->create(['event_key' => 'document_issued', 'created_at' => now()->subDays(5)]);
-        Notification::factory()->create(['event_key' => 'task_completed', 'created_at' => now()]);
-        Notification::factory()->create(['event_key' => 'document_issued', 'created_at' => now()]);
+        Notification::factory()->create(['event_key' => 'document_issued', 'created_at' => now()->subDays(5), 'organization_id' => $this->defaultOrg->id]);
+        Notification::factory()->create(['event_key' => 'task_completed', 'created_at' => now(), 'organization_id' => $this->defaultOrg->id]);
+        Notification::factory()->create(['event_key' => 'document_issued', 'created_at' => now(), 'organization_id' => $this->defaultOrg->id]);
 
-        $res = $this->getJson('/api/notifications/logs?event_key=document_issued&from_date='.now()->subDays(1)->toDateString());
+        $res = $this->getJson('/api/task-assignment/notification-config/logs?event_key=document_issued&from_date='.now()->subDays(1)->toDateString());
 
         $res->assertOk();
         $this->assertSame(1, $res->json('data.total'));
@@ -77,12 +78,12 @@ class NotificationLogControllerTest extends TestCase
     public function test_index_filters_by_delivery_channel_and_status(): void
     {
         $this->actingAsSuperAdmin();
-        $n1 = Notification::factory()->create();
+        $n1 = Notification::factory()->create(['organization_id' => $this->defaultOrg->id]);
         NotificationDelivery::factory()->create(['notification_id' => $n1->id, 'channel' => 'sms', 'status' => 'sent']);
-        $n2 = Notification::factory()->create();
+        $n2 = Notification::factory()->create(['organization_id' => $this->defaultOrg->id]);
         NotificationDelivery::factory()->create(['notification_id' => $n2->id, 'channel' => 'mail', 'status' => 'failed']);
 
-        $res = $this->getJson('/api/notifications/logs?channel=sms&delivery_status=sent');
+        $res = $this->getJson('/api/task-assignment/notification-config/logs?channel=sms&delivery_status=sent');
 
         $res->assertOk();
         $this->assertSame(1, $res->json('data.total'));
@@ -92,10 +93,10 @@ class NotificationLogControllerTest extends TestCase
     public function test_show_returns_notification_with_deliveries(): void
     {
         $this->actingAsSuperAdmin();
-        $n = Notification::factory()->create();
+        $n = Notification::factory()->create(['organization_id' => $this->defaultOrg->id]);
         NotificationDelivery::factory()->count(2)->create(['notification_id' => $n->id]);
 
-        $res = $this->getJson("/api/notifications/logs/{$n->id}");
+        $res = $this->getJson("/api/task-assignment/notification-config/logs/{$n->id}");
 
         $res->assertOk();
         $this->assertSame($n->id, $res->json('data.id'));
@@ -105,13 +106,13 @@ class NotificationLogControllerTest extends TestCase
     public function test_stats_returns_aggregates(): void
     {
         $this->actingAsSuperAdmin();
-        $n1 = Notification::factory()->create(['event_key' => 'document_issued']);
-        $n2 = Notification::factory()->create(['event_key' => 'task_completed']);
+        $n1 = Notification::factory()->create(['event_key' => 'document_issued', 'organization_id' => $this->defaultOrg->id]);
+        $n2 = Notification::factory()->create(['event_key' => 'task_completed', 'organization_id' => $this->defaultOrg->id]);
         NotificationDelivery::factory()->create(['notification_id' => $n1->id, 'channel' => 'sms', 'status' => 'sent']);
         NotificationDelivery::factory()->create(['notification_id' => $n1->id, 'channel' => 'mail', 'status' => 'failed']);
         NotificationDelivery::factory()->create(['notification_id' => $n2->id, 'channel' => 'sms', 'status' => 'sent']);
 
-        $res = $this->getJson('/api/notifications/logs/stats');
+        $res = $this->getJson('/api/task-assignment/notification-config/logs/stats');
 
         $res->assertOk();
         $this->assertSame(2, $res->json('data.total'));

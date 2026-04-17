@@ -1,14 +1,17 @@
 <?php
 
 use App\Modules\Core\NotificationConfigController;
+use App\Modules\Core\NotificationLogController;
 use Illuminate\Support\Facades\Route;
 
 /**
- * Routes cấu hình notification cho module TaskAssignment.
- * Schedule nằm dưới event (nested): list/create scoped theo event_key,
- * update/delete theo id (endpoint chung ngoài module).
+ * Routes notification scoped cho module TaskAssignment.
+ * - Event configs + schedules (admin config theo org).
+ * - Logs + stats (lịch sử gửi chỉ trong events của module + org hiện tại).
+ * Middleware `notification.module:task_assignment` set module_key vào request context.
  */
 Route::middleware('notification.module:task_assignment')->group(function () {
+    // Admin event config
     Route::get('/event-configs', [NotificationConfigController::class, 'eventConfigIndex'])
         ->middleware('permission:notifications.event-configs.index,web');
     Route::put('/event-configs/{eventKey}', [NotificationConfigController::class, 'eventConfigUpdate'])
@@ -18,4 +21,13 @@ Route::middleware('notification.module:task_assignment')->group(function () {
         ->middleware('permission:notifications.schedules.index,web');
     Route::post('/event-configs/{eventKey}/schedules', [NotificationConfigController::class, 'scheduleStore'])
         ->middleware('permission:notifications.schedules.store,web');
+
+    // Admin logs (xem lịch sử thông báo của module + org hiện tại)
+    Route::get('/logs/stats', [NotificationLogController::class, 'stats'])
+        ->middleware('permission:notifications.logs.index,web');
+    Route::get('/logs', [NotificationLogController::class, 'index'])
+        ->middleware('permission:notifications.logs.index,web');
+    Route::get('/logs/{id}', [NotificationLogController::class, 'show'])
+        ->whereNumber('id')
+        ->middleware('permission:notifications.logs.show,web');
 });

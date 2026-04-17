@@ -22,11 +22,17 @@ class ReminderScheduler
             return;
         }
 
+        $item->loadMissing('document');
+        $organizationId = (int) ($item->document->organization_id ?? 0);
+        if ($organizationId === 0) {
+            return;
+        }
+
         TaskAssignmentReminder::where('task_assignment_item_id', $item->id)
             ->where('status', 'pending')
             ->delete();
 
-        // Load tất cả schedules thuộc 3 reminder event của module task_assignment
+        // Load schedules thuộc 3 reminder event của module task_assignment — scope theo org.
         $reminderEventKeys = [
             NotificationEventEnum::ReminderBefore->value,
             NotificationEventEnum::ReminderOn->value,
@@ -34,6 +40,7 @@ class ReminderScheduler
         ];
         $configs = NotificationEventConfig::with('schedules')
             ->where('module_key', NotificationModuleEnum::TaskAssignment->value)
+            ->where('organization_id', $organizationId)
             ->whereIn('event_key', $reminderEventKeys)
             ->get();
 

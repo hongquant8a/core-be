@@ -6,6 +6,7 @@ use App\Modules\Core\Models\Notification;
 use App\Modules\Core\Models\NotificationDelivery;
 use App\Modules\Core\Models\NotificationEventConfig;
 use App\Modules\Core\Models\NotificationSchedule;
+use App\Modules\Core\Models\Organization;
 use App\Modules\Core\Models\User;
 use App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDocument;
@@ -23,6 +24,7 @@ class SimulateNotificationFlowCommand extends Command
     protected $signature = 'notification:simulate
         {--manager-email= : Email của người giao việc (default: user id=1)}
         {--assignee-email= : Email của người được giao việc (default: user id=2)}
+        {--organization-id= : ID tổ chức (default: organization đầu tiên)}
         {--channels=mail : Channels gửi (comma-separated: sms,mail,zalo,fcm)}
         {--no-cleanup : Giữ lại data sau khi chạy (mặc định xóa)}';
 
@@ -39,7 +41,11 @@ class SimulateNotificationFlowCommand extends Command
         $this->line('Channels: '.implode(', ', $channels));
         $this->newLine();
 
-        // 1. Resolve actors
+        // 1. Resolve organization + actors + set Spatie team context
+        $organization = $this->resolveOrganization();
+        setPermissionsTeamId($organization->id);
+        $this->line("Organization: #{$organization->id} {$organization->name}");
+
         $manager = $this->resolveUser($this->option('manager-email'), 'manager');
         $assignee = $this->resolveUser($this->option('assignee-email'), 'assignee');
         $this->line("Manager:  #{$manager->id} {$manager->name} ({$manager->email})");
@@ -51,7 +57,7 @@ class SimulateNotificationFlowCommand extends Command
         $initialReminderCount = TaskAssignmentReminder::count();
 
         $this->info('Step 1: Enabling event configs for simulation...');
-        $this->enableAllEvents($channels);
+        $this->enableAllEvents($channels, $organization->id);
         $this->newLine();
 
         $createdIds = ['document' => null, 'item' => null, 'configs_snapshot' => null];
@@ -234,6 +240,28 @@ class SimulateNotificationFlowCommand extends Command
         return 'đúng hạn';
     }
 
+    private function resolveOrganization(): Organization
+    {
+        $id = $this->option('organization-id');
+        if ($id) {
+            $org = Organization::find($id);
+            if (! $org) {
+                $this->error("Organization #{$id} not found");
+                exit(1);
+            }
+
+            return $org;
+        }
+
+        $org = Organization::orderBy('id')->first();
+        if (! $org) {
+            $this->error('Chưa có organization nào trong DB. Seed trước.');
+            exit(1);
+        }
+
+        return $org;
+    }
+
     private function resolveUser(?string $email, string $role): User
     {
         if ($email) {
@@ -255,13 +283,13 @@ class SimulateNotificationFlowCommand extends Command
         return $user;
     }
 
-    private function enableAllEvents(array $channels): void
+    private function enableAllEvents(array $channels, int $organizationId): void
     {
         $moduleKey = NotificationModuleEnum::TaskAssignment->value;
 
         foreach (NotificationEventEnum::cases() as $event) {
             $config = NotificationEventConfig::firstOrCreate(
-                ['module_key' => $moduleKey, 'event_key' => $event->value],
+                ['module_key' => $moduleKey, 'event_key' => $event->value, 'organization_id' => $organizationId],
                 ['enabled' => true]
             );
             $config->update(['enabled' => true]);

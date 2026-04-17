@@ -11,12 +11,20 @@ use App\Services\Notification\Services\NotificationDispatcher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Mockery;
+use Tests\Concerns\InteractsWithNotifications;
 use Tests\TestCase;
 
 class NotificationDispatcherTest extends TestCase
 {
+    use InteractsWithNotifications;
     use \Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        setPermissionsTeamId($this->resolveTestOrganization()->id);
+    }
 
     private function fakeBuilder(string $title = 'T', string $body = 'B', array $ctx = []): ContentBuilder
     {

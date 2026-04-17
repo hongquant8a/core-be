@@ -18,14 +18,15 @@ class SendTaskCompletedNotifications implements ShouldQueue
 
     public function handle(TaskCompleted $event): void
     {
-        $channels = $this->resolveChannels();
-        if (empty($channels)) {
+        $item = $event->item->load(['assigner', 'document']);
+        $manager = $item->assigner;
+        if (! $manager) {
             return;
         }
 
-        $item = $event->item->load('assigner');
-        $manager = $item->assigner;
-        if (! $manager) {
+        $organizationId = (int) $item->document->organization_id;
+        $channels = $this->resolveChannels($organizationId);
+        if (empty($channels)) {
             return;
         }
 
@@ -37,13 +38,15 @@ class SendTaskCompletedNotifications implements ShouldQueue
             notifiable: $item,
             channels: $channels,
             builder: $builder,
+            organizationId: $organizationId,
         );
     }
 
-    private function resolveChannels(): array
+    private function resolveChannels(int $organizationId): array
     {
         $config = NotificationEventConfig::with('schedules')
             ->where('module_key', NotificationModuleEnum::TaskAssignment->value)
+            ->where('organization_id', $organizationId)
             ->where('event_key', 'task_completed')
             ->first();
         if (! $config || ! $config->enabled) {

@@ -18,6 +18,7 @@ class Notification extends Model
 
     protected $fillable = [
         'user_id',
+        'organization_id',
         'event_key',
         'notifiable_type',
         'notifiable_id',
@@ -35,6 +36,16 @@ class Notification extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function organization()
+    {
+        return $this->belongsTo(Organization::class);
+    }
+
+    public function scopeForOrganization($query, int $organizationId)
+    {
+        return $query->where('organization_id', $organizationId);
     }
 
     public function notifiable()
