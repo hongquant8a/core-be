@@ -168,7 +168,12 @@ class SimulateNotificationFlowCommand extends Command
             if (! $noCleanup) {
                 $this->newLine();
                 $this->info('Cleanup: deleting simulation data...');
+                // Xóa notifications polymorphic (không có FK cascade → phải xóa tay).
+                // Deliveries cascade theo notification FK nên không cần xóa riêng.
                 if ($createdIds['item']) {
+                    Notification::where('notifiable_type', TaskAssignmentItem::class)
+                        ->where('notifiable_id', $createdIds['item'])
+                        ->delete();
                     TaskAssignmentItem::find($createdIds['item'])?->delete();
                 }
                 if ($createdIds['document']) {
