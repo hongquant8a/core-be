@@ -3,6 +3,7 @@
 use App\Modules\Core\MyNotificationController;
 use App\Modules\Core\NotificationConfigController;
 use App\Modules\Core\NotificationController;
+use App\Modules\Core\NotificationLogController;
 use Illuminate\Support\Facades\Route;
 
 // Test endpoint
@@ -19,6 +20,15 @@ Route::delete('/me/{id}', [MyNotificationController::class, 'destroy'])->whereNu
 // Admin overview registry (optional — dashboard tổng quan)
 Route::get('/modules', [NotificationConfigController::class, 'modules'])
     ->middleware('permission:notifications.event-configs.index,web');
+
+// Admin logs — xem lịch sử gửi thông báo
+Route::get('/logs/stats', [NotificationLogController::class, 'stats'])
+    ->middleware('permission:notifications.logs.index,web');
+Route::get('/logs', [NotificationLogController::class, 'index'])
+    ->middleware('permission:notifications.logs.index,web');
+Route::get('/logs/{id}', [NotificationLogController::class, 'show'])
+    ->whereNumber('id')
+    ->middleware('permission:notifications.logs.show,web');
 
 // Schedule update/delete by id (id unique, module gắn cứng trong record)
 Route::put('/schedules/{schedule}', [NotificationConfigController::class, 'scheduleUpdate'])
