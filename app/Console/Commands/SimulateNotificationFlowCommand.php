@@ -110,17 +110,21 @@ class SimulateNotificationFlowCommand extends Command
             // 5. Issue document → fires DocumentIssued
             $this->info('Step 4: Ban hành văn bản (draft → issued) → bắn event DocumentIssued...');
             $docSvc->changeStatus($document, 'issued');
-            $this->line('  → Event DocumentIssued fired, listener queued.');
+            $this->line('  → Event DocumentIssued fired. Chờ queue worker process...');
+            $this->waitForQueue();
             $this->showNotificationsForItem($item->id, 'document_issued');
             $this->newLine();
 
             // 6. Assignee reports task → fires TaskCompleted
             $this->info('Step 5: Assignee báo cáo hoàn thành (todo → reported) → bắn event TaskCompleted...');
+            // Note: completion_percent < 100 để giữ status='reported' (service có rule: 100% → auto done).
+            // Manager sẽ confirm ở step sau.
             $item = $itemSvc->updateProgress($item, [
                 'processing_status' => TaskProgressStatusEnum::Reported->value,
-                'completion_percent' => 100,
+                'completion_percent' => 90,
             ]);
-            $this->line('  → Event TaskCompleted fired, listener queued.');
+            $this->line('  → Event TaskCompleted fired. Chờ queue worker process...');
+            $this->waitForQueue();
             $this->showNotificationsForItem($item->id, 'task_completed');
             $this->newLine();
 
@@ -129,8 +133,14 @@ class SimulateNotificationFlowCommand extends Command
             auth()->login($manager); // simulate auth for confirmed_by
             $item = $itemSvc->confirmDone($item);
             auth()->logout();
-            $this->line('  → Event TaskConfirmed fired, listener queued.');
+            $this->line('  → Event TaskConfirmed fired. Chờ queue worker process...');
+            $this->waitForQueue();
             $this->showNotificationsForItem($item->id, 'task_confirmed');
+            $this->newLine();
+
+            // Wait extra cho SendDeliveryJob process xong các delivery
+            $this->line('Chờ worker process nốt các SendDeliveryJob...');
+            $this->waitForQueue(5);
             $this->newLine();
 
             // 8. Summary
@@ -171,6 +181,11 @@ class SimulateNotificationFlowCommand extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    private function waitForQueue(int $seconds = 3): void
+    {
+        sleep($seconds);
     }
 
     private function resolveUser(?string $email, string $role): User
