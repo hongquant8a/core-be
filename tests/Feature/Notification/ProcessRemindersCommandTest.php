@@ -8,7 +8,6 @@ use App\Modules\Core\Models\User;
 use App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Modules\TaskAssignment\Models\TaskAssignmentReminder;
-use App\Services\Notification\Console\ProcessRemindersCommand;
 use App\Services\Notification\Jobs\SendDeliveryJob;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;

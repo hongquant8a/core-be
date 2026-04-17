@@ -18,8 +18,8 @@ use Tests\TestCase;
 
 class SendDeliveryJobTest extends TestCase
 {
-    use RefreshDatabase;
     use \Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
+    use RefreshDatabase;
 
     private function makeDelivery(string $channel = 'sms', string $status = 'pending'): NotificationDelivery
     {
@@ -42,7 +42,7 @@ class SendDeliveryJobTest extends TestCase
     {
         $delivery = $this->makeDelivery(status: 'sent');
 
-        $registry = new ContentBuilderRegistry();
+        $registry = new ContentBuilderRegistry;
         $svc = Mockery::mock(NotificationService::class);
         $svc->shouldNotReceive('send');
 
@@ -57,7 +57,7 @@ class SendDeliveryJobTest extends TestCase
         $builder = Mockery::mock(ContentBuilder::class);
         $builder->shouldReceive('build')->andReturn(null);
 
-        $registry = new ContentBuilderRegistry();
+        $registry = new ContentBuilderRegistry;
         $registry->register('test_event', $builder);
 
         $svc = Mockery::mock(NotificationService::class);
@@ -77,7 +77,7 @@ class SendDeliveryJobTest extends TestCase
         $builder->shouldReceive('build')->andReturn(
             new NotificationPayload(['sms'], new Recipient(phone: '0905112233'), 'hi')
         );
-        $registry = new ContentBuilderRegistry();
+        $registry = new ContentBuilderRegistry;
         $registry->register('test_event', $builder);
 
         $svc = Mockery::mock(NotificationService::class);
@@ -100,7 +100,7 @@ class SendDeliveryJobTest extends TestCase
         $builder->shouldReceive('build')->andReturn(
             new NotificationPayload(['sms'], new Recipient(phone: '0905112233'), 'hi')
         );
-        $registry = new ContentBuilderRegistry();
+        $registry = new ContentBuilderRegistry;
         $registry->register('test_event', $builder);
 
         $svc = Mockery::mock(NotificationService::class);

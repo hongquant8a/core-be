@@ -15,8 +15,8 @@ use Tests\TestCase;
 
 class NotificationDispatcherTest extends TestCase
 {
-    use RefreshDatabase;
     use \Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
+    use RefreshDatabase;
 
     private function fakeBuilder(string $title = 'T', string $body = 'B', array $ctx = []): ContentBuilder
     {
