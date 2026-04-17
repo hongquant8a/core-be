@@ -2,10 +2,18 @@
 
 namespace App\Modules\Core\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class NotificationEventConfig extends Model
 {
+    use HasFactory;
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\Modules\Core\Models\NotificationEventConfigFactory::new();
+    }
+
     protected $table = 'notification_event_configs';
 
     protected $fillable = [

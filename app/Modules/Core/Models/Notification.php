@@ -2,10 +2,18 @@
 
 namespace App\Modules\Core\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Notification extends Model
 {
+    use HasFactory;
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\Modules\Core\Models\NotificationFactory::new();
+    }
+
     protected $table = 'notifications';
 
     protected $fillable = [

@@ -2,6 +2,7 @@
 
 namespace App\Modules\Core\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -11,6 +12,13 @@ use Illuminate\Database\Eloquent\Model;
  */
 class NotificationSchedule extends Model
 {
+    use HasFactory;
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\Modules\Core\Models\NotificationScheduleFactory::new();
+    }
+
     protected $table = 'notification_schedules';
 
     protected $fillable = [
