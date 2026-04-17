@@ -4,6 +4,7 @@ namespace Tests\Concerns;
 
 use App\Modules\Core\Models\NotificationEventConfig;
 use App\Modules\Core\Models\NotificationSchedule;
+use App\Modules\Core\Models\Organization;
 use App\Services\Notification\Enums\NotificationEventEnum;
 use App\Services\Notification\Enums\NotificationModuleEnum;
 
@@ -11,6 +12,7 @@ trait InteractsWithNotifications
 {
     /**
      * Seed 6 event configs (disabled) + schedules instant cho non-reminder.
+     * Also sets default X-Organization-Id header for HTTP tests using the default organization.
      */
     protected function seedNotificationConfig(): void
     {
@@ -20,6 +22,12 @@ trait InteractsWithNotifications
                 ['module_key' => $moduleKey, 'event_key' => $event->value],
                 ['enabled' => false]
             );
+        }
+
+        $defaultOrg = Organization::where('slug', 'default')->first();
+        if ($defaultOrg && method_exists($this, 'withHeader')) {
+            $this->withHeader('X-Organization-Id', (string) $defaultOrg->id);
+            setPermissionsTeamId($defaultOrg->id);
         }
     }
 
