@@ -20,8 +20,8 @@ use Tests\TestCase;
 class ReminderFireFlowTest extends TestCase
 {
     use InteractsWithNotifications;
-    use RefreshDatabase;
     use \Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
+    use RefreshDatabase;
 
     protected function setUp(): void
     {

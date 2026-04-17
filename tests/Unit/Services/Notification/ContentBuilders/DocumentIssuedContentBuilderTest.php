@@ -48,7 +48,7 @@ class DocumentIssuedContentBuilderTest extends TestCase
         $recipient = $this->makeRecipient();
         $other = User::factory()->create();
 
-        $result = (new DocumentIssuedContentBuilder())->build('sms', $recipient, $other);
+        $result = (new DocumentIssuedContentBuilder)->build('sms', $recipient, $other);
 
         $this->assertNull($result);
     }
@@ -58,7 +58,7 @@ class DocumentIssuedContentBuilderTest extends TestCase
         $item = $this->makeItemWithDocument();
         $recipient = $this->makeRecipient();
 
-        $result = (new DocumentIssuedContentBuilder())->build('unknown', $recipient, $item);
+        $result = (new DocumentIssuedContentBuilder)->build('unknown', $recipient, $item);
 
         $this->assertNull($result);
     }
@@ -68,7 +68,7 @@ class DocumentIssuedContentBuilderTest extends TestCase
         $item = $this->makeItemWithDocument();
         $recipient = $this->makeRecipient();
 
-        $payload = (new DocumentIssuedContentBuilder())->build('sms', $recipient, $item);
+        $payload = (new DocumentIssuedContentBuilder)->build('sms', $recipient, $item);
 
         $this->assertInstanceOf(NotificationPayload::class, $payload);
         $this->assertSame(['sms'], $payload->channels);
@@ -82,7 +82,7 @@ class DocumentIssuedContentBuilderTest extends TestCase
         $item = $this->makeItemWithDocument();
         $recipient = $this->makeRecipient(['phone' => null]);
 
-        $payload = (new DocumentIssuedContentBuilder())->build('sms', $recipient, $item);
+        $payload = (new DocumentIssuedContentBuilder)->build('sms', $recipient, $item);
 
         $this->assertNull($payload);
     }
@@ -92,7 +92,7 @@ class DocumentIssuedContentBuilderTest extends TestCase
         $item = $this->makeItemWithDocument();
         $recipient = $this->makeRecipient();
 
-        $payload = (new DocumentIssuedContentBuilder())->build('mail', $recipient, $item);
+        $payload = (new DocumentIssuedContentBuilder)->build('mail', $recipient, $item);
 
         $this->assertInstanceOf(NotificationPayload::class, $payload);
         $this->assertSame(['mail'], $payload->channels);
@@ -114,7 +114,7 @@ class DocumentIssuedContentBuilderTest extends TestCase
             'fcm_token' => 'fcm-token-xyz',
         ]);
 
-        $payload = (new DocumentIssuedContentBuilder())->build('mail', $recipient, $item);
+        $payload = (new DocumentIssuedContentBuilder)->build('mail', $recipient, $item);
 
         $this->assertNull($payload);
     }
@@ -124,7 +124,7 @@ class DocumentIssuedContentBuilderTest extends TestCase
         $item = $this->makeItemWithDocument();
         $recipient = $this->makeRecipient();
 
-        $payload = (new DocumentIssuedContentBuilder())->build('zalo', $recipient, $item);
+        $payload = (new DocumentIssuedContentBuilder)->build('zalo', $recipient, $item);
 
         $this->assertInstanceOf(NotificationPayload::class, $payload);
         $this->assertSame(['zalo'], $payload->channels);
@@ -140,7 +140,7 @@ class DocumentIssuedContentBuilderTest extends TestCase
         $item = $this->makeItemWithDocument();
         $recipient = $this->makeRecipient(['phone' => null]);
 
-        $payload = (new DocumentIssuedContentBuilder())->build('zalo', $recipient, $item);
+        $payload = (new DocumentIssuedContentBuilder)->build('zalo', $recipient, $item);
 
         $this->assertNull($payload);
     }
@@ -150,7 +150,7 @@ class DocumentIssuedContentBuilderTest extends TestCase
         $item = $this->makeItemWithDocument();
         $recipient = $this->makeRecipient();
 
-        $payload = (new DocumentIssuedContentBuilder())->build('fcm', $recipient, $item);
+        $payload = (new DocumentIssuedContentBuilder)->build('fcm', $recipient, $item);
 
         $this->assertInstanceOf(NotificationPayload::class, $payload);
         $this->assertSame(['fcm'], $payload->channels);
@@ -165,7 +165,7 @@ class DocumentIssuedContentBuilderTest extends TestCase
         $item = $this->makeItemWithDocument();
         $recipient = $this->makeRecipient(['fcm_token' => null]);
 
-        $payload = (new DocumentIssuedContentBuilder())->build('fcm', $recipient, $item);
+        $payload = (new DocumentIssuedContentBuilder)->build('fcm', $recipient, $item);
 
         $this->assertNull($payload);
     }
@@ -174,7 +174,7 @@ class DocumentIssuedContentBuilderTest extends TestCase
     {
         $item = $this->makeItemWithDocument();
         $recipient = $this->makeRecipient();
-        $builder = new DocumentIssuedContentBuilder();
+        $builder = new DocumentIssuedContentBuilder;
 
         $title = $builder->title($recipient, $item);
         $body = $builder->shortBody($recipient, $item);
@@ -183,6 +183,7 @@ class DocumentIssuedContentBuilderTest extends TestCase
         $this->assertSame('Bạn được giao công việc mới', $title);
         $this->assertStringContainsString('Rà soát báo cáo', $body);
         $this->assertSame("/task-assignment-items/{$item->id}", $ctx['url']);
-        $this->assertSame($item->document_id, $ctx['document_id']);
+        $this->assertSame($item->task_assignment_document_id, $ctx['document_id']);
+        $this->assertNotNull($ctx['document_id']);
     }
 }

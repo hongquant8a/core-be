@@ -47,7 +47,7 @@ class DocumentIssuedContentBuilder implements ContentBuilder
         if ($notifiable instanceof TaskAssignmentItem) {
             return [
                 'url' => "/task-assignment-items/{$notifiable->id}",
-                'document_id' => $notifiable->document_id,
+                'document_id' => $notifiable->task_assignment_document_id,
             ];
         }
 

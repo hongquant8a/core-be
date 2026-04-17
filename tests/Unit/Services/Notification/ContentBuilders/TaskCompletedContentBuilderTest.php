@@ -54,7 +54,7 @@ class TaskCompletedContentBuilderTest extends TestCase
         $recipient = $this->makeRecipient();
         $other = User::factory()->create();
 
-        $result = (new TaskCompletedContentBuilder())->build('sms', $recipient, $other);
+        $result = (new TaskCompletedContentBuilder)->build('sms', $recipient, $other);
 
         $this->assertNull($result);
     }
@@ -64,7 +64,7 @@ class TaskCompletedContentBuilderTest extends TestCase
         $item = $this->makeItem();
         $recipient = $this->makeRecipient();
 
-        $payload = (new TaskCompletedContentBuilder())->build('sms', $recipient, $item);
+        $payload = (new TaskCompletedContentBuilder)->build('sms', $recipient, $item);
 
         $this->assertInstanceOf(NotificationPayload::class, $payload);
         $this->assertSame(['sms'], $payload->channels);
@@ -77,7 +77,7 @@ class TaskCompletedContentBuilderTest extends TestCase
         $item = $this->makeItem();
         $r = $this->makeRecipient(['phone' => null]);
 
-        $this->assertNull((new TaskCompletedContentBuilder())->build('sms', $r, $item));
+        $this->assertNull((new TaskCompletedContentBuilder)->build('sms', $r, $item));
     }
 
     public function test_mail_payload_rendered_with_subject(): void
@@ -85,7 +85,7 @@ class TaskCompletedContentBuilderTest extends TestCase
         $item = $this->makeItem();
         $recipient = $this->makeRecipient();
 
-        $payload = (new TaskCompletedContentBuilder())->build('mail', $recipient, $item);
+        $payload = (new TaskCompletedContentBuilder)->build('mail', $recipient, $item);
 
         $this->assertInstanceOf(NotificationPayload::class, $payload);
         $this->assertSame(['mail'], $payload->channels);
@@ -99,7 +99,7 @@ class TaskCompletedContentBuilderTest extends TestCase
         $item = $this->makeItem();
         $r = new User(['name' => 'x', 'email' => null, 'phone' => '090', 'fcm_token' => 't']);
 
-        $this->assertNull((new TaskCompletedContentBuilder())->build('mail', $r, $item));
+        $this->assertNull((new TaskCompletedContentBuilder)->build('mail', $r, $item));
     }
 
     public function test_zalo_payload_with_template_data(): void
@@ -107,7 +107,7 @@ class TaskCompletedContentBuilderTest extends TestCase
         $item = $this->makeItem();
         $recipient = $this->makeRecipient();
 
-        $payload = (new TaskCompletedContentBuilder())->build('zalo', $recipient, $item);
+        $payload = (new TaskCompletedContentBuilder)->build('zalo', $recipient, $item);
 
         $this->assertInstanceOf(NotificationPayload::class, $payload);
         $this->assertSame(['zalo'], $payload->channels);
@@ -122,7 +122,7 @@ class TaskCompletedContentBuilderTest extends TestCase
         $item = $this->makeItem();
         $r = $this->makeRecipient(['phone' => null]);
 
-        $this->assertNull((new TaskCompletedContentBuilder())->build('zalo', $r, $item));
+        $this->assertNull((new TaskCompletedContentBuilder)->build('zalo', $r, $item));
     }
 
     public function test_fcm_payload(): void
@@ -130,7 +130,7 @@ class TaskCompletedContentBuilderTest extends TestCase
         $item = $this->makeItem();
         $recipient = $this->makeRecipient();
 
-        $payload = (new TaskCompletedContentBuilder())->build('fcm', $recipient, $item);
+        $payload = (new TaskCompletedContentBuilder)->build('fcm', $recipient, $item);
 
         $this->assertInstanceOf(NotificationPayload::class, $payload);
         $this->assertSame(['fcm'], $payload->channels);
@@ -145,14 +145,14 @@ class TaskCompletedContentBuilderTest extends TestCase
         $item = $this->makeItem();
         $r = $this->makeRecipient(['fcm_token' => null]);
 
-        $this->assertNull((new TaskCompletedContentBuilder())->build('fcm', $r, $item));
+        $this->assertNull((new TaskCompletedContentBuilder)->build('fcm', $r, $item));
     }
 
     public function test_title_body_context(): void
     {
         $item = $this->makeItem();
         $recipient = $this->makeRecipient();
-        $builder = new TaskCompletedContentBuilder();
+        $builder = new TaskCompletedContentBuilder;
 
         $this->assertSame('Công việc đã báo cáo hoàn thành', $builder->title($recipient, $item));
         $this->assertStringContainsString('Soạn công văn', $builder->shortBody($recipient, $item));
