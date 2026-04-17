@@ -15,7 +15,7 @@ class NotificationEventConfigSeeder extends Seeder
             $moduleKey = $event->module()->value;
             NotificationEventConfig::firstOrCreate(
                 ['module_key' => $moduleKey, 'event_key' => $event->value],
-                ['enabled' => false, 'channels' => []]
+                ['enabled' => false]
             );
         }
     }
