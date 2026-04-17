@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'log.activity' => \App\Modules\Core\Middleware\LogActivity::class,
             'ensure.route.org' => \App\Modules\Core\Middleware\EnsureRouteModelsBelongToOrganization::class,
             'sync.fcm.token' => \App\Modules\Core\Middleware\SyncFcmToken::class,
+            'notification.module' => \App\Modules\Core\Middleware\SetNotificationModule::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

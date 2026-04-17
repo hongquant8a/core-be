@@ -9,8 +9,7 @@ class NotificationSchedule extends Model
     protected $table = 'notification_schedules';
 
     protected $fillable = [
-        'configurable_type',
-        'configurable_id',
+        'module_key',
         'moment',
         'offset_minutes',
         'channels',
@@ -24,16 +23,13 @@ class NotificationSchedule extends Model
         'enabled' => 'boolean',
     ];
 
-    public function configurable()
-    {
-        return $this->morphTo();
-    }
-
-    /**
-     * Scope: global schedules (configurable_type = null).
-     */
     public function scopeGlobal($query)
     {
-        return $query->whereNull('configurable_type')->whereNull('configurable_id');
+        return $query->whereNull('module_key');
+    }
+
+    public function scopeForModule($query, string $moduleKey)
+    {
+        return $query->where('module_key', $moduleKey);
     }
 }

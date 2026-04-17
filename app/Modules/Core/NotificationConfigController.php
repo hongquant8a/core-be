@@ -8,39 +8,68 @@ use App\Modules\Core\Models\NotificationSchedule;
 use App\Modules\Core\Requests\StoreNotificationScheduleRequest;
 use App\Modules\Core\Requests\UpdateNotificationEventConfigRequest;
 use App\Modules\Core\Requests\UpdateNotificationScheduleRequest;
+use App\Services\Notification\Enums\NotificationEventEnum;
+use App\Services\Notification\Enums\NotificationModuleEnum;
+use Illuminate\Http\Request;
 
 /**
  * @group Core - Notification Config
+ *
+ * Controller dùng chung cho mọi module. Module_key được middleware
+ * `notification.module:{key}` gán vào request attributes — controller
+ * không nhận trực tiếp từ URL.
  */
 class NotificationConfigController extends Controller
 {
-    public function eventConfigIndex()
+    /**
+     * Registry module + events — mục đích nội bộ/dashboard (không bắt buộc cho FE).
+     */
+    public function modules()
     {
-        // Phase A: chỉ thao tác global configs (configurable_type=null).
-        // Phase C sẽ thêm per-entity config endpoints.
-        return $this->success(NotificationEventConfig::global()->orderBy('event_key')->get());
+        $modules = collect(NotificationModuleEnum::cases())->map(fn ($module) => [
+            'key' => $module->value,
+            'label' => $module->label(),
+            'events' => collect($module->events())->map(fn (NotificationEventEnum $e) => [
+                'key' => $e->value,
+                'label' => $e->label(),
+            ])->all(),
+        ])->all();
+
+        return $this->success($modules);
+    }
+
+    public function eventConfigIndex(Request $request)
+    {
+        return $this->success(
+            NotificationEventConfig::forModule($this->moduleKey($request))
+                ->orderBy('event_key')
+                ->get()
+        );
     }
 
     public function eventConfigUpdate(UpdateNotificationEventConfigRequest $request, string $eventKey)
     {
-        $cfg = NotificationEventConfig::global()->where('event_key', $eventKey)->firstOrFail();
+        $cfg = NotificationEventConfig::forModule($this->moduleKey($request))
+            ->where('event_key', $eventKey)
+            ->firstOrFail();
         $cfg->update($request->validated());
 
         return $this->success($cfg->fresh());
     }
 
-    public function scheduleIndex()
+    public function scheduleIndex(Request $request)
     {
-        return $this->success(NotificationSchedule::global()->orderBy('sort_order')->orderBy('id')->get());
+        return $this->success(
+            NotificationSchedule::forModule($this->moduleKey($request))
+                ->orderBy('sort_order')->orderBy('id')->get()
+        );
     }
 
     public function scheduleStore(StoreNotificationScheduleRequest $request)
     {
-        // Tạo global schedule (configurable null). Per-entity tạo qua API Phase C.
-        $schedule = NotificationSchedule::create($request->validated() + [
-            'configurable_type' => null,
-            'configurable_id' => null,
-        ]);
+        $schedule = NotificationSchedule::create(
+            $request->validated() + ['module_key' => $this->moduleKey($request)]
+        );
 
         return $this->success($schedule, 'Đã tạo lịch nhắc', 201);
     }
@@ -57,5 +86,15 @@ class NotificationConfigController extends Controller
         $schedule->delete();
 
         return $this->success(null, 'Đã xóa lịch nhắc');
+    }
+
+    private function moduleKey(Request $request): string
+    {
+        $key = $request->attributes->get('notification_module_key');
+        if (! $key) {
+            abort(500, 'Route chưa áp middleware notification.module');
+        }
+
+        return $key;
     }
 }
