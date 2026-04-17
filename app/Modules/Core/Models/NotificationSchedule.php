@@ -4,32 +4,30 @@ namespace App\Modules\Core\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Schedule thuộc về 1 event_config. Giữ channels.
+ * - Non-reminder event: 1 schedule duy nhất với moment=null, offset_minutes=null (instant)
+ * - Reminder event: N schedule với moment=before/on/after + offset_minutes
+ */
 class NotificationSchedule extends Model
 {
     protected $table = 'notification_schedules';
 
     protected $fillable = [
-        'module_key',
+        'notification_event_config_id',
         'moment',
         'offset_minutes',
         'channels',
-        'enabled',
         'label',
         'sort_order',
     ];
 
     protected $casts = [
         'channels' => 'array',
-        'enabled' => 'boolean',
     ];
 
-    public function scopeGlobal($query)
+    public function eventConfig()
     {
-        return $query->whereNull('module_key');
-    }
-
-    public function scopeForModule($query, string $moduleKey)
-    {
-        return $query->where('module_key', $moduleKey);
+        return $this->belongsTo(NotificationEventConfig::class, 'notification_event_config_id');
     }
 }

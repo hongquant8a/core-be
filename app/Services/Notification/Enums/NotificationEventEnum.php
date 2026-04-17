@@ -34,7 +34,7 @@ enum NotificationEventEnum: string
     public function label(): string
     {
         return match ($this) {
-            self::DocumentIssued => 'Văn bản ban hành',
+            self::DocumentIssued => 'Văn bản được ban hành',
             self::TaskCompleted => 'Công việc báo cáo hoàn thành',
             self::TaskConfirmed => 'Công việc được xác nhận',
             self::ReminderBefore => 'Nhắc trước hạn',

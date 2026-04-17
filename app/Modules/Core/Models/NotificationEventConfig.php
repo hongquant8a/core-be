@@ -12,13 +12,16 @@ class NotificationEventConfig extends Model
         'module_key',
         'event_key',
         'enabled',
-        'channels',
     ];
 
     protected $casts = [
         'enabled' => 'boolean',
-        'channels' => 'array',
     ];
+
+    public function schedules()
+    {
+        return $this->hasMany(NotificationSchedule::class, 'notification_event_config_id');
+    }
 
     /**
      * Scope: global configs (module_key = null).

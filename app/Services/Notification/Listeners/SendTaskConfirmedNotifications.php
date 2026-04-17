@@ -3,6 +3,7 @@
 namespace App\Services\Notification\Listeners;
 
 use App\Modules\Core\Models\NotificationEventConfig;
+use App\Services\Notification\Enums\NotificationModuleEnum;
 use App\Services\Notification\Events\TaskConfirmed;
 use App\Services\Notification\Services\ContentBuilderRegistry;
 use App\Services\Notification\Services\NotificationDispatcher;
@@ -17,10 +18,8 @@ class SendTaskConfirmedNotifications implements ShouldQueue
 
     public function handle(TaskConfirmed $event): void
     {
-        $config = NotificationEventConfig::global()
-            ->where('event_key', 'task_confirmed')
-            ->first();
-        if (! $config || ! $config->enabled || empty($config->channels)) {
+        $channels = $this->resolveChannels();
+        if (empty($channels)) {
             return;
         }
 
@@ -32,9 +31,23 @@ class SendTaskConfirmedNotifications implements ShouldQueue
                 eventKey: 'task_confirmed',
                 recipient: $user,
                 notifiable: $item,
-                channels: $config->channels,
+                channels: $channels,
                 builder: $builder,
             );
         }
+    }
+
+    private function resolveChannels(): array
+    {
+        $config = NotificationEventConfig::with('schedules')
+            ->where('module_key', NotificationModuleEnum::TaskAssignment->value)
+            ->where('event_key', 'task_confirmed')
+            ->first();
+        if (! $config || ! $config->enabled) {
+            return [];
+        }
+        $instant = $config->schedules->firstWhere('moment', null);
+
+        return $instant?->channels ?? [];
     }
 }

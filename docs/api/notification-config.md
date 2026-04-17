@@ -1,46 +1,40 @@
 # API Cấu hình Notification (Admin) – Core
 
-Quản lý cấu hình sự kiện + lịch nhắc cho từng module. **Module được bind vào URL path của module**, FE hoàn toàn không cần biết `module_key`.
+Cấu hình notification **theo từng module**. Schedule là child của Event — channels nằm ở schedule. Event chỉ có toggle `enabled`.
 
 **Auth:** Bearer token (Sanctum).
-
-**Permissions:**
-- `notifications.event-configs.index` / `.update`
-- `notifications.schedules.index` / `.store` / `.update` / `.destroy`
-
-Super Admin + Admin auto nhận.
+**Permissions:** `notifications.event-configs.{index,update}`, `notifications.schedules.{index,store,update,destroy}`. Super Admin + Admin auto nhận.
 
 ---
 
-## Pattern: Module-scoped URL
+## Model hierarchy
 
-Mỗi module có notification sẽ có URL prefix riêng cho config. Backend middleware `notification.module:{key}` tự gán `module_key` vào request — controller chia sẻ cho tất cả module.
+```
+NotificationEventConfig (1 per event per module)
+  ├── enabled (bool)
+  └── schedules[] (child)
+       ├── moment: before|on|after | null
+       ├── offset_minutes: int | null
+       ├── channels: ['sms','mail','zalo','fcm']
+       └── label, sort_order
+```
 
-### Hiện có
+### 2 loại event
 
-| Module | URL prefix |
-|---|---|
-| Giao việc (TaskAssignment) | `/api/task-assignment/notification-config` |
+| Loại | Event keys | Cấu trúc schedule |
+|---|---|---|
+| **Non-reminder** (fire tức thì khi trigger) | `document_issued`, `task_completed`, `task_confirmed` | **1 schedule duy nhất** với `moment=null`, `offset=null` (instant). FE chỉ edit channels. |
+| **Reminder** (fire theo lịch deadline) | `reminder_before`, `reminder_on`, `reminder_after` | **N schedule** với `moment` + `offset_minutes` + channels. FE CRUD được. |
 
-Khi thêm module mới (vd News, Inventory), BE tạo route file + đăng ký URL prefix riêng. FE **không cần sửa gì** nếu chỉ hiển thị config nội bộ module — URL đã biết sẵn.
+### Resolve channels khi fire
+
+- Non-reminder: listener load event_config → lấy channels từ schedule instant duy nhất.
+- Reminder: cron process reminder row → reminder.schedule → channels.
+- Nếu event.enabled=false hoặc schedule.channels=[] → không gửi.
 
 ---
 
-## Endpoints
-
-### A. Endpoints chung (không scope module)
-
-#### A.1. Test notification
-
-| | |
-|---|---|
-| **Method** | POST |
-| **Path** | `/api/notifications/test` |
-| **Permission** | `notifications.test` |
-
-Xem file [notification.md](notification.md).
-
-#### A.2. Registry overview (optional)
+## Module registry
 
 | | |
 |---|---|
@@ -48,9 +42,6 @@ Xem file [notification.md](notification.md).
 | **Path** | `/api/notifications/modules` |
 | **Permission** | `notifications.event-configs.index` |
 
-Liệt kê các module + events. Dùng cho **dashboard tổng quan** của admin nếu muốn xem toàn cục. FE các màn module không cần endpoint này.
-
-**Response:**
 ```json
 {
   "success": true,
@@ -59,43 +50,29 @@ Liệt kê các module + events. Dùng cho **dashboard tổng quan** của admin
       "key": "task_assignment",
       "label": "Giao việc",
       "events": [
-        { "key": "document_issued", "label": "Văn bản ban hành" },
-        { "key": "task_completed",  "label": "Công việc báo cáo hoàn thành" },
-        { "key": "task_confirmed",  "label": "Công việc được xác nhận" },
-        { "key": "reminder_before", "label": "Nhắc trước hạn" },
-        { "key": "reminder_on",     "label": "Nhắc đến hạn" },
-        { "key": "reminder_after",  "label": "Nhắc quá hạn" }
+        { "key": "document_issued",  "label": "Văn bản được ban hành", "is_reminder": false },
+        { "key": "task_completed",   "label": "Công việc báo cáo hoàn thành", "is_reminder": false },
+        { "key": "task_confirmed",   "label": "Công việc được xác nhận", "is_reminder": false },
+        { "key": "reminder_before",  "label": "Nhắc trước hạn", "is_reminder": true },
+        { "key": "reminder_on",      "label": "Nhắc đến hạn", "is_reminder": true },
+        { "key": "reminder_after",   "label": "Nhắc quá hạn", "is_reminder": true }
       ]
     }
   ]
 }
 ```
 
-#### A.3. Update/Delete schedule theo ID
-
-Sau khi tạo schedule qua module, update/delete dùng endpoint chung (id unique toàn bảng):
-
-| Method | Path | Permission |
-|---|---|---|
-| PUT | `/api/notifications/schedules/{id}` | `notifications.schedules.update` |
-| DELETE | `/api/notifications/schedules/{id}` | `notifications.schedules.destroy` |
+`is_reminder` giúp FE biết event cần render UI CRUD schedules (reminder) hay chỉ edit channels inline (non-reminder).
 
 ---
 
-### B. Endpoints module TaskAssignment
+## Event configs (module-scoped)
 
-FE trong trang config của module TaskAssignment gọi 4 endpoint sau:
+### List
 
-#### B.1. Danh sách event configs
+`GET /api/task-assignment/notification-config/event-configs`
 
-| | |
-|---|---|
-| **Method** | GET |
-| **Path** | `/api/task-assignment/notification-config/event-configs` |
-| **Permission** | `notifications.event-configs.index` |
-
-**Response:** mảng 6 event config của module, order theo `event_key`.
-
+Response — kèm schedules eager-load:
 ```json
 {
   "success": true,
@@ -105,133 +82,129 @@ FE trong trang config của module TaskAssignment gọi 4 endpoint sau:
       "module_key": "task_assignment",
       "event_key": "document_issued",
       "enabled": false,
-      "channels": [],
+      "schedules": [
+        {
+          "id": 9,
+          "notification_event_config_id": 1,
+          "moment": null,
+          "offset_minutes": null,
+          "channels": [],
+          "label": "Gửi tức thì",
+          "sort_order": 0
+        }
+      ],
       "created_at": "...",
       "updated_at": "..."
     },
-    ...
-  ]
-}
-```
-
-#### B.2. Cập nhật event config
-
-| | |
-|---|---|
-| **Method** | PUT |
-| **Path** | `/api/task-assignment/notification-config/event-configs/{eventKey}` |
-| **Permission** | `notifications.event-configs.update` |
-
-**Path param `{eventKey}`:** một trong `document_issued`, `task_completed`, `task_confirmed`, `reminder_before`, `reminder_on`, `reminder_after`.
-
-**Body:**
-```json
-{
-  "enabled": true,
-  "channels": ["sms", "mail", "fcm"]
-}
-```
-
-| Field | Type | Required | Validation |
-|---|---|---|---|
-| `enabled` | boolean | ✅ | |
-| `channels` | array | | Mỗi phần tử `sms`/`mail`/`zalo`/`fcm` |
-
-#### B.3. Danh sách schedules của module
-
-| | |
-|---|---|
-| **Method** | GET |
-| **Path** | `/api/task-assignment/notification-config/schedules` |
-| **Permission** | `notifications.schedules.index` |
-
-**Response:** mảng schedules thuộc module.
-
-```json
-{
-  "success": true,
-  "data": [
     {
-      "id": 1,
-      "module_key": "task_assignment",
-      "moment": "before",
-      "offset_minutes": 1440,
-      "channels": ["mail"],
-      "enabled": true,
-      "label": "Nhắc trước 1 ngày",
-      "sort_order": 1,
-      "created_at": "...",
-      "updated_at": "..."
-    },
-    { "moment": "before", "offset_minutes": 120, "label": "Nhắc trước 2 giờ", "...": "..." },
-    { "moment": "on", "offset_minutes": null, "label": "Đến hạn", "...": "..." },
-    { "moment": "after", "offset_minutes": 1440, "label": "Trễ 1 ngày", "...": "..." }
+      "id": 4,
+      "event_key": "reminder_before",
+      "enabled": false,
+      "schedules": [
+        { "id": 12, "moment": "before", "offset_minutes": 1440, "channels": [], "label": "Nhắc trước 1 ngày" },
+        { "id": 13, "moment": "before", "offset_minutes": 120, "channels": [], "label": "Nhắc trước 2 giờ" }
+      ]
+    }
   ]
 }
 ```
 
-Order: `sort_order` ASC → `id` ASC.
+### Update (toggle enabled)
 
-#### B.4. Tạo schedule mới trong module
+`PUT /api/task-assignment/notification-config/event-configs/{eventKey}`
 
-| | |
-|---|---|
-| **Method** | POST |
-| **Path** | `/api/task-assignment/notification-config/schedules` |
-| **Permission** | `notifications.schedules.store` |
+Body:
+```json
+{ "enabled": true }
+```
 
-Body **không chứa** `module_key` — BE tự gán.
+Chỉ 1 field `enabled`. Channels/schedules quản lý qua endpoint schedules.
 
+---
+
+## Schedules (nested under event)
+
+### List schedules của 1 event
+
+`GET /api/task-assignment/notification-config/event-configs/{eventKey}/schedules`
+
+### Create schedule trong event
+
+`POST /api/task-assignment/notification-config/event-configs/{eventKey}/schedules`
+
+**Non-reminder event:** chỉ cần `label` + `channels` (BE tự force `moment=null`, `offset_minutes=null`). Thường không cần tạo thêm — đã có sẵn 1 schedule instant khi seed.
+```json
+{ "label": "Gửi tức thì (override)", "channels": ["sms","mail"] }
+```
+
+**Reminder event:** cần `moment` + `offset_minutes` + `channels`.
 ```json
 {
   "moment": "before",
   "offset_minutes": 180,
-  "channels": ["sms", "mail"],
-  "enabled": true,
+  "channels": ["sms","mail"],
   "label": "Nhắc trước 3 giờ",
   "sort_order": 5
 }
 ```
 
-| Field | Type | Required | Validation |
+| Field | Type | Required | Note |
 |---|---|---|---|
-| `moment` | string | ✅ | `before` / `on` / `after` |
-| `offset_minutes` | integer | | `>= 0`. Null khi `moment=on` |
-| `channels` | array | ✅ | ≥ 1 phần tử |
-| `enabled` | boolean | | Default `true` |
+| `moment` | string | | `before`/`on`/`after` (chỉ cho reminder; non-reminder bị BE reset null) |
+| `offset_minutes` | integer | | `>= 0` (chỉ dùng với `before`/`after`) |
+| `channels` | array | | `sms`/`mail`/`zalo`/`fcm` |
 | `label` | string | ✅ | ≤ 255 ký tự |
 | `sort_order` | integer | | |
 
-**Response 201:** schedule vừa tạo.
+### Update schedule
+
+`PUT /api/notifications/schedules/{id}` (endpoint chung, id unique toàn bảng)
+
+Body partial:
+```json
+{ "channels": ["sms","mail","fcm"] }
+```
+
+### Delete schedule
+
+`DELETE /api/notifications/schedules/{id}`
 
 ---
 
-## Flow UI
+## Flow UI (trong module TaskAssignment)
 
-### Trang "Cấu hình thông báo" **trong module TaskAssignment**
+### Section 1: "Sự kiện kích hoạt"
 
-- Hardcode/bind URL `/api/task-assignment/notification-config/*` trong component config page của module (FE module đã biết mình là TaskAssignment qua router/folder).
-- 2 section:
-  - **Sự kiện:** GET `/event-configs` → render bảng ma trận → PUT từng row khi save.
-  - **Lịch nhắc:** GET `/schedules` → bảng CRUD → POST/PUT/DELETE.
+Render các event rows. UI khác nhau theo `is_reminder`:
 
-### Mở rộng module mới
+**Non-reminder event** (vd Văn bản được ban hành):
+```
+Văn bản được ban hành    [Toggle enabled]    [Channels: ☐SMS ☐Email ☐Zalo ☐FCM]
+```
+Channel checkboxes edit **inline** — save → `PUT /schedules/{instant_schedule_id}` với body `{ channels: [...] }`.
 
-Khi thêm module News:
-1. BE thêm case `NotificationModuleEnum::News = 'news'`
-2. BE map events mới vào module
-3. BE tạo `app/Modules/News/Routes/notification_config.php` (copy pattern TaskAssignment)
-4. BE đăng ký prefix `/api/news/notification-config` trong `api.php`
-5. FE module News gọi URL mới → xong
+**Reminder event** (vd Nhắc trước hạn):
+```
+Nhắc trước hạn           [Toggle enabled]    [Cấu hình lịch →]
+```
+Không có channel checkbox inline. Click "Cấu hình lịch" → mở Section 2 cho event này.
 
-**FE không bao giờ thấy `module_key`** trong URL/body.
+### Section 2: "Lịch nhắc" (CRUD cho reminder event đang chọn)
+
+Bảng N schedules:
+| Label | Moment | Offset | Channels | Actions |
+|---|---|---|---|---|
+| Nhắc trước 1 ngày | Trước hạn | 1440 phút | [mail] | [Edit][Del] |
+| Nhắc trước 2 giờ | Trước hạn | 120 phút | [sms, fcm] | [Edit][Del] |
+| [+ Thêm lịch] | | | | |
+
+CRUD endpoints đã nêu ở trên.
 
 ---
 
-## Lưu ý quan trọng
+## Lưu ý
 
-1. **Channel toggle phụ thuộc Settings:** notification gửi cần channel bật trong Settings (`sms_enabled`, etc). Nếu channel ở event config nhưng channel bị tắt → gửi fail với `"<Channel> is disabled"`.
-
-2. **Reminder fire logic:** khi reminder tới giờ, intersect `reminder_{moment}` event config channels ∩ `notification_schedules.channels`. Nếu event disabled → fallback schedule channels. Nếu intersect rỗng → cancel.
-
-3. **Schedule update/delete dùng endpoint chung `/notifications/schedules/{id}`** (id unique toàn bảng, không cần module trong path).
+1. Non-reminder event được seed với 1 schedule instant `channels=[]`. Admin chỉ cần bật `enabled` + chọn channels → notification hoạt động.
+2. Xóa event_config → cascade xóa schedules (FK cascadeOnDelete).
+3. Nếu delete schedule duy nhất của non-reminder event → không có channel để gửi → notification không fire. Admin phải tạo lại schedule nếu xóa nhầm.
+4. Channel toggle trong Settings (`sms_enabled`, etc.) vẫn là gate toàn cục — dù schedule có channels, channel disabled trong Settings sẽ fail gửi.

@@ -2,53 +2,59 @@
 
 namespace App\Services\Notification\Services;
 
+use App\Modules\Core\Models\NotificationEventConfig;
 use App\Modules\Core\Models\NotificationSchedule;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Modules\TaskAssignment\Models\TaskAssignmentReminder;
+use App\Services\Notification\Enums\NotificationEventEnum;
+use App\Services\Notification\Enums\NotificationModuleEnum;
 
 class ReminderScheduler
 {
     /**
-     * (Re)create pending reminders for item theo schedules hiện hành.
-     * Xóa pending cũ của item, insert mới dựa trên end_at + schedule offsets.
+     * (Re)create pending reminders for item theo schedules của 3 reminder event config.
      */
     public function scheduleFor(TaskAssignmentItem $item): void
     {
-        // Chỉ schedule cho item có deadline + chưa done
         if (! $item->end_at || in_array($item->processing_status, ['done', 'cancelled'], true)) {
             $this->cancelPending($item);
 
             return;
         }
 
-        // Xóa pending cũ trước khi tạo mới
         TaskAssignmentReminder::where('task_assignment_item_id', $item->id)
             ->where('status', 'pending')
             ->delete();
 
-        $schedules = NotificationSchedule::global()
-            ->where('enabled', true)
+        // Load tất cả schedules thuộc 3 reminder event của module task_assignment
+        $reminderEventKeys = [
+            NotificationEventEnum::ReminderBefore->value,
+            NotificationEventEnum::ReminderOn->value,
+            NotificationEventEnum::ReminderAfter->value,
+        ];
+        $configs = NotificationEventConfig::with('schedules')
+            ->where('module_key', NotificationModuleEnum::TaskAssignment->value)
+            ->whereIn('event_key', $reminderEventKeys)
             ->get();
 
-        foreach ($schedules as $schedule) {
-            $remindAt = $this->computeRemindAt($item, $schedule);
-            if ($remindAt === null) {
-                continue;
-            }
+        foreach ($configs as $config) {
+            foreach ($config->schedules as $schedule) {
+                $remindAt = $this->computeRemindAt($item, $schedule);
+                if ($remindAt === null) {
+                    continue;
+                }
 
-            TaskAssignmentReminder::create([
-                'task_assignment_item_id' => $item->id,
-                'notification_schedule_id' => $schedule->id,
-                'moment' => $schedule->moment,
-                'remind_at' => $remindAt,
-                'status' => 'pending',
-            ]);
+                TaskAssignmentReminder::create([
+                    'task_assignment_item_id' => $item->id,
+                    'notification_schedule_id' => $schedule->id,
+                    'moment' => $schedule->moment,
+                    'remind_at' => $remindAt,
+                    'status' => 'pending',
+                ]);
+            }
         }
     }
 
-    /**
-     * Cancel all pending reminders cho 1 item (gọi khi item done hoặc deleted).
-     */
     public function cancelPending(TaskAssignmentItem $item): void
     {
         TaskAssignmentReminder::where('task_assignment_item_id', $item->id)

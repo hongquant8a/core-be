@@ -2,7 +2,6 @@
 
 namespace App\Services\Notification\Console;
 
-use App\Modules\Core\Models\NotificationEventConfig;
 use App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum;
 use App\Modules\TaskAssignment\Models\TaskAssignmentReminder;
 use App\Services\Notification\Services\ContentBuilderRegistry;
@@ -52,22 +51,18 @@ class ProcessRemindersCommand extends Command
 
         $eventKey = "reminder_{$reminder->moment}";
 
-        $config = NotificationEventConfig::global()
-            ->where('event_key', $eventKey)
-            ->first();
-        $eventEnabled = $config && $config->enabled && ! empty($config->channels);
+        // Channels lấy từ chính schedule của reminder (schedule là child của event_config).
+        // Check enabled của parent event_config trước.
+        $schedule = $reminder->schedule;
+        $config = $schedule?->eventConfig;
 
-        // Channels = intersect (event config channels) ∩ (schedule channels)
-        // Nếu event config disabled hoặc rỗng → fallback schedule channels
-        $channels = $eventEnabled
-            ? array_values(array_intersect($config->channels, $reminder->schedule?->channels ?? []))
-            : ($reminder->schedule?->channels ?? []);
-
-        if (empty($channels)) {
+        if (! $config || ! $config->enabled || empty($schedule->channels)) {
             $reminder->update(['status' => 'cancelled', 'fired_at' => now()]);
 
             return;
         }
+
+        $channels = $schedule->channels;
 
         $builder = $registry->for($eventKey);
 

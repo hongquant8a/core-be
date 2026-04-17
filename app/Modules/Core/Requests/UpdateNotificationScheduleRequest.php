@@ -14,11 +14,10 @@ class UpdateNotificationScheduleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'moment' => 'sometimes|in:before,on,after',
-            'offset_minutes' => 'nullable|integer|min:0',
-            'channels' => 'sometimes|array|min:1',
+            'moment' => 'sometimes|nullable|in:before,on,after',
+            'offset_minutes' => 'sometimes|nullable|integer|min:0',
+            'channels' => 'sometimes|array',
             'channels.*' => 'in:sms,mail,zalo,fcm',
-            'enabled' => 'sometimes|boolean',
             'label' => 'sometimes|string|max:255',
             'sort_order' => 'sometimes|integer',
         ];

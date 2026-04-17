@@ -15,8 +15,6 @@ class UpdateNotificationEventConfigRequest extends FormRequest
     {
         return [
             'enabled' => 'required|boolean',
-            'channels' => 'array',
-            'channels.*' => 'in:sms,mail,zalo,fcm',
         ];
     }
 }

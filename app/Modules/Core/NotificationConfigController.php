@@ -14,16 +14,9 @@ use Illuminate\Http\Request;
 
 /**
  * @group Core - Notification Config
- *
- * Controller dùng chung cho mọi module. Module_key được middleware
- * `notification.module:{key}` gán vào request attributes — controller
- * không nhận trực tiếp từ URL.
  */
 class NotificationConfigController extends Controller
 {
-    /**
-     * Registry module + events — mục đích nội bộ/dashboard (không bắt buộc cho FE).
-     */
     public function modules()
     {
         $modules = collect(NotificationModuleEnum::cases())->map(fn ($module) => [
@@ -32,16 +25,22 @@ class NotificationConfigController extends Controller
             'events' => collect($module->events())->map(fn (NotificationEventEnum $e) => [
                 'key' => $e->value,
                 'label' => $e->label(),
+                'is_reminder' => str_starts_with($e->value, 'reminder_'),
             ])->all(),
         ])->all();
 
         return $this->success($modules);
     }
 
+    /**
+     * List event configs kèm schedules eager-load.
+     * Non-reminder event có 1 schedule instant; reminder event có N schedule.
+     */
     public function eventConfigIndex(Request $request)
     {
         return $this->success(
-            NotificationEventConfig::forModule($this->moduleKey($request))
+            NotificationEventConfig::with('schedules')
+                ->forModule($this->moduleKey($request))
                 ->orderBy('event_key')
                 ->get()
         );
@@ -57,21 +56,34 @@ class NotificationConfigController extends Controller
         return $this->success($cfg->fresh());
     }
 
-    public function scheduleIndex(Request $request)
+    public function scheduleIndex(Request $request, string $eventKey)
     {
+        $cfg = NotificationEventConfig::forModule($this->moduleKey($request))
+            ->where('event_key', $eventKey)
+            ->firstOrFail();
+
         return $this->success(
-            NotificationSchedule::forModule($this->moduleKey($request))
-                ->orderBy('sort_order')->orderBy('id')->get()
+            $cfg->schedules()->orderBy('sort_order')->orderBy('id')->get()
         );
     }
 
-    public function scheduleStore(StoreNotificationScheduleRequest $request)
+    public function scheduleStore(StoreNotificationScheduleRequest $request, string $eventKey)
     {
-        $schedule = NotificationSchedule::create(
-            $request->validated() + ['module_key' => $this->moduleKey($request)]
-        );
+        $cfg = NotificationEventConfig::forModule($this->moduleKey($request))
+            ->where('event_key', $eventKey)
+            ->firstOrFail();
 
-        return $this->success($schedule, 'Đã tạo lịch nhắc', 201);
+        // Non-reminder event: moment/offset bị force về null
+        $isReminder = str_starts_with($eventKey, 'reminder_');
+        $data = $request->validated() + ['notification_event_config_id' => $cfg->id];
+        if (! $isReminder) {
+            $data['moment'] = null;
+            $data['offset_minutes'] = null;
+        }
+
+        $schedule = NotificationSchedule::create($data);
+
+        return $this->success($schedule, 'Đã tạo schedule', 201);
     }
 
     public function scheduleUpdate(UpdateNotificationScheduleRequest $request, NotificationSchedule $schedule)
@@ -85,7 +97,7 @@ class NotificationConfigController extends Controller
     {
         $schedule->delete();
 
-        return $this->success(null, 'Đã xóa lịch nhắc');
+        return $this->success(null, 'Đã xóa schedule');
     }
 
     private function moduleKey(Request $request): string
