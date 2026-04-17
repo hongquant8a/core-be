@@ -102,9 +102,39 @@ class SimulateNotificationFlowCommand extends Command
                 'updated_at' => now(),
             ]);
 
-            $reminderCount = TaskAssignmentReminder::where('task_assignment_item_id', $item->id)->count();
+            $reminders = TaskAssignmentReminder::with('schedule')
+                ->where('task_assignment_item_id', $item->id)
+                ->orderBy('remind_at')
+                ->get();
             $this->line("  Item created: #{$item->id} '{$item->name}' (deadline={$item->end_at->format('d/m/Y H:i')})");
-            $this->line("  Reminders auto-created by Observer: {$reminderCount}");
+            $this->line('  Reminders auto-created by Observer:');
+            $this->table(
+                ['Label', 'Moment', 'Offset (min)', 'remind_at', 'Expected offset from deadline'],
+                $reminders->map(fn ($r) => [
+                    $r->schedule?->label ?? '—',
+                    $r->moment,
+                    $r->schedule?->offset_minutes ?? 'null',
+                    $r->remind_at->format('d/m/Y H:i:s'),
+                    $this->formatDeadlineDiff($item->end_at, $r->remind_at),
+                ])->all(),
+            );
+            $this->newLine();
+
+            // 4.5. Fire 1 reminder để demo timing chạy đúng
+            $this->info('Step 3.5: Demo fire reminder — force remind_at về past + run cron...');
+            $firstPending = TaskAssignmentReminder::where('task_assignment_item_id', $item->id)
+                ->where('status', 'pending')
+                ->orderBy('remind_at')
+                ->first();
+            if ($firstPending) {
+                $firstPending->update(['remind_at' => now()->subMinutes(1)]);
+                $this->line("  Forced reminder #{$firstPending->id} ({$firstPending->moment}/{$firstPending->schedule?->label}) remind_at → ".$firstPending->remind_at->format('H:i:s'));
+                $this->call('notifications:process-reminders');
+                $this->waitForQueue(2);
+                $fresh = $firstPending->fresh();
+                $this->line("  → Reminder status: {$fresh->status} (fired_at={$fresh->fired_at?->format('H:i:s')})");
+                $this->showNotificationsForItem($item->id, 'reminder_'.$firstPending->moment);
+            }
             $this->newLine();
 
             // 5. Issue document → fires DocumentIssued
@@ -191,6 +221,19 @@ class SimulateNotificationFlowCommand extends Command
         sleep($seconds);
     }
 
+    private function formatDeadlineDiff(\Carbon\Carbon $deadline, \Carbon\Carbon $remindAt): string
+    {
+        $diffMinutes = $deadline->diffInMinutes($remindAt, false);
+        if ($diffMinutes > 0) {
+            return 'sau hạn '.$diffMinutes.' phút';
+        }
+        if ($diffMinutes < 0) {
+            return 'trước hạn '.abs($diffMinutes).' phút';
+        }
+
+        return 'đúng hạn';
+    }
+
     private function resolveUser(?string $email, string $role): User
     {
         if ($email) {
@@ -230,6 +273,9 @@ class SimulateNotificationFlowCommand extends Command
                     ['channels' => $channels, 'label' => 'Instant (simulation)', 'sort_order' => 0]
                 );
                 $schedule->update(['channels' => $channels]);
+            } else {
+                // Reminder: update channels cho tất cả schedule đã seed
+                $config->schedules()->update(['channels' => json_encode($channels)]);
             }
         }
 
