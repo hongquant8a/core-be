@@ -8,6 +8,7 @@ use App\Services\Notification\Channels\MailChannel;
 use App\Services\Notification\Channels\SmsChannel;
 use App\Services\Notification\Channels\ZaloChannel;
 use App\Services\Notification\NotificationService;
+use App\Services\Notification\Services\ContentBuilderRegistry;
 use App\Services\Notification\SmsClient;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
@@ -16,6 +17,8 @@ class NotificationServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->singleton(ContentBuilderRegistry::class);
+
         $this->app->singleton(NotificationService::class, function ($app) {
             $settings = $app->make(SettingService::class);
             $smsClient = $app->make(SmsClient::class);

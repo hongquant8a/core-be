@@ -89,7 +89,7 @@ class FcmChannel implements NotificationChannel
         }
 
         try {
-            return (new Factory())
+            return (new Factory)
                 ->withServiceAccount($this->serviceAccount)
                 ->createMessaging();
         } catch (Throwable) {

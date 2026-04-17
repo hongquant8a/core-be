@@ -97,6 +97,14 @@ class PermissionSeeder extends Seeder
         'notifications' => [
             'test',
         ],
+        // Core - Cấu hình sự kiện thông báo
+        'notifications.event-configs' => [
+            'index', 'update',
+        ],
+        // Core - Cấu hình lịch nhắc
+        'notifications.schedules' => [
+            'index', 'store', 'update', 'destroy',
+        ],
         // TaskAssignment - Công việc được giao (cho nhân viên xem task của mình)
         'my-received-tasks' => [
             'index',
@@ -154,6 +162,8 @@ class PermissionSeeder extends Seeder
         'task-assignment-item-reports' => 'Báo cáo công việc',
         'dashboard' => 'Tổng quan',
         'notifications' => 'Thông báo',
+        'notifications.event-configs' => 'Cấu hình sự kiện thông báo',
+        'notifications.schedules' => 'Cấu hình lịch nhắc',
         'my-received-tasks' => 'Công việc được giao',
         'my-assigned-tasks' => 'Công việc đang giao',
     ];

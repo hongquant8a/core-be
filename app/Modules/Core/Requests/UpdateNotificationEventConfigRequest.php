@@ -1,0 +1,22 @@
+<?php
+
+namespace App\Modules\Core\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class UpdateNotificationEventConfigRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    public function rules(): array
+    {
+        return [
+            'enabled' => 'required|boolean',
+            'channels' => 'array',
+            'channels.*' => 'in:sms,mail,zalo,fcm',
+        ];
+    }
+}

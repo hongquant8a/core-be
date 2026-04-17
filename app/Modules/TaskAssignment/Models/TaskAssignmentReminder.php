@@ -2,7 +2,7 @@
 
 namespace App\Modules\TaskAssignment\Models;
 
-use App\Modules\Core\Models\User;
+use App\Modules\Core\Models\NotificationSchedule;
 use Illuminate\Database\Eloquent\Model;
 
 class TaskAssignmentReminder extends Model
@@ -11,18 +11,16 @@ class TaskAssignmentReminder extends Model
 
     protected $fillable = [
         'task_assignment_item_id',
+        'notification_schedule_id',
+        'moment',
         'remind_at',
-        'sent_at',
-        'channel',
-        'recipient_department_id',
-        'recipient_user_id',
         'status',
-        'error_message',
+        'fired_at',
     ];
 
     protected $casts = [
         'remind_at' => 'datetime',
-        'sent_at'   => 'datetime',
+        'fired_at' => 'datetime',
     ];
 
     public function item()
@@ -30,13 +28,8 @@ class TaskAssignmentReminder extends Model
         return $this->belongsTo(TaskAssignmentItem::class, 'task_assignment_item_id');
     }
 
-    public function recipientDepartment()
+    public function schedule()
     {
-        return $this->belongsTo(TaskAssignmentDepartment::class, 'recipient_department_id');
-    }
-
-    public function recipient()
-    {
-        return $this->belongsTo(User::class, 'recipient_user_id');
+        return $this->belongsTo(NotificationSchedule::class, 'notification_schedule_id');
     }
 }

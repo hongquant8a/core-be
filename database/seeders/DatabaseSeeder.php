@@ -19,6 +19,8 @@ class DatabaseSeeder extends Seeder
         $this->call(PermissionSeeder::class);
         $this->call(TaskAssignmentDataSeeder::class);
         $this->call(SettingSeeder::class);
+        $this->call(NotificationEventConfigSeeder::class);
+        $this->call(NotificationScheduleSeeder::class);
     }
 
     /**
@@ -47,21 +49,20 @@ class DatabaseSeeder extends Seeder
 
         foreach ($users as $i => $data) {
             $ts = $baseDate->copy()->addMinutes($i * 10);
-            User::unguarded(fn () =>
-                User::firstOrCreate(
-                    ['user_name' => $data['user_name']],
-                    [
-                        'name' => $data['name'],
-                        'email' => $data['email'],
-                        'password' => $password,
-                        'email_verified_at' => $ts,
-                        'status' => $data['status'],
-                        'created_by' => 1,
-                        'updated_by' => 1,
-                        'created_at' => $ts,
-                        'updated_at' => $ts,
-                    ]
-                )
+            User::unguarded(fn () => User::firstOrCreate(
+                ['user_name' => $data['user_name']],
+                [
+                    'name' => $data['name'],
+                    'email' => $data['email'],
+                    'password' => $password,
+                    'email_verified_at' => $ts,
+                    'status' => $data['status'],
+                    'created_by' => 1,
+                    'updated_by' => 1,
+                    'created_at' => $ts,
+                    'updated_at' => $ts,
+                ]
+            )
             );
         }
     }
