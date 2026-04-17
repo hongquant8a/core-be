@@ -168,30 +168,13 @@ class TaskAssignmentItemService
     public function updateProgress(TaskAssignmentItem $item, array $validated): TaskAssignmentItem
     {
         $previousStatus = $item->processing_status;
-        $status = $validated['processing_status'] ?? $item->processing_status;
-        $percent = $validated['completion_percent'] ?? $item->completion_percent;
 
-        // Rule: done -> 100%, set completed_at
-        if ($status === TaskProgressStatusEnum::Done->value) {
-            $percent = 100;
-            $item->completed_at = $item->completed_at ?? now();
-        }
-        // Rule: 100% -> done, set completed_at
-        elseif ((int) $percent === 100) {
-            $status = TaskProgressStatusEnum::Done->value;
-            $item->completed_at = $item->completed_at ?? now();
-        }
-        // Rule: reopen from done -> clear completed_at
-        elseif ($item->processing_status === TaskProgressStatusEnum::Done->value && $status !== TaskProgressStatusEnum::Done->value) {
-            $item->completed_at = null;
-        }
-
-        $item->processing_status = $status;
-        $item->completion_percent = $percent;
+        $item->processing_status = $validated['processing_status'] ?? $item->processing_status;
+        $item->completion_percent = $validated['completion_percent'] ?? $item->completion_percent;
         $item->save();
 
         // Dispatch event khi assignee báo cáo xong (status → reported)
-        if ($status === TaskProgressStatusEnum::Reported->value && $previousStatus !== $status) {
+        if ($item->processing_status === TaskProgressStatusEnum::Reported->value && $previousStatus !== $item->processing_status) {
             event(new TaskCompleted($item->fresh()));
         }
 

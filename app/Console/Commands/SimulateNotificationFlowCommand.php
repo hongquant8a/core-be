@@ -117,11 +117,9 @@ class SimulateNotificationFlowCommand extends Command
 
             // 6. Assignee reports task → fires TaskCompleted
             $this->info('Step 5: Assignee báo cáo hoàn thành (todo → reported) → bắn event TaskCompleted...');
-            // Note: completion_percent < 100 để giữ status='reported' (service có rule: 100% → auto done).
-            // Manager sẽ confirm ở step sau.
             $item = $itemSvc->updateProgress($item, [
                 'processing_status' => TaskProgressStatusEnum::Reported->value,
-                'completion_percent' => 90,
+                'completion_percent' => 100,
             ]);
             $this->line('  → Event TaskCompleted fired. Chờ queue worker process...');
             $this->waitForQueue();
