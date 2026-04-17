@@ -4,26 +4,18 @@ namespace App\Services\Notification\Contracts;
 
 use App\Modules\Core\Models\User;
 use App\Services\Notification\DTOs\NotificationPayload;
+use Illuminate\Database\Eloquent\Model;
 
 interface ContentBuilder
 {
     /**
      * Build a payload for a specific channel, or null to skip (e.g. recipient missing field).
      */
-    public function build(string $channelKey, User $recipient, mixed ...$args): ?NotificationPayload;
+    public function build(string $channelKey, User $recipient, Model $notifiable, mixed ...$extraArgs): ?NotificationPayload;
 
-    /**
-     * In-app notification title (displayed in list).
-     */
-    public function title(User $recipient, mixed ...$args): string;
+    public function title(User $recipient, Model $notifiable, mixed ...$extraArgs): string;
 
-    /**
-     * In-app short body (displayed in list).
-     */
-    public function shortBody(User $recipient, mixed ...$args): string;
+    public function shortBody(User $recipient, Model $notifiable, mixed ...$extraArgs): string;
 
-    /**
-     * Extra context for in-app (e.g. url, action).
-     */
-    public function inAppContext(User $recipient, mixed ...$args): array;
+    public function inAppContext(User $recipient, Model $notifiable, mixed ...$extraArgs): array;
 }

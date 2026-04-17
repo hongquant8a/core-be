@@ -15,7 +15,7 @@ class SendDeliveryJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public function __construct(public int $deliveryId, public array $builderArgs = []) {}
+    public function __construct(public int $deliveryId, public array $extraArgs = []) {}
 
     public function handle(
         ContentBuilderRegistry $registry,
@@ -28,10 +28,17 @@ class SendDeliveryJob implements ShouldQueue
 
         $notification = $delivery->notification;
         $recipient = $notification->user;
+        $notifiable = $notification->notifiable; // morphTo resolves actual model
+
+        if (! $notifiable) {
+            $delivery->update(['status' => 'failed', 'error_message' => 'Notifiable no longer exists']);
+
+            return;
+        }
 
         $builder = $registry->for($notification->event_key);
 
-        $payload = $builder->build($delivery->channel, $recipient, ...$this->builderArgs);
+        $payload = $builder->build($delivery->channel, $recipient, $notifiable, ...$this->extraArgs);
 
         if ($payload === null) {
             $delivery->update([

@@ -10,6 +10,8 @@ use App\Modules\TaskAssignment\Imports\ItemsImport;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDepartment;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItemAttachment;
+use App\Services\Notification\Events\TaskCompleted;
+use App\Services\Notification\Events\TaskConfirmed;
 use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +21,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 class TaskAssignmentItemService
 {
     public function __construct(private MediaService $mediaService) {}
+
     public function stats(array $filters): array
     {
         $base = TaskAssignmentItem::filter($filters);
@@ -164,6 +167,7 @@ class TaskAssignmentItemService
 
     public function updateProgress(TaskAssignmentItem $item, array $validated): TaskAssignmentItem
     {
+        $previousStatus = $item->processing_status;
         $status = $validated['processing_status'] ?? $item->processing_status;
         $percent = $validated['completion_percent'] ?? $item->completion_percent;
 
@@ -186,11 +190,18 @@ class TaskAssignmentItemService
         $item->completion_percent = $percent;
         $item->save();
 
+        // Dispatch event khi assignee báo cáo xong (status → reported)
+        if ($status === TaskProgressStatusEnum::Reported->value && $previousStatus !== $status) {
+            event(new TaskCompleted($item->fresh()));
+        }
+
         return $item->load(['document', 'itemType', 'users', 'creator.media', 'editor.media']);
     }
 
     public function confirmDone(TaskAssignmentItem $item): TaskAssignmentItem
     {
+        $previousStatus = $item->processing_status;
+
         $item->update([
             'processing_status' => TaskProgressStatusEnum::Done->value,
             'completion_percent' => 100,
@@ -198,6 +209,11 @@ class TaskAssignmentItemService
             'confirmed_by' => auth()->id(),
             'confirmed_at' => now(),
         ]);
+
+        // Dispatch event khi manager xác nhận xong (status → done)
+        if ($previousStatus !== TaskProgressStatusEnum::Done->value) {
+            event(new TaskConfirmed($item->fresh()));
+        }
 
         return $item->load(['document', 'itemType', 'users', 'assigner', 'confirmer', 'creator.media', 'editor.media']);
     }
@@ -397,20 +413,20 @@ class TaskAssignmentItemService
             ->selectRaw('COUNT(*) as total')
             ->selectRaw("SUM(CASE WHEN ti.processing_status = 'todo' THEN 1 ELSE 0 END) as todo")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = 'in_progress' THEN 1 ELSE 0 END) as in_progress")
-            ->selectRaw("SUM(CASE WHEN ti.processing_status = ? THEN 1 ELSE 0 END) as done", [$done])
-            ->selectRaw("SUM(CASE WHEN ti.deadline_type = ? AND ti.end_at < NOW() AND ti.processing_status NOT IN (?, ?) THEN 1 ELSE 0 END) as overdue", [$hasDeadline, $done, $cancelled])
-            ->selectRaw("SUM(CASE WHEN ti.processing_status = ? AND (ti.end_at IS NULL OR ti.completed_at <= ti.end_at) THEN 1 ELSE 0 END) as on_time_count", [$done])
-            ->selectRaw("SUM(CASE WHEN ti.processing_status = ? AND ti.completed_at > ti.end_at THEN 1 ELSE 0 END) as overdue_done_count", [$done])
+            ->selectRaw('SUM(CASE WHEN ti.processing_status = ? THEN 1 ELSE 0 END) as done', [$done])
+            ->selectRaw('SUM(CASE WHEN ti.deadline_type = ? AND ti.end_at < NOW() AND ti.processing_status NOT IN (?, ?) THEN 1 ELSE 0 END) as overdue', [$hasDeadline, $done, $cancelled])
+            ->selectRaw('SUM(CASE WHEN ti.processing_status = ? AND (ti.end_at IS NULL OR ti.completed_at <= ti.end_at) THEN 1 ELSE 0 END) as on_time_count', [$done])
+            ->selectRaw('SUM(CASE WHEN ti.processing_status = ? AND ti.completed_at > ti.end_at THEN 1 ELSE 0 END) as overdue_done_count', [$done])
             ->selectRaw("SUM(CASE WHEN tiu.assignment_status = 'assigned' THEN 1 ELSE 0 END) as assigned_count")
             ->selectRaw("SUM(CASE WHEN tiu.assignment_status IN ('accepted', 'done') THEN 1 ELSE 0 END) as accepted_count");
 
         if ($fromDate && $toDate) {
             $toDateEnd = Carbon::parse($toDate)->endOfDay();
-            $query->selectRaw("SUM(CASE WHEN ti.created_at >= ? AND ti.created_at <= ? THEN 1 ELSE 0 END) as new_in_period", [$fromDate, $toDateEnd])
-                ->selectRaw("SUM(CASE WHEN ti.processing_status = ? AND ti.completed_at >= ? AND ti.completed_at <= ? THEN 1 ELSE 0 END) as done_in_period", [$done, $fromDate, $toDateEnd]);
+            $query->selectRaw('SUM(CASE WHEN ti.created_at >= ? AND ti.created_at <= ? THEN 1 ELSE 0 END) as new_in_period', [$fromDate, $toDateEnd])
+                ->selectRaw('SUM(CASE WHEN ti.processing_status = ? AND ti.completed_at >= ? AND ti.completed_at <= ? THEN 1 ELSE 0 END) as done_in_period', [$done, $fromDate, $toDateEnd]);
         } else {
-            $query->selectRaw("NULL as new_in_period")
-                ->selectRaw("NULL as done_in_period");
+            $query->selectRaw('NULL as new_in_period')
+                ->selectRaw('NULL as done_in_period');
         }
 
         $results = $query->get();
@@ -511,9 +527,9 @@ class TaskAssignmentItemService
         $results = $query->groupBy('td.id', 'td.name', 'td.issue_date')
             ->selectRaw('td.id as document_id, td.name as document_name, td.issue_date')
             ->selectRaw('COUNT(*) as total_items')
-            ->selectRaw("SUM(CASE WHEN ti.processing_status = ? THEN 1 ELSE 0 END) as done", [$done])
+            ->selectRaw('SUM(CASE WHEN ti.processing_status = ? THEN 1 ELSE 0 END) as done', [$done])
             ->selectRaw("SUM(CASE WHEN ti.processing_status = 'in_progress' THEN 1 ELSE 0 END) as in_progress")
-            ->selectRaw("SUM(CASE WHEN ti.deadline_type = ? AND ti.end_at < NOW() AND ti.processing_status NOT IN (?, ?) THEN 1 ELSE 0 END) as overdue", [$hasDeadline, $done, $cancelled])
+            ->selectRaw('SUM(CASE WHEN ti.deadline_type = ? AND ti.end_at < NOW() AND ti.processing_status NOT IN (?, ?) THEN 1 ELSE 0 END) as overdue', [$hasDeadline, $done, $cancelled])
             ->orderBy('td.issue_date', 'desc')
             ->get();
 

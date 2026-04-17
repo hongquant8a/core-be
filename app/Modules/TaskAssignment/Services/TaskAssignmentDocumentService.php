@@ -8,6 +8,7 @@ use App\Modules\TaskAssignment\Exports\DocumentsExport;
 use App\Modules\TaskAssignment\Imports\DocumentsImport;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDocument;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDocumentAttachment;
+use App\Services\Notification\Events\DocumentIssued;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
@@ -185,6 +186,8 @@ class TaskAssignmentDocumentService
 
     public function changeStatus(TaskAssignmentDocument $document, string $status): TaskAssignmentDocument
     {
+        $previousStatus = $document->status;
+
         if ($status === TaskAssignmentDocumentStatusEnum::Issued->value) {
             if ($document->items()->count() === 0) {
                 throw \Illuminate\Validation\ValidationException::withMessages([
@@ -206,6 +209,11 @@ class TaskAssignmentDocumentService
             $document->update(['status' => $status, 'issued_at' => now()]);
         } else {
             $document->update(['status' => $status, 'issued_at' => null]);
+        }
+
+        // Dispatch event khi status chuyển sang 'issued' (mỗi lần chuyển đều bắn — không dedupe)
+        if ($status === TaskAssignmentDocumentStatusEnum::Issued->value && $previousStatus !== $status) {
+            event(new DocumentIssued($document->fresh()));
         }
 
         return $document->load(['type', 'attachments.media', 'creator.media', 'editor.media']);
