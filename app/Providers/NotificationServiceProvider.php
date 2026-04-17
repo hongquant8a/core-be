@@ -8,11 +8,14 @@ use App\Services\Notification\Channels\MailChannel;
 use App\Services\Notification\Channels\SmsChannel;
 use App\Services\Notification\Channels\ZaloChannel;
 use App\Services\Notification\ContentBuilders\DocumentIssuedContentBuilder;
+use App\Services\Notification\ContentBuilders\ReminderContentBuilder;
 use App\Services\Notification\ContentBuilders\TaskCompletedContentBuilder;
 use App\Services\Notification\ContentBuilders\TaskConfirmedContentBuilder;
 use App\Services\Notification\Events\DocumentIssued;
 use App\Services\Notification\Events\TaskCompleted;
 use App\Services\Notification\Events\TaskConfirmed;
+use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
+use App\Modules\TaskAssignment\Observers\TaskAssignmentItemObserver;
 use App\Services\Notification\Listeners\SendDocumentIssuedNotifications;
 use App\Services\Notification\Listeners\SendTaskCompletedNotifications;
 use App\Services\Notification\Listeners\SendTaskConfirmedNotifications;
@@ -52,10 +55,16 @@ class NotificationServiceProvider extends ServiceProvider
         $registry->register('document_issued', $this->app->make(DocumentIssuedContentBuilder::class));
         $registry->register('task_completed', $this->app->make(TaskCompletedContentBuilder::class));
         $registry->register('task_confirmed', $this->app->make(TaskConfirmedContentBuilder::class));
+        $registry->register('reminder_before', new ReminderContentBuilder('before'));
+        $registry->register('reminder_on', new ReminderContentBuilder('on'));
+        $registry->register('reminder_after', new ReminderContentBuilder('after'));
 
         // Register event listeners
         Event::listen(DocumentIssued::class, SendDocumentIssuedNotifications::class);
         Event::listen(TaskCompleted::class, SendTaskCompletedNotifications::class);
         Event::listen(TaskConfirmed::class, SendTaskConfirmedNotifications::class);
+
+        // Register model observer for auto reminder scheduling
+        TaskAssignmentItem::observe(TaskAssignmentItemObserver::class);
     }
 }
