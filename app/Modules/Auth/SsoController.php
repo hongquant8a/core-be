@@ -5,13 +5,14 @@ namespace App\Modules\Auth;
 use App\Http\Controllers\Controller;
 use App\Modules\Auth\Requests\CbccvcLoginRequest;
 use App\Modules\Auth\Requests\SsoExchangeRequest;
+use App\Modules\Auth\Services\AuthService;
 use App\Modules\Auth\Services\Providers\CbccvcProvider;
 use App\Modules\Auth\Services\Providers\SsoDanangProvider;
 use App\Modules\Auth\Services\Providers\SsoProvider;
 use App\Modules\Auth\Services\UserSyncService;
 use App\Modules\Core\Enums\UserStatusEnum;
 use App\Modules\Core\Models\Setting;
-use App\Modules\Core\Resources\UserResource;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 /**
@@ -21,7 +22,10 @@ use RuntimeException;
  */
 class SsoController extends Controller
 {
-    public function __construct(private UserSyncService $userSyncService) {}
+    public function __construct(
+        private UserSyncService $userSyncService,
+        private AuthService $authService,
+    ) {}
 
     /**
      * OAuth code exchange (đa provider).
@@ -106,11 +110,17 @@ class SsoController extends Controller
             $userinfo = $fetchUserinfo();
         } catch (RuntimeException $e) {
             $msg = $e->getMessage();
-            if (str_contains($msg, 'invalid credentials') || str_contains($msg, 'invalid_grant')) {
-                return $this->error($msg, $invalidCredentialsStatus);
+            Log::warning('SSO provider error', ['provider' => $provider, 'error' => $msg]);
+
+            if (str_contains($msg, 'invalid_grant')) {
+                return $this->error('Mã xác thực không hợp lệ hoặc đã hết hạn. Vui lòng thử lại.', $invalidCredentialsStatus);
             }
 
-            return $this->error('Cổng đăng nhập không phản hồi: '.$msg, 502);
+            if (str_contains($msg, 'invalid credentials')) {
+                return $this->error('Tài khoản hoặc mật khẩu không đúng.', $invalidCredentialsStatus);
+            }
+
+            return $this->error('Cổng đăng nhập không phản hồi. Vui lòng thử lại sau.', 502);
         }
 
         $user = $this->userSyncService->syncFromUserinfo($provider, $userinfo);
@@ -119,12 +129,6 @@ class SsoController extends Controller
             return $this->forbidden('Tài khoản của bạn đã bị khóa');
         }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return $this->success([
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'user' => (new UserResource($user))->resolve(),
-        ], 'Đăng nhập thành công.');
+        return $this->success($this->authService->buildAuthenticatedResponse($user), 'Đăng nhập thành công.');
     }
 }

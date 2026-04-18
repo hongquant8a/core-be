@@ -5,9 +5,11 @@ namespace App\Modules\Auth\Services;
 use App\Modules\Core\Models\Setting;
 use App\Modules\Core\Models\User;
 use App\Modules\Core\Models\UserSocial;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 
 class UserSyncService
 {
@@ -21,6 +23,16 @@ class UserSyncService
      * @param  array{email: string, name: string, sub: string, raw: array}  $userinfo
      */
     public function syncFromUserinfo(string $provider, array $userinfo): User
+    {
+        try {
+            return $this->performSync($provider, $userinfo);
+        } catch (UniqueConstraintViolationException $e) {
+            // Concurrent request created the social. Retry once.
+            return $this->performSync($provider, $userinfo);
+        }
+    }
+
+    private function performSync(string $provider, array $userinfo): User
     {
         $providerUserId = trim((string) $userinfo['sub']);
         $email = trim((string) $userinfo['email']);
@@ -49,7 +61,7 @@ class UserSyncService
                 ]);
 
                 if ($roleId = Setting::get('auth_auto_create_default_role_id')) {
-                    $role = \Spatie\Permission\Models\Role::find($roleId);
+                    $role = Role::find($roleId);
                     if ($role) {
                         $user->assignRole($role);
                     }

@@ -76,7 +76,16 @@ class SsoExchangeTest extends TestCase
         $res->assertOk();
         $res->assertJsonPath('success', true);
         $res->assertJsonStructure([
-            'data' => ['access_token', 'token_type', 'user' => ['id', 'name', 'email']],
+            'data' => [
+                'access_token',
+                'token_type',
+                'user' => ['id', 'name', 'email'],
+                'available_organizations',
+                'current_organization_id',
+                'roles',
+                'permissions',
+                'abilities',
+            ],
         ]);
         $this->assertDatabaseHas('users', ['email' => 'giangpt@danang.gov.vn']);
         $this->assertDatabaseHas('user_socials', [
@@ -111,5 +120,40 @@ class SsoExchangeTest extends TestCase
         ]);
 
         $res->assertStatus(502);
+    }
+
+    public function test_returns_403_when_synced_user_is_inactive(): void
+    {
+        // Create user with inactive status, pre-link social so sync returns them
+        $user = \App\Modules\Core\Models\User::factory()->create([
+            'email' => 'locked@danang.gov.vn',
+            'status' => 'inactive',
+        ]);
+        \App\Modules\Core\Models\UserSocial::create([
+            'user_id' => $user->id,
+            'provider' => 'sso_danang',
+            'provider_user_id' => 'locked-sub',
+            'provider_data' => [],
+            'linked_at' => now(),
+        ]);
+
+        Http::fake([
+            'https://sso.example.test/oauth2/token' => Http::response([
+                'access_token' => 'atok',
+                'expires_in' => 3600,
+            ]),
+            'https://sso.example.test/oauth2/userinfo' => Http::response([
+                'email' => 'locked@danang.gov.vn',
+                'name' => 'Locked',
+                'sub' => 'locked-sub',
+            ]),
+        ]);
+
+        $res = $this->postJson('/api/auth/sso/exchange', [
+            'provider' => 'sso_danang',
+            'code' => 'ok',
+        ]);
+
+        $res->assertStatus(403);
     }
 }

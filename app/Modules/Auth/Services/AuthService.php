@@ -37,7 +37,12 @@ class AuthService
             ];
         }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        return ['ok' => true, 'data' => $this->buildAuthenticatedResponse($user)];
+    }
+
+    public function buildAuthenticatedResponse(User $user, string $tokenName = 'auth_token'): array
+    {
+        $token = $user->createToken($tokenName)->plainTextToken;
         $organizations = $this->getAccessibleOrganizations($user);
         $accessibleIds = array_column($organizations, 'id');
 
@@ -46,26 +51,21 @@ class AuthService
             $currentOrganizationId = null;
         } else {
             $currentOrganizationId = $this->resolveCurrentOrganizationIdForLogin(
-                $user,
-                $organizations,
-                $accessibleIds
+                $user, $organizations, $accessibleIds
             );
         }
 
         $rolesAndPermissions = $this->getRolesAndPermissionsForOrganization($user, $currentOrganizationId);
 
         return [
-            'ok' => true,
-            'data' => [
-                'access_token' => $token,
-                'token_type' => 'Bearer',
-                'user' => (new UserResource($user))->resolve(),
-                'available_organizations' => $organizations,
-                'current_organization_id' => $currentOrganizationId,
-                'roles' => $rolesAndPermissions['roles'],
-                'permissions' => $rolesAndPermissions['permissions'],
-                'abilities' => $rolesAndPermissions['abilities'],
-            ],
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+            'user' => (new UserResource($user))->resolve(),
+            'available_organizations' => $organizations,
+            'current_organization_id' => $currentOrganizationId,
+            'roles' => $rolesAndPermissions['roles'],
+            'permissions' => $rolesAndPermissions['permissions'],
+            'abilities' => $rolesAndPermissions['abilities'],
         ];
     }
 
