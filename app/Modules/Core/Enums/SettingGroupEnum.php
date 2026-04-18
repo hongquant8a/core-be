@@ -17,6 +17,9 @@ enum SettingGroupEnum: string
     case Zalo = 'zalo';
     case Chat = 'chat';
     case Log = 'log';
+    case SsoDanang = 'sso_danang';
+    case SsoCbccvc = 'sso_cbccvc';
+    case Auth = 'auth';
 
     /** Danh sách giá trị để validate. */
     public static function values(): array
@@ -44,6 +47,9 @@ enum SettingGroupEnum: string
             self::Zalo => 'Cấu hình Zalo',
             self::Chat => 'Chat nội bộ',
             self::Log => 'Cấu hình nhật ký',
+            self::SsoDanang => 'SSO Đà Nẵng',
+            self::SsoCbccvc => 'CBCCVC',
+            self::Auth => 'Xác thực chung',
         };
     }
 }

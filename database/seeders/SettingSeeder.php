@@ -83,6 +83,18 @@ class SettingSeeder extends Seeder
         ['key' => 'chat_test_type', 'value' => null, 'group' => 'chat', 'is_public' => false, 'type' => 'string', 'label' => 'Loại kiểm tra', 'sort_order' => 9],
         // Log
         ['key' => 'log_retention_days', 'value' => '90', 'group' => 'log', 'is_public' => false, 'type' => 'integer', 'label' => 'Số ngày giữ nhật ký', 'sort_order' => 1],
+        // SSO Đà Nẵng
+        ['key' => 'sso_danang_enabled', 'value' => '0', 'group' => 'sso_danang', 'is_public' => true, 'type' => 'boolean', 'label' => 'Bật SSO Đà Nẵng', 'sort_order' => 1],
+        ['key' => 'sso_danang_base_url', 'value' => 'https://sso.danang.gov.vn', 'group' => 'sso_danang', 'is_public' => true, 'type' => 'string', 'label' => 'Base URL', 'sort_order' => 2],
+        ['key' => 'sso_danang_client_id', 'value' => null, 'group' => 'sso_danang', 'is_public' => true, 'type' => 'string', 'label' => 'Client ID', 'sort_order' => 3],
+        ['key' => 'sso_danang_client_secret', 'value' => null, 'group' => 'sso_danang', 'is_public' => false, 'type' => 'string', 'label' => 'Client Secret', 'sort_order' => 4],
+        ['key' => 'sso_danang_redirect_uri', 'value' => null, 'group' => 'sso_danang', 'is_public' => true, 'type' => 'string', 'label' => 'Redirect URI', 'sort_order' => 5],
+        ['key' => 'sso_danang_scope', 'value' => 'openid profile email', 'group' => 'sso_danang', 'is_public' => true, 'type' => 'string', 'label' => 'Scope', 'sort_order' => 6],
+        // CBCCVC
+        ['key' => 'sso_cbccvc_enabled', 'value' => '0', 'group' => 'sso_cbccvc', 'is_public' => true, 'type' => 'boolean', 'label' => 'Bật CBCCVC', 'sort_order' => 1],
+        ['key' => 'sso_cbccvc_base_url', 'value' => 'https://cbccvc.danang.gov.vn', 'group' => 'sso_cbccvc', 'is_public' => true, 'type' => 'string', 'label' => 'Base URL', 'sort_order' => 2],
+        // Auth chung
+        ['key' => 'auth_auto_create_default_role_id', 'value' => null, 'group' => 'auth', 'is_public' => false, 'type' => 'integer', 'label' => 'Role mặc định khi tạo user qua SSO', 'sort_order' => 1],
     ];
 
     public function run(): void
