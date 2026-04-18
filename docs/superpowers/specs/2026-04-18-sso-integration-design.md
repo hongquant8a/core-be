@@ -16,7 +16,7 @@ Cả 2 đều **enabled/disabled** bằng settings. Khi enabled, trang login SPA
 ## 2. Scope & Non-goals
 
 ### In scope
-- Bảng `user_socials` 1-1 với `users`, multi-provider.
+- Bảng `user_socials` 1-N với `users`, multi-provider (1 user có thể link nhiều provider đồng thời).
 - Settings cho SSO Đà Nẵng và CBCCVC.
 - 2 endpoints: OAuth exchange (đa provider) + CBCCVC login (trực tiếp).
 - Sync user từ userinfo (create nếu mới, link nếu email đã tồn tại).
@@ -38,19 +38,20 @@ Cả 2 đều **enabled/disabled** bằng settings. Khi enabled, trang login SPA
 ```
 user_socials
 ├── id                 BIGINT PK
-├── user_id            BIGINT FK users.id  UNIQUE  ON DELETE CASCADE
+├── user_id            BIGINT FK users.id  ON DELETE CASCADE  (index)
 ├── provider           VARCHAR   ('sso_danang' | 'cbccvc' | future: 'google', 'facebook')
 ├── provider_user_id   VARCHAR   (sub từ SSO Đà Nẵng / user id từ CBCCVC, trim khoảng trắng)
 ├── provider_data      JSON NULL (raw userinfo — audit/debug)
 ├── linked_at          TIMESTAMP
 ├── created_at, updated_at
-└── UNIQUE (provider, provider_user_id)
+├── UNIQUE (provider, provider_user_id)
+└── UNIQUE (user_id, provider)
 ```
 
-**Constraints:**
-- `user_id UNIQUE` → 1-1: mỗi user chỉ link tới 1 social account tại một thời điểm.
+**Constraints (1-N — 1 user có nhiều social):**
 - `(provider, provider_user_id) UNIQUE` → 1 social account chỉ thuộc về 1 user.
-- `ON DELETE CASCADE` từ `users` → xóa user thì social record mất theo.
+- `(user_id, provider) UNIQUE` → 1 user không link 2 account cùng provider. (Muốn đổi tài khoản SSO Đà Nẵng khác → phải unlink cái cũ trước.)
+- `ON DELETE CASCADE` từ `users` → xóa user thì social records mất theo.
 
 ### Thay đổi bảng `users`
 **Không có migration mới cho `users`.** Schema hiện tại đủ:
@@ -73,7 +74,7 @@ class UserSocial extends Model
 
 **`User` model — bổ sung:**
 ```php
-public function social() { return $this->hasOne(UserSocial::class); }
+public function socials() { return $this->hasMany(UserSocial::class); }
 ```
 
 ## 4. Settings
@@ -239,15 +240,10 @@ public function syncFromUserinfo(string $provider, array $userinfo): User
         if ($roleId = Setting::get('auth_auto_create_default_role_id')) {
             $user->assignRole($roleId);
         }
-    } else {
-        // 4. User đã tồn tại — check xem đã link với provider khác chưa
-        if ($user->social && $user->social->provider !== $provider) {
-            throw new SocialConflictException(
-                "User email {$email} đã link với provider '{$user->social->provider}'."
-            );
-        }
-        // Chưa link với provider nào → link mới bên dưới
     }
+    // Nếu user đã tồn tại (email match): không update user fields, chỉ link social mới.
+    // Với 1-N: user có thể có nhiều social (mỗi provider khác nhau) — unique(user_id, provider)
+    // đảm bảo không link 2 account cùng provider vào 1 user.
 
     // Tạo social link (cả create path và link path)
     UserSocial::create([
@@ -279,7 +275,6 @@ public function syncFromUserinfo(string $provider, array $userinfo): User
 | Provider chưa enabled trong settings | 404 | "Chức năng chưa được kích hoạt." |
 | Missing required setting (client_id, base_url…) | 500 | "Cấu hình SSO không đầy đủ." |
 | Provider không hợp lệ (whitelist fail) | 422 | "Provider không hợp lệ." |
-| User đã link với provider khác (vi phạm 1-1) | 409 | "Tài khoản đã được liên kết với phương thức đăng nhập khác. Vui lòng liên hệ quản trị viên." |
 
 Tất cả lỗi log lại kèm `provider`, `provider_user_id` (nếu có) để debug.
 
