@@ -72,6 +72,7 @@ class SettingSeeder extends Seeder
         ['key' => 'zalo_template_id', 'value' => null, 'group' => 'zalo', 'is_public' => false, 'type' => 'string', 'label' => 'Mẫu tin nhắn ID', 'sort_order' => 5],
         ['key' => 'zalo_extra_params', 'value' => null, 'group' => 'zalo', 'is_public' => false, 'type' => 'json', 'label' => 'Tham số bổ sung', 'sort_order' => 6],
         // Chat
+        ['key' => 'chat_enabled', 'value' => '0', 'group' => 'chat', 'is_public' => false, 'type' => 'boolean', 'label' => 'Bật Chat', 'sort_order' => 0],
         ['key' => 'chat_server', 'value' => null, 'group' => 'chat', 'is_public' => false, 'type' => 'string', 'label' => 'Máy chủ Chat', 'sort_order' => 1],
         ['key' => 'chat_api_key', 'value' => null, 'group' => 'chat', 'is_public' => false, 'type' => 'string', 'label' => 'API Key', 'sort_order' => 2],
         ['key' => 'chat_sender', 'value' => null, 'group' => 'chat', 'is_public' => false, 'type' => 'string', 'label' => 'Người gửi', 'sort_order' => 3],

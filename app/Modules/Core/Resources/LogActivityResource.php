@@ -16,6 +16,7 @@ class LogActivityResource extends JsonResource
             'user_id' => $this->user_id,
             'user_name' => $this->user?->name ?? 'Guest',
             'organization_id' => $this->organization_id,
+            'organization_name' => $this->organization?->name,
             'route' => $this->route,
             'method_type' => $this->method_type,
             'status_code' => $this->status_code,

@@ -34,17 +34,25 @@ class TaskAssignmentItemController extends Controller
     /**
      * Thống kê công việc
      *
-     * @queryParam search string Từ khóa tìm kiếm theo tiêu đề.
-     * @queryParam status string Lọc theo trạng thái.
-     * @queryParam document_id integer Lọc theo văn bản giao việc. Example: 1
-     * @queryParam assignee_id integer Lọc theo người được giao. Example: 1
+     * @queryParam search string Từ khóa tìm kiếm theo tên.
+     * @queryParam processing_status string Lọc theo trạng thái xử lý: todo, in_progress, reported, done, overdue, paused, cancelled. Example: in_progress
+     * @queryParam priority string Lọc theo mức độ ưu tiên. Example: high
+     * @queryParam deadline_type string Lọc theo loại thời hạn. Example: has_deadline
+     * @queryParam task_assignment_document_id integer Lọc theo văn bản giao việc. Example: 1
+     * @queryParam task_assignment_item_type_id integer Lọc theo loại công việc. Example: 1
+     * @queryParam department_id integer Lọc theo phòng ban được giao. Example: 1
+     * @queryParam assignee_id integer Lọc theo người được giao (alias của user_id). Example: 1
+     * @queryParam assigner_id integer Lọc theo người giao việc - match assigned_by hoặc created_by (alias của assigned_by_or_created_by). Example: 1
+     * @queryParam assignment_role string Vai trò trong công việc: main, support. Dùng kèm assignee_id để phân biệt chủ trì / hỗ trợ. Example: main
+     * @queryParam assignment_status string Trạng thái giao việc: assigned, accepted, done. Example: accepted
+     * @queryParam start_from date Lọc bắt đầu từ ngày (Y-m-d). Example: 2026-01-01
+     * @queryParam start_to date Lọc bắt đầu đến ngày (Y-m-d). Example: 2026-12-31
+     * @queryParam end_from date Lọc hạn từ ngày (Y-m-d). Example: 2026-01-01
+     * @queryParam end_to date Lọc hạn đến ngày (Y-m-d). Example: 2026-12-31
      * @queryParam from_date date Lọc từ ngày tạo (Y-m-d). Example: 2026-01-01
      * @queryParam to_date date Lọc đến ngày tạo (Y-m-d). Example: 2026-12-31
-     * @queryParam sort_by string Sắp xếp theo: id, title, deadline, created_at, updated_at. Example: deadline
-     * @queryParam sort_order string Thứ tự: asc, desc. Example: asc
-     * @queryParam limit integer Số bản ghi mỗi trang (1-100). Example: 10
      *
-     * @response 200 {"success": true, "data": {"total": 20, "pending": 5, "in_progress": 10, "completed": 5}}
+     * @response 200 {"success": true, "data": {"total": 20, "todo": 5, "in_progress": 8, "reported": 2, "done": 3, "overdue": 1, "paused": 0, "cancelled": 1}}
      */
     public function stats(FilterRequest $request)
     {
@@ -54,14 +62,25 @@ class TaskAssignmentItemController extends Controller
     /**
      * Danh sách công việc
      *
-     * @queryParam search string Từ khóa tìm kiếm theo tiêu đề.
-     * @queryParam status string Lọc theo trạng thái.
-     * @queryParam document_id integer Lọc theo văn bản giao việc. Example: 1
-     * @queryParam assignee_id integer Lọc theo người được giao. Example: 1
+     * @queryParam search string Từ khóa tìm kiếm theo tên.
+     * @queryParam processing_status string Lọc theo trạng thái xử lý: todo, in_progress, reported, done, overdue, paused, cancelled. Example: in_progress
+     * @queryParam priority string Lọc theo mức độ ưu tiên. Example: high
+     * @queryParam deadline_type string Lọc theo loại thời hạn. Example: has_deadline
+     * @queryParam task_assignment_document_id integer Lọc theo văn bản giao việc. Example: 1
+     * @queryParam task_assignment_item_type_id integer Lọc theo loại công việc. Example: 1
+     * @queryParam department_id integer Lọc theo phòng ban được giao. Example: 1
+     * @queryParam assignee_id integer Lọc theo người được giao (alias của user_id). Example: 1
+     * @queryParam assigner_id integer Lọc theo người giao việc - match assigned_by hoặc created_by (alias của assigned_by_or_created_by). Example: 1
+     * @queryParam assignment_role string Vai trò trong công việc: main, support. Dùng kèm assignee_id để phân biệt chủ trì / hỗ trợ. Example: main
+     * @queryParam assignment_status string Trạng thái giao việc: assigned, accepted, done. Example: accepted
+     * @queryParam start_from date Lọc bắt đầu từ ngày (Y-m-d). Example: 2026-01-01
+     * @queryParam start_to date Lọc bắt đầu đến ngày (Y-m-d). Example: 2026-12-31
+     * @queryParam end_from date Lọc hạn từ ngày (Y-m-d). Example: 2026-01-01
+     * @queryParam end_to date Lọc hạn đến ngày (Y-m-d). Example: 2026-12-31
      * @queryParam from_date date Lọc từ ngày tạo (Y-m-d). Example: 2026-01-01
      * @queryParam to_date date Lọc đến ngày tạo (Y-m-d). Example: 2026-12-31
-     * @queryParam sort_by string Sắp xếp theo: id, title, deadline, created_at, updated_at. Example: deadline
-     * @queryParam sort_order string Thứ tự: asc, desc. Example: asc
+     * @queryParam sort_by string Sắp xếp theo: id, name, start_at, end_at, completion_percent, priority, created_at, updated_at. Example: end_at
+     * @queryParam sort_order string Thứ tự: asc, desc. Example: desc
      * @queryParam limit integer Số bản ghi mỗi trang (1-100). Example: 10
      *
      * @apiResourceCollection App\Modules\TaskAssignment\Resources\ItemCollection
