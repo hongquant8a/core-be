@@ -53,7 +53,7 @@ Dùng cho **SSO Đà Nẵng** (và OAuth provider tương lai như Google, Faceb
 - `provider` (required, string) — hiện chỉ chấp nhận `sso_danang`. Giá trị khác → 422.
 - `code` (required, string) — authorization code nhận được từ callback URL.
 
-**Response 200 — thành công:**
+**Response 200 — thành công (shape giống hệt `/api/auth/login`):**
 ```json
 {
   "success": true,
@@ -61,23 +61,24 @@ Dùng cho **SSO Đà Nẵng** (và OAuth provider tương lai như Google, Faceb
   "data": {
     "access_token": "1|xxx...",
     "token_type": "Bearer",
-    "user": {
-      "id": 42,
-      "name": "Phan Tấn Giang",
-      "email": "giangpt@danang.gov.vn"
-    }
+    "user": { "id": 42, "name": "Phan Tấn Giang", "email": "giangpt@danang.gov.vn" },
+    "available_organizations": [{ "id": 2, "name": "Sở Nội vụ", "description": null }],
+    "current_organization_id": 2,
+    "roles": ["admin"],
+    "permissions": ["users.index", "users.store"],
+    "abilities": [{ "action": "index", "subject": "User" }]
   }
 }
 ```
 
-**Lỗi:**
-| HTTP | Nguyên nhân |
-|---|---|
-| 422 | `provider` không thuộc whitelist (`sso_danang`) hoặc thiếu `code`. |
-| 404 | Provider chưa được kích hoạt (`sso_danang_enabled=false`). |
-| 400 | Code invalid/expired ở upstream (invalid_grant). |
-| 502 | SSO Gateway không phản hồi hoặc lỗi upstream khác. |
-| 403 | User status không phải `active` (sau sync). |
+**Lỗi (generic message — chi tiết full error được log server-side):**
+| HTTP | Body message | Nguyên nhân |
+|---|---|---|
+| 422 | (validation errors) | `provider` không thuộc whitelist (`sso_danang`) hoặc thiếu `code`. |
+| 404 | "Chức năng chưa được kích hoạt." | Provider chưa enabled (`sso_danang_enabled=false`). |
+| 400 | "Mã xác thực không hợp lệ hoặc đã hết hạn. Vui lòng thử lại." | Code invalid/expired ở upstream (invalid_grant). |
+| 502 | "Cổng đăng nhập không phản hồi. Vui lòng thử lại sau." | SSO Gateway lỗi/timeout. |
+| 403 | "Tài khoản của bạn đã bị khóa" | User `status != 'active'` sau sync. |
 
 ### 2.2. `POST /api/auth/sso/cbccvc/login` — CBCCVC direct login
 
@@ -95,31 +96,16 @@ Dùng cho CBCCVC — FE hiển thị form username/password của mình, gửi c
 - `username` (required, string)
 - `password` (required, string)
 
-**Response 200 — thành công:**
-```json
-{
-  "success": true,
-  "message": "Đăng nhập thành công.",
-  "data": {
-    "access_token": "1|xxx...",
-    "token_type": "Bearer",
-    "user": {
-      "id": 43,
-      "name": "Phan Tấn Giang",
-      "email": "giangpt@danang.gov.vn"
-    }
-  }
-}
-```
+**Response 200 — thành công:** shape giống hệt `/api/auth/sso/exchange` ở mục 2.1 (có đầy đủ `available_organizations`, `roles`, `permissions`, `abilities`).
 
 **Lỗi:**
-| HTTP | Nguyên nhân |
-|---|---|
-| 422 | Thiếu `username` hoặc `password`. |
-| 404 | CBCCVC chưa được kích hoạt. |
-| 401 | Sai `username`/`password` ở CBCCVC. |
-| 502 | CBCCVC không phản hồi. |
-| 403 | User status không phải `active`. |
+| HTTP | Body message | Nguyên nhân |
+|---|---|---|
+| 422 | (validation errors) | Thiếu `username` hoặc `password`. |
+| 404 | "Chức năng chưa được kích hoạt." | CBCCVC chưa enabled. |
+| 401 | "Tài khoản hoặc mật khẩu không đúng." | Sai credentials. |
+| 502 | "Cổng đăng nhập không phản hồi. Vui lòng thử lại sau." | CBCCVC lỗi/timeout. |
+| 403 | "Tài khoản của bạn đã bị khóa" | User `status != 'active'` sau sync. |
 
 ## 3. Integration flow — SSO Đà Nẵng
 
