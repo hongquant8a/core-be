@@ -117,7 +117,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":[{"id":31,"name":"eius et animi","description":"Velit et fugiat sunt nihil accusantium.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"01:16:37 03\/04\/2026","updated_at":"01:16:37 03\/04\/2026"},{"id":32,"name":"harum mollitia modi","description":"Aut ab provident perspiciatis quo omnis nostrum aut.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"01:16:37 03\/04\/2026","updated_at":"01:16:37 03\/04\/2026"}],"success":"true"}'
+        content: '{"data":[{"id":4,"name":"eius et animi","description":"Velit et fugiat sunt nihil accusantium.","status":"active","created_by":null,"updated_by":null,"created_at":"06:18:03 18\/04\/2026","updated_at":"06:18:03 18\/04\/2026"},{"id":5,"name":"harum mollitia modi","description":"Aut ab provident perspiciatis quo omnis nostrum aut.","status":"active","created_by":null,"updated_by":null,"created_at":"06:18:03 18\/04\/2026","updated_at":"06:18:03 18\/04\/2026"}],"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -239,7 +239,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":[{"id":33,"name":"eius et animi","description":"Velit et fugiat sunt nihil accusantium."},{"id":34,"name":"harum mollitia modi","description":"Aut ab provident perspiciatis quo omnis nostrum aut."}],"success":"true"}'
+        content: '{"data":[{"id":6,"name":"eius et animi","description":"Velit et fugiat sunt nihil accusantium."},{"id":7,"name":"harum mollitia modi","description":"Aut ab provident perspiciatis quo omnis nostrum aut."}],"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -424,6 +424,48 @@ endpoints:
         content: '{"success": true, "message": "Import loại văn bản giao việc thành công."}'
         headers: []
         description: ''
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/task-assignment-types/import-template
+    metadata:
+      custom: []
+      groupName: 'TaskAssignment - Loại văn bản giao việc'
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Tải mẫu import loại văn bản giao việc'
+      description: ''
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer Bearer {YOUR_ACCESS_TOKEN}'
+      X-Organization-Id: 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: ''
+        headers: []
+        description: 'File Excel mẫu'
     responseFields: []
     auth:
       - headers
@@ -805,7 +847,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":[{"id":35,"name":"eius et animi","description":"Velit et fugiat sunt nihil accusantium.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"01:16:39 03\/04\/2026","updated_at":"01:16:39 03\/04\/2026"},{"id":36,"name":"harum mollitia modi","description":"Aut ab provident perspiciatis quo omnis nostrum aut.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"01:16:39 03\/04\/2026","updated_at":"01:16:39 03\/04\/2026"}],"links":{"first":"\/?page=1","last":"\/?page=1","prev":null,"next":null},"meta":{"current_page":1,"from":1,"last_page":1,"links":[{"url":null,"label":"&laquo; Previous","page":null,"active":false},{"url":"\/?page=1","label":"1","page":1,"active":true},{"url":null,"label":"Next &raquo;","page":null,"active":false}],"path":"\/","per_page":10,"to":2,"total":2},"success":"true"}'
+        content: '{"data":[{"id":8,"name":"eius et animi","description":"Velit et fugiat sunt nihil accusantium.","status":"active","created_by":null,"updated_by":null,"created_at":"06:18:06 18\/04\/2026","updated_at":"06:18:06 18\/04\/2026"},{"id":9,"name":"harum mollitia modi","description":"Aut ab provident perspiciatis quo omnis nostrum aut.","status":"active","created_by":null,"updated_by":null,"created_at":"06:18:06 18\/04\/2026","updated_at":"06:18:06 18\/04\/2026"}],"links":{"first":"\/?page=1","last":"\/?page=1","prev":null,"next":null},"meta":{"current_page":1,"from":1,"last_page":1,"links":[{"url":null,"label":"&laquo; Previous","page":null,"active":false},{"url":"\/?page=1","label":"1","page":1,"active":true},{"url":null,"label":"Next &raquo;","page":null,"active":false}],"path":"\/","per_page":10,"to":2,"total":2},"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -871,7 +913,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":37,"name":"aut adipisci quidem","description":"Qui commodi incidunt iure odit.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"01:16:39 03\/04\/2026","updated_at":"01:16:39 03\/04\/2026"},"success":"true"}'
+        content: '{"data":{"id":10,"name":"aut adipisci quidem","description":"Qui commodi incidunt iure odit.","status":"active","created_by":null,"updated_by":null,"created_at":"06:18:06 18\/04\/2026","updated_at":"06:18:06 18\/04\/2026"},"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -949,7 +991,7 @@ endpoints:
       -
         custom: []
         status: 201
-        content: '{"data":{"id":38,"name":"fugiat sunt nihil","description":"Harum mollitia modi deserunt aut ab provident perspiciatis quo.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"01:16:39 03\/04\/2026","updated_at":"01:16:39 03\/04\/2026"},"success":"true","message":"T\u1ea1o lo\u1ea1i v\u0103n b\u1ea3n giao vi\u1ec7c th\u00e0nh c\u00f4ng!"}'
+        content: '{"data":{"id":11,"name":"fugiat sunt nihil","description":"Harum mollitia modi deserunt aut ab provident perspiciatis quo.","status":"active","created_by":null,"updated_by":null,"created_at":"06:18:06 18\/04\/2026","updated_at":"06:18:06 18\/04\/2026"},"success":"true","message":"T\u1ea1o lo\u1ea1i v\u0103n b\u1ea3n giao vi\u1ec7c th\u00e0nh c\u00f4ng!"}'
         headers: []
         description: ''
     responseFields: []
@@ -1051,7 +1093,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":39,"name":"eius et animi","description":"Velit et fugiat sunt nihil accusantium.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"01:16:39 03\/04\/2026","updated_at":"01:16:39 03\/04\/2026"},"success":"true","message":"C\u1eadp nh\u1eadt lo\u1ea1i v\u0103n b\u1ea3n giao vi\u1ec7c th\u00e0nh c\u00f4ng!"}'
+        content: '{"data":{"id":12,"name":"eius et animi","description":"Velit et fugiat sunt nihil accusantium.","status":"active","created_by":null,"updated_by":null,"created_at":"06:18:06 18\/04\/2026","updated_at":"06:18:06 18\/04\/2026"},"success":"true","message":"C\u1eadp nh\u1eadt lo\u1ea1i v\u0103n b\u1ea3n giao vi\u1ec7c th\u00e0nh c\u00f4ng!"}'
         headers: []
         description: ''
     responseFields: []
@@ -1153,7 +1195,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":40,"name":"eius et animi","description":"Velit et fugiat sunt nihil accusantium.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"01:16:39 03\/04\/2026","updated_at":"01:16:39 03\/04\/2026"},"success":"true","message":"C\u1eadp nh\u1eadt lo\u1ea1i v\u0103n b\u1ea3n giao vi\u1ec7c th\u00e0nh c\u00f4ng!"}'
+        content: '{"data":{"id":13,"name":"eius et animi","description":"Velit et fugiat sunt nihil accusantium.","status":"active","created_by":null,"updated_by":null,"created_at":"06:18:06 18\/04\/2026","updated_at":"06:18:06 18\/04\/2026"},"success":"true","message":"C\u1eadp nh\u1eadt lo\u1ea1i v\u0103n b\u1ea3n giao vi\u1ec7c th\u00e0nh c\u00f4ng!"}'
         headers: []
         description: ''
     responseFields: []
@@ -1297,7 +1339,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":41,"name":"aut adipisci quidem","description":"Qui commodi incidunt iure odit.","status":"active","created_by":"N\/A","updated_by":"N\/A","created_at":"01:16:39 03\/04\/2026","updated_at":"01:16:39 03\/04\/2026"},"success":"true","message":"\u0110\u1ed5i tr\u1ea1ng th\u00e1i th\u00e0nh c\u00f4ng!"}'
+        content: '{"data":{"id":14,"name":"aut adipisci quidem","description":"Qui commodi incidunt iure odit.","status":"active","created_by":null,"updated_by":null,"created_at":"06:18:06 18\/04\/2026","updated_at":"06:18:06 18\/04\/2026"},"success":"true","message":"\u0110\u1ed5i tr\u1ea1ng th\u00e1i th\u00e0nh c\u00f4ng!"}'
         headers: []
         description: ''
     responseFields: []

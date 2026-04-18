@@ -309,6 +309,126 @@ endpoints:
   -
     custom: []
     httpMethods:
+      - POST
+    uri: api/auth/sso/exchange
+    metadata:
+      custom: []
+      groupName: Auth
+      groupDescription: |-
+
+        Đăng nhập qua SSO (Đà Nẵng) hoặc CBCCVC.
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'OAuth code exchange (đa provider).'
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      provider:
+        custom: []
+        name: provider
+        description: 'Provider key.'
+        required: true
+        example: sso_danang
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      code:
+        custom: []
+        name: code
+        description: 'Authorization code từ SSO Gateway.'
+        required: true
+        example: abc123
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+    cleanBodyParameters:
+      provider: sso_danang
+      code: abc123
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"success": true, "data": {"access_token": "1|xxx", "token_type": "Bearer", "user": {"id": 1, "name": "..."}}}'
+        headers: []
+        description: ''
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: api/auth/sso/cbccvc/login
+    metadata:
+      custom: []
+      groupName: Auth
+      groupDescription: |-
+
+        Đăng nhập qua SSO (Đà Nẵng) hoặc CBCCVC.
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'CBCCVC direct login (username/password).'
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      username:
+        custom: []
+        name: username
+        description: 'Tên đăng nhập CBCCVC.'
+        required: true
+        example: giangpt
+        type: string
+        enumValues: []
+        exampleWasSpecified: true
+        nullable: false
+        deprecated: false
+      password:
+        custom: []
+        name: password
+        description: 'Mật khẩu.'
+        required: true
+        example: '|]|{+-'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanBodyParameters:
+      username: giangpt
+      password: '|]|{+-'
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
       - GET
     uri: api/user
     metadata:

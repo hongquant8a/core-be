@@ -187,6 +187,48 @@ endpoints:
   -
     custom: []
     httpMethods:
+      - GET
+    uri: api/users/import-template
+    metadata:
+      custom: []
+      groupName: 'Core - User'
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Tải mẫu import người dùng'
+      description: ''
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer Bearer {YOUR_ACCESS_TOKEN}'
+      X-Organization-Id: 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: ''
+        headers: []
+        description: 'File Excel mẫu'
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
       - POST
     uri: api/users/bulk-delete
     metadata:
@@ -557,7 +599,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":[{"id":32,"name":"Ms. Elisabeth Okuneva","email":"gulgowski.asia@example.com","user_name":"idickens","status":"inactive","created_by":"N\/A","updated_by":"N\/A","assignments":[],"created_at":"03\/04\/2026 01:16:38","updated_at":"03\/04\/2026 01:16:38"},{"id":33,"name":"Mya DuBuque","email":"breitenberg.gilbert@example.com","user_name":"price.amber","status":"inactive","created_by":"N\/A","updated_by":"N\/A","assignments":[],"created_at":"03\/04\/2026 01:16:38","updated_at":"03\/04\/2026 01:16:38"}],"links":{"first":"\/?page=1","last":"\/?page=1","prev":null,"next":null},"meta":{"current_page":1,"from":1,"last_page":1,"links":[{"url":null,"label":"&laquo; Previous","page":null,"active":false},{"url":"\/?page=1","label":"1","page":1,"active":true},{"url":null,"label":"Next &raquo;","page":null,"active":false}],"path":"\/","per_page":10,"to":2,"total":2},"success":"true"}'
+        content: '{"data":[{"id":15,"name":"Ms. Elisabeth Okuneva","email":"gulgowski.asia@example.com","user_name":"idickens","status":"inactive","avatar":null,"created_by":null,"updated_by":null,"assignments":[],"created_at":"18\/04\/2026 06:18:04","updated_at":"18\/04\/2026 06:18:04"},{"id":16,"name":"Mya DuBuque","email":"breitenberg.gilbert@example.com","user_name":"price.amber","status":"inactive","avatar":null,"created_by":null,"updated_by":null,"assignments":[],"created_at":"18\/04\/2026 06:18:04","updated_at":"18\/04\/2026 06:18:04"}],"links":{"first":"\/?page=1","last":"\/?page=1","prev":null,"next":null},"meta":{"current_page":1,"from":1,"last_page":1,"links":[{"url":null,"label":"&laquo; Previous","page":null,"active":false},{"url":"\/?page=1","label":"1","page":1,"active":true},{"url":null,"label":"Next &raquo;","page":null,"active":false}],"path":"\/","per_page":10,"to":2,"total":2},"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -623,7 +665,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":34,"name":"Morgan Hirthe","email":"dare.emelie@example.com","user_name":"imclaughlin","status":"inactive","created_by":"N\/A","updated_by":"N\/A","assignments":[],"created_at":"03\/04\/2026 01:16:38","updated_at":"03\/04\/2026 01:16:38"},"success":"true"}'
+        content: '{"data":{"id":17,"name":"Morgan Hirthe","email":"dare.emelie@example.com","user_name":"imclaughlin","status":"inactive","avatar":null,"created_by":null,"updated_by":null,"assignments":[],"created_at":"18\/04\/2026 06:18:05","updated_at":"18\/04\/2026 06:18:05"},"success":"true"}'
         headers: []
         description: ''
     responseFields: []
@@ -652,7 +694,7 @@ endpoints:
     headers:
       Authorization: 'Bearer Bearer {YOUR_ACCESS_TOKEN}'
       X-Organization-Id: 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1'
-      Content-Type: application/json
+      Content-Type: multipart/form-data
       Accept: application/json
     urlParameters: []
     cleanUrlParameters: []
@@ -714,10 +756,27 @@ endpoints:
         exampleWasSpecified: true
         nullable: true
         deprecated: false
+      avatar:
+        custom: []
+        name: avatar
+        description: 'Ảnh đại diện (jpg, png, svg, webp, max 5MB).'
+        required: false
+        example: null
+        type: file
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
       assignments:
         custom: []
         name: assignments
-        description: 'Danh sách gán vai trò theo tổ chức. Ví dụ: [{"role_id":1,"organization_ids":[2,3]},{"role_id":5,"organization_ids":[9]}]'
+        description: |-
+          Danh sách gán vai trò theo tổ chức. Ví dụ: [{"role_id":1,"organization_ids":[2,3]},{"role_id":5,"organization_ids":[9]}]
+
+          **Xử lý avatar:**
+          - `multipart/form-data` + file blob → upload ảnh mới, trả URL.
+          - `application/json` + chuỗi rỗng `""` → xóa ảnh, trả `null`.
+          - Không gửi field avatar → giữ nguyên.
         required: false
         example:
           - architecto
@@ -769,12 +828,13 @@ endpoints:
       assignments:
         - architecto
       password_confirmation: architecto
-    fileParameters: []
+    fileParameters:
+      avatar: null
     responses:
       -
         custom: []
         status: 201
-        content: '{"data":{"id":35,"name":"Ms. Elisabeth Okuneva","email":"idickens@example.org","user_name":"aschuster","status":"active","created_by":"N\/A","updated_by":"N\/A","assignments":[],"created_at":"03\/04\/2026 01:16:38","updated_at":"03\/04\/2026 01:16:38"},"success":"true","message":"T\u00e0i kho\u1ea3n \u0111\u00e3 \u0111\u01b0\u1ee3c t\u1ea1o th\u00e0nh c\u00f4ng!"}'
+        content: '{"data":{"id":18,"name":"Ms. Elisabeth Okuneva","email":"idickens@example.org","user_name":"aschuster","status":"active","avatar":null,"created_by":null,"updated_by":null,"assignments":[],"created_at":"18\/04\/2026 06:18:05","updated_at":"18\/04\/2026 06:18:05"},"success":"true","message":"T\u00e0i kho\u1ea3n \u0111\u00e3 \u0111\u01b0\u1ee3c t\u1ea1o th\u00e0nh c\u00f4ng!"}'
         headers: []
         description: ''
     responseFields: []
@@ -803,7 +863,7 @@ endpoints:
     headers:
       Authorization: 'Bearer Bearer {YOUR_ACCESS_TOKEN}'
       X-Organization-Id: 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1'
-      Content-Type: application/json
+      Content-Type: multipart/form-data
       Accept: application/json
     urlParameters:
       user_id:
@@ -889,10 +949,27 @@ endpoints:
         exampleWasSpecified: false
         nullable: false
         deprecated: false
+      avatar:
+        custom: []
+        name: avatar
+        description: 'Ảnh đại diện (jpg, png, svg, webp, max 5MB).'
+        required: false
+        example: null
+        type: file
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
       assignments:
         custom: []
         name: assignments
-        description: 'Danh sách gán vai trò theo tổ chức. Khi gửi field này, hệ thống sẽ đồng bộ lại toàn bộ phân quyền của user.'
+        description: |-
+          Danh sách gán vai trò theo tổ chức. Khi gửi field này, hệ thống sẽ đồng bộ lại toàn bộ phân quyền của user.
+
+          **Xử lý avatar:**
+          - `multipart/form-data` + file blob → upload ảnh mới, xóa ảnh cũ, trả URL mới.
+          - `application/json` + chuỗi rỗng `""` → xóa ảnh, trả `null`.
+          - Không gửi field avatar → giữ nguyên.
         required: false
         example:
           - architecto
@@ -944,12 +1021,13 @@ endpoints:
       assignments:
         - architecto
       password_confirmation: architecto
-    fileParameters: []
+    fileParameters:
+      avatar: null
     responses:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":36,"name":"Ms. Elisabeth Okuneva","email":"aschuster@example.com","user_name":"gilbert32","status":"active","created_by":"N\/A","updated_by":"N\/A","assignments":[],"created_at":"03\/04\/2026 01:16:38","updated_at":"03\/04\/2026 01:16:38"},"success":"true","message":"T\u00e0i kho\u1ea3n \u0111\u00e3 \u0111\u01b0\u1ee3c c\u1eadp nh\u1eadt!"}'
+        content: '{"data":{"id":19,"name":"Ms. Elisabeth Okuneva","email":"aschuster@example.com","user_name":"gilbert32","status":"active","avatar":null,"created_by":null,"updated_by":null,"assignments":[],"created_at":"18\/04\/2026 06:18:05","updated_at":"18\/04\/2026 06:18:05"},"success":"true","message":"T\u00e0i kho\u1ea3n \u0111\u00e3 \u0111\u01b0\u1ee3c c\u1eadp nh\u1eadt!"}'
         headers: []
         description: ''
     responseFields: []
@@ -978,7 +1056,7 @@ endpoints:
     headers:
       Authorization: 'Bearer Bearer {YOUR_ACCESS_TOKEN}'
       X-Organization-Id: 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1'
-      Content-Type: application/json
+      Content-Type: multipart/form-data
       Accept: application/json
     urlParameters:
       user_id:
@@ -1064,10 +1142,27 @@ endpoints:
         exampleWasSpecified: false
         nullable: false
         deprecated: false
+      avatar:
+        custom: []
+        name: avatar
+        description: 'Ảnh đại diện (jpg, png, svg, webp, max 5MB).'
+        required: false
+        example: null
+        type: file
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
       assignments:
         custom: []
         name: assignments
-        description: 'Danh sách gán vai trò theo tổ chức. Khi gửi field này, hệ thống sẽ đồng bộ lại toàn bộ phân quyền của user.'
+        description: |-
+          Danh sách gán vai trò theo tổ chức. Khi gửi field này, hệ thống sẽ đồng bộ lại toàn bộ phân quyền của user.
+
+          **Xử lý avatar:**
+          - `multipart/form-data` + file blob → upload ảnh mới, xóa ảnh cũ, trả URL mới.
+          - `application/json` + chuỗi rỗng `""` → xóa ảnh, trả `null`.
+          - Không gửi field avatar → giữ nguyên.
         required: false
         example:
           - architecto
@@ -1119,12 +1214,13 @@ endpoints:
       assignments:
         - architecto
       password_confirmation: architecto
-    fileParameters: []
+    fileParameters:
+      avatar: null
     responses:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":37,"name":"Ms. Elisabeth Okuneva","email":"gilbert32@example.com","user_name":"hirthe.theo","status":"active","created_by":"N\/A","updated_by":"N\/A","assignments":[],"created_at":"03\/04\/2026 01:16:38","updated_at":"03\/04\/2026 01:16:38"},"success":"true","message":"T\u00e0i kho\u1ea3n \u0111\u00e3 \u0111\u01b0\u1ee3c c\u1eadp nh\u1eadt!"}'
+        content: '{"data":{"id":20,"name":"Ms. Elisabeth Okuneva","email":"gilbert32@example.com","user_name":"hirthe.theo","status":"active","avatar":null,"created_by":null,"updated_by":null,"assignments":[],"created_at":"18\/04\/2026 06:18:05","updated_at":"18\/04\/2026 06:18:05"},"success":"true","message":"T\u00e0i kho\u1ea3n \u0111\u00e3 \u0111\u01b0\u1ee3c c\u1eadp nh\u1eadt!"}'
         headers: []
         description: ''
     responseFields: []
@@ -1268,7 +1364,7 @@ endpoints:
       -
         custom: []
         status: 200
-        content: '{"data":{"id":38,"name":"Morgan Hirthe","email":"imclaughlin@example.org","user_name":"okeefe.isidro","status":"inactive","created_by":"N\/A","updated_by":"N\/A","assignments":[],"created_at":"03\/04\/2026 01:16:38","updated_at":"03\/04\/2026 01:16:38"},"success":"true","message":"C\u1eadp nh\u1eadt tr\u1ea1ng th\u00e1i th\u00e0nh c\u00f4ng!"}'
+        content: '{"data":{"id":21,"name":"Morgan Hirthe","email":"imclaughlin@example.org","user_name":"okeefe.isidro","status":"inactive","avatar":null,"created_by":null,"updated_by":null,"assignments":[],"created_at":"18\/04\/2026 06:18:05","updated_at":"18\/04\/2026 06:18:05"},"success":"true","message":"C\u1eadp nh\u1eadt tr\u1ea1ng th\u00e1i th\u00e0nh c\u00f4ng!"}'
         headers: []
         description: ''
     responseFields: []

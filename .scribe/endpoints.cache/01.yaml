@@ -150,13 +150,19 @@ endpoints:
       subgroup: ''
       subgroupDescription: ''
       title: 'Cập nhật cấu hình'
-      description: 'Cập nhật một phần hoặc toàn bộ. Body là object key-value. Chỉ cập nhật các key tồn tại.'
+      description: |-
+        Cập nhật một phần hoặc toàn bộ. Body là object key-value. Chỉ cập nhật các key tồn tại.
+
+        **Xử lý field ảnh (type=image: icon, logo, admin_background_image, org_select_background_image):**
+        - `multipart/form-data` + file blob → upload ảnh mới, xóa ảnh cũ, trả URL mới.
+        - `application/json` + URL string → giữ nguyên ảnh cũ, không thay đổi.
+        - `application/json` + chuỗi rỗng `""` → xóa ảnh, trả `null`.
       authenticated: true
       deprecated: false
     headers:
       Authorization: 'Bearer Bearer {YOUR_ACCESS_TOKEN}'
       X-Organization-Id: 'ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1'
-      Content-Type: application/json
+      Content-Type: multipart/form-data
       Accept: application/json
     urlParameters: []
     cleanUrlParameters: []
@@ -185,6 +191,28 @@ endpoints:
         exampleWasSpecified: true
         nullable: false
         deprecated: false
+      logo:
+        custom: []
+        name: logo
+        description: 'optional Ảnh logo (jpg, png, svg, webp, ico, max 5MB).'
+        required: false
+        example: null
+        type: file
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      icon:
+        custom: []
+        name: icon
+        description: 'optional Ảnh favicon (jpg, png, svg, webp, ico, max 5MB).'
+        required: false
+        example: null
+        type: file
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
       log_retention_days:
         custom: []
         name: log_retention_days
@@ -200,7 +228,9 @@ endpoints:
       copyright: '© 2026 QuânDH'
       language: vi
       log_retention_days: 90
-    fileParameters: []
+    fileParameters:
+      logo: null
+      icon: null
     responses:
       -
         custom: []
