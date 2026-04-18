@@ -4,7 +4,13 @@ Notification list cho user đang đăng nhập (inbox trong app). Chỉ thao tá
 
 **Base path:** `/api/notifications/me`
 
-**Auth:** Bearer token (Sanctum). Hệ thống filter `user_id = auth()->id()` — user không thể xem/sửa notification của người khác.
+**Auth:**
+- Bearer token (Sanctum) — required.
+- Header `X-Organization-Id: {id}` — required. Xác định tổ chức đang làm việc (Spatie team context).
+
+**Scoping:** mọi endpoint filter theo `user_id = auth()->id()` **AND** `organization_id = X-Organization-Id`. User không thể xem/sửa notification của người khác hoặc của org khác. Đổi org (đổi header) → thấy inbox khác, badge counter khác.
+
+Thiếu header `X-Organization-Id` → 422 validation error từ middleware `SetPermissionsTeamId`.
 
 ---
 
@@ -14,6 +20,7 @@ Notification list cho user đang đăng nhập (inbox trong app). Chỉ thao tá
 {
   "id": 123,
   "user_id": 5,
+  "organization_id": 1,
   "event_key": "document_issued",
   "notifiable_type": "App\\Modules\\TaskAssignment\\Models\\TaskAssignmentItem",
   "notifiable_id": 42,
@@ -31,6 +38,7 @@ Notification list cho user đang đăng nhập (inbox trong app). Chỉ thao tá
 
 | Field | Mô tả |
 |---|---|
+| `organization_id` | Tổ chức (Spatie team) sở hữu notification. Luôn khớp với `X-Organization-Id` của request hiện tại |
 | `event_key` | 1 trong 6: `document_issued`, `task_completed`, `task_confirmed`, `reminder_before`, `reminder_on`, `reminder_after` |
 | `notifiable_type` / `notifiable_id` | Entity liên quan (Phase B/C đều là `TaskAssignmentItem`) |
 | `title` | Tiêu đề ngắn hiển thị trong list |
@@ -197,11 +205,13 @@ FE redirect user tới `context.url` khi click; đồng thời mark read.
 
 ## Lưu ý
 
-1. **Realtime (optional):** nếu FE đã setup FCM service worker, notification sẽ tự đẩy push tới browser — FE nghe event từ service worker, có thể increment badge counter ngay mà không cần poll.
+1. **Multi-org:** user làm việc với nhiều tổ chức thì phải đổi header `X-Organization-Id` → inbox + badge reset theo org đó. Không có endpoint "all orgs". FE nếu hiện tổng notification cross-org phải query từng org riêng.
 
-2. **Pagination:** luôn dùng pagination, không load hết. User có thể có hàng trăm notification cũ.
+2. **Realtime (optional):** nếu FE đã setup FCM service worker, notification sẽ tự đẩy push tới browser — FE nghe event từ service worker, có thể increment badge counter ngay mà không cần poll. Server đã scope push token theo user nên FE chỉ cần update badge của org đang active.
 
-3. **Context structure không cố định:** mỗi event có thể thêm field vào `context`. FE nên:
+3. **Pagination:** luôn dùng pagination, không load hết. User có thể có hàng trăm notification cũ.
+
+4. **Context structure không cố định:** mỗi event có thể thêm field vào `context`. FE nên:
    - Đọc `context.url` nếu có → navigate
    - Fallback về format text từ `title` + `body` nếu không có URL
    - Không assume field khác tồn tại

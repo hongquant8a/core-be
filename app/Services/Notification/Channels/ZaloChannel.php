@@ -13,32 +13,7 @@ use Throwable;
 
 class ZaloChannel implements NotificationChannel
 {
-    private bool $enabled;
-
-    private ?string $server;
-
-    private ?string $username;
-
-    private ?string $password;
-
-    private ?string $sender;
-
-    private ?string $templateId;
-
-    private array $extraParams;
-
-    public function __construct(SettingService $settings)
-    {
-        $this->enabled = (bool) ($settings->getByKey('zalo_enabled')['value'] ?? false);
-        $this->server = $settings->getByKey('zalo_server')['value'] ?? null;
-        $this->username = $settings->getByKey('zalo_username')['value'] ?? null;
-        $this->password = $settings->getByKey('zalo_password')['value'] ?? null;
-        $this->sender = $settings->getByKey('zalo_sender')['value'] ?? null;
-        $this->templateId = $settings->getByKey('zalo_template_id')['value'] ?? null;
-
-        $extra = $settings->getByKey('zalo_extra_params')['value'] ?? null;
-        $this->extraParams = is_array($extra) ? $extra : (is_string($extra) ? (json_decode($extra, true) ?? []) : []);
-    }
+    public function __construct(private SettingService $settings) {}
 
     public function key(): string
     {
@@ -47,19 +22,21 @@ class ZaloChannel implements NotificationChannel
 
     public function send(Recipient $recipient, NotificationPayload $payload): SendResult
     {
-        if (! $this->enabled) {
+        $cfg = $this->loadConfig();
+
+        if (! $cfg['enabled']) {
             return $this->fail('Zalo is disabled');
         }
 
-        if (! $this->server || ! $this->username || ! $this->password) {
+        if (! $cfg['server'] || ! $cfg['username'] || ! $cfg['password']) {
             return $this->fail('Zalo not configured');
         }
 
-        if (! $this->sender) {
+        if (! $cfg['sender']) {
             return $this->fail('Missing Zalo OA sender ID');
         }
 
-        if (! $this->templateId) {
+        if (! $cfg['template_id']) {
             return $this->fail('Missing Zalo template ID');
         }
 
@@ -73,20 +50,20 @@ class ZaloChannel implements NotificationChannel
             return $this->fail('Invalid phone format');
         }
 
-        $templateData = array_merge($this->extraParams, $payload->context);
+        $templateData = array_merge($cfg['extra_params'], $payload->context);
 
         $body = [
-            'from' => $this->sender,
+            'from' => $cfg['sender'],
             'to' => $phone,
-            'template_id' => $this->templateId,
+            'template_id' => $cfg['template_id'],
             'template_data' => $templateData ?: (object) [],
             'client_req_id' => Str::uuid()->toString(),
         ];
 
         try {
-            $response = Http::withBasicAuth($this->username, $this->password)
+            $response = Http::withBasicAuth($cfg['username'], $cfg['password'])
                 ->acceptJson()
-                ->post($this->server, $body);
+                ->post($cfg['server'], $body);
 
             $data = $response->json();
         } catch (Throwable $e) {
@@ -107,6 +84,22 @@ class ZaloChannel implements NotificationChannel
         $description = $data['description'] ?? 'Zalo send failed';
 
         return $this->fail("[{$errorCode}] {$description}");
+    }
+
+    private function loadConfig(): array
+    {
+        $extra = $this->settings->getByKey('zalo_extra_params')['value'] ?? null;
+        $extraParams = is_array($extra) ? $extra : (is_string($extra) ? (json_decode($extra, true) ?? []) : []);
+
+        return [
+            'enabled' => (bool) ($this->settings->getByKey('zalo_enabled')['value'] ?? false),
+            'server' => $this->settings->getByKey('zalo_server')['value'] ?? null,
+            'username' => $this->settings->getByKey('zalo_username')['value'] ?? null,
+            'password' => $this->settings->getByKey('zalo_password')['value'] ?? null,
+            'sender' => $this->settings->getByKey('zalo_sender')['value'] ?? null,
+            'template_id' => $this->settings->getByKey('zalo_template_id')['value'] ?? null,
+            'extra_params' => $extraParams,
+        ];
     }
 
     private function normalizePhone(string $phone): string

@@ -15,24 +15,14 @@ use Throwable;
 
 class FcmChannel implements NotificationChannel
 {
-    private ?FirebaseMessaging $messaging = null;
+    private ?FirebaseMessaging $cachedMessaging = null;
 
-    private bool $messagingInitAttempted = false;
+    private ?string $cachedAccountHash = null;
 
-    private bool $enabled;
-
-    private array $serviceAccount = [];
-
-    private ?string $projectId = null;
-
-    public function __construct(SettingService $settings, ?FirebaseMessaging $messaging = null)
-    {
-        $account = $settings->getByKey('firebase_service_account')['value'] ?? null;
-        $this->serviceAccount = is_array($account) ? $account : (is_string($account) ? json_decode($account, true) ?? [] : []);
-        $this->projectId = $this->serviceAccount['project_id'] ?? null;
-        $this->enabled = (bool) ($settings->getByKey('fcm_enabled')['value'] ?? false);
-        $this->messaging = $messaging;
-    }
+    public function __construct(
+        private SettingService $settings,
+        private ?FirebaseMessaging $injectedMessaging = null,
+    ) {}
 
     public function key(): string
     {
@@ -41,16 +31,14 @@ class FcmChannel implements NotificationChannel
 
     public function send(Recipient $recipient, NotificationPayload $payload): SendResult
     {
-        if (! $this->enabled) {
+        $cfg = $this->loadConfig();
+
+        if (! $cfg['enabled']) {
             return $this->fail('FCM is disabled');
         }
 
-        if (! $this->messaging && ! $this->messagingInitAttempted) {
-            $this->messaging = $this->createMessaging();
-            $this->messagingInitAttempted = true;
-        }
-
-        if (! $this->messaging) {
+        $messaging = $this->resolveMessaging($cfg['service_account']);
+        if (! $messaging) {
             return $this->fail('FCM not configured');
         }
 
@@ -70,7 +58,7 @@ class FcmChannel implements NotificationChannel
         }
 
         try {
-            $response = $this->messaging->send($message);
+            $response = $messaging->send($message);
         } catch (Throwable $e) {
             return $this->fail('FCM send failed: '.$e->getMessage());
         }
@@ -82,19 +70,45 @@ class FcmChannel implements NotificationChannel
         );
     }
 
-    protected function createMessaging(): ?FirebaseMessaging
+    private function loadConfig(): array
     {
-        if (! $this->projectId || empty($this->serviceAccount['private_key']) || empty($this->serviceAccount['client_email'])) {
+        $account = $this->settings->getByKey('firebase_service_account')['value'] ?? null;
+        $serviceAccount = is_array($account) ? $account : (is_string($account) ? json_decode($account, true) ?? [] : []);
+
+        return [
+            'enabled' => (bool) ($this->settings->getByKey('fcm_enabled')['value'] ?? false),
+            'service_account' => $serviceAccount,
+        ];
+    }
+
+    private function resolveMessaging(array $serviceAccount): ?FirebaseMessaging
+    {
+        if ($this->injectedMessaging) {
+            return $this->injectedMessaging;
+        }
+
+        if (empty($serviceAccount['project_id']) || empty($serviceAccount['private_key']) || empty($serviceAccount['client_email'])) {
             return null;
         }
 
+        // Cache messaging client by service account hash — rebuild chỉ khi admin đổi credentials.
+        $hash = md5(serialize($serviceAccount));
+        if ($this->cachedMessaging && $this->cachedAccountHash === $hash) {
+            return $this->cachedMessaging;
+        }
+
         try {
-            return (new Factory)
-                ->withServiceAccount($this->serviceAccount)
+            $messaging = (new Factory)
+                ->withServiceAccount($serviceAccount)
                 ->createMessaging();
         } catch (Throwable) {
             return null;
         }
+
+        $this->cachedMessaging = $messaging;
+        $this->cachedAccountHash = $hash;
+
+        return $messaging;
     }
 
     private function fail(string $error): SendResult

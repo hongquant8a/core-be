@@ -13,33 +13,7 @@ use Throwable;
 
 class MailChannel implements NotificationChannel
 {
-    private bool $enabled;
-
-    private ?string $host;
-
-    private ?string $port;
-
-    private ?string $username;
-
-    private ?string $password;
-
-    private ?string $encryption;
-
-    private ?string $senderAddress;
-
-    private ?string $senderName;
-
-    public function __construct(SettingService $settings)
-    {
-        $this->enabled = (bool) ($settings->getByKey('email_enabled')['value'] ?? false);
-        $this->host = $settings->getByKey('email_smtp_host')['value'] ?? null;
-        $this->port = $settings->getByKey('email_smtp_port')['value'] ?? '587';
-        $this->username = $settings->getByKey('email_smtp_username')['value'] ?? null;
-        $this->password = $settings->getByKey('email_smtp_password')['value'] ?? null;
-        $this->encryption = $settings->getByKey('email_smtp_encryption')['value'] ?? 'tls';
-        $this->senderAddress = $settings->getByKey('email_sender_address')['value'] ?? null;
-        $this->senderName = $settings->getByKey('email_sender_name')['value'] ?? '';
-    }
+    public function __construct(private SettingService $settings) {}
 
     public function key(): string
     {
@@ -48,15 +22,17 @@ class MailChannel implements NotificationChannel
 
     public function send(Recipient $recipient, NotificationPayload $payload): SendResult
     {
-        if (! $this->enabled) {
+        $cfg = $this->loadConfig();
+
+        if (! $cfg['enabled']) {
             return $this->fail('Mail is disabled');
         }
 
-        if (! $this->host || ! $this->username || ! $this->password) {
+        if (! $cfg['host'] || ! $cfg['username'] || ! $cfg['password']) {
             return $this->fail('Mail not configured');
         }
 
-        if (! $this->senderAddress) {
+        if (! $cfg['sender_address']) {
             return $this->fail('Missing sender email address');
         }
 
@@ -70,25 +46,17 @@ class MailChannel implements NotificationChannel
             config([
                 'mail.mailers.notification_smtp' => [
                     'transport' => 'smtp',
-                    'host' => $this->host,
-                    'port' => (int) $this->port,
-                    'username' => $this->username,
-                    'password' => $this->password,
-                    'encryption' => $this->encryption,
+                    'host' => $cfg['host'],
+                    'port' => (int) $cfg['port'],
+                    'username' => $cfg['username'],
+                    'password' => $cfg['password'],
+                    'encryption' => $cfg['encryption'],
                 ],
             ]);
 
-            $html = view('emails.notification', [
-                'subject' => $subject,
-                'content' => $payload->content,
-                'recipientName' => $recipient->name,
-                'context' => $payload->context ?: [],
-                'senderName' => $this->senderName,
-            ])->render();
-
             Mail::mailer('notification_smtp')
-                ->html($html, function (Message $message) use ($recipient, $subject) {
-                    $message->from($this->senderAddress, $this->senderName)
+                ->html($payload->content, function (Message $message) use ($recipient, $subject, $cfg) {
+                    $message->from($cfg['sender_address'], $cfg['sender_name'])
                         ->to($recipient->email, $recipient->name)
                         ->subject($subject);
                 });
@@ -97,6 +65,20 @@ class MailChannel implements NotificationChannel
         } catch (Throwable $e) {
             return $this->fail('Mail error: '.$e->getMessage());
         }
+    }
+
+    private function loadConfig(): array
+    {
+        return [
+            'enabled' => (bool) ($this->settings->getByKey('email_enabled')['value'] ?? false),
+            'host' => $this->settings->getByKey('email_smtp_host')['value'] ?? null,
+            'port' => $this->settings->getByKey('email_smtp_port')['value'] ?? '587',
+            'username' => $this->settings->getByKey('email_smtp_username')['value'] ?? null,
+            'password' => $this->settings->getByKey('email_smtp_password')['value'] ?? null,
+            'encryption' => $this->settings->getByKey('email_smtp_encryption')['value'] ?? 'tls',
+            'sender_address' => $this->settings->getByKey('email_sender_address')['value'] ?? null,
+            'sender_name' => $this->settings->getByKey('email_sender_name')['value'] ?? '',
+        ];
     }
 
     private function fail(string $error): SendResult

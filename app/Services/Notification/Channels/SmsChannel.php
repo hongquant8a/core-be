@@ -13,21 +13,7 @@ use Throwable;
 
 class SmsChannel implements NotificationChannel
 {
-    private bool $enabled;
-
-    private ?string $server;
-
-    private ?string $username;
-
-    private ?string $password;
-
-    public function __construct(private SmsClient $client, SettingService $settings)
-    {
-        $this->enabled = (bool) ($settings->getByKey('sms_enabled')['value'] ?? false);
-        $this->server = $settings->getByKey('sms_server')['value'] ?? null;
-        $this->username = $settings->getByKey('sms_username')['value'] ?? null;
-        $this->password = $settings->getByKey('sms_password')['value'] ?? null;
-    }
+    public function __construct(private SmsClient $client, private SettingService $settings) {}
 
     public function key(): string
     {
@@ -36,11 +22,13 @@ class SmsChannel implements NotificationChannel
 
     public function send(Recipient $recipient, NotificationPayload $payload): SendResult
     {
-        if (! $this->enabled) {
+        $cfg = $this->loadConfig();
+
+        if (! $cfg['enabled']) {
             return $this->fail('SMS is disabled');
         }
 
-        if (! $this->server || ! $this->username || ! $this->password) {
+        if (! $cfg['server'] || ! $cfg['username'] || ! $cfg['password']) {
             return $this->fail('SMS not configured');
         }
 
@@ -56,7 +44,7 @@ class SmsChannel implements NotificationChannel
         $content = $this->normalizeContent($payload->content);
 
         try {
-            $resp = $this->client->sendSms($this->server, $this->username, $this->password, $phone, $content);
+            $resp = $this->client->sendSms($cfg['server'], $cfg['username'], $cfg['password'], $phone, $content);
         } catch (Throwable $e) {
             return $this->fail('SOAP error: '.$e->getMessage());
         }
@@ -67,6 +55,16 @@ class SmsChannel implements NotificationChannel
         }
 
         return $this->fail($resp['message'] ?? 'SMS send failed');
+    }
+
+    private function loadConfig(): array
+    {
+        return [
+            'enabled' => (bool) ($this->settings->getByKey('sms_enabled')['value'] ?? false),
+            'server' => $this->settings->getByKey('sms_server')['value'] ?? null,
+            'username' => $this->settings->getByKey('sms_username')['value'] ?? null,
+            'password' => $this->settings->getByKey('sms_password')['value'] ?? null,
+        ];
     }
 
     private function normalizePhone(string $phone): string
