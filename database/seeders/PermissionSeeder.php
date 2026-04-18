@@ -89,6 +89,10 @@ class PermissionSeeder extends Seeder
         'settings' => [
             'index', 'show', 'update',
         ],
+        // Core - Cấu hình SSO (quản trị OAuth providers)
+        'sso-settings' => [
+            'index', 'update',
+        ],
         // Core - Dashboard
         'dashboard' => [
             'index',
@@ -158,6 +162,7 @@ class PermissionSeeder extends Seeder
         'organizations' => 'Tổ chức',
         'log-activities' => 'Nhật ký truy cập',
         'settings' => 'Cấu hình hệ thống',
+        'sso-settings' => 'Cấu hình SSO',
         'task-assignment-departments' => 'Phòng ban giao việc',
         'task-assignment-types' => 'Loại văn bản giao việc',
         'task-assignment-item-types' => 'Loại công việc',
