@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UserSocial extends Model
 {
+    protected $table = 'user_socials';
+
     protected $fillable = [
         'user_id',
         'provider',
@@ -15,10 +17,13 @@ class UserSocial extends Model
         'linked_at',
     ];
 
-    protected $casts = [
-        'provider_data' => 'array',
-        'linked_at' => 'datetime',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'provider_data' => 'array',
+            'linked_at' => 'datetime',
+        ];
+    }
 
     public function user(): BelongsTo
     {
