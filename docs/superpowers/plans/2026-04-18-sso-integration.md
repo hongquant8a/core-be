@@ -1310,9 +1310,20 @@ class SsoController extends Controller
         );
     }
 
+    /**
+     * Map provider key (from user_socials.provider convention) → settings `enabled` key.
+     * SSO Đà Nẵng: provider='sso_danang' → setting 'sso_danang_enabled'
+     * CBCCVC:      provider='cbccvc'     → setting 'sso_cbccvc_enabled'
+     */
     private function isProviderEnabled(string $provider): bool
     {
-        return (bool) Setting::get("sso_{$provider}_enabled", false);
+        $settingKey = match ($provider) {
+            'sso_danang' => 'sso_danang_enabled',
+            'cbccvc' => 'sso_cbccvc_enabled',
+            default => null,
+        };
+
+        return $settingKey !== null && (bool) Setting::get($settingKey, false);
     }
 
     private function resolveProvider(string $key): SsoProvider
