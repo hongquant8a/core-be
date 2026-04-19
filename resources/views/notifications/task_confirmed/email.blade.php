@@ -1,15 +1,25 @@
 @extends('emails.notification-layout', [
     'subjectText' => 'Công việc đã được xác nhận',
+    'accentColor' => '#2F7D32',
+    'accentLabel' => 'ĐÃ XÁC NHẬN',
 ])
 
 @section('body')
-    <p>Xin chào <strong>{{ $recipient->name }}</strong>,</p>
-    <p>Công việc <strong>{{ $item->name }}</strong> đã được xác nhận hoàn thành.</p>
-    <table style="width:100%; font-size:14px; border-collapse:collapse; margin:12px 0;">
-        <tr><td style="padding:6px 8px; color:#6b7280; width:35%;">Tên công việc</td><td style="padding:6px 8px; font-weight:500;">{{ $item->name }}</td></tr>
+    <p>Hệ thống xin trân trọng thông báo: công việc <strong>{{ $item->name }}</strong> đã được xác nhận hoàn thành.</p>
+
+    <div class="info-title"><span class="info-title-dot"></span>Thông tin công việc</div>
+    <table class="info-table" role="presentation" cellpadding="0" cellspacing="0">
+        <tr>
+            <td class="info-label">Tên công việc</td>
+            <td class="info-value">{{ $item->name }}</td>
+        </tr>
         @if($item->confirmed_at)
-            <tr><td style="padding:6px 8px; color:#6b7280;">Xác nhận lúc</td><td style="padding:6px 8px;">{{ $item->confirmed_at->format('H:i d/m/Y') }}</td></tr>
+            <tr>
+                <td class="info-label">Thời điểm xác nhận</td>
+                <td class="info-value">{{ $item->confirmed_at->format('H:i') }} ngày {{ $item->confirmed_at->format('d/m/Y') }}</td>
+            </tr>
         @endif
     </table>
-    <p>Cảm ơn bạn đã hoàn thành công việc.</p>
+
+    <p class="action-note">Xin cảm ơn Quý vị đã hoàn thành công việc đúng yêu cầu.</p>
 @endsection

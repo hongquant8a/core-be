@@ -1,0 +1,27 @@
+php artisan key:generate
+
+# Cài dependency:
+composer install --no-dev --optimize-autoloader --prefer-dist
+
+# Quyền ghi:
+chmod -R 775 storage bootstrap/cache
+chown -R www-data:www-data storage bootstrap/cache  # Linux
+
+# Link storage (ảnh logo/icon cần cái này):
+php artisan storage:link
+
+# Tạo DB + dữ liệu mặc định:
+php artisan migrate --force
+php artisan db:seed --force
+
+# Cache production:
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+php artisan event:cache
+
+# Chạy web server (dev/nhẹ, không dùng nginx/apache):
+php artisan serve --host=0.0.0.0 --port=8000
+
+# Chạy queue worker (mở terminal khác, giữ chạy nền):
+php artisan queue:work database --queue=notifications,default --sleep=3 --tries=3 --max-time=3600
