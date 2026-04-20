@@ -24,6 +24,7 @@ class UpdateUserRequest extends FormRequest
         return [
             'name' => 'sometimes|string|max:255',
             'email' => 'sometimes|email|unique:users,email,'.$this->route('user')?->id,
+            'phone' => 'sometimes|nullable|string|max:20',
             'user_name' => 'sometimes|nullable|string|max:100|unique:users,user_name,'.$this->route('user')?->id.'|regex:/^[a-zA-Z0-9._-]*$/',
             'password' => 'sometimes|string|min:6|confirmed',
             'status' => ['sometimes', 'in:'.implode(',', UserStatusEnum::values())],
@@ -42,6 +43,8 @@ class UpdateUserRequest extends FormRequest
             'name.max' => 'Tên người dùng không được vượt quá 255 ký tự.',
             'email.email' => 'Email không hợp lệ.',
             'email.unique' => 'Email đã tồn tại.',
+            'phone.string' => 'Số điện thoại phải là một chuỗi ký tự.',
+            'phone.max' => 'Số điện thoại không được vượt quá 20 ký tự.',
             'user_name.unique' => 'Tên đăng nhập :input đã tồn tại.',
             'user_name.string' => 'Tên đăng nhập phải là một chuỗi ký tự.',
             'user_name.max' => 'Tên đăng nhập không được vượt quá 100 ký tự.',
@@ -75,6 +78,10 @@ class UpdateUserRequest extends FormRequest
                 'description' => 'Email đăng nhập',
                 'example' => 'user@example.com',
             ],
+            'phone' => [
+                'description' => 'Số điện thoại',
+                'example' => '0901234567',
+            ],
             'user_name' => [
                 'description' => 'Tên đăng nhập (không dấu cách, cho phép . _ -)',
                 'example' => 'nguyenvanb',
@@ -106,6 +113,7 @@ class UpdateUserRequest extends FormRequest
         return [
             'name' => 'Tên người dùng',
             'email' => 'Email',
+            'phone' => 'Số điện thoại',
             'user_name' => 'Tên đăng nhập',
             'password' => 'Mật khẩu',
             'status' => 'Trạng thái',

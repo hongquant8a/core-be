@@ -24,6 +24,7 @@ class StoreUserRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
+            'phone' => 'nullable|string|max:20',
             'user_name' => 'nullable|string|max:100|unique:users,user_name|regex:/^[a-zA-Z0-9._-]*$/',
             'password' => 'required|string|min:6|confirmed',
             'status' => ['nullable', 'in:'.implode(',', UserStatusEnum::values())],
@@ -44,6 +45,8 @@ class StoreUserRequest extends FormRequest
             'email.required' => 'Email không được để trống.',
             'email.email' => 'Email không hợp lệ.',
             'email.unique' => 'Email đã tồn tại.',
+            'phone.string' => 'Số điện thoại phải là một chuỗi ký tự.',
+            'phone.max' => 'Số điện thoại không được vượt quá 20 ký tự.',
             'user_name.unique' => 'Tên đăng nhập :input đã tồn tại.',
             'user_name.string' => 'Tên đăng nhập phải là một chuỗi ký tự.',
             'user_name.max' => 'Tên đăng nhập không được vượt quá 100 ký tự.',
@@ -78,6 +81,10 @@ class StoreUserRequest extends FormRequest
                 'description' => 'Email đăng nhập',
                 'example' => 'user@example.com',
             ],
+            'phone' => [
+                'description' => 'Số điện thoại',
+                'example' => '0901234567',
+            ],
             'user_name' => [
                 'description' => 'Tên đăng nhập (không dấu cách, cho phép . _ -)',
                 'example' => 'nguyenvana',
@@ -109,6 +116,7 @@ class StoreUserRequest extends FormRequest
         return [
             'name' => 'Tên người dùng',
             'email' => 'Email',
+            'phone' => 'Số điện thoại',
             'user_name' => 'Tên đăng nhập',
             'password' => 'Mật khẩu',
             'status' => 'Trạng thái',
