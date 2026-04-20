@@ -43,6 +43,6 @@ class ItemsExport implements FromCollection, WithHeadings
 
     public function headings(): array
     {
-        return ['ID', 'Tên công việc', 'Mô tả', 'Văn bản', 'Loại công việc', 'Loại thời hạn', 'Bắt đầu', 'Kết thúc', 'Trạng thái', 'Hoàn thành (%)', 'Ưu tiên', 'Ngày hoàn thành', 'Phòng ban', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật'];
+        return ['ID', 'Tên công việc', 'Mô tả', 'Văn bản', 'Loại công việc', 'Loại thời hạn', 'Ngày bắt đầu', 'Ngày kết thúc', 'Trạng thái xử lý', 'Hoàn thành (%)', 'Độ ưu tiên', 'Ngày hoàn thành', 'Phòng ban', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật'];
     }
 }

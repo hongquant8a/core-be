@@ -18,6 +18,7 @@ class SettingSeeder extends Seeder
         ['key' => 'time_format', 'value' => 'H:i:s d/m/Y', 'group' => 'general', 'is_public' => true, 'type' => 'string', 'label' => 'Định dạng thời gian', 'sort_order' => 4],
         ['key' => 'icon', 'value' => null, 'group' => 'general', 'is_public' => true, 'type' => 'image', 'label' => 'Biểu tượng favicon', 'sort_order' => 5],
         ['key' => 'logo', 'value' => null, 'group' => 'general', 'is_public' => true, 'type' => 'image', 'label' => 'Logo trang', 'sort_order' => 6],
+        ['key' => 'contact_email', 'value' => null, 'group' => 'general', 'is_public' => false, 'type' => 'string', 'label' => 'Email tiếp nhận yêu cầu liên hệ', 'sort_order' => 7],
         // Admin page
         ['key' => 'admin_app_name', 'value' => 'QuânDH Core', 'group' => 'admin_page', 'is_public' => true, 'type' => 'string', 'label' => 'Tên ứng dụng', 'sort_order' => 1],
         ['key' => 'admin_logo_title', 'value' => 'Hệ thống quản trị', 'group' => 'admin_page', 'is_public' => true, 'type' => 'string', 'label' => 'Tiêu đề logo', 'sort_order' => 2],

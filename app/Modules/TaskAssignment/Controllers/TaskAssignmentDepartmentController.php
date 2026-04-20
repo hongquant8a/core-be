@@ -266,7 +266,7 @@ class TaskAssignmentDepartmentController extends Controller
     public function importTemplate()
     {
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Modules\Core\Exports\ImportTemplateExport(['code', 'name', 'description', 'status', 'sort_order']),
+            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\TaskAssignment\Imports\DepartmentImport::TEMPLATE_LABELS),
             'import-departments-template.xlsx'
         );
     }

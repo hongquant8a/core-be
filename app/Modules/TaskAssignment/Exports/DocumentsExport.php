@@ -34,6 +34,6 @@ class DocumentsExport implements FromCollection, WithHeadings
 
     public function headings(): array
     {
-        return ['ID', 'Name', 'Summary', 'Issue Date', 'Type', 'Status', 'Issued At', 'Items Count', 'Created By', 'Updated By', 'Created At', 'Updated At'];
+        return ['ID', 'Tên văn bản', 'Tóm tắt', 'Ngày ban hành', 'Loại văn bản', 'Trạng thái', 'Thời điểm ban hành', 'Số công việc', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật'];
     }
 }

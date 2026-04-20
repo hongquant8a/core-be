@@ -265,7 +265,7 @@ class TaskAssignmentItemTypeController extends Controller
     public function importTemplate()
     {
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Modules\Core\Exports\ImportTemplateExport(['name', 'description', 'status']),
+            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\TaskAssignment\Imports\LookupImport::TEMPLATE_LABELS),
             'import-item-types-template.xlsx'
         );
     }

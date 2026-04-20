@@ -2,6 +2,7 @@
 
 namespace App\Modules\TaskAssignment\Imports;
 
+use App\Modules\Core\Traits\TranslatesExcelHeadings;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDocument;
 use App\Modules\TaskAssignment\Models\TaskAssignmentType;
 use Maatwebsite\Excel\Concerns\Importable;
@@ -13,21 +14,33 @@ use Maatwebsite\Excel\Concerns\WithValidation;
 
 class DocumentsImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFailure
 {
-    use Importable, SkipsFailures;
+    use Importable, SkipsFailures, TranslatesExcelHeadings;
+
+    public const FIELD_LABELS = [
+        'name' => 'Tên văn bản',
+        'summary' => 'Tóm tắt',
+        'issue_date' => 'Ngày ban hành',
+        'type' => 'Loại văn bản',
+        'status' => 'Trạng thái',
+    ];
+
+    /** Subset xuất ra template — chỉ field required theo StoreDocumentRequest. */
+    public const TEMPLATE_LABELS = [
+        'name' => 'Tên văn bản',
+        'status' => 'Trạng thái',
+    ];
 
     public function model(array $row)
     {
-        $typeId = $row['task_assignment_type_id'] ?? null;
-
-        // Hỗ trợ import theo tên loại văn bản
-        if (! $typeId && ($typeName = $row['loại văn bản'] ?? $row['type'] ?? null)) {
-            $typeId = TaskAssignmentType::where('name', $typeName)->value('id');
+        $typeId = null;
+        if (! empty($row['type'])) {
+            $typeId = TaskAssignmentType::where('name', $row['type'])->value('id');
         }
 
         return new TaskAssignmentDocument([
-            'name' => $row['name'] ?? $row['tên văn bản'] ?? null,
-            'summary' => $row['summary'] ?? $row['tóm tắt'] ?? null,
-            'issue_date' => $row['issue_date'] ?? $row['ngày ban hành'] ?? null,
+            'name' => $row['name'] ?? null,
+            'summary' => $row['summary'] ?? null,
+            'issue_date' => $row['issue_date'] ?? null,
             'task_assignment_type_id' => $typeId,
             'status' => $row['status'] ?? 'draft',
             'created_by' => auth()->id(),
@@ -37,6 +50,8 @@ class DocumentsImport implements ToModel, WithHeadingRow, WithValidation, SkipsO
 
     public function prepareForValidation($data, $index)
     {
+        $data = $this->translateHeadings($data);
+
         $data['name'] = isset($data['name']) ? (string) $data['name'] : null;
         $data['summary'] = isset($data['summary']) ? (string) $data['summary'] : null;
 

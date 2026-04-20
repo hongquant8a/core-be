@@ -312,7 +312,7 @@ class TaskAssignmentItemController extends Controller
     public function importTemplate()
     {
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Modules\Core\Exports\ImportTemplateExport(['name', 'description', 'deadline_type', 'start_at', 'end_at', 'processing_status', 'completion_percent', 'priority']),
+            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\TaskAssignment\Imports\ItemsImport::TEMPLATE_LABELS),
             'import-items-template.xlsx'
         );
     }

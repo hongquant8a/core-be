@@ -5,6 +5,7 @@ namespace App\Modules\Core\Imports;
 use App\Modules\Core\Enums\StatusEnum;
 use App\Modules\Core\Models\Organization;
 use App\Modules\Core\Services\OrganizationService;
+use App\Modules\Core\Traits\TranslatesExcelHeadings;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
@@ -12,6 +13,23 @@ use Maatwebsite\Excel\Concerns\WithValidation;
 
 class OrganizationsImport implements ToModel, WithHeadingRow, WithValidation
 {
+    use TranslatesExcelHeadings;
+
+    public const FIELD_LABELS = [
+        'name' => 'Tên tổ chức',
+        'slug' => 'Slug',
+        'description' => 'Mô tả',
+        'status' => 'Trạng thái',
+        'sort_order' => 'Thứ tự',
+        'parent_slug' => 'Slug tổ chức cha',
+    ];
+
+    /** Subset xuất ra template — chỉ field required theo StoreOrganizationRequest. */
+    public const TEMPLATE_LABELS = [
+        'name' => 'Tên tổ chức',
+        'status' => 'Trạng thái',
+    ];
+
     public function model(array $row)
     {
         $parentSlug = $row['parent_slug'] ?? $row['parent slug'] ?? '';
@@ -31,6 +49,8 @@ class OrganizationsImport implements ToModel, WithHeadingRow, WithValidation
 
     public function prepareForValidation($data, $index)
     {
+        $data = $this->translateHeadings($data);
+
         $data['name'] = isset($data['name']) ? (string) $data['name'] : null;
         $data['status'] = isset($data['status']) ? (string) $data['status'] : null;
 

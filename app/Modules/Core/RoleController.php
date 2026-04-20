@@ -195,7 +195,7 @@ class RoleController extends Controller
     public function importTemplate()
     {
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Modules\Core\Exports\ImportTemplateExport(['name', 'guard_name', 'organization_id']),
+            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Core\Imports\RolesImport::TEMPLATE_LABELS),
             'import-roles-template.xlsx'
         );
     }

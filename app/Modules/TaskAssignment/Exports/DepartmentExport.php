@@ -31,6 +31,6 @@ class DepartmentExport implements FromCollection, WithHeadings
 
     public function headings(): array
     {
-        return ['ID', 'Code', 'Name', 'Description', 'Status', 'Sort Order', 'Created By', 'Updated By', 'Created At', 'Updated At'];
+        return ['ID', 'Mã phòng ban', 'Tên phòng ban', 'Mô tả', 'Trạng thái', 'Thứ tự', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật'];
     }
 }

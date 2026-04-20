@@ -35,14 +35,14 @@ class UsersExport implements FromCollection, WithHeadings
     {
         return [
             'ID',
-            'Name',
+            'Họ và tên',
             'Email',
-            'User Name',
-            'Status',
-            'Created By',
-            'Updated By',
-            'Created At',
-            'Updated At',
+            'Tên đăng nhập',
+            'Trạng thái',
+            'Người tạo',
+            'Người cập nhật',
+            'Ngày tạo',
+            'Ngày cập nhật',
         ];
     }
 }

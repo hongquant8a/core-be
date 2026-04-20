@@ -5,10 +5,12 @@ namespace App\Modules\Auth;
 use App\Http\Controllers\Controller;
 use App\Modules\Auth\Requests\ForgotPasswordRequest;
 use App\Modules\Auth\Requests\LoginRequest;
+use App\Modules\Auth\Requests\RequestAccountRequest;
 use App\Modules\Auth\Requests\ResetPasswordRequest;
 use App\Modules\Auth\Requests\SwitchOrganizationRequest;
 use App\Modules\Auth\Services\AuthService;
 use App\Modules\Auth\Services\CaslAbilityConverter;
+use App\Modules\Auth\Services\GuestAccountRequestService;
 use App\Modules\Core\Resources\UserResource;
 use Illuminate\Http\Request;
 
@@ -19,7 +21,10 @@ use Illuminate\Http\Request;
  */
 class AuthController extends Controller
 {
-    public function __construct(private AuthService $authService) {}
+    public function __construct(
+        private AuthService $authService,
+        private GuestAccountRequestService $guestAccountRequestService,
+    ) {}
 
     /**
      * Đăng nhập
@@ -145,5 +150,27 @@ class AuthController extends Controller
         return $ok
             ? $this->success(null, 'Mật khẩu đã được đặt lại')
             : $this->error('Không thể đặt lại mật khẩu', 400);
+    }
+
+    /**
+     * Yêu cầu mở tài khoản (guest)
+     *
+     * Khách gửi thông tin (Họ tên, SĐT, Email, Nội dung), hệ thống forward qua email tới `contact_email` trong settings.
+     * Endpoint giới hạn 5 request / IP / 10 phút.
+     *
+     * @unauthenticated
+     *
+     * @response 200 {"success": true, "message": "Yêu cầu đã được gửi."}
+     * @response 503 {"success": false, "message": "Hệ thống chưa cấu hình email tiếp nhận. Vui lòng liên hệ quản trị."}
+     */
+    public function requestAccount(RequestAccountRequest $request)
+    {
+        $result = $this->guestAccountRequestService->handle($request->validated());
+
+        if (! $result['ok']) {
+            return $this->error('Hệ thống chưa cấu hình email tiếp nhận. Vui lòng liên hệ quản trị.', 503);
+        }
+
+        return $this->success(null, 'Yêu cầu đã được gửi.');
     }
 }

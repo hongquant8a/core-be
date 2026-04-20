@@ -305,7 +305,7 @@ class OrganizationController extends Controller
     public function importTemplate()
     {
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Modules\Core\Exports\ImportTemplateExport(['name', 'slug', 'description', 'status', 'sort_order', 'parent_slug']),
+            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Core\Imports\OrganizationsImport::TEMPLATE_LABELS),
             'import-organizations-template.xlsx'
         );
     }

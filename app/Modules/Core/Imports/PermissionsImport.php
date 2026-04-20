@@ -3,12 +3,28 @@
 namespace App\Modules\Core\Imports;
 
 use App\Modules\Core\Models\Permission;
+use App\Modules\Core\Traits\TranslatesExcelHeadings;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
 
 class PermissionsImport implements ToModel, WithHeadingRow, WithValidation
 {
+    use TranslatesExcelHeadings;
+
+    public const FIELD_LABELS = [
+        'name' => 'Tên quyền',
+        'guard_name' => 'Guard',
+        'description' => 'Mô tả',
+        'sort_order' => 'Thứ tự',
+        'parent_id' => 'ID quyền cha',
+    ];
+
+    /** Subset xuất ra template — chỉ field required theo StorePermissionRequest. */
+    public const TEMPLATE_LABELS = [
+        'name' => 'Tên quyền',
+    ];
+
     public function model(array $row)
     {
         $guard = $row['guard_name'] ?? config('auth.defaults.guard', 'web');
@@ -25,6 +41,8 @@ class PermissionsImport implements ToModel, WithHeadingRow, WithValidation
 
     public function prepareForValidation($data, $index)
     {
+        $data = $this->translateHeadings($data);
+
         $data['name'] = isset($data['name']) ? (string) $data['name'] : null;
         $data['guard_name'] = isset($data['guard_name']) ? (string) $data['guard_name'] : null;
 

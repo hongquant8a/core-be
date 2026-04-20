@@ -2,6 +2,7 @@
 
 namespace App\Modules\TaskAssignment\Imports;
 
+use App\Modules\Core\Traits\TranslatesExcelHeadings;
 use Maatwebsite\Excel\Concerns\Importable;
 use Maatwebsite\Excel\Concerns\SkipsFailures;
 use Maatwebsite\Excel\Concerns\SkipsOnFailure;
@@ -11,7 +12,19 @@ use Maatwebsite\Excel\Concerns\WithValidation;
 
 class LookupImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFailure
 {
-    use Importable, SkipsFailures;
+    use Importable, SkipsFailures, TranslatesExcelHeadings;
+
+    public const FIELD_LABELS = [
+        'name' => 'Tên',
+        'description' => 'Mô tả',
+        'status' => 'Trạng thái',
+    ];
+
+    /** Subset xuất ra template — chỉ field required theo StoreLookupRequest. */
+    public const TEMPLATE_LABELS = [
+        'name' => 'Tên',
+        'status' => 'Trạng thái',
+    ];
 
     public function __construct(private string $modelClass) {}
 
@@ -30,6 +43,8 @@ class LookupImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFa
 
     public function prepareForValidation($data, $index)
     {
+        $data = $this->translateHeadings($data);
+
         $data['name'] = isset($data['name']) ? (string) $data['name'] : null;
 
         return $data;

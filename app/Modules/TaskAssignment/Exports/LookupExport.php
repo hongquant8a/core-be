@@ -33,6 +33,6 @@ class LookupExport implements FromCollection, WithHeadings
 
     public function headings(): array
     {
-        return ['ID', 'Name', 'Description', 'Status', 'Created By', 'Updated By', 'Created At', 'Updated At'];
+        return ['ID', 'Tên', 'Mô tả', 'Trạng thái', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật'];
     }
 }

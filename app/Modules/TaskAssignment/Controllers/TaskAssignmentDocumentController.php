@@ -261,7 +261,7 @@ class TaskAssignmentDocumentController extends Controller
     public function importTemplate()
     {
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Modules\Core\Exports\ImportTemplateExport(['name', 'summary', 'issue_date', 'type', 'status']),
+            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\TaskAssignment\Imports\DocumentsImport::TEMPLATE_LABELS),
             'import-documents-template.xlsx'
         );
     }

@@ -3,12 +3,26 @@
 namespace App\Modules\Core\Imports;
 
 use App\Modules\Core\Models\Role;
+use App\Modules\Core\Traits\TranslatesExcelHeadings;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
 
 class RolesImport implements ToModel, WithHeadingRow, WithValidation
 {
+    use TranslatesExcelHeadings;
+
+    public const FIELD_LABELS = [
+        'name' => 'Tên vai trò',
+        'guard_name' => 'Guard',
+        'organization_id' => 'ID tổ chức',
+    ];
+
+    /** Subset xuất ra template — chỉ field required theo StoreRoleRequest. */
+    public const TEMPLATE_LABELS = [
+        'name' => 'Tên vai trò',
+    ];
+
     public function model(array $row)
     {
         $guard = $row['guard_name'] ?? config('auth.defaults.guard', 'web');
@@ -23,6 +37,8 @@ class RolesImport implements ToModel, WithHeadingRow, WithValidation
 
     public function prepareForValidation($data, $index)
     {
+        $data = $this->translateHeadings($data);
+
         $data['name'] = isset($data['name']) ? (string) $data['name'] : null;
         $data['guard_name'] = isset($data['guard_name']) ? (string) $data['guard_name'] : null;
 

@@ -6,6 +6,7 @@ use App\Modules\Core\Enums\UserStatusEnum;
 use App\Modules\Core\Models\Organization;
 use App\Modules\Core\Models\Role;
 use App\Modules\Core\Models\User;
+use App\Modules\Core\Traits\TranslatesExcelHeadings;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Maatwebsite\Excel\Concerns\ToModel;
@@ -14,6 +15,25 @@ use Maatwebsite\Excel\Concerns\WithValidation;
 
 class UsersImport implements ToModel, WithHeadingRow, WithValidation
 {
+    use TranslatesExcelHeadings;
+
+    public const FIELD_LABELS = [
+        'name' => 'Họ và tên',
+        'email' => 'Email',
+        'user_name' => 'Tên đăng nhập',
+        'password' => 'Mật khẩu',
+        'status' => 'Trạng thái',
+        'organization' => 'Tổ chức',
+        'role' => 'Vai trò',
+    ];
+
+    /** Subset xuất ra template — chỉ field required theo StoreUserRequest. */
+    public const TEMPLATE_LABELS = [
+        'name' => 'Họ và tên',
+        'email' => 'Email',
+        'password' => 'Mật khẩu',
+    ];
+
     public function model(array $row)
     {
         $password = trim((string) ($row['password'] ?? 'password'));
@@ -78,6 +98,8 @@ class UsersImport implements ToModel, WithHeadingRow, WithValidation
 
     public function prepareForValidation($data, $index)
     {
+        $data = $this->translateHeadings($data);
+
         $data['name'] = isset($data['name']) ? (string) $data['name'] : null;
         $data['user_name'] = isset($data['user_name']) ? (string) $data['user_name'] : null;
         $data['email'] = isset($data['email']) ? (string) $data['email'] : null;

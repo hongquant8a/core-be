@@ -25,3 +25,7 @@ php artisan serve --host=0.0.0.0 --port=8000
 
 # Chạy queue worker (mở terminal khác, giữ chạy nền):
 php artisan queue:work database --queue=notifications,default --sleep=3 --tries=3 --max-time=3600
+
+
+chown -R www:www /www/wwwroot/danatec-core.theworkpc.com/backend/storage
+chmod -R 775 /www/wwwroot/danatec-core.theworkpc.com/backend/storage

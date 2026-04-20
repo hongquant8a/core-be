@@ -24,7 +24,6 @@ class OrganizationsExport implements FromCollection, WithHeadings
             'slug' => $o->slug,
             'description' => $o->description,
             'status' => $o->status,
-            'parent_id' => $o->parent_id,
             'parent_slug' => $o->parent_id ? (Organization::find($o->parent_id)?->slug ?? '') : '',
             'sort_order' => $o->sort_order,
             'depth' => $service->getDepth($o),
@@ -37,6 +36,6 @@ class OrganizationsExport implements FromCollection, WithHeadings
 
     public function headings(): array
     {
-        return ['ID', 'Name', 'Slug', 'Description', 'Status', 'Parent ID', 'Parent Slug', 'Sort Order', 'Depth', 'Created By', 'Updated By', 'Created At', 'Updated At'];
+        return ['ID', 'Tên tổ chức', 'Slug', 'Mô tả', 'Trạng thái', 'Slug tổ chức cha', 'Thứ tự', 'Cấp', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật'];
     }
 }

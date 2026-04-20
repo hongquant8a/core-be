@@ -6,6 +6,7 @@ use App\Modules\Core\Services\SettingService;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Knuckles\Scribe\Scribe;
+use Maatwebsite\Excel\Imports\HeadingRowFormatter;
 use Throwable;
 
 class AppServiceProvider extends ServiceProvider
@@ -23,6 +24,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Giữ nguyên header Excel khi import (không lowercase/snake_case).
+        // Cho phép import dùng header tiếng Việt giống hệt template export.
+        // Mỗi Import class tự dịch label → field key trong prepareForValidation.
+        HeadingRowFormatter::default('none');
+
         Scribe::afterGenerating(function (array $paths) {
             if (! empty($paths['postman']) && file_exists($paths['postman'])) {
                 $json = json_decode(file_get_contents($paths['postman']), true);

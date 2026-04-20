@@ -2,6 +2,7 @@
 
 namespace App\Modules\TaskAssignment\Imports;
 
+use App\Modules\Core\Traits\TranslatesExcelHeadings;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDepartment;
 use Maatwebsite\Excel\Concerns\Importable;
 use Maatwebsite\Excel\Concerns\SkipsFailures;
@@ -12,7 +13,22 @@ use Maatwebsite\Excel\Concerns\WithValidation;
 
 class DepartmentImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFailure
 {
-    use Importable, SkipsFailures;
+    use Importable, SkipsFailures, TranslatesExcelHeadings;
+
+    public const FIELD_LABELS = [
+        'code' => 'Mã phòng ban',
+        'name' => 'Tên phòng ban',
+        'description' => 'Mô tả',
+        'status' => 'Trạng thái',
+        'sort_order' => 'Thứ tự',
+    ];
+
+    /** Subset xuất ra template — chỉ field required theo StoreDepartmentRequest. */
+    public const TEMPLATE_LABELS = [
+        'code' => 'Mã phòng ban',
+        'name' => 'Tên phòng ban',
+        'status' => 'Trạng thái',
+    ];
 
     public function model(array $row)
     {
@@ -29,6 +45,8 @@ class DepartmentImport implements ToModel, WithHeadingRow, WithValidation, Skips
 
     public function prepareForValidation($data, $index)
     {
+        $data = $this->translateHeadings($data);
+
         $data['code'] = isset($data['code']) ? (string) $data['code'] : null;
         $data['name'] = isset($data['name']) ? (string) $data['name'] : null;
 
