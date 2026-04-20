@@ -1,7 +1,11 @@
 <?php
 
+use App\Http\Controllers\DeployController;
 use App\Modules\Auth\AuthController;
 use Illuminate\Support\Facades\Route;
+
+// Deploy webhook - public, xác thực bằng HMAC sha256 trong controller
+Route::post('/deploy/webhook', [DeployController::class, 'handle']);
 
 // Auth module - public routes (đăng nhập, quên mật khẩu, đặt lại mật khẩu)
 Route::prefix('auth')->middleware('log.activity')->group(function () {

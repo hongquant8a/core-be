@@ -56,7 +56,8 @@ class LogActivity extends Model
                     ->orWhere('route', 'like', '%'.$search.'%')
                     ->orWhere('ip_address', 'like', '%'.$search.'%')
                     ->orWhere('country', 'like', '%'.$search.'%')
-                    ->orWhere('user_type', 'like', '%'.$search.'%');
+                    ->orWhere('user_type', 'like', '%'.$search.'%')
+                    ->orWhereHas('user', fn ($q3) => $q3->where('name', 'like', '%'.$search.'%'));
             });
         });
         $query->when(isset($filters['organization_id']) && $filters['organization_id'] !== '', fn ($q) => $q->where('organization_id', $filters['organization_id']));
