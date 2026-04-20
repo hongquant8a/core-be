@@ -40,7 +40,7 @@ class Permission extends SpatiePermission
     }
 
     /**
-     * Scope lọc: search (name, guard_name, description); from_date, to_date; sort_by.
+     * Scope lọc: search (name, guard_name, description); parent_id; from_date, to_date; sort_by.
      */
     public function scopeFilter($query, array $filters)
     {
@@ -50,6 +50,8 @@ class Permission extends SpatiePermission
                     ->orWhere('guard_name', 'like', '%'.$search.'%')
                     ->orWhere('description', 'like', '%'.$search.'%');
             });
+        })->when(array_key_exists('parent_id', $filters) && $filters['parent_id'] !== '', function ($q) use ($filters) {
+            $q->where('parent_id', $filters['parent_id'] === null ? null : (int) $filters['parent_id']);
         })->when(isset($filters['from_date']) && $filters['from_date'], function ($q, $v) use ($filters) {
             $q->whereDate('created_at', '>=', $filters['from_date']);
         })->when(isset($filters['to_date']) && $filters['to_date'], function ($q, $v) use ($filters) {

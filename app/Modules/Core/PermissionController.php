@@ -31,6 +31,7 @@ class PermissionController extends Controller
      * Tổng số bản ghi sau khi áp dụng bộ lọc.
      *
      * @queryParam search string Từ khóa tìm kiếm (name, guard_name, description). Example: posts
+     * @queryParam parent_id integer Lọc theo permission cha. Example: 152
      * @queryParam from_date date Lọc từ ngày tạo (created_at) (Y-m-d). Example: 2026-02-01
      * @queryParam to_date date Lọc đến ngày tạo (created_at) (Y-m-d). Example: 2026-02-17
      * @queryParam sort_by string Sắp xếp theo: id, name, guard_name, created_at, updated_at. Example: created_at
@@ -50,6 +51,7 @@ class PermissionController extends Controller
      * Lấy danh sách có phân trang, lọc và sắp xếp.
      *
      * @queryParam search string Từ khóa tìm kiếm (name, guard_name, description). Example: posts
+     * @queryParam parent_id integer Lọc theo permission cha. Example: 152
      * @queryParam from_date date Lọc từ ngày tạo (created_at) (Y-m-d). Example: 2026-02-01
      * @queryParam to_date date Lọc đến ngày tạo (created_at) (Y-m-d). Example: 2026-02-17
      * @queryParam sort_by string Sắp xếp theo: id, name, guard_name, description, sort_order, parent_id, created_at, updated_at. Example: sort_order
@@ -181,6 +183,7 @@ class PermissionController extends Controller
      * Áp dụng cùng bộ lọc với index. Xuất ra các trường: id, name, guard_name, description, sort_order, parent_id, created_at, updated_at.
      *
      * @queryParam search string Từ khóa tìm kiếm (name, guard_name).
+     * @queryParam parent_id integer Lọc theo permission cha. Example: 152
      * @queryParam from_date date Lọc từ ngày tạo (created_at) (Y-m-d).
      * @queryParam to_date date Lọc đến ngày tạo (created_at) (Y-m-d).
      * @queryParam sort_by string Sắp xếp theo: id, name, guard_name, created_at, updated_at.

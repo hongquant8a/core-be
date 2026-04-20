@@ -26,8 +26,8 @@ class LogActivity
         'firebase_service_account', 'api_google_maps_token',
     ];
 
-    /** Đường dẫn không ghi log (vd: health check). */
-    protected static array $excludedPaths = ['/up'];
+    /** Đường dẫn không ghi log (vd: health check, polling endpoints). */
+    protected static array $excludedPaths = ['/up', '/api/notifications/me/unread-count'];
 
     public function handle(Request $request, Closure $next): Response
     {

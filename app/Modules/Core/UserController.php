@@ -32,6 +32,7 @@ class UserController extends Controller
      *
      * @queryParam search string Từ khóa tìm kiếm (name, email, user_name). Example: john
      * @queryParam status string Lọc theo trạng thái: active, inactive, banned.
+     * @queryParam organization_id integer Lọc user được gán vai trò trong tổ chức. Example: 28
      * @queryParam sort_by string Sắp xếp theo: id, name, email, user_name, created_at. Example: created_at
      * @queryParam sort_order string Thứ tự: asc, desc. Example: desc
      * @queryParam limit integer Số bản ghi mỗi trang (1-100). Example: 10
@@ -50,6 +51,7 @@ class UserController extends Controller
      *
      * @queryParam search string Từ khóa tìm kiếm (name, email, user_name). Example: john
      * @queryParam status string Lọc theo trạng thái: active, inactive, banned.
+     * @queryParam organization_id integer Lọc user được gán vai trò trong tổ chức. Example: 28
      * @queryParam sort_by string Sắp xếp theo: id, name, email, user_name, created_at. Example: created_at
      * @queryParam sort_order string Thứ tự: asc, desc. Example: desc
      * @queryParam limit integer Số bản ghi mỗi trang (1-100). Example: 10
@@ -193,6 +195,7 @@ class UserController extends Controller
      *
      * @queryParam search string Từ khóa tìm kiếm (name, email).
      * @queryParam status string Lọc theo trạng thái: active, inactive, banned.
+     * @queryParam organization_id integer Lọc user được gán vai trò trong tổ chức. Example: 28
      * @queryParam sort_by string Sắp xếp theo: id, name, email, created_at.
      * @queryParam sort_order string Thứ tự: asc, desc.
      * @queryParam limit integer Số bản ghi (1-100).

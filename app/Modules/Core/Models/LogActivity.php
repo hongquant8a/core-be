@@ -59,6 +59,7 @@ class LogActivity extends Model
                     ->orWhere('user_type', 'like', '%'.$search.'%');
             });
         });
+        $query->when(isset($filters['organization_id']) && $filters['organization_id'] !== '', fn ($q) => $q->where('organization_id', $filters['organization_id']));
         $query->when(isset($filters['from_date']) && $filters['from_date'], fn ($q) => $q->whereDate('created_at', '>=', $filters['from_date']));
         $query->when(isset($filters['to_date']) && $filters['to_date'], fn ($q) => $q->whereDate('created_at', '<=', $filters['to_date']));
         $query->when(isset($filters['method_type']) && $filters['method_type'], fn ($q) => $q->where('method_type', $filters['method_type']));

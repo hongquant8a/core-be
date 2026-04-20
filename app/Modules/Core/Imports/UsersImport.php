@@ -27,11 +27,18 @@ class UsersImport implements ToModel, WithHeadingRow, WithValidation
         'role' => 'Vai trò',
     ];
 
-    /** Subset xuất ra template — chỉ field required theo StoreUserRequest. */
+    /**
+     * Subset xuất ra template.
+     * `name`, `email`, `password` là required theo StoreUserRequest.
+     * `organization`, `role` dùng name để lookup (Import::model() tìm Organization theo name + Role theo name)
+     * — nếu có thì tự động gán user vào org với role tương ứng.
+     */
     public const TEMPLATE_LABELS = [
         'name' => 'Họ và tên',
         'email' => 'Email',
         'password' => 'Mật khẩu',
+        'organization' => 'Tổ chức',
+        'role' => 'Vai trò',
     ];
 
     public function model(array $row)

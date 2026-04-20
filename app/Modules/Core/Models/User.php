@@ -106,6 +106,14 @@ class User extends Authenticatable implements HasMedia
                     $sub->where('model_has_roles.organization_id', $teamId);
                 }
             });
+        })->when($filters['organization_id'] ?? null, function ($query, $orgId) {
+            $query->whereExists(function ($sub) use ($orgId) {
+                $sub->select(\DB::raw(1))
+                    ->from('model_has_roles')
+                    ->whereColumn('model_has_roles.model_id', 'users.id')
+                    ->where('model_has_roles.model_type', self::class)
+                    ->where('model_has_roles.organization_id', $orgId);
+            });
         })->when($filters['sort_by'] ?? 'created_at', function ($query, $sortBy) use ($filters) {
             $allowed = ['id', 'name', 'email', 'user_name', 'created_at'];
             $column = in_array($sortBy, $allowed) ? $sortBy : 'created_at';
