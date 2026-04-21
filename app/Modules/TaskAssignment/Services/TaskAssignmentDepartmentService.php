@@ -115,27 +115,77 @@ class TaskAssignmentDepartmentService
     {
         $orgId = getPermissionsTeamId();
 
-        // Xóa user cũ trong department này
-        TaskAssignmentUser::where('task_assignment_department_id', $department->id)
+        $currentUserIds = TaskAssignmentUser::where('task_assignment_department_id', $department->id)
             ->where('organization_id', $orgId)
-            ->delete();
+            ->pluck('user_id')
+            ->all();
 
-        // Thêm user mới
-        foreach ($userIds as $userId) {
-            TaskAssignmentUser::updateOrCreate(
-                ['user_id' => $userId, 'organization_id' => $orgId],
-                [
-                    'task_assignment_department_id' => $department->id,
-                    'status' => 'active',
-                ]
-            );
+        $toRemove = array_diff($currentUserIds, $userIds);
+        $toAdd = array_diff($userIds, $currentUserIds);
+
+        if ($toRemove) {
+            TaskAssignmentUser::where('task_assignment_department_id', $department->id)
+                ->where('organization_id', $orgId)
+                ->whereIn('user_id', $toRemove)
+                ->delete();
         }
+
+        foreach ($toAdd as $userId) {
+            $hasPrimary = TaskAssignmentUser::where('user_id', $userId)
+                ->where('organization_id', $orgId)
+                ->where('is_primary', true)
+                ->exists();
+
+            TaskAssignmentUser::create([
+                'user_id' => $userId,
+                'task_assignment_department_id' => $department->id,
+                'organization_id' => $orgId,
+                'status' => 'active',
+                'is_primary' => ! $hasPrimary,
+            ]);
+        }
+    }
+
+    public function setPrimary(int $userId, int $departmentId): void
+    {
+        $orgId = getPermissionsTeamId();
+
+        $target = TaskAssignmentUser::where('user_id', $userId)
+            ->where('task_assignment_department_id', $departmentId)
+            ->where('organization_id', $orgId)
+            ->firstOrFail();
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($userId, $target, $orgId) {
+            TaskAssignmentUser::where('user_id', $userId)
+                ->where('organization_id', $orgId)
+                ->update(['is_primary' => false]);
+
+            $target->update(['is_primary' => true]);
+        });
     }
 
     public function removeUser(TaskAssignmentDepartment $department, int $userId): void
     {
-        TaskAssignmentUser::where('task_assignment_department_id', $department->id)
-            ->where('user_id', $userId)
-            ->delete();
+        $orgId = getPermissionsTeamId();
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($department, $userId, $orgId) {
+            $removed = TaskAssignmentUser::where('task_assignment_department_id', $department->id)
+                ->where('user_id', $userId)
+                ->first();
+
+            if (! $removed) {
+                return;
+            }
+
+            $wasPrimary = (bool) $removed->is_primary;
+            $removed->delete();
+
+            if ($wasPrimary) {
+                TaskAssignmentUser::where('user_id', $userId)
+                    ->where('organization_id', $orgId)
+                    ->limit(1)
+                    ->update(['is_primary' => true]);
+            }
+        });
     }
 }

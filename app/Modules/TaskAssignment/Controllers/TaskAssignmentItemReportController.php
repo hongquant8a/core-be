@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItemReport;
+use App\Modules\TaskAssignment\Requests\ConfirmReportRequest;
 use App\Modules\TaskAssignment\Requests\StoreReportRequest;
 use App\Modules\TaskAssignment\Requests\UpdateReportRequest;
 use App\Modules\TaskAssignment\Resources\ReportCollection;
@@ -14,6 +15,7 @@ use App\Modules\TaskAssignment\Services\TaskAssignmentReportService;
 
 /**
  * @group TaskAssignment - Báo cáo công việc
+ *
  * @header X-Organization-Id ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1
  *
  * Quản lý báo cáo công việc: danh sách, tạo, cập nhật, xóa báo cáo theo từng công việc.
@@ -54,7 +56,9 @@ class TaskAssignmentItemReportController extends Controller
      * @urlParam taskAssignmentItemReport integer required ID báo cáo. Example: 1
      *
      * @apiResource App\Modules\TaskAssignment\Resources\ReportResource
+     *
      * @apiResourceModel App\Modules\TaskAssignment\Models\TaskAssignmentItemReport
+     *
      * @apiResourceAdditional success=true
      */
     public function show(TaskAssignmentItemReport $taskAssignmentItemReport)
@@ -111,12 +115,16 @@ class TaskAssignmentItemReportController extends Controller
      */
     public function update(UpdateReportRequest $request, TaskAssignmentItemReport $taskAssignmentItemReport)
     {
-        $report = $this->reportService->update(
-            $taskAssignmentItemReport,
-            $request->validated(),
-            $request->file('attachments', []),
-            $request->input('remove_attachment_ids', [])
-        );
+        try {
+            $report = $this->reportService->update(
+                $taskAssignmentItemReport,
+                $request->validated(),
+                $request->file('attachments', []),
+                $request->input('remove_attachment_ids', [])
+            );
+        } catch (\RuntimeException $e) {
+            return $this->error($e->getMessage(), 422);
+        }
 
         return $this->successResource(new ReportResource($report), 'Báo cáo đã được cập nhật!');
     }
@@ -130,8 +138,37 @@ class TaskAssignmentItemReportController extends Controller
      */
     public function destroy(TaskAssignmentItemReport $taskAssignmentItemReport)
     {
-        $this->reportService->destroy($taskAssignmentItemReport);
+        try {
+            $this->reportService->destroy($taskAssignmentItemReport);
+        } catch (\RuntimeException $e) {
+            return $this->error($e->getMessage(), 422);
+        }
 
         return $this->success(null, 'Báo cáo đã được xóa thành công!');
+    }
+
+    /**
+     * Xác nhận báo cáo và khóa.
+     *
+     * @urlParam id integer required ID báo cáo. Example: 1
+     *
+     * @bodyParam confirm_note string optional Ghi chú xác nhận. Example: Đạt quy định
+     *
+     * @response 200 {"success": true, "message": "Đã xác nhận báo cáo."}
+     */
+    public function confirm(ConfirmReportRequest $request, int $id)
+    {
+        $report = \App\Modules\TaskAssignment\Models\TaskAssignmentItemReport::findOrFail($id);
+
+        try {
+            $updated = $this->reportService->confirm($report, $request->validated('confirm_note'));
+        } catch (\RuntimeException $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+
+        return $this->success(
+            (new \App\Modules\TaskAssignment\Resources\ReportResource($updated))->resolve(),
+            'Đã xác nhận báo cáo.'
+        );
     }
 }

@@ -58,8 +58,33 @@ class TaskAssignmentReportService
         }
     }
 
+    public function confirm(TaskAssignmentItemReport $report, ?string $note): TaskAssignmentItemReport
+    {
+        if ($report->is_locked) {
+            throw new \RuntimeException('Báo cáo đã khóa, không thể xác nhận lại.');
+        }
+
+        $uid = auth()->id();
+
+        $report->update([
+            'manager_confirmed' => true,
+            'manager_confirmed_by' => $uid,
+            'manager_confirmed_at' => now(),
+            'manager_confirm_note' => $note,
+            'is_locked' => true,
+            'locked_at' => now(),
+            'locked_by' => $uid,
+        ]);
+
+        return $report->fresh();
+    }
+
     public function update(TaskAssignmentItemReport $report, array $validated, array $files = [], array $removeAttachmentIds = []): TaskAssignmentItemReport
     {
+        if ($report->is_locked) {
+            throw new \RuntimeException('Báo cáo đã khóa, không thể sửa.');
+        }
+
         $storedFiles = [];
 
         try {
@@ -101,6 +126,10 @@ class TaskAssignmentReportService
 
     public function destroy(TaskAssignmentItemReport $report): void
     {
+        if ($report->is_locked) {
+            throw new \RuntimeException('Báo cáo đã khóa, không thể xóa.');
+        }
+
         $attachments = $report->attachments()->with('media')->get();
 
         foreach ($attachments as $attachment) {

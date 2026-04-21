@@ -15,10 +15,15 @@ class TaskAssignmentUser extends Model
     protected $fillable = [
         'user_id',
         'task_assignment_department_id',
+        'is_primary',
         'status',
         'organization_id',
         'created_by',
         'updated_by',
+    ];
+
+    protected $casts = [
+        'is_primary' => 'boolean',
     ];
 
     protected static function booted()

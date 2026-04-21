@@ -5,6 +5,19 @@
 
 ---
 
+> **📝 Corrections log (2026-04-21):** Sau ~3 tháng triển khai, các điểm sau đã được điều chỉnh thực tế. Xem [`docs/superpowers/specs/2026-04-21-task-assignment-corrections.md`](docs/superpowers/specs/2026-04-21-task-assignment-corrections.md) để biết chi tiết.
+>
+> - **§3.1:** Tên bảng thực tế là `task_assignment_users`. Có cột `is_primary`, unique key `(user_id, task_assignment_department_id, organization_id)`. User có thể ở **nhiều phòng ban** trong cùng org.
+> - **§3.7:** Code dùng tên cột `department_id` (không phải `assigned_department_id`), nhưng semantic **là snapshot** (verified) — giá trị chốt tại thời điểm giao, không cập nhật về sau. Cũng có thêm cột `department_role` (main/cooperate).
+> - **§3.12:** Đã refactor. Bảng `task_assignment_reminders` hiện có FK `notification_schedule_id` → `notification_schedules`, `moment` (before/on/after), `status` (pending/fired/cancelled), `fired_at`. Bỏ channel/recipient_*/error_message.
+> - **§3.13:** Bảng `task_assignment_notification_settings` **KHÔNG triển khai**. Thay bằng hệ thống Core `notification_event_configs` + `notification_schedules` (module_key=`task_assignment`, event_key=`reminder_before`/`reminder_on`/`reminder_after`).
+> - **§4.4:** **Module CÓ dùng `organization_id`** vì Spatie Permission chạy teamsMode (yêu cầu `organization_id` non-null trong `model_has_roles`).
+> - **§5.2:** Thống kê theo phòng ban dùng cột `department_id` (snapshot at assignment time) — semantic khớp `assigned_department_id` của spec.
+> - **§6.2:** Command thực tế là `notifications:process-reminders` (chung cho Core), không có command riêng cho module.
+> - **§6.5:** API cấu hình thông báo dùng endpoint Core: `/api/task-assignment/notification-config/*`. KHÔNG có `/api/task-assignment-notification-settings`.
+
+---
+
 ## 1. Phạm vi bài toán
 
 ### 1.1 Đối tượng quản lý

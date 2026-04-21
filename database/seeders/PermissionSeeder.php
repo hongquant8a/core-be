@@ -83,7 +83,7 @@ class PermissionSeeder extends Seeder
         ],
         // TaskAssignment - Báo cáo công việc
         'task-assignment-item-reports' => [
-            'index', 'show', 'store', 'update', 'destroy',
+            'index', 'show', 'store', 'update', 'destroy', 'confirm',
         ],
         // Core - Cấu hình hệ thống
         'settings' => [
@@ -207,6 +207,7 @@ class PermissionSeeder extends Seeder
         'syncUsers' => 'Đồng bộ người dùng',
         'removeUser' => 'Xóa người dùng',
         'confirmDone' => 'Xác nhận hoàn thành',
+        'confirm' => 'Xác nhận',
         'test' => 'Kiểm thử',
     ];
 

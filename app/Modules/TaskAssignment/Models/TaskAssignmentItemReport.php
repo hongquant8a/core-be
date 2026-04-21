@@ -29,10 +29,21 @@ class TaskAssignmentItemReport extends Model implements HasMedia
         'report_document_excerpt',
         'report_document_content',
         'organization_id',
+        'manager_confirmed',
+        'manager_confirmed_by',
+        'manager_confirmed_at',
+        'manager_confirm_note',
+        'is_locked',
+        'locked_at',
+        'locked_by',
     ];
 
     protected $casts = [
         'completed_at' => 'datetime',
+        'manager_confirmed' => 'boolean',
+        'manager_confirmed_at' => 'datetime',
+        'is_locked' => 'boolean',
+        'locked_at' => 'datetime',
     ];
 
     protected static function booted()

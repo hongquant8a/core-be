@@ -3,13 +3,13 @@
 namespace App\Modules\TaskAssignment\Enums;
 
 /**
- * Trạng thái nhắc việc.
+ * Trạng thái nhắc việc (khớp migration restructure 2026-04-16).
  */
 enum TaskReminderStatusEnum: string
 {
     case Pending = 'pending';
-    case Sent = 'sent';
-    case Failed = 'failed';
+    case Fired = 'fired';
+    case Cancelled = 'cancelled';
 
     /** Danh sách giá trị để validate. */
     public static function values(): array
@@ -17,7 +17,7 @@ enum TaskReminderStatusEnum: string
         return array_column(self::cases(), 'value');
     }
 
-    /** Rule validation: in:pending,sent,failed */
+    /** Rule validation. */
     public static function rule(): string
     {
         return 'in:'.implode(',', self::values());
@@ -28,8 +28,8 @@ enum TaskReminderStatusEnum: string
     {
         return match ($this) {
             self::Pending => 'Chờ gửi',
-            self::Sent => 'Đã gửi',
-            self::Failed => 'Thất bại',
+            self::Fired => 'Đã gửi',
+            self::Cancelled => 'Đã hủy',
         };
     }
 }
