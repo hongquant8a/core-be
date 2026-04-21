@@ -46,20 +46,17 @@ class LogActivityController extends Controller
     /**
      * Timeline thống kê nhật ký (line chart dashboard)
      *
-     * BE tự chọn grain theo độ dài range:
-     * - Diff ≤ 62 ngày → `granularity = "day"`, period format `YYYY-MM-DD`
-     * - Diff > 62 ngày → `granularity = "month"`, period format `YYYY-MM`
-     * - Không có from/to → 12 tháng gần nhất, grain month.
+     * Stat ALL dữ liệu, group theo grain FE chọn (tương ứng dropdown "theo tháng" / "theo ngày").
      *
-     * @queryParam from_date date Từ ngày. Example: 2026-04-01
-     * @queryParam to_date date Đến ngày. Example: 2026-04-30
-     * @queryParam organization_id integer Lọc theo tổ chức.
+     * @queryParam granularity string `day` hoặc `month`. Mặc định `month`. Example: month
      *
-     * @response 200 {"success":true,"data":{"granularity":"day","data":[{"period":"2026-04-01","total":120,"views":100,"creates":15,"updates":3,"deletes":2}]}}
+     * @response 200 {"success":true,"data":{"granularity":"month","data":[{"period":"2026-01","total":2100,"views":1800,"creates":200,"updates":80,"deletes":20}]}}
      */
     public function timeline(FilterRequest $request)
     {
-        return $this->success($this->logActivityService->timeline($request->all()));
+        $granularity = (string) $request->input('granularity', 'month');
+
+        return $this->success($this->logActivityService->timeline($granularity));
     }
 
     /**

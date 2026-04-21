@@ -2,15 +2,15 @@
 
 ## 2026-04-21 – Thêm 4 endpoint thống kê cho dashboard
 
-Bổ sung các thống kê còn thiếu cho dashboard (biểu đồ theo tháng, top N, phân bố). Tất cả đều **nhận filter `from_date` + `to_date`** — FE bắn 1 bộ filter chung cho toàn section.
+Bổ sung các thống kê còn thiếu cho dashboard (timeline, top N, phân bố).
+
+**Tất cả endpoint stat ALL-TIME**, không nhận date filter. Dropdown "theo tháng / theo ngày" chỉ là selector grain cho line chart (truyền `granularity` param).
 
 **Không tạo permission mới** — reuse `log-activities.stats` + `users.stats` đã có.
 
 ---
 
-## 1. Thống kê nhật ký theo mốc thời gian (line chart)
-
-**1 endpoint duy nhất.** BE tự chọn grain theo độ dài range, FE chỉ bắn `from_date` + `to_date` và dựa vào `granularity` trong response để format trục X.
+## 1. Timeline nhật ký (line chart)
 
 | | |
 |---|---|
@@ -18,28 +18,25 @@ Bổ sung các thống kê còn thiếu cho dashboard (biểu đồ theo tháng,
 | **Path** | `/api/log-activities/stats/timeline` |
 | **Permission** | `log-activities.stats` |
 
-**Rule grain:**
-- Diff ≤ 62 ngày (vd "1 tháng gần nhất", "30 ngày") → `granularity = "day"`, `period` format `YYYY-MM-DD`
-- Diff > 62 ngày (vd "6 tháng", "1 năm") → `granularity = "month"`, `period` format `YYYY-MM`
-- Thiếu `from_date` / `to_date` → mặc định 12 tháng gần nhất, grain `month`
+**Query:** `granularity` — `"day"` hoặc `"month"` (mặc định `"month"`).
 
-**Query:** `from_date`, `to_date`, `organization_id`, `search`, `method_type`, `status_code`
+**Range:** từ mốc **sớm nhất có log** → **hiện tại**, BE pad 0 cho mốc trống để chart liên tục. Nếu chưa có log nào → `data: []`.
 
-**Response grain month (vd "6 tháng gần nhất"):**
+**Response grain month:**
 ```json
 {
   "success": true,
   "data": {
     "granularity": "month",
     "data": [
-      { "period": "2025-11", "total": 1200, "views": 1000, "creates": 120, "updates": 60, "deletes": 20 },
+      { "period": "2026-01", "total": 2100, "views": 1800, "creates": 200, "updates": 80, "deletes": 20 },
       { "period": "2026-04", "total": 15008, "views": 13000, "creates": 1500, "updates": 400, "deletes": 108 }
     ]
   }
 }
 ```
 
-**Response grain day (vd "30 ngày gần nhất"):**
+**Response grain day:**
 ```json
 {
   "success": true,
@@ -53,7 +50,7 @@ Bổ sung các thống kê còn thiếu cho dashboard (biểu đồ theo tháng,
 }
 ```
 
-Chỉ trả mốc có dữ liệu — FE cần pad mốc trống nếu muốn chart liên tục.
+BE pad full range từ log sớm nhất → hiện tại, mốc không có log trả `total: 0`. FE chỉ cần plot thẳng.
 
 ---
 
@@ -148,6 +145,6 @@ Tổng `total` = tổng user thỏa filter.
 
 ## Lưu ý FE
 
-- **Filter `from_date` + `to_date` dùng chung cho cả section** — khi user đổi khoảng thời gian ở selector "Hoạt động theo tháng", gọi lại cả 4 endpoint + 3 card trên cùng với filter này.
-- Card tổ chức (118) **không** áp filter thời gian (tổng hệ thống).
-- Ngày format `YYYY-MM-DD`. Tháng trong response `by-month` format `YYYY-MM`.
+- Tất cả endpoint dashboard **stat all-time**, không nhận date filter.
+- Dropdown "theo tháng / theo ngày" chỉ đổi `granularity` param cho `/stats/timeline` — không ảnh hưởng widget khác.
+- `period` format theo grain: `YYYY-MM` (month) hoặc `YYYY-MM-DD` (day).

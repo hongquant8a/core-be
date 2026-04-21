@@ -34,25 +34,30 @@ class LogActivityService
     }
 
     /**
-     * Timeline cho line chart dashboard: tự chọn grain day/month theo độ dài range.
+     * Timeline cho line chart dashboard. Stat ALL-time, pad mốc trống = 0.
      *
-     * Rule: diff ≤ 62 ngày → day, ngược lại → month.
-     * Không có from_date/to_date → mặc định 12 tháng gần nhất (grain month).
+     * Range: từ mốc sớm nhất có log → hiện tại. Không có log → trả mảng rỗng.
      *
      * @return array{granularity:string,data:array<int,array<string,mixed>>}
      */
-    public function timeline(array $filters): array
+    public function timeline(string $granularity = 'month'): array
     {
-        $granularity = $this->resolveGranularity($filters);
+        $granularity = $granularity === 'day' ? 'day' : 'month';
         $format = $granularity === 'day' ? '%Y-%m-%d' : '%Y-%m';
 
-        if (empty($filters['from_date']) && empty($filters['to_date'])) {
-            $filters['from_date'] = Carbon::now()->subMonths(11)->startOfMonth()->toDateString();
-            $filters['to_date'] = Carbon::now()->endOfMonth()->toDateString();
+        $earliest = LogActivity::query()->min('created_at');
+        if (! $earliest) {
+            return ['granularity' => $granularity, 'data' => []];
         }
 
-        $rows = LogActivity::filter($filters)
-            ->reorder()
+        $start = $granularity === 'day'
+            ? Carbon::parse($earliest)->startOfDay()
+            : Carbon::parse($earliest)->startOfMonth();
+        $end = $granularity === 'day'
+            ? Carbon::now()->endOfDay()
+            : Carbon::now()->endOfMonth();
+
+        $rows = LogActivity::query()
             ->selectRaw("
                 DATE_FORMAT(created_at, ?) as period,
                 count(*) as total,
@@ -62,41 +67,29 @@ class LogActivityService
                 count(case when method_type = 'DELETE' then 1 end) as deletes
             ", [$format])
             ->groupBy('period')
-            ->orderBy('period')
-            ->get();
+            ->get()
+            ->keyBy('period');
+
+        $data = [];
+        $cursor = $start->copy();
+        while ($cursor <= $end) {
+            $key = $granularity === 'day' ? $cursor->format('Y-m-d') : $cursor->format('Y-m');
+            $row = $rows->get($key);
+            $data[] = [
+                'period' => $key,
+                'total' => $row ? (int) $row->total : 0,
+                'views' => $row ? (int) $row->views : 0,
+                'creates' => $row ? (int) $row->creates : 0,
+                'updates' => $row ? (int) $row->updates : 0,
+                'deletes' => $row ? (int) $row->deletes : 0,
+            ];
+            $granularity === 'day' ? $cursor->addDay() : $cursor->addMonth();
+        }
 
         return [
             'granularity' => $granularity,
-            'data' => $rows->map(fn ($r) => [
-                'period' => $r->period,
-                'total' => (int) $r->total,
-                'views' => (int) $r->views,
-                'creates' => (int) $r->creates,
-                'updates' => (int) $r->updates,
-                'deletes' => (int) $r->deletes,
-            ])->all(),
+            'data' => $data,
         ];
-    }
-
-    /**
-     * Chọn grain dựa trên range. Thiếu date → month.
-     */
-    private function resolveGranularity(array $filters): string
-    {
-        $from = $filters['from_date'] ?? null;
-        $to = $filters['to_date'] ?? null;
-
-        if (! $from || ! $to) {
-            return 'month';
-        }
-
-        try {
-            $diffDays = Carbon::parse($from)->diffInDays(Carbon::parse($to));
-        } catch (\Throwable) {
-            return 'month';
-        }
-
-        return $diffDays <= 62 ? 'day' : 'month';
     }
 
     /**

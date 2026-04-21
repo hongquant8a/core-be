@@ -75,9 +75,9 @@ Validation dùng type-based generic rules (string/json/boolean). Sai format sẽ
 
 ## 4. Deploy
 
-BE chạy seed để đẩy 7 field mới vào DB (idempotent, giữ nguyên value hiện có):
+BE chạy seed để đẩy 7 field mới vào DB (idempotent, `updateOrCreate` giữ nguyên value hiện có):
 ```bash
-php artisan db:seed --class=FirebaseSettingSeeder
+php artisan db:seed --class=SettingSeeder
 ```
 
 Sau đó admin paste config qua UI — không cần restart BE, không cần rebuild FE.
