@@ -5,6 +5,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/export', [LogActivityController::class, 'export'])->middleware('permission:log-activities.export,web');
 Route::get('/stats', [LogActivityController::class, 'stats'])->middleware('permission:log-activities.stats,web');
+Route::get('/stats/timeline', [LogActivityController::class, 'timeline'])->middleware('permission:log-activities.stats,web');
+Route::get('/stats/top-users', [LogActivityController::class, 'topUsers'])->middleware('permission:log-activities.stats,web');
+Route::get('/stats/top-organizations', [LogActivityController::class, 'topOrganizations'])->middleware('permission:log-activities.stats,web');
 Route::post('/delete-by-date', [LogActivityController::class, 'destroyByDate'])->middleware('permission:log-activities.destroyByDate,web');
 Route::post('/clear', [LogActivityController::class, 'destroyAll'])->middleware('permission:log-activities.destroyAll,web');
 Route::post('/bulk-delete', [LogActivityController::class, 'bulkDestroy'])->middleware('permission:log-activities.bulkDestroy,web');

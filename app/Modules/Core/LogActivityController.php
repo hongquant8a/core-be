@@ -44,6 +44,58 @@ class LogActivityController extends Controller
     }
 
     /**
+     * Timeline thống kê nhật ký (line chart dashboard)
+     *
+     * BE tự chọn grain theo độ dài range:
+     * - Diff ≤ 62 ngày → `granularity = "day"`, period format `YYYY-MM-DD`
+     * - Diff > 62 ngày → `granularity = "month"`, period format `YYYY-MM`
+     * - Không có from/to → 12 tháng gần nhất, grain month.
+     *
+     * @queryParam from_date date Từ ngày. Example: 2026-04-01
+     * @queryParam to_date date Đến ngày. Example: 2026-04-30
+     * @queryParam organization_id integer Lọc theo tổ chức.
+     *
+     * @response 200 {"success":true,"data":{"granularity":"day","data":[{"period":"2026-04-01","total":120,"views":100,"creates":15,"updates":3,"deletes":2}]}}
+     */
+    public function timeline(FilterRequest $request)
+    {
+        return $this->success($this->logActivityService->timeline($request->all()));
+    }
+
+    /**
+     * Top N người dùng hoạt động nhiều nhất
+     *
+     * @queryParam limit integer Số bản ghi (mặc định 5). Example: 5
+     * @queryParam from_date date Từ ngày. Example: 2026-01-01
+     * @queryParam to_date date Đến ngày. Example: 2026-12-31
+     * @queryParam organization_id integer Lọc theo tổ chức.
+     *
+     * @response 200 {"success":true,"data":[{"user_id":1,"name":"Nguyễn Văn A","email":"...","user_name":"nva","total":2448}]}
+     */
+    public function topUsers(FilterRequest $request)
+    {
+        $limit = (int) $request->input('limit', 5);
+
+        return $this->success($this->logActivityService->topUsers($request->all(), $limit));
+    }
+
+    /**
+     * Top N tổ chức hoạt động nhiều nhất
+     *
+     * @queryParam limit integer Số bản ghi (mặc định 5). Example: 5
+     * @queryParam from_date date Từ ngày. Example: 2026-01-01
+     * @queryParam to_date date Đến ngày. Example: 2026-12-31
+     *
+     * @response 200 {"success":true,"data":[{"organization_id":1,"name":"Sở Nội vụ","slug":"so-noi-vu","total":2448}]}
+     */
+    public function topOrganizations(FilterRequest $request)
+    {
+        $limit = (int) $request->input('limit', 5);
+
+        return $this->success($this->logActivityService->topOrganizations($request->all(), $limit));
+    }
+
+    /**
      * Danh sách nhật ký
      *
      * @queryParam search string Tìm kiếm. Example: login

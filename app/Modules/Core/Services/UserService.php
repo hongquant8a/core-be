@@ -33,6 +33,50 @@ class UserService
         return User::with(['creator.media', 'editor.media'])->filter($filters)->paginate($limit);
     }
 
+    /**
+     * Phân bố người dùng theo tổ chức (primary org từ user_preferences.current_organization_id).
+     *
+     * Trả mảng {organization_id, name, total} sort theo total desc.
+     * Áp dụng filter status/search như endpoint stats.
+     */
+    public function statsByOrganization(array $filters, int $limit = 10): array
+    {
+        $userIds = User::filter($filters)->pluck('id');
+
+        $rows = DB::table('user_preferences')
+            ->join('organizations', 'organizations.id', '=', 'user_preferences.current_organization_id')
+            ->whereIn('user_preferences.user_id', $userIds)
+            ->whereNotNull('user_preferences.current_organization_id')
+            ->select(
+                'organizations.id as organization_id',
+                'organizations.name',
+                DB::raw('count(distinct user_preferences.user_id) as total')
+            )
+            ->groupBy('organizations.id', 'organizations.name')
+            ->orderByDesc('total')
+            ->limit($limit)
+            ->get();
+
+        $totalWithOrg = $rows->sum('total');
+        $others = $userIds->count() - $totalWithOrg;
+
+        $result = $rows->map(fn ($r) => [
+            'organization_id' => (int) $r->organization_id,
+            'name' => $r->name,
+            'total' => (int) $r->total,
+        ])->all();
+
+        if ($others > 0) {
+            $result[] = [
+                'organization_id' => null,
+                'name' => 'Khác',
+                'total' => $others,
+            ];
+        }
+
+        return $result;
+    }
+
     public function store(array $data): User
     {
         return DB::transaction(function () use ($data) {

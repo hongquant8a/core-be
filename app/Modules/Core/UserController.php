@@ -45,6 +45,25 @@ class UserController extends Controller
     }
 
     /**
+     * Phân bố người dùng theo tổ chức (dashboard pie chart)
+     *
+     * Đếm user theo organization hiện tại (user_preferences.current_organization_id).
+     * Trả top N tổ chức + slice "Khác" cho user chưa có tổ chức.
+     *
+     * @queryParam limit integer Số tổ chức tối đa hiển thị (mặc định 10). Example: 10
+     * @queryParam status string Lọc theo trạng thái user: active, inactive, banned.
+     * @queryParam search string Tìm kiếm user. Example: john
+     *
+     * @response 200 {"success":true,"data":[{"organization_id":1,"name":"Sở Nội vụ","total":260},{"organization_id":null,"name":"Khác","total":45}]}
+     */
+    public function statsByOrganization(FilterRequest $request)
+    {
+        $limit = (int) $request->input('limit', 10);
+
+        return $this->success($this->userService->statsByOrganization($request->all(), $limit));
+    }
+
+    /**
      * Danh sách người dùng
      *
      * Lấy danh sách có phân trang, lọc và sắp xếp.

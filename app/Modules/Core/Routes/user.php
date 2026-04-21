@@ -9,6 +9,7 @@ Route::get('/import-template', [UserController::class, 'importTemplate'])->middl
 Route::post('/bulk-delete', [UserController::class, 'bulkDestroy'])->middleware('permission:users.bulkDestroy,web');
 Route::patch('/bulk-status', [UserController::class, 'bulkUpdateStatus'])->middleware('permission:users.bulkUpdateStatus,web');
 Route::get('/stats', [UserController::class, 'stats'])->middleware('permission:users.stats,web');
+Route::get('/stats/by-organization', [UserController::class, 'statsByOrganization'])->middleware('permission:users.stats,web');
 Route::get('/', [UserController::class, 'index'])->middleware('permission:users.index,web');
 Route::get('/{user}', [UserController::class, 'show'])->middleware('permission:users.show,web');
 Route::post('/', [UserController::class, 'store'])->middleware('permission:users.store,web');
