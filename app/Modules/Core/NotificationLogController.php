@@ -3,12 +3,15 @@
 namespace App\Modules\Core;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Core\Exports\NotificationLogsExport;
 use App\Modules\Core\Models\Notification;
 use App\Modules\Core\Models\NotificationDelivery;
+use App\Modules\Core\Requests\BulkDestroyNotificationLogRequest;
 use App\Services\Notification\Enums\NotificationEventEnum;
 use App\Services\Notification\Enums\NotificationModuleEnum;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 use RuntimeException;
 
 /**
@@ -41,6 +44,57 @@ class NotificationLogController extends Controller
             ->firstOrFail();
 
         return $this->success($notification);
+    }
+
+    /**
+     * Xóa 1 thông báo
+     *
+     * @urlParam id integer required ID notification. Example: 1
+     *
+     * @response 200 {"success": true, "message": "Đã xóa thông báo thành công!"}
+     */
+    public function destroy(Request $request, int $id)
+    {
+        $notification = $this->scopedQuery($request)->where('id', $id)->firstOrFail();
+        $notification->delete();
+
+        return $this->success(null, 'Đã xóa thông báo thành công!');
+    }
+
+    /**
+     * Xóa hàng loạt thông báo
+     *
+     * Chỉ xóa các notification nằm trong phạm vi module + organization hiện tại.
+     * Các ID không thuộc phạm vi sẽ bị bỏ qua. Deliveries được cascade xoá theo.
+     *
+     * @bodyParam ids array required Danh sách ID notification. Example: [1, 2, 3]
+     *
+     * @response 200 {"success": true, "message": "Đã xóa thành công 3 thông báo!"}
+     */
+    public function bulkDestroy(BulkDestroyNotificationLogRequest $request)
+    {
+        $count = $this->scopedQuery($request)
+            ->whereIn('id', $request->input('ids'))
+            ->delete();
+
+        return $this->success(null, "Đã xóa thành công {$count} thông báo!");
+    }
+
+    /**
+     * Xuất danh sách thông báo
+     *
+     * Áp dụng cùng bộ lọc với index. Trả về file Excel.
+     */
+    public function export(Request $request)
+    {
+        return Excel::download(
+            new NotificationLogsExport(
+                $this->resolveEventKeys($request),
+                $this->currentOrganizationId(),
+                $request->all()
+            ),
+            'notification-logs.xlsx'
+        );
     }
 
     public function stats(Request $request)
@@ -85,21 +139,28 @@ class NotificationLogController extends Controller
      */
     private function scopedQuery(Request $request)
     {
+        return Notification::query()
+            ->where('organization_id', $this->currentOrganizationId())
+            ->whereIn('event_key', $this->resolveEventKeys($request));
+    }
+
+    /**
+     * Event keys thuộc module hiện tại (set qua middleware notification.module).
+     */
+    private function resolveEventKeys(Request $request): array
+    {
         $moduleKey = $request->attributes->get('notification_module_key');
         if (! $moduleKey) {
             throw new RuntimeException('Notification module context missing (middleware notification.module chưa set).');
         }
 
         $module = NotificationModuleEnum::from($moduleKey);
-        $eventKeys = collect(NotificationEventEnum::cases())
+
+        return collect(NotificationEventEnum::cases())
             ->filter(fn ($e) => $e->module() === $module)
             ->map(fn ($e) => $e->value)
             ->values()
             ->all();
-
-        return Notification::query()
-            ->where('organization_id', $this->currentOrganizationId())
-            ->whereIn('event_key', $eventKeys);
     }
 
     private function currentOrganizationId(): int

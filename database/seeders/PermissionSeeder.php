@@ -111,7 +111,7 @@ class PermissionSeeder extends Seeder
         ],
         // Core - Nhật ký gửi thông báo (admin)
         'notifications.logs' => [
-            'index', 'show',
+            'index', 'show', 'destroy', 'bulkDestroy', 'export',
         ],
         // TaskAssignment - Công việc được giao (cho nhân viên xem task của mình)
         'my-received-tasks' => [

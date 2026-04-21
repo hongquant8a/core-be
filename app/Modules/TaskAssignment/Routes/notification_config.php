@@ -25,9 +25,16 @@ Route::middleware('notification.module:task_assignment')->group(function () {
     // Admin logs (xem lịch sử thông báo của module + org hiện tại)
     Route::get('/logs/stats', [NotificationLogController::class, 'stats'])
         ->middleware('permission:notifications.logs.index,web');
+    Route::get('/logs/export', [NotificationLogController::class, 'export'])
+        ->middleware('permission:notifications.logs.export,web');
+    Route::post('/logs/bulk-delete', [NotificationLogController::class, 'bulkDestroy'])
+        ->middleware('permission:notifications.logs.bulkDestroy,web');
     Route::get('/logs', [NotificationLogController::class, 'index'])
         ->middleware('permission:notifications.logs.index,web');
     Route::get('/logs/{id}', [NotificationLogController::class, 'show'])
         ->whereNumber('id')
         ->middleware('permission:notifications.logs.show,web');
+    Route::delete('/logs/{id}', [NotificationLogController::class, 'destroy'])
+        ->whereNumber('id')
+        ->middleware('permission:notifications.logs.destroy,web');
 });
