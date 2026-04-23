@@ -50,7 +50,10 @@ class TaskAssignmentItemService
 
     public function show(TaskAssignmentItem $item): TaskAssignmentItem
     {
-        return $item->load(['document', 'itemType', 'users', 'reports', 'attachments.media', 'assigner', 'creator.media', 'editor.media']);
+        $item->load(['document', 'itemType', 'users', 'reports', 'attachments.media', 'assigner', 'creator.media', 'editor.media']);
+        $item->loadCount(['reports', 'transfers', 'notes']);
+
+        return $item;
     }
 
     public function store(array $validated, array $files = []): TaskAssignmentItem
@@ -401,7 +404,7 @@ class TaskAssignmentItemService
             ->selectRaw('SUM(CASE WHEN ti.processing_status = ? THEN 1 ELSE 0 END) as done', [$done])
             ->selectRaw('SUM(CASE WHEN ti.deadline_type = ? AND ti.end_at < NOW() AND ti.processing_status NOT IN (?, ?) THEN 1 ELSE 0 END) as overdue', [$hasDeadline, $done, $cancelled])
             ->selectRaw("SUM(CASE WHEN tiu.assignment_status = 'assigned' THEN 1 ELSE 0 END) as assigned_count")
-            ->selectRaw("SUM(CASE WHEN tiu.assignment_status IN ('accepted', 'done') THEN 1 ELSE 0 END) as accepted_count");
+            ->selectRaw("SUM(CASE WHEN tiu.assignment_status = 'done' THEN 1 ELSE 0 END) as accepted_count");
 
         if ($fromDate && $toDate) {
             $toDateEnd = Carbon::parse($toDate)->endOfDay();

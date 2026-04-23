@@ -12,7 +12,7 @@ class UpdateReportRequest extends BaseRequest
             'report_document_excerpt' => 'sometimes|nullable|string|max:65535',
             'report_document_content' => 'sometimes|nullable|string',
             'attachments' => 'nullable|array|max:10',
-            'files.*' => 'file|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx|max:20480',
+            'attachments.*' => 'file|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,gif|max:20480',
             'remove_attachment_ids' => 'nullable|array',
             'remove_attachment_ids.*' => 'integer',
         ];

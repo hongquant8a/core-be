@@ -85,6 +85,14 @@ class PermissionSeeder extends Seeder
         'task-assignment-item-reports' => [
             'index', 'show', 'store', 'update', 'destroy', 'confirm',
         ],
+        // TaskAssignment - Điều chuyển công việc
+        'task-assignment-item-transfers' => [
+            'index', 'store',
+        ],
+        // TaskAssignment - Ghi chú công việc
+        'task-assignment-item-notes' => [
+            'store',
+        ],
         // Core - Cấu hình hệ thống
         'settings' => [
             'index', 'show', 'update',
@@ -169,6 +177,8 @@ class PermissionSeeder extends Seeder
         'task-assignment-documents' => 'Văn bản giao việc',
         'task-assignment-items' => 'Công việc',
         'task-assignment-item-reports' => 'Báo cáo công việc',
+        'task-assignment-item-transfers' => 'Điều chuyển công việc',
+        'task-assignment-item-notes' => 'Ghi chú công việc',
         'dashboard' => 'Tổng quan',
         'notifications' => 'Thông báo',
         'notifications.event-configs' => 'Cấu hình sự kiện thông báo',
@@ -346,10 +356,12 @@ class PermissionSeeder extends Seeder
             ['email' => 'nhanvien@example.com', 'user_name' => 'nhanvien', 'name' => 'Nhân viên', 'role' => $nhanVienRole],
         ] as $userData) {
             $user = User::updateOrCreate(
-                ['email' => $userData['email']],
+                [
+                    'user_name' => $userData['user_name'],
+                ],
                 [
                     'name' => $userData['name'],
-                    'user_name' => $userData['user_name'],
+                    'email' => $userData['email'],
                     'password' => 'quandcore**11',
                     'status' => StatusEnum::Active->value,
                     'email_verified_at' => now(),
@@ -426,6 +438,11 @@ class PermissionSeeder extends Seeder
         $names[] = 'task-assignment-item-reports.index';
         $names[] = 'task-assignment-item-reports.show';
 
+        // Điều chuyển & Ghi chú
+        $names[] = 'task-assignment-item-transfers.index';
+        $names[] = 'task-assignment-item-transfers.store';
+        $names[] = 'task-assignment-item-notes.store';
+
         // Dashboard + 2 màn công việc cá nhân
         $names[] = 'dashboard.index';
         $names[] = 'my-assigned-tasks.index';
@@ -470,6 +487,11 @@ class PermissionSeeder extends Seeder
             'task-assignment-item-reports.index',
             'task-assignment-item-reports.show',
 
+            // Điều chuyển & Ghi chú
+            'task-assignment-item-transfers.index',
+            'task-assignment-item-transfers.store',
+            'task-assignment-item-notes.store',
+
             // Dashboard + 2 màn công việc cá nhân
             'dashboard.index',
             'my-assigned-tasks.index',
@@ -481,15 +503,15 @@ class PermissionSeeder extends Seeder
     protected function getNhanVienPermissionNames(): array
     {
         return [
-            // Văn bản giao việc (chỉ xem)
-            'task-assignment-documents.stats',
-            'task-assignment-documents.index',
-            'task-assignment-documents.show',
+            // Phòng ban giao việc (để lấy danh sách user cho chức năng điều chuyển)
+            'task-assignment-departments.index',
+            'task-assignment-departments.users',
 
             // Công việc (xem + cập nhật tiến độ)
             'task-assignment-items.stats',
             'task-assignment-items.index',
             'task-assignment-items.show',
+            'task-assignment-items.update',
             'task-assignment-items.updateProgress',
             'task-assignment-items.changeStatus',
 
@@ -502,6 +524,11 @@ class PermissionSeeder extends Seeder
             'task-assignment-item-reports.show',
             'task-assignment-item-reports.store',
             'task-assignment-item-reports.update',
+
+            // Điều chuyển & Ghi chú
+            // 'task-assignment-item-transfers.index',
+            'task-assignment-item-transfers.store',
+            'task-assignment-item-notes.store',
 
             // Công việc được giao (xem task cua minh)
             'my-received-tasks.index',

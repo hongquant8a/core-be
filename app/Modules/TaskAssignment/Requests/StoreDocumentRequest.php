@@ -14,6 +14,8 @@ class StoreDocumentRequest extends BaseRequest
             'issue_date' => 'nullable|date',
             'task_assignment_type_id' => 'nullable|integer|exists:task_assignment_types,id',
             'status' => ['required', TaskAssignmentDocumentStatusEnum::rule()],
+            'attachments' => 'nullable|array|max:10',
+            'attachments.*' => 'file|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,gif|max:20480',
         ];
     }
 

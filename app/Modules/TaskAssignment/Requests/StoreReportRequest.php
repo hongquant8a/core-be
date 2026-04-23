@@ -13,7 +13,7 @@ class StoreReportRequest extends BaseRequest
             'report_document_excerpt' => 'nullable|string|max:65535',
             'report_document_content' => 'nullable|string',
             'attachments' => 'nullable|array|max:10',
-            'attachments.*' => 'file|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx|max:20480',
+            'attachments.*' => 'file|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,gif|max:20480',
         ];
     }
 

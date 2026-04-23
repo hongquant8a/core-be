@@ -55,15 +55,14 @@ class TaskAssignmentReportService
 
                 $loaded = $report->load(['reporter', 'managerConfirmer', 'locker', 'attachments.media', 'item:id,end_at,task_assignment_document_id']);
 
-                // Auto-mark reporter's assignment as done (spec §9.3.A: accepted → done).
-                // Reporter signals "phần việc của mình đã xong" qua việc submit báo cáo.
+                // Auto-mark reporter's assignment as done
                 $reporterId = $report->reporter_user_id;
                 if ($reporterId) {
                     DB::table('task_assignment_item_user')
                         ->where('task_assignment_item_id', $item->id)
                         ->where('user_id', $reporterId)
                         ->update([
-                            'assignment_status' => 'done',
+                            'assignment_status' => \App\Modules\TaskAssignment\Enums\TaskUserAssignmentStatusEnum::Done->value,
                             'completed_at' => now(),
                             'updated_at' => now(),
                         ]);
@@ -101,7 +100,6 @@ class TaskAssignmentReportService
 
         event(new TaskConfirmed($fresh->item));
 
-        // KHÔNG auto-close task — manager phải gọi PATCH /items/{id}/close riêng (spec §9.3.D).
         return $fresh;
     }
 

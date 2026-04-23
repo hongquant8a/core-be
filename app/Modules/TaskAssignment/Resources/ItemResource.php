@@ -75,6 +75,8 @@ class ItemResource extends JsonResource
                 });
             }),
             'reports_count' => $this->whenCounted('reports'),
+            'transfers_count' => $this->whenCounted('transfers'),
+            'notes_count' => $this->whenCounted('notes'),
             'assigned_by' => $this->whenLoaded('assigner', fn () => $this->formatUserSummary($this->assigner), null),
             'created_by' => $this->whenLoaded('creator', fn () => $this->formatUserSummary($this->creator), null),
             'updated_by' => $this->whenLoaded('editor', fn () => $this->formatUserSummary($this->editor), null),

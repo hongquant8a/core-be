@@ -18,7 +18,9 @@ use App\Modules\TaskAssignment\Requests\UpdateItemProgressRequest;
 use App\Modules\TaskAssignment\Requests\UpdateItemRequest;
 use App\Modules\TaskAssignment\Resources\ItemCollection;
 use App\Modules\TaskAssignment\Resources\ItemResource;
+use App\Modules\TaskAssignment\Resources\TimelineCollection;
 use App\Modules\TaskAssignment\Services\TaskAssignmentItemService;
+use App\Modules\TaskAssignment\Services\TaskAssignmentTimelineService;
 
 /**
  * @group TaskAssignment - Công việc
@@ -43,7 +45,7 @@ class TaskAssignmentItemController extends Controller
      * @queryParam assignee_id integer Lọc theo người được giao (alias của user_id). Example: 1
      * @queryParam assigner_id integer Lọc theo người giao việc - match assigned_by hoặc created_by (alias của assigned_by_or_created_by). Example: 1
      * @queryParam assignment_role string Vai trò trong công việc: main, support. Dùng kèm assignee_id để phân biệt chủ trì / hỗ trợ. Example: main
-     * @queryParam assignment_status string Trạng thái giao việc: assigned, accepted, done. Example: accepted
+     * @queryParam assignment_status string Trạng thái giao việc: assigned, done. Example: assigned
      * @queryParam start_from date Lọc bắt đầu từ ngày (Y-m-d). Example: 2026-01-01
      * @queryParam start_to date Lọc bắt đầu đến ngày (Y-m-d). Example: 2026-12-31
      * @queryParam end_from date Lọc hạn từ ngày (Y-m-d). Example: 2026-01-01
@@ -71,7 +73,7 @@ class TaskAssignmentItemController extends Controller
      * @queryParam assignee_id integer Lọc theo người được giao (alias của user_id). Example: 1
      * @queryParam assigner_id integer Lọc theo người giao việc - match assigned_by hoặc created_by (alias của assigned_by_or_created_by). Example: 1
      * @queryParam assignment_role string Vai trò trong công việc: main, support. Dùng kèm assignee_id để phân biệt chủ trì / hỗ trợ. Example: main
-     * @queryParam assignment_status string Trạng thái giao việc: assigned, accepted, done. Example: accepted
+     * @queryParam assignment_status string Trạng thái giao việc: assigned, done. Example: assigned
      * @queryParam start_from date Lọc bắt đầu từ ngày (Y-m-d). Example: 2026-01-01
      * @queryParam start_to date Lọc bắt đầu đến ngày (Y-m-d). Example: 2026-12-31
      * @queryParam end_from date Lọc hạn từ ngày (Y-m-d). Example: 2026-01-01
@@ -457,5 +459,28 @@ class TaskAssignmentItemController extends Controller
         $items = $this->itemService->upcomingDeadline($request->all(), (int) ($request->limit ?? 10));
 
         return $this->successCollection(new ItemCollection($items));
+    }
+
+    /**
+     * Timeline công việc
+     *
+     * Hợp nhất lịch sử trao đổi (notes) và lịch sử chuyển việc (transfers) thành một dòng thời gian duy nhất.
+     * Sắp xếp theo thời gian tăng dần (cũ nhất trước).
+     *
+     * @urlParam taskAssignmentItem integer required ID công việc. Example: 1
+     * @queryParam limit integer Số bản ghi mỗi trang (1-100). Example: 20
+     * @queryParam page integer Trang hiện tại. Example: 1
+     *
+     * @response 200 {"success": true, "data": [{"type": "note", "id": 1, "timestamp": "08:30:00 20/04/2026", "actor": {"id": 3, "name": "Nguyễn Văn A"}, "data": {}}, {"type": "transfer", "id": 1, "timestamp": "14:00:00 21/04/2026", "actor": {"id": 3, "name": "Nguyễn Văn A"}, "data": {}}]}
+     */
+    public function timeline(FilterRequest $request, TaskAssignmentItem $taskAssignmentItem, TaskAssignmentTimelineService $timelineService)
+    {
+        $paginator = $timelineService->timeline(
+            $taskAssignmentItem->id,
+            (int) ($request->limit ?? 20),
+            (int) ($request->page ?? 1)
+        );
+
+        return $this->successCollection(new TimelineCollection($paginator));
     }
 }

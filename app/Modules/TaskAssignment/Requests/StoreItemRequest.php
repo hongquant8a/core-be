@@ -29,6 +29,8 @@ class StoreItemRequest extends BaseRequest
             'users.*.department_id' => 'required|integer|exists:task_assignment_departments,id',
             'users.*.department_role' => ['required', TaskAssignmentRoleEnum::rule()],
             'users.*.assignment_role' => ['required', TaskUserAssignmentRoleEnum::rule()],
+            'attachments' => 'nullable|array|max:10',
+            'attachments.*' => 'file|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,gif|max:20480',
         ];
     }
 

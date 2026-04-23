@@ -68,6 +68,14 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
     Route::prefix('task-assignment-item-reports')->group(function () {
         require base_path('app/Modules/TaskAssignment/Routes/task_assignment_item_report.php');
     });
+    
+    // Timeline routes (nested under item)
+    Route::prefix('task-assignment-items/{taskAssignmentItem}/transfers')->group(function () {
+        require base_path('app/Modules/TaskAssignment/Routes/task_assignment_transfer.php');
+    });
+    Route::prefix('task-assignment-items/{taskAssignmentItem}/notes')->group(function () {
+        require base_path('app/Modules/TaskAssignment/Routes/task_assignment_note.php');
+    });
 
     // Notification config scoped cho module TaskAssignment
     Route::prefix('task-assignment/notification-config')->group(function () {

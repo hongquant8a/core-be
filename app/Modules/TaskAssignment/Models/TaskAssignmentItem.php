@@ -99,6 +99,16 @@ class TaskAssignmentItem extends Model implements HasMedia
         return $this->hasMany(TaskAssignmentItemReport::class, 'task_assignment_item_id');
     }
 
+    public function transfers()
+    {
+        return $this->hasMany(TaskAssignmentItemUserTransfer::class, 'task_assignment_item_id');
+    }
+
+    public function notes()
+    {
+        return $this->hasMany(TaskAssignmentItemNote::class, 'task_assignment_item_id');
+    }
+
     public function assigner()
     {
         return $this->belongsTo(User::class, 'assigned_by');
@@ -132,9 +142,18 @@ class TaskAssignmentItem extends Model implements HasMedia
             ->when($filters['deadline_type'] ?? null, fn ($q, $type) => $q->where('deadline_type', $type))
             ->when($filters['task_assignment_document_id'] ?? null, fn ($q, $docId) => $q->where('task_assignment_document_id', $docId))
             ->when($filters['task_assignment_item_type_id'] ?? null, fn ($q, $typeId) => $q->where('task_assignment_item_type_id', $typeId))
-            ->when($filters['department_id'] ?? null, fn ($q, $deptId) => $q->whereHas('users', fn ($q2) => $q2->where('task_assignment_item_user.department_id', $deptId)))
-            ->when($filters['user_id'] ?? $filters['assignee_id'] ?? null, fn ($q, $userId) => $q->whereHas('users', fn ($q2) => $q2->where('users.id', $userId)))
-            ->when($filters['assignment_role'] ?? null, fn ($q, $role) => $q->whereHas('users', fn ($q2) => $q2->where('task_assignment_item_user.assignment_role', $role)))
+            ->when($filters['department_id'] ?? null, fn ($q, $deptId) => $q->whereHas('users', fn ($q2) => $q2
+                ->where('task_assignment_item_user.department_id', $deptId)
+                ->where('task_assignment_item_user.assignment_status', '!=', \App\Modules\TaskAssignment\Enums\TaskUserAssignmentStatusEnum::Transferred->value)
+            ))
+            ->when($filters['user_id'] ?? $filters['assignee_id'] ?? null, fn ($q, $userId) => $q->whereHas('users', fn ($q2) => $q2
+                ->where('users.id', $userId)
+                ->where('task_assignment_item_user.assignment_status', '!=', \App\Modules\TaskAssignment\Enums\TaskUserAssignmentStatusEnum::Transferred->value)
+            ))
+            ->when($filters['assignment_role'] ?? null, fn ($q, $role) => $q->whereHas('users', fn ($q2) => $q2
+                ->where('task_assignment_item_user.assignment_role', $role)
+                ->where('task_assignment_item_user.assignment_status', '!=', \App\Modules\TaskAssignment\Enums\TaskUserAssignmentStatusEnum::Transferred->value)
+            ))
             ->when($filters['assignment_status'] ?? null, fn ($q, $status) => $q->whereHas('users', fn ($q2) => $q2->where('task_assignment_item_user.assignment_status', $status)))
             ->when($filters['assigned_by_or_created_by'] ?? $filters['assigner_id'] ?? null, fn ($q, $userId) => $q->where(fn ($q2) => $q2->where('assigned_by', $userId)->orWhere('created_by', $userId)))
             ->when($filters['start_from'] ?? null, fn ($q, $date) => $q->whereDate('start_at', '>=', $date))

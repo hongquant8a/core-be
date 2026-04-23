@@ -15,6 +15,7 @@ class ConfirmReportRequest extends FormRequest
     {
         return [
             'confirm_note' => 'nullable|string|max:2000',
+            'is_done' => 'nullable|boolean',
         ];
     }
 

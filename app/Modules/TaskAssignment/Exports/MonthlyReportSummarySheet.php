@@ -78,7 +78,7 @@ class MonthlyReportSummarySheet implements FromArray, WithTitle, WithStyles, Sho
         $rows[] = [
             'STT',
             'ĐƠN VỊ',
-            'TỔNG SỐ NHIỆM VỤ UBND GIAO',
+            'TỔNG NHIỆM VỤ ĐÃ GIAO',
             'NHIỆM VỤ ĐANG GIAO',
             'NHIỆM VỤ HOÀN THÀNH',
             'NHIỆM VỤ TRỄ HẠN',
