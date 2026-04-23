@@ -11,12 +11,18 @@ use App\Modules\TaskAssignment\Models\TaskAssignmentType;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItemType;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 
 class TaskAssignmentSampleSeeder extends Seeder
 {
     public function run(): void
     {
+        // Thiết lập team_id cho Permission (Spatie)
+        if (function_exists('setPermissionsTeamId')) {
+            setPermissionsTeamId(1);
+        }
+
         // 1. Tạo/Cập nhật Users
         $admin = User::updateOrCreate(
             ['email' => 'admin@example.com'],
@@ -24,7 +30,6 @@ class TaskAssignmentSampleSeeder extends Seeder
                 'name' => 'Quản lý Mẫu',
                 'user_name' => 'admin_sample',
                 'password' => Hash::make('password'),
-                'organization_id' => 1,
             ]
         );
 
@@ -34,7 +39,6 @@ class TaskAssignmentSampleSeeder extends Seeder
                 'name' => 'Nhân viên Mẫu',
                 'user_name' => 'nhanvien_sample',
                 'password' => Hash::make('password'),
-                'organization_id' => 1,
             ]
         );
 
@@ -116,17 +120,19 @@ class TaskAssignmentSampleSeeder extends Seeder
             DB::table('task_assignment_item_notes')->insert([
                 [
                     'task_assignment_item_id' => $item->id,
-                    'user_id' => $admin->id,
+                    'author_user_id' => $admin->id,
+                    'author_role' => 'manager',
                     'content' => 'Chào em, anh giao việc này em nghiên cứu triển khai sớm nhé.',
                     'created_at' => now()->subDays(1)->addHours(1),
-                    'updated_at' => now()->subDays(1)->addHours(1),
+                    'organization_id' => 1,
                 ],
                 [
                     'task_assignment_item_id' => $item->id,
-                    'user_id' => $staff->id,
+                    'author_user_id' => $staff->id,
+                    'author_role' => 'assignee',
                     'content' => 'Vâng anh, em đã nhận được việc và đang xem tài liệu ạ.',
                     'created_at' => now()->subDays(1)->addHours(2),
-                    'updated_at' => now()->subDays(1)->addHours(2),
+                    'organization_id' => 1,
                 ]
             ]);
         }
@@ -142,7 +148,9 @@ class TaskAssignmentSampleSeeder extends Seeder
                 'from_user_id' => $admin->id,
                 'to_user_id' => $staff->id,
                 'note' => 'Chuyển giao chuyên môn cho nhân viên thực hiện.',
-                'transferred_by' => $admin->id,
+                'transferred_by_user_id' => $admin->id,
+                'transferred_at' => now()->subDays(1),
+                'organization_id' => 1,
                 'created_at' => now()->subDays(1),
                 'updated_at' => now()->subDays(1),
             ]);
