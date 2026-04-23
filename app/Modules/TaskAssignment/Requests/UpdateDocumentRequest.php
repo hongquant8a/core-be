@@ -15,7 +15,7 @@ class UpdateDocumentRequest extends BaseRequest
             'task_assignment_type_id' => 'nullable|integer|exists:task_assignment_types,id',
             'status' => ['sometimes', TaskAssignmentDocumentStatusEnum::rule()],
             'attachments' => 'nullable|array|max:10',
-            'attachments.*' => 'file|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,gif|max:20480',
+            'attachments.*' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,gif|max:20480',
             'remove_attachment_ids' => 'nullable|array',
             'remove_attachment_ids.*' => 'integer',
         ];
