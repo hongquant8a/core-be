@@ -9,7 +9,7 @@ class UpdateItemProgressRequest extends BaseRequest
     public function rules(): array
     {
         return [
-            'processing_status' => ['sometimes', TaskProgressStatusEnum::rule()],
+            'processing_status' => ['sometimes', TaskProgressStatusEnum::selectableRule()],
             'completion_percent' => 'sometimes|integer|min:0|max:100',
         ];
     }

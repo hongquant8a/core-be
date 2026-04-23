@@ -18,9 +18,26 @@ class ReportResource extends JsonResource
                 'email' => $this->reporter?->email,
             ]),
             'completed_at' => $this->completed_at?->format('H:i:s d/m/Y'),
+            // Timing so với deadline task: 'on_time' | 'late' | null
+            'timing_status' => $this->resource->timingStatus(),
             'report_document_number' => $this->report_document_number,
             'report_document_excerpt' => $this->report_document_excerpt,
             'report_document_content' => $this->report_document_content,
+            'manager_confirmed' => (bool) $this->manager_confirmed,
+            'manager_confirmed_by' => $this->whenLoaded('managerConfirmer', fn () => [
+                'id' => $this->managerConfirmer?->id,
+                'name' => $this->managerConfirmer?->name,
+                'email' => $this->managerConfirmer?->email,
+            ], $this->manager_confirmed_by),
+            'manager_confirmed_at' => $this->manager_confirmed_at?->format('H:i:s d/m/Y'),
+            'manager_confirm_note' => $this->manager_confirm_note,
+            'is_locked' => (bool) $this->is_locked,
+            'locked_by' => $this->whenLoaded('locker', fn () => [
+                'id' => $this->locker?->id,
+                'name' => $this->locker?->name,
+                'email' => $this->locker?->email,
+            ], $this->locked_by),
+            'locked_at' => $this->locked_at?->format('H:i:s d/m/Y'),
             'attachments' => $this->whenLoaded('attachments', function () {
                 return $this->attachments->map(function ($attachment) {
                     return [

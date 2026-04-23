@@ -51,7 +51,6 @@ class TaskConfirmedFlowTest extends TestCase
             'processing_status' => 'done',
             'completion_percent' => 100,
             'completed_at' => now(),
-            'confirmed_at' => now(),
         ]);
         for ($i = 0; $i < $assigneeCount; $i++) {
             $u = User::factory()->create();

@@ -45,7 +45,7 @@ class TaskCompletedFlowTest extends TestCase
             'name' => 'Task',
             'priority' => 'normal',
             'deadline_type' => 'no_deadline',
-            'processing_status' => 'reported',
+            'processing_status' => 'in_progress',
             'completion_percent' => 100,
             'assigned_by' => $manager->id,
         ]);
@@ -101,7 +101,7 @@ class TaskCompletedFlowTest extends TestCase
             'name' => 'Orphan',
             'priority' => 'normal',
             'deadline_type' => 'no_deadline',
-            'processing_status' => 'reported',
+            'processing_status' => 'in_progress',
             'completion_percent' => 100,
             // no assigned_by
         ]);

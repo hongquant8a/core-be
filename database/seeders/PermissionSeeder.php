@@ -77,7 +77,7 @@ class PermissionSeeder extends Seeder
         'task-assignment-items' => [
             'stats', 'index', 'show', 'store', 'update', 'destroy',
             'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
-            'updateProgress', 'confirmDone',
+            'updateProgress', 'markDone',
             'statsByDepartment', 'statsByUser', 'statsByTime', 'overdue', 'upcomingDeadline',
             'statsByItemType', 'statsByDocument', 'exportMonthlyReport',
         ],
@@ -195,6 +195,7 @@ class PermissionSeeder extends Seeder
         'destroyByDate' => 'Xóa theo khoảng thời gian',
         'destroyAll' => 'Xóa toàn bộ',
         'updateProgress' => 'Cập nhật tiến độ',
+        'markDone' => 'Đánh dấu hoàn thành',
         'statsByDepartment' => 'Thống kê theo phòng ban',
         'statsByUser' => 'Thống kê theo người dùng',
         'statsByTime' => 'Thống kê theo thời gian',
@@ -206,7 +207,6 @@ class PermissionSeeder extends Seeder
         'users' => 'Danh sách người dùng',
         'syncUsers' => 'Đồng bộ người dùng',
         'removeUser' => 'Xóa người dùng',
-        'confirmDone' => 'Xác nhận hoàn thành',
         'confirm' => 'Xác nhận',
         'test' => 'Kiểm thử',
     ];
@@ -454,7 +454,6 @@ class PermissionSeeder extends Seeder
             'task-assignment-items.update',
             'task-assignment-items.changeStatus',
             'task-assignment-items.updateProgress',
-            'task-assignment-items.confirmDone',
 
             // Thống kê nâng cao (giai đoạn 2) - BE ép department_id phòng mình
             'task-assignment-items.statsByDepartment',

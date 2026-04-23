@@ -20,7 +20,7 @@ class StoreItemRequest extends BaseRequest
             'deadline_type' => ['required', TaskDeadlineTypeEnum::rule()],
             'start_at' => 'nullable|date',
             'end_at' => ['nullable', 'date', 'after_or_equal:start_at', 'required_if:deadline_type,has_deadline'],
-            'processing_status' => ['nullable', TaskProgressStatusEnum::rule()],
+            'processing_status' => ['nullable', TaskProgressStatusEnum::selectableRule()],
             'completion_percent' => 'nullable|integer|min:0|max:100',
             'priority' => ['nullable', TaskPriorityEnum::rule()],
             'assigned_by' => 'nullable|integer|exists:users,id',

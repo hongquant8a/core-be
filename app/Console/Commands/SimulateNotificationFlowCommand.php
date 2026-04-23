@@ -8,12 +8,12 @@ use App\Modules\Core\Models\NotificationEventConfig;
 use App\Modules\Core\Models\NotificationSchedule;
 use App\Modules\Core\Models\Organization;
 use App\Modules\Core\Models\User;
-use App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDocument;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Modules\TaskAssignment\Models\TaskAssignmentReminder;
 use App\Modules\TaskAssignment\Services\TaskAssignmentDocumentService;
 use App\Modules\TaskAssignment\Services\TaskAssignmentItemService;
+use App\Modules\TaskAssignment\Services\TaskAssignmentReportService;
 use App\Services\Notification\Enums\NotificationEventEnum;
 use App\Services\Notification\Enums\NotificationModuleEnum;
 use Illuminate\Console\Command;
@@ -33,6 +33,7 @@ class SimulateNotificationFlowCommand extends Command
     public function handle(
         TaskAssignmentDocumentService $docSvc,
         TaskAssignmentItemService $itemSvc,
+        TaskAssignmentReportService $reportSvc,
     ): int {
         $channels = array_filter(array_map('trim', explode(',', $this->option('channels'))));
         $noCleanup = (bool) $this->option('no-cleanup');
@@ -151,21 +152,23 @@ class SimulateNotificationFlowCommand extends Command
             $this->showNotificationsForItem($item->id, 'document_issued');
             $this->newLine();
 
-            // 6. Assignee reports task → fires TaskCompleted
-            $this->info('Step 5: Assignee báo cáo hoàn thành (todo → reported) → bắn event TaskCompleted...');
-            $item = $itemSvc->updateProgress($item, [
-                'processing_status' => TaskProgressStatusEnum::Reported->value,
+            // 6. Assignee submits report → fires TaskCompleted
+            $this->info('Step 5: Assignee nộp báo cáo → bắn event TaskCompleted...');
+            auth()->login($assignee);
+            $report = $reportSvc->store($item, [
+                'report_document_content' => 'Báo cáo giả lập từ simulation',
                 'completion_percent' => 100,
             ]);
-            $this->line('  → Event TaskCompleted fired. Chờ queue worker process...');
+            auth()->logout();
+            $this->line('  → Report created. Event TaskCompleted fired. Chờ queue worker process...');
             $this->waitForQueue();
             $this->showNotificationsForItem($item->id, 'task_completed');
             $this->newLine();
 
-            // 7. Manager confirms → fires TaskConfirmed
-            $this->info('Step 6: Manager xác nhận (reported → done) → bắn event TaskConfirmed...');
-            auth()->login($manager); // simulate auth for confirmed_by
-            $item = $itemSvc->confirmDone($item);
+            // 7. Manager confirms report → fires TaskConfirmed
+            $this->info('Step 6: Manager xác nhận báo cáo → bắn event TaskConfirmed...');
+            auth()->login($manager);
+            $reportSvc->confirm($report, 'Xác nhận từ simulation');
             auth()->logout();
             $this->line('  → Event TaskConfirmed fired. Chờ queue worker process...');
             $this->waitForQueue();

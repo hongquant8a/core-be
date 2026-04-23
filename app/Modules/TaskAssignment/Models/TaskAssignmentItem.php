@@ -34,8 +34,6 @@ class TaskAssignmentItem extends Model implements HasMedia
         'priority',
         'completed_at',
         'assigned_by',
-        'confirmed_by',
-        'confirmed_at',
         'organization_id',
         'created_by',
         'updated_by',
@@ -45,7 +43,6 @@ class TaskAssignmentItem extends Model implements HasMedia
         'start_at'           => 'datetime',
         'end_at'             => 'datetime',
         'completed_at'       => 'datetime',
-        'confirmed_at'       => 'datetime',
         'completion_percent' => 'integer',
     ];
 
@@ -53,6 +50,24 @@ class TaskAssignmentItem extends Model implements HasMedia
     {
         static::creating(fn (TaskAssignmentItem $model) => $model->created_by = $model->updated_by = auth()->id());
         static::updating(fn (TaskAssignmentItem $model) => $model->updated_by = auth()->id());
+    }
+
+    /**
+     * "Trễ hạn" — task chưa hoàn thành mà đã quá `end_at`.
+     * Derive từ dates, không lưu DB.
+     *
+     * Timing cho báo cáo đã hoàn thành (on_time / late) nằm ở ReportResource.timing_status,
+     * không phải thuộc tính của task.
+     */
+    public function isOverdue(): bool
+    {
+        return $this->deadline_type === \App\Modules\TaskAssignment\Enums\TaskDeadlineTypeEnum::HasDeadline->value
+            && $this->end_at
+            && $this->end_at->isPast()
+            && ! in_array($this->processing_status, [
+                \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Done->value,
+                \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Cancelled->value,
+            ], true);
     }
 
     public function document()
@@ -87,11 +102,6 @@ class TaskAssignmentItem extends Model implements HasMedia
     public function assigner()
     {
         return $this->belongsTo(User::class, 'assigned_by');
-    }
-
-    public function confirmer()
-    {
-        return $this->belongsTo(User::class, 'confirmed_by');
     }
 
     public function creator()
@@ -133,6 +143,15 @@ class TaskAssignmentItem extends Model implements HasMedia
             ->when($filters['end_to'] ?? null, fn ($q, $date) => $q->whereDate('end_at', '<=', $date))
             ->when($filters['from_date'] ?? null, fn ($q, $date) => $q->whereDate('created_at', '>=', $date))
             ->when($filters['to_date'] ?? null, fn ($q, $date) => $q->whereDate('created_at', '<=', $date))
+            // Computed flag is_overdue: deadline_type=has_deadline AND end_at<now AND status NOT IN (done, cancelled).
+            // "Đang trễ hạn" — task chưa hoàn thành mà quá `end_at`.
+            ->when(isset($filters['is_overdue']) && filter_var($filters['is_overdue'], FILTER_VALIDATE_BOOLEAN), fn ($q) => $q
+                ->where('deadline_type', \App\Modules\TaskAssignment\Enums\TaskDeadlineTypeEnum::HasDeadline->value)
+                ->where('end_at', '<', now())
+                ->whereNotIn('processing_status', [
+                    \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Done->value,
+                    \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Cancelled->value,
+                ]))
             ->when($filters['sort_by'] ?? 'created_at', function ($q, $sortBy) use ($filters) {
                 $allowed = ['id', 'name', 'start_at', 'end_at', 'completion_percent', 'priority', 'created_at', 'updated_at'];
                 $column = in_array($sortBy, $allowed) ? $sortBy : 'created_at';

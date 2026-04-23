@@ -9,14 +9,14 @@ class ChangeStatusItemRequest extends BaseRequest
     public function rules(): array
     {
         return [
-            'processing_status' => ['required', TaskProgressStatusEnum::rule()],
+            'processing_status' => ['required', TaskProgressStatusEnum::selectableRule()],
         ];
     }
 
     public function bodyParameters(): array
     {
         return [
-            'processing_status' => ['description' => 'Trạng thái xử lý mới.', 'example' => TaskProgressStatusEnum::Done->value],
+            'processing_status' => ['description' => 'Trạng thái xử lý mới. KHÔNG chấp nhận `done` — giá trị `done` được tự động set khi báo cáo cuối được xác nhận và khóa.', 'example' => TaskProgressStatusEnum::InProgress->value],
         ];
     }
 }

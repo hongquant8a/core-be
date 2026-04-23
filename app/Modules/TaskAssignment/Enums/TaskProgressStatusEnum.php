@@ -11,7 +11,6 @@ enum TaskProgressStatusEnum: string
     case InProgress = 'in_progress';
     case Reported = 'reported';
     case Done = 'done';
-    case Overdue = 'overdue';
     case Paused = 'paused';
     case Cancelled = 'cancelled';
 
@@ -21,10 +20,29 @@ enum TaskProgressStatusEnum: string
         return array_column(self::cases(), 'value');
     }
 
-    /** Rule validation: in:todo,in_progress,done,overdue,paused,cancelled */
+    /** Rule validation: in:todo,in_progress,done,overdue,paused,cancelled (generated from cases) */
     public static function rule(): string
     {
         return 'in:'.implode(',', self::values());
+    }
+
+    /**
+     * Trạng thái user được phép chọn trong UI (loại `done` — internal).
+     * - `done`: BE auto set qua endpoint `PATCH /items/{id}/mark-done` (manager).
+     *
+     * Khái niệm "trễ hạn" KHÔNG còn là enum value — chuyển sang computed flag
+     * `is_overdue` trên ItemResource (derive từ `end_at` vs `now()`).
+     * Timing của báo cáo đã hoàn thành (on_time/late) nằm ở report.timing_status.
+     */
+    public static function selectableValues(): array
+    {
+        return array_values(array_diff(self::values(), [self::Done->value]));
+    }
+
+    /** Rule validation cho user input — KHÔNG cho phép chọn `done` trực tiếp. */
+    public static function selectableRule(): string
+    {
+        return 'in:'.implode(',', self::selectableValues());
     }
 
     /** Nhãn tiếng Việt. */
@@ -35,7 +53,6 @@ enum TaskProgressStatusEnum: string
             self::InProgress => 'Đang thực hiện',
             self::Reported => 'Đã báo cáo',
             self::Done => 'Hoàn thành',
-            self::Overdue => 'Quá hạn',
             self::Paused => 'Tạm dừng',
             self::Cancelled => 'Đã hủy',
         };

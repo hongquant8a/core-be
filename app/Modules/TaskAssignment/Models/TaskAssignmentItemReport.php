@@ -65,6 +65,38 @@ class TaskAssignmentItemReport extends Model implements HasMedia
         return $this->belongsTo(User::class, 'reporter_user_id');
     }
 
+    public function managerConfirmer()
+    {
+        return $this->belongsTo(User::class, 'manager_confirmed_by');
+    }
+
+    public function locker()
+    {
+        return $this->belongsTo(User::class, 'locked_by');
+    }
+
+    /**
+     * Timing của báo cáo so với deadline task:
+     * - 'on_time': completed_at ≤ task.end_at (đúng hạn)
+     * - 'late':    completed_at > task.end_at (trễ hạn)
+     * - null:      thiếu completed_at hoặc task no_deadline
+     *
+     * Derive on-the-fly, không lưu DB.
+     */
+    public function timingStatus(): ?string
+    {
+        if (! $this->completed_at) {
+            return null;
+        }
+
+        $deadline = $this->item?->end_at;
+        if (! $deadline) {
+            return null;
+        }
+
+        return $this->completed_at->lte($deadline) ? 'on_time' : 'late';
+    }
+
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('task-report-attachments');

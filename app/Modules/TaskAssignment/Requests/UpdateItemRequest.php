@@ -19,7 +19,7 @@ class UpdateItemRequest extends BaseRequest
             'deadline_type' => ['sometimes', TaskDeadlineTypeEnum::rule()],
             'start_at' => 'nullable|date',
             'end_at' => 'nullable|date|after_or_equal:start_at',
-            'processing_status' => ['sometimes', TaskProgressStatusEnum::rule()],
+            'processing_status' => ['sometimes', TaskProgressStatusEnum::selectableRule()],
             'completion_percent' => 'nullable|integer|min:0|max:100',
             'priority' => ['sometimes', TaskPriorityEnum::rule()],
             'users' => 'nullable|array',

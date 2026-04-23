@@ -11,7 +11,7 @@ class BulkUpdateStatusItemRequest extends BaseRequest
         return [
             'ids' => 'required|array|min:1',
             'ids.*' => 'integer|exists:task_assignment_items,id',
-            'processing_status' => ['required', TaskProgressStatusEnum::rule()],
+            'processing_status' => ['required', TaskProgressStatusEnum::selectableRule()],
         ];
     }
 

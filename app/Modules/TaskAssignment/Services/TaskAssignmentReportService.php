@@ -3,9 +3,12 @@
 namespace App\Modules\TaskAssignment\Services;
 
 use App\Modules\Core\Services\MediaService;
+use App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItemReport;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItemReportAttachment;
+use App\Services\Notification\Events\TaskCompleted;
+use App\Services\Notification\Events\TaskConfirmed;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 
@@ -16,7 +19,7 @@ class TaskAssignmentReportService
     public function index(int $itemId, int $limit)
     {
         return TaskAssignmentItemReport::where('task_assignment_item_id', $itemId)
-            ->with(['reporter', 'attachments.media'])
+            ->with(['reporter', 'managerConfirmer', 'locker', 'attachments.media', 'item:id,end_at,task_assignment_document_id'])
             ->paginate($limit);
     }
 
@@ -50,7 +53,25 @@ class TaskAssignmentReportService
                     ]);
                 }
 
-                return $report->load(['reporter', 'attachments.media']);
+                $loaded = $report->load(['reporter', 'managerConfirmer', 'locker', 'attachments.media', 'item:id,end_at,task_assignment_document_id']);
+
+                // Auto-mark reporter's assignment as done (spec §9.3.A: accepted → done).
+                // Reporter signals "phần việc của mình đã xong" qua việc submit báo cáo.
+                $reporterId = $report->reporter_user_id;
+                if ($reporterId) {
+                    DB::table('task_assignment_item_user')
+                        ->where('task_assignment_item_id', $item->id)
+                        ->where('user_id', $reporterId)
+                        ->update([
+                            'assignment_status' => 'done',
+                            'completed_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                }
+
+                event(new TaskCompleted($report->item));
+
+                return $loaded;
             });
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);
@@ -76,7 +97,12 @@ class TaskAssignmentReportService
             'locked_by' => $uid,
         ]);
 
-        return $report->fresh();
+        $fresh = $report->fresh(['reporter', 'managerConfirmer', 'locker', 'attachments.media', 'item:id,end_at,task_assignment_document_id']);
+
+        event(new TaskConfirmed($fresh->item));
+
+        // KHÔNG auto-close task — manager phải gọi PATCH /items/{id}/close riêng (spec §9.3.D).
+        return $fresh;
     }
 
     public function update(TaskAssignmentItemReport $report, array $validated, array $files = [], array $removeAttachmentIds = []): TaskAssignmentItemReport
@@ -116,7 +142,7 @@ class TaskAssignmentReportService
                     ]);
                 }
 
-                return $report->load(['reporter', 'attachments.media']);
+                return $report->load(['reporter', 'managerConfirmer', 'locker', 'attachments.media', 'item:id,end_at,task_assignment_document_id']);
             });
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);

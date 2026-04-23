@@ -4,7 +4,6 @@ namespace App\Modules\TaskAssignment\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
-use App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Modules\TaskAssignment\Requests\BulkDestroyItemRequest;
 use App\Modules\TaskAssignment\Requests\BulkUpdateStatusItemRequest;
@@ -232,10 +231,10 @@ class TaskAssignmentItemController extends Controller
     }
 
     /**
-     * Xác nhận hoàn thành công việc
+     * Đánh dấu công việc hoàn thành (manager xác nhận).
      *
-     * Chỉ áp dụng cho công việc có trạng thái "reported" (đã báo cáo).
-     * Người giao việc review báo cáo xong bấm xác nhận → chuyển sang "done".
+     * Auto set: processing_status=done, completion_percent=100, completed_at=now().
+     * Yêu cầu: task chưa done/cancelled, có ít nhất 1 báo cáo đã được xác nhận và khóa.
      *
      * @urlParam taskAssignmentItem integer required ID công việc. Example: 1
      *
@@ -243,17 +242,19 @@ class TaskAssignmentItemController extends Controller
      *
      * @apiResourceModel App\Modules\TaskAssignment\Models\TaskAssignmentItem
      *
-     * @apiResourceAdditional success=true message="Xác nhận hoàn thành thành công!"
+     * @apiResourceAdditional success=true message="Đã đánh dấu hoàn thành."
+     *
+     * @response 422 {"success": false, "message": "Phải có ít nhất 1 báo cáo đã được xác nhận trước khi đánh dấu hoàn thành."}
      */
-    public function confirmDone(TaskAssignmentItem $taskAssignmentItem)
+    public function markDone(TaskAssignmentItem $taskAssignmentItem)
     {
-        if ($taskAssignmentItem->processing_status !== TaskProgressStatusEnum::Reported->value) {
-            return $this->error("Chỉ có thể xác nhận công việc có trạng thái 'Đã báo cáo'.", 422);
+        try {
+            $item = $this->itemService->markDone($taskAssignmentItem);
+        } catch (\RuntimeException $e) {
+            return $this->error($e->getMessage(), 422);
         }
 
-        $item = $this->itemService->confirmDone($taskAssignmentItem);
-
-        return $this->successResource(new ItemResource($item), 'Xác nhận hoàn thành thành công!');
+        return $this->successResource(new ItemResource($item), 'Đã đánh dấu hoàn thành.');
     }
 
     /**
@@ -379,7 +380,7 @@ class TaskAssignmentItemController extends Controller
      * @queryParam from_date date Từ ngày (Y-m-d). Example: 2026-01-01
      * @queryParam to_date date Đến ngày (Y-m-d). Example: 2026-12-31
      *
-     * @response 200 {"success": true, "data": [{"user_id": 1, "user_name": "Nguyễn Văn A", "total": 10, "todo": 2, "in_progress": 3, "done": 4, "overdue": 1, "on_time_count": 3, "overdue_done_count": 1}]}
+     * @response 200 {"success": true, "data": [{"user_id": 1, "user_name": "Nguyễn Văn A", "total": 10, "todo": 2, "in_progress": 3, "done": 4, "overdue": 1}]}
      */
     public function statsByUser(StatsFilterRequest $request)
     {

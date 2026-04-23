@@ -9,7 +9,7 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-// Register + schedule notification reminder processing
+// Register + schedule notification reminder processing.
 Schedule::command(ProcessRemindersCommand::class)
     ->everyMinute()
     ->withoutOverlapping();

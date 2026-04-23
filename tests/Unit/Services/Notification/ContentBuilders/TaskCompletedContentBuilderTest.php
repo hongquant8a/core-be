@@ -44,7 +44,7 @@ class TaskCompletedContentBuilderTest extends TestCase
             'priority' => 'normal',
             'deadline_type' => 'has_deadline',
             'end_at' => now()->addDays(2),
-            'processing_status' => 'reported',
+            'processing_status' => 'in_progress',
             'completion_percent' => 100,
         ]);
     }
