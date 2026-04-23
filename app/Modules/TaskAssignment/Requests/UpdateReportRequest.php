@@ -12,7 +12,7 @@ class UpdateReportRequest extends BaseRequest
             'report_document_excerpt' => 'sometimes|nullable|string|max:65535',
             'report_document_content' => 'sometimes|nullable|string',
             'attachments' => 'nullable|array|max:10',
-            'attachments.*' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,gif|max:20480',
+            'attachments.*' => $this->getAttachmentRule(),
             'remove_attachment_ids' => 'nullable|array',
             'remove_attachment_ids.*' => 'integer',
         ];
@@ -38,7 +38,7 @@ class UpdateReportRequest extends BaseRequest
                 'example' => 'Nội dung báo cáo đầy đủ...',
             ],
             'attachments' => [
-                'description' => 'Danh sách tệp đính kèm mới (tối đa 10 tệp, mỗi tệp tối đa 20MB).',
+                'description' => 'Danh sách tệp đính kèm. Có thể truyền file mới (multipart/form-data) hoặc truyền chuỗi JSON/object của file cũ để giữ lại. Tối đa 10 tệp, mỗi tệp tối đa 20MB.',
                 'example' => [],
             ],
             'files.*' => [

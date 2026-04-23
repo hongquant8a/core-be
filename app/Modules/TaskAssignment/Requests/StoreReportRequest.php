@@ -13,7 +13,7 @@ class StoreReportRequest extends BaseRequest
             'report_document_excerpt' => 'nullable|string|max:65535',
             'report_document_content' => 'nullable|string',
             'attachments' => 'nullable|array|max:10',
-            'attachments.*' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,gif|max:20480',
+            'attachments.*' => $this->getAttachmentRule(),
         ];
     }
 
@@ -36,12 +36,9 @@ class StoreReportRequest extends BaseRequest
                 'description' => 'Nội dung chi tiết báo cáo.',
                 'example' => 'Nội dung báo cáo đầy đủ...',
             ],
-            'files' => [
-                'description' => 'Danh sách tệp đính kèm (tối đa 10 tệp, mỗi tệp tối đa 20MB).',
+            'attachments' => [
+                'description' => 'Danh sách tệp đính kèm. Có thể truyền file mới (multipart/form-data) hoặc truyền chuỗi JSON/object của file cũ để giữ lại. Tối đa 10 tệp, mỗi tệp tối đa 20MB.',
                 'example' => [],
-            ],
-            'files.*' => [
-                'description' => 'Tệp đính kèm (định dạng pdf, doc, docx, xls, xlsx, ppt, pptx).',
             ],
         ];
     }

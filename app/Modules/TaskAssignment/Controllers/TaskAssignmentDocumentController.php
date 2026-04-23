@@ -108,7 +108,7 @@ class TaskAssignmentDocumentController extends Controller
      * @bodyParam title string required Tiêu đề văn bản. Example: Quyết định giao việc tháng 4
      * @bodyParam type_id integer required ID loại văn bản. Example: 1
      * @bodyParam status string required Trạng thái. Example: draft
-     * @bodyParam files[] file Tệp đính kèm (tối đa 10 tệp, multipart/form-data).
+     * @bodyParam attachments[] file Tệp đính kèm (tối đa 10 tệp, multipart/form-data).
      *
      * @apiResource App\Modules\TaskAssignment\Resources\DocumentResource status=201
      *
@@ -131,13 +131,13 @@ class TaskAssignmentDocumentController extends Controller
      * @bodyParam title string Tiêu đề văn bản.
      * @bodyParam type_id integer ID loại văn bản.
      * @bodyParam status string Trạng thái.
-     * @bodyParam files[] file Tệp đính kèm mới (append, multipart/form-data).
+     * @bodyParam attachments[] file Tệp đính kèm mới (append, multipart/form-data).
      * @bodyParam remove_attachment_ids array Mảng ID đính kèm cần xóa.
      *
      * **Xử lý file đính kèm:**
-     * - `multipart/form-data` + `files[]` → upload file mới, thêm vào danh sách đính kèm.
+     * - `multipart/form-data` + `attachments[]` → upload file mới, thêm vào danh sách đính kèm.
      * - `remove_attachment_ids` → xóa file đính kèm theo ID.
-     * - Không gửi `files[]` và `remove_attachment_ids` → giữ nguyên.
+     * - Không gửi `attachments[]` và `remove_attachment_ids` → giữ nguyên.
      * - Không thể chỉnh sửa văn bản đã ban hành (status=issued). Phải chuyển về draft trước.
      *
      * @apiResource App\Modules\TaskAssignment\Resources\DocumentResource

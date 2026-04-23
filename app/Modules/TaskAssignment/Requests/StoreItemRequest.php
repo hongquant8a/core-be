@@ -43,63 +43,66 @@ class StoreItemRequest extends BaseRequest
             ],
             'name' => [
                 'description' => 'Tên công việc.',
-                'example' => 'Lập báo cáo tài chính tháng 4',
+                'example' => 'Soạn thảo báo cáo tình hình nhân sự tháng 4',
             ],
             'description' => [
                 'description' => 'Mô tả chi tiết công việc.',
-                'example' => 'Lập báo cáo tài chính và nộp cho Ban giám đốc.',
+                'example' => 'Yêu cầu tổng hợp số liệu từ các phòng ban, hạn chót báo cáo sơ bộ 25/04.',
             ],
             'task_assignment_item_type_id' => [
-                'description' => 'ID loại hạng mục công việc.',
+                'description' => 'ID loại công việc (nhóm công việc).',
                 'example' => 1,
             ],
             'deadline_type' => [
-                'description' => 'Loại thời hạn công việc.',
-                'example' => TaskDeadlineTypeEnum::HasDeadline->value,
+                'description' => 'Loại thời hạn (có thời hạn, không thời hạn, theo văn bản chỉ đạo).',
+                'example' => 'has_deadline',
             ],
             'start_at' => [
-                'description' => 'Ngày bắt đầu công việc.',
-                'example' => '2026-04-01',
+                'description' => 'Thời gian bắt đầu (Y-m-d H:i:s).',
+                'example' => '2026-04-10 08:00:00',
             ],
             'end_at' => [
-                'description' => 'Ngày kết thúc công việc. Bắt buộc khi deadline_type là has_deadline.',
-                'example' => '2026-04-30',
+                'description' => 'Thời gian kết thúc / Hạn chót (Y-m-d H:i:s).',
+                'example' => '2026-04-30 17:00:00',
             ],
             'processing_status' => [
-                'description' => 'Trạng thái xử lý công việc.',
-                'example' => TaskProgressStatusEnum::Todo->value,
+                'description' => 'Trạng thái xử lý (todo, in_progress, paused, cancelled, done).',
+                'example' => 'todo',
             ],
             'completion_percent' => [
-                'description' => 'Phần trăm hoàn thành công việc (0-100).',
+                'description' => 'Phần trăm hoàn thành (0-100).',
                 'example' => 0,
             ],
             'priority' => [
-                'description' => 'Mức độ ưu tiên công việc.',
-                'example' => TaskPriorityEnum::Medium->value,
+                'description' => 'Mức độ ưu tiên (low, medium, high, urgent).',
+                'example' => 'medium',
             ],
             'assigned_by' => [
                 'description' => 'ID người giao việc (quản trị).',
                 'example' => 1,
             ],
             'users' => [
-                'description' => 'Danh sách người thực hiện (Phòng ban → User → Vai trò).',
-                'example' => [['user_id' => 1, 'department_id' => 1, 'department_role' => TaskAssignmentRoleEnum::Main->value, 'assignment_role' => TaskUserAssignmentRoleEnum::Main->value]],
+                'description' => 'Danh sách người thực hiện công việc (cập nhật lại toàn bộ danh sách).',
             ],
             'users.*.user_id' => [
                 'description' => 'ID người dùng.',
                 'example' => 1,
             ],
             'users.*.department_id' => [
-                'description' => 'ID phòng ban của người dùng.',
-                'example' => 1,
+                'description' => 'ID phòng ban của người dùng (tại thời điểm phân công).',
+                'example' => 2,
             ],
             'users.*.department_role' => [
-                'description' => 'Vai trò của phòng ban trong công việc (chủ trì/phối hợp).',
-                'example' => TaskAssignmentRoleEnum::Main->value,
+                'description' => 'Vai trò của phòng ban (chủ trì, phối hợp).',
+                'example' => 'main',
             ],
             'users.*.assignment_role' => [
-                'description' => 'Vai trò của người dùng trong công việc (chủ trì/hỗ trợ).',
-                'example' => TaskUserAssignmentRoleEnum::Main->value,
+                'description' => 'Vai trò của người dùng (xử lý chính, người phối hợp, theo dõi).',
+                'example' => 'main',
+            ],
+            'attachments' => [
+                'description' => 'Danh sách tệp đính kèm. Có thể truyền file mới (multipart/form-data) hoặc truyền chuỗi JSON/object của file cũ để giữ lại. Tối đa 10 tệp, mỗi tệp 20MB.',
+                'example' => [],
             ],
         ];
     }

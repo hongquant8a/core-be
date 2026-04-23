@@ -12,10 +12,10 @@ class StoreDocumentRequest extends BaseRequest
             'name' => 'required|string|max:255',
             'summary' => 'nullable|string|max:65535',
             'issue_date' => 'nullable|date',
-            'task_assignment_type_id' => 'nullable|integer|exists:task_assignment_types,id',
+            'task_assignment_type_id' => 'required|integer|exists:task_assignment_types,id',
             'status' => ['required', TaskAssignmentDocumentStatusEnum::rule()],
             'attachments' => 'nullable|array|max:10',
-            'attachments.*' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,gif|max:20480',
+            'attachments.*' => $this->getAttachmentRule(),
         ];
     }
 
@@ -31,16 +31,20 @@ class StoreDocumentRequest extends BaseRequest
                 'example' => 'Văn bản triển khai công việc quý II.',
             ],
             'issue_date' => [
-                'description' => 'Ngày ban hành văn bản.',
+                'description' => 'Ngày ban hành (Y-m-d).',
                 'example' => '2026-04-01',
             ],
             'task_assignment_type_id' => [
-                'description' => 'ID loại giao việc.',
+                'description' => 'ID loại văn bản giao việc.',
                 'example' => 1,
             ],
             'status' => [
-                'description' => 'Trạng thái văn bản.',
-                'example' => TaskAssignmentDocumentStatusEnum::Draft->value,
+                'description' => 'Trạng thái văn bản (draft, issued).',
+                'example' => 'draft',
+            ],
+            'attachments' => [
+                'description' => 'Danh sách tệp đính kèm. Có thể truyền file mới (multipart/form-data) hoặc truyền chuỗi JSON/object của file cũ để giữ lại. Tối đa 10 tệp, mỗi tệp 20MB.',
+                'example' => [],
             ],
         ];
     }
