@@ -357,11 +357,11 @@ class PermissionSeeder extends Seeder
         ] as $userData) {
             $user = User::updateOrCreate(
                 [
-                    'user_name' => $userData['user_name'],
+                    'email' => $userData['email'],
                 ],
                 [
+                    'user_name' => $userData['user_name'],
                     'name' => $userData['name'],
-                    'email' => $userData['email'],
                     'password' => 'quandcore**11',
                     'status' => StatusEnum::Active->value,
                     'email_verified_at' => now(),
