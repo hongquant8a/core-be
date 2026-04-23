@@ -29,7 +29,7 @@ class TaskAssignmentReportService
 
         try {
             return DB::transaction(function () use ($item, $validated, $files, &$storedFiles) {
-                $data = collect($validated)->except(['files', 'task_assignment_item_id'])->all();
+                $data = collect($validated)->except(['attachments', 'task_assignment_item_id'])->all();
                 $data['task_assignment_item_id'] = $item->id;
                 $report = TaskAssignmentItemReport::create($data);
 
@@ -113,7 +113,7 @@ class TaskAssignmentReportService
 
         try {
             return DB::transaction(function () use ($report, $validated, $files, $removeAttachmentIds, &$storedFiles) {
-                $data = collect($validated)->except(['files', 'remove_attachment_ids'])->all();
+                $data = collect($validated)->except(['attachments', 'remove_attachment_ids'])->all();
                 $report->update($data);
 
                 if (! empty($removeAttachmentIds)) {

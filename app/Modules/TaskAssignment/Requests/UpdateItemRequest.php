@@ -16,12 +16,12 @@ class UpdateItemRequest extends BaseRequest
             'name' => 'sometimes|string|max:255',
             'description' => 'sometimes|nullable|string',
             'task_assignment_item_type_id' => 'nullable|integer|exists:task_assignment_item_types,id',
-            'deadline_type' => ['sometimes', TaskAssignmentDeadlineTypeEnum::rule()],
+            'deadline_type' => ['sometimes', TaskDeadlineTypeEnum::rule()],
             'start_at' => 'nullable|date',
             'end_at' => 'nullable|date|after_or_equal:start_at',
-            'processing_status' => ['sometimes', TaskAssignmentProcessingStatusEnum::rule()],
+            'processing_status' => ['sometimes', TaskProgressStatusEnum::rule()],
             'completion_percent' => 'nullable|integer|min:0|max:100',
-            'priority' => ['sometimes', TaskAssignmentPriorityEnum::rule()],
+            'priority' => ['sometimes', TaskPriorityEnum::rule()],
             'users' => 'nullable|array',
             'users.*.user_id' => 'required|integer|exists:users,id',
             'users.*.department_id' => 'required|integer|exists:task_assignment_departments,id',
@@ -95,6 +95,10 @@ class UpdateItemRequest extends BaseRequest
             'attachments' => [
                 'description' => 'Danh sách tệp đính kèm. Có thể truyền file mới (multipart/form-data) hoặc truyền chuỗi JSON/object của file cũ để giữ lại. Tối đa 10 tệp, mỗi tệp 20MB.',
                 'example' => [],
+            ],
+            'remove_attachment_ids' => [
+                'description' => 'Danh sách ID tệp đính kèm cần xóa.',
+                'example' => [1, 2],
             ],
         ];
     }

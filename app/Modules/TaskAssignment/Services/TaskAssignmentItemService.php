@@ -42,7 +42,7 @@ class TaskAssignmentItemService
 
     public function index(array $filters, int $limit)
     {
-        return TaskAssignmentItem::with(['document', 'itemType', 'users', 'assigner', 'creator.media', 'editor.media'])
+        return TaskAssignmentItem::with(['document', 'itemType', 'users', 'assigner', 'creator.media', 'editor.media', 'attachments.media'])
             ->withCount('reports')
             ->filter($filters)
             ->paginate($limit);

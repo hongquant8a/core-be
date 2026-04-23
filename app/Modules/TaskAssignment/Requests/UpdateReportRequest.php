@@ -41,16 +41,9 @@ class UpdateReportRequest extends BaseRequest
                 'description' => 'Danh sách tệp đính kèm. Có thể truyền file mới (multipart/form-data) hoặc truyền chuỗi JSON/object của file cũ để giữ lại. Tối đa 10 tệp, mỗi tệp tối đa 20MB.',
                 'example' => [],
             ],
-            'files.*' => [
-                'description' => 'Tệp đính kèm (định dạng pdf, doc, docx, xls, xlsx, ppt, pptx).',
-            ],
             'remove_attachment_ids' => [
                 'description' => 'Danh sách ID tệp đính kèm cần xóa.',
                 'example' => [1, 2],
-            ],
-            'remove_attachment_ids.*' => [
-                'description' => 'ID tệp đính kèm.',
-                'example' => 1,
             ],
         ];
     }

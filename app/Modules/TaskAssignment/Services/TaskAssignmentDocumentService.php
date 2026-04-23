@@ -72,7 +72,7 @@ class TaskAssignmentDocumentService
 
     public function show(TaskAssignmentDocument $document): TaskAssignmentDocument
     {
-        return $document->load(['type', 'items', 'attachments.media', 'creator.media', 'editor.media']);
+        return $document->load(['type', 'items.attachments.media', 'attachments.media', 'creator.media', 'editor.media']);
     }
 
     public function store(array $validated, array $files = []): TaskAssignmentDocument
@@ -81,7 +81,7 @@ class TaskAssignmentDocumentService
 
         try {
             return DB::transaction(function () use ($validated, $files, &$storedFiles) {
-                $data = collect($validated)->except(['files', 'remove_attachment_ids'])->all();
+                $data = collect($validated)->except(['attachments', 'remove_attachment_ids'])->all();
                 $document = TaskAssignmentDocument::create($data);
 
                 foreach ($files as $file) {
@@ -126,7 +126,7 @@ class TaskAssignmentDocumentService
 
         try {
             return DB::transaction(function () use ($document, $validated, $files, $removeAttachmentIds, &$storedFiles) {
-                $data = collect($validated)->except(['files', 'remove_attachment_ids'])->all();
+                $data = collect($validated)->except(['attachments', 'remove_attachment_ids'])->all();
                 $document->update($data);
 
                 if (! empty($removeAttachmentIds)) {
