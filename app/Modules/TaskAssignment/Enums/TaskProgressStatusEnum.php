@@ -9,7 +9,6 @@ enum TaskProgressStatusEnum: string
 {
     case Todo = 'todo';
     case InProgress = 'in_progress';
-    case Reported = 'reported';
     case Done = 'done';
     case Paused = 'paused';
     case Cancelled = 'cancelled';
@@ -51,7 +50,6 @@ enum TaskProgressStatusEnum: string
         return match ($this) {
             self::Todo => 'Chưa bắt đầu',
             self::InProgress => 'Đang thực hiện',
-            self::Reported => 'Đã báo cáo',
             self::Done => 'Hoàn thành',
             self::Paused => 'Tạm dừng',
             self::Cancelled => 'Đã hủy',

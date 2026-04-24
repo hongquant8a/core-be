@@ -26,7 +26,7 @@ class MonthlyReportSummarySheet implements FromArray, WithTitle, WithStyles, Sho
      * - 'cancelled': task bị hủy — KHÔNG tính vào tổng, chỉ note ở "Ghi chú".
      * - 'done': terminal — task đã hoàn thành (kể cả past deadline vẫn là 'done').
      * - 'overdue': task active + deadline đã qua.
-     * - 'in_flight': mọi status khác đang tồn tại (todo, in_progress, reported, paused).
+     * - 'in_flight': mọi status khác đang tồn tại (todo, in_progress, paused).
      *
      * @param  object  $item  Must expose processing_status, deadline_type, end_at (Carbon|string|null).
      * @return 'in_flight'|'done'|'overdue'|'cancelled'

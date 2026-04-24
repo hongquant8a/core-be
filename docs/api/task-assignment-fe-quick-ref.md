@@ -36,20 +36,52 @@ Body: { processing_status?, completion_percent? }
 PATCH /api/task-assignment-items/{id}/confirm-done   ❌ KHÔNG CÒN
 ```
 
-## `processing_status` (6 giá trị)
+## `processing_status` (5 giá trị)
 
 | Value | Label | User chọn? | Auto by BE? |
 |---|---|---|---|
 | `todo` | Chưa bắt đầu | ✓ | – |
 | `in_progress` | Đang thực hiện | ✓ | – |
-| `reported` | Đã báo cáo | ✓ | – |
 | `paused` | Tạm dừng | ✓ | – |
 | `cancelled` | Đã hủy | ✓ | – |
 | `done` | Hoàn thành | ✗ | ✓ qua `mark-done` |
 
-→ **Dropdown user render 5 option** (loại `done`).
+→ **Dropdown user render 4 option** (loại `done`).
 → Task ở `done` → dropdown disabled, badge read-only.
 → Truyền `done` vào endpoint `change-status`/`update-progress`/`store`/`update`/`bulk-update-status` → **422**.
+
+**Status `reported` đã GỠ:** trước đây assignee có thể đặt status này, nay submit report (`POST /reports`) là kênh duy nhất để signal "đã xong". Không có option "Đã báo cáo" trong dropdown nữa.
+
+## Stats trả về (donut chart)
+
+`GET /api/task-assignment-items/stats` trả 7 field count **mutually exclusive** (sum = total):
+```json
+{
+  "total": 54,
+  "todo": 5, "in_progress": 8, "done": 14,
+  "paused": 0, "cancelled": 0,
+  "overdue": 6   ← active + past deadline (đã loại khỏi todo/in_progress/paused)
+}
+```
+
+→ Donut 6 lát: `todo + in_progress + done + paused + cancelled + overdue = total` luôn đúng.
+
+→ Lưu ý: 1 task `in_progress` quá hạn được count ở `overdue` bucket, KHÔNG count ở `in_progress` (mutually exclusive).
+
+## Item hiển thị "in_progress + overdue"
+
+Item resource trả 2 field độc lập:
+```json
+{
+  "processing_status": "in_progress",
+  "is_overdue": true,
+  "end_at": "2026-04-20"
+}
+```
+
+FE render:
+- Badge chính: theo `processing_status` (vd "Đang thực hiện" xanh)
+- Badge phụ: nếu `is_overdue=true` → "Trễ hạn" (cam)
 
 ## Timing (đúng hạn / trễ hạn)
 

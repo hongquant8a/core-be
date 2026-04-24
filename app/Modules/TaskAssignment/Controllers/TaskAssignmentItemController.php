@@ -35,7 +35,7 @@ class TaskAssignmentItemController extends Controller
      * Thống kê công việc
      *
      * @queryParam search string Từ khóa tìm kiếm theo tên.
-     * @queryParam processing_status string Lọc theo trạng thái xử lý: todo, in_progress, reported, done, overdue, paused, cancelled. Example: in_progress
+     * @queryParam processing_status string Lọc theo trạng thái xử lý: todo, in_progress, done, overdue, paused, cancelled. Example: in_progress
      * @queryParam priority string Lọc theo mức độ ưu tiên. Example: high
      * @queryParam deadline_type string Lọc theo loại thời hạn. Example: has_deadline
      * @queryParam task_assignment_document_id integer Lọc theo văn bản giao việc. Example: 1
@@ -52,7 +52,7 @@ class TaskAssignmentItemController extends Controller
      * @queryParam from_date date Lọc từ ngày tạo (Y-m-d). Example: 2026-01-01
      * @queryParam to_date date Lọc đến ngày tạo (Y-m-d). Example: 2026-12-31
      *
-     * @response 200 {"success": true, "data": {"total": 20, "todo": 5, "in_progress": 8, "reported": 2, "done": 3, "overdue": 1, "paused": 0, "cancelled": 1}}
+     * @response 200 {"success": true, "data": {"total": 18, "todo": 5, "in_progress": 8, "done": 3, "paused": 0, "cancelled": 1, "overdue": 1}}
      */
     public function stats(FilterRequest $request)
     {
@@ -63,7 +63,7 @@ class TaskAssignmentItemController extends Controller
      * Danh sách công việc
      *
      * @queryParam search string Từ khóa tìm kiếm theo tên.
-     * @queryParam processing_status string Lọc theo trạng thái xử lý: todo, in_progress, reported, done, overdue, paused, cancelled. Example: in_progress
+     * @queryParam processing_status string Lọc theo trạng thái xử lý: todo, in_progress, done, overdue, paused, cancelled. Example: in_progress
      * @queryParam priority string Lọc theo mức độ ưu tiên. Example: high
      * @queryParam deadline_type string Lọc theo loại thời hạn. Example: has_deadline
      * @queryParam task_assignment_document_id integer Lọc theo văn bản giao việc. Example: 1

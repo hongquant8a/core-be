@@ -96,13 +96,4 @@ class MonthlyReportClassifierTest extends TestCase
         $this->assertSame('overdue', MonthlyReportSummarySheet::classify($item, $this->now));
     }
 
-    public function test_reported_task_is_in_flight(): void
-    {
-        $item = (object) [
-            'processing_status' => 'reported',
-            'deadline_type' => 'has_deadline',
-            'end_at' => Carbon::parse('2026-04-15'),
-        ];
-        $this->assertSame('in_flight', MonthlyReportSummarySheet::classify($item, $this->now));
-    }
 }
