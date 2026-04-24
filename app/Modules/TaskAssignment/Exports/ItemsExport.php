@@ -2,12 +2,15 @@
 
 namespace App\Modules\TaskAssignment\Exports;
 
+use App\Modules\TaskAssignment\Exports\Concerns\StripsHtml;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 
 class ItemsExport implements FromCollection, WithHeadings
 {
+    use StripsHtml;
+
     public function __construct(private array $filters = []) {}
 
     public function collection()
@@ -23,7 +26,7 @@ class ItemsExport implements FromCollection, WithHeadings
         return $items->map(fn ($item) => [
                 'id' => $item->id,
                 'name' => $item->name,
-                'description' => $item->description,
+                'description' => $this->stripHtml($item->description),
                 'document' => $item->document?->name ?? 'N/A',
                 'item_type' => $item->itemType?->name ?? 'N/A',
                 'deadline_type' => $item->deadline_type,

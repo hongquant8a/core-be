@@ -23,12 +23,40 @@ class StoreItemRequest extends BaseRequest
             'processing_status' => ['nullable', TaskProgressStatusEnum::selectableRule()],
             'completion_percent' => 'nullable|integer|min:0|max:100',
             'priority' => ['nullable', TaskPriorityEnum::rule()],
-            'assigned_by' => 'nullable|integer|exists:users,id',
+            'assigned_by' => ['nullable', 'integer', function ($attribute, $value, $fail) {
+                if (! $value) {
+                    return;
+                }
+                $orgId = getPermissionsTeamId();
+                $exists = \Illuminate\Support\Facades\DB::table('task_assignment_users')
+                    ->where('user_id', $value)
+                    ->where('organization_id', $orgId)
+                    ->where('status', 'active')
+                    ->exists();
+                if (! $exists) {
+                    $fail("Người giao việc (ID {$value}) không thuộc module giao việc của tổ chức này.");
+                }
+            }],
             'users' => 'nullable|array',
-            'users.*.user_id' => 'required|integer|exists:users,id',
+            'users.*.user_id' => 'required|integer',
             'users.*.department_id' => 'required|integer|exists:task_assignment_departments,id',
             'users.*.department_role' => ['required', TaskAssignmentRoleEnum::rule()],
             'users.*.assignment_role' => ['required', TaskUserAssignmentRoleEnum::rule()],
+            'users.*' => [function ($attribute, $value, $fail) {
+                if (! is_array($value) || empty($value['user_id']) || empty($value['department_id'])) {
+                    return;
+                }
+                $orgId = getPermissionsTeamId();
+                $exists = \Illuminate\Support\Facades\DB::table('task_assignment_users')
+                    ->where('user_id', $value['user_id'])
+                    ->where('task_assignment_department_id', $value['department_id'])
+                    ->where('organization_id', $orgId)
+                    ->where('status', 'active')
+                    ->exists();
+                if (! $exists) {
+                    $fail("User ID {$value['user_id']} không thuộc phòng ban ID {$value['department_id']} trong tổ chức này.");
+                }
+            }],
             'attachments' => 'nullable|array|max:10',
             'attachments.*' => $this->getAttachmentRule(),
         ];
