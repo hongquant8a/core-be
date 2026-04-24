@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withCommands([
         \App\Services\Notification\Console\ProcessRemindersCommand::class,
+        \App\Console\Commands\CleanupObsoleteSeedsCommand::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
