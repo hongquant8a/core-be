@@ -14,19 +14,20 @@ class RolesExport implements FromCollection, WithHeadings
 
     public function collection()
     {
-        $items = Role::with('organization')->filter($this->filters)->get();
+        $items = Role::with('organization')->filter($this->filters)->orderByDesc('id')->get();
 
-        return $items->map(fn ($r) => [
-            'id' => $r->id,
+        return $items->values()->map(fn ($r, $i) => [
+            'stt' => $i + 1,
             'name' => $r->name,
             'organization_name' => $r->organization?->name ?? 'N/A',
             'created_at' => $r->created_at?->format('H:i:s d/m/Y'),
             'updated_at' => $r->updated_at?->format('H:i:s d/m/Y'),
+            'id' => $r->id,
         ]);
     }
 
     public function headings(): array
     {
-        return ['ID', 'Tên vai trò', 'Tên tổ chức', 'Ngày tạo', 'Ngày cập nhật'];
+        return ['STT', 'Tên vai trò', 'Tên tổ chức', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
     }
 }

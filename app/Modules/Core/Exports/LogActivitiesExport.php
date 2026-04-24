@@ -16,10 +16,11 @@ class LogActivitiesExport implements FromCollection, WithHeadings
     {
         $logs = LogActivity::with(['user', 'organization'])
             ->filter($this->filters)
+            ->orderByDesc('id')
             ->get();
 
-        return $logs->map(fn (LogActivity $log) => [
-            'id' => $log->id,
+        return $logs->values()->map(fn (LogActivity $log, $i) => [
+            'stt' => $i + 1,
             'description' => $log->description,
             'user_name' => $log->user?->name ?? 'Guest',
             'organization_name' => $log->organization?->name ?? 'N/A',
@@ -31,13 +32,14 @@ class LogActivitiesExport implements FromCollection, WithHeadings
             'user_agent' => $log->user_agent,
             'created_at' => $log->created_at?->format('H:i:s d/m/Y'),
             'updated_at' => $log->updated_at?->format('H:i:s d/m/Y'),
+            'id' => $log->id,
         ]);
     }
 
     public function headings(): array
     {
         return [
-            'ID',
+            'STT',
             'Mô tả',
             'Tên người dùng',
             'Tên tổ chức',
@@ -49,6 +51,7 @@ class LogActivitiesExport implements FromCollection, WithHeadings
             'Trình duyệt',
             'Ngày tạo',
             'Ngày cập nhật',
+            'ID',
         ];
     }
 }

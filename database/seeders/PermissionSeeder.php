@@ -71,12 +71,12 @@ class PermissionSeeder extends Seeder
         // TaskAssignment - Văn bản giao việc
         'task-assignment-documents' => [
             'stats', 'statsByTime', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
+            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
         ],
         // TaskAssignment - Công việc
         'task-assignment-items' => [
             'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
+            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
             'updateProgress', 'markDone',
             'statsByDepartment', 'statsByUser', 'statsByTime', 'overdue', 'upcomingDeadline',
             'statsByItemType', 'statsByDocument', 'exportMonthlyReport',

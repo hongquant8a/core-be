@@ -22,33 +22,34 @@ class MonthlyReportSummarySheet implements FromArray, WithTitle, WithStyles, Sho
     /**
      * Classify an item into one of 4 buckets for the monthly report.
      *
-     * Order matters: overdue is checked first so an in_progress task past its
-     * deadline falls into 'overdue', not 'in_flight'. Done is terminal —
-     * a completed task stays 'done' even if its deadline passed.
+     * Priority:
+     * - 'cancelled': task bị hủy — KHÔNG tính vào tổng, chỉ note ở "Ghi chú".
+     * - 'done': terminal — task đã hoàn thành (kể cả past deadline vẫn là 'done').
+     * - 'overdue': task active + deadline đã qua.
+     * - 'in_flight': mọi status khác đang tồn tại (todo, in_progress, reported, paused).
      *
      * @param  object  $item  Must expose processing_status, deadline_type, end_at (Carbon|string|null).
-     * @return 'in_flight'|'done'|'overdue'|'other'
+     * @return 'in_flight'|'done'|'overdue'|'cancelled'
      */
     public static function classify(object $item, Carbon $now): string
     {
+        if ($item->processing_status === 'cancelled') {
+            return 'cancelled';
+        }
+
         if ($item->processing_status === 'done') {
             return 'done';
         }
 
         $isOverdue = $item->deadline_type === 'has_deadline'
             && $item->end_at
-            && Carbon::parse($item->end_at)->lt($now)
-            && ! in_array($item->processing_status, ['done', 'cancelled'], true);
+            && Carbon::parse($item->end_at)->lt($now);
 
         if ($isOverdue) {
             return 'overdue';
         }
 
-        if (in_array($item->processing_status, ['todo', 'in_progress'], true)) {
-            return 'in_flight';
-        }
-
-        return 'other';
+        return 'in_flight';
     }
 
     public function __construct(private string $month) {}
@@ -95,12 +96,15 @@ class MonthlyReportSummarySheet implements FromArray, WithTitle, WithStyles, Sho
                 ->where('created_at', '<=', $monthEnd)
                 ->get();
 
-            $counts = ['in_flight' => 0, 'done' => 0, 'overdue' => 0, 'other' => 0];
+            $counts = ['in_flight' => 0, 'done' => 0, 'overdue' => 0, 'cancelled' => 0];
             foreach ($items as $item) {
                 $counts[self::classify($item, $now)]++;
             }
 
-            $total = $items->count();
+            // Tổng = in_flight + done + overdue (loại cancelled khỏi báo cáo).
+            $total = $counts['in_flight'] + $counts['done'] + $counts['overdue'];
+            $note = $counts['cancelled'] > 0 ? "{$counts['cancelled']} nhiệm vụ đã hủy" : '';
+
             $rows[] = [
                 $this->toRoman($i + 1),
                 $dept->name,
@@ -108,7 +112,7 @@ class MonthlyReportSummarySheet implements FromArray, WithTitle, WithStyles, Sho
                 $counts['in_flight'],
                 $counts['done'],
                 $counts['overdue'],
-                '',
+                $note,
             ];
 
             $totals['total'] += $total;

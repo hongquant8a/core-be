@@ -14,9 +14,11 @@ class DepartmentExport implements FromCollection, WithHeadings
     {
         return TaskAssignmentDepartment::with(['creator', 'editor'])
             ->filter($this->filters)
+            ->orderByDesc('id')
             ->get()
-            ->map(fn ($dept) => [
-                'id' => $dept->id,
+            ->values()
+            ->map(fn ($dept, $i) => [
+                'stt' => $i + 1,
                 'code' => $dept->code,
                 'name' => $dept->name,
                 'description' => $dept->description,
@@ -26,11 +28,12 @@ class DepartmentExport implements FromCollection, WithHeadings
                 'updated_by' => $dept->editor?->name ?? 'N/A',
                 'created_at' => $dept->created_at?->format('H:i:s d/m/Y'),
                 'updated_at' => $dept->updated_at?->format('H:i:s d/m/Y'),
+                'id' => $dept->id,
             ]);
     }
 
     public function headings(): array
     {
-        return ['ID', 'Mã phòng ban', 'Tên phòng ban', 'Mô tả', 'Trạng thái', 'Thứ tự', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật'];
+        return ['STT', 'Mã phòng ban', 'Tên phòng ban', 'Mô tả', 'Trạng thái', 'Thứ tự', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
     }
 }

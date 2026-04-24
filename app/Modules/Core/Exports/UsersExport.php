@@ -16,10 +16,11 @@ class UsersExport implements FromCollection, WithHeadings
     {
         $users = User::with(['creator', 'editor'])
             ->filter($this->filters)
+            ->orderByDesc('id')
             ->get();
 
-        return $users->map(fn ($user) => [
-            'id' => $user->id,
+        return $users->values()->map(fn ($user, $i) => [
+            'stt' => $i + 1,
             'name' => $user->name,
             'email' => $user->email,
             'user_name' => $user->user_name,
@@ -28,13 +29,14 @@ class UsersExport implements FromCollection, WithHeadings
             'updated_by' => $user->editor?->name ?? 'N/A',
             'created_at' => $user->created_at?->format('d/m/Y H:i:s'),
             'updated_at' => $user->updated_at?->format('d/m/Y H:i:s'),
+            'id' => $user->id,
         ]);
     }
 
     public function headings(): array
     {
         return [
-            'ID',
+            'STT',
             'Họ và tên',
             'Email',
             'Tên đăng nhập',
@@ -43,6 +45,7 @@ class UsersExport implements FromCollection, WithHeadings
             'Người cập nhật',
             'Ngày tạo',
             'Ngày cập nhật',
+            'ID',
         ];
     }
 }

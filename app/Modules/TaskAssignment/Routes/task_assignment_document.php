@@ -4,8 +4,6 @@ use App\Modules\TaskAssignment\Controllers\TaskAssignmentDocumentController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/export', [TaskAssignmentDocumentController::class, 'export'])->middleware('permission:task-assignment-documents.export,web');
-Route::post('/import', [TaskAssignmentDocumentController::class, 'import'])->middleware('permission:task-assignment-documents.import,web');
-Route::get('/import-template', [TaskAssignmentDocumentController::class, 'importTemplate'])->middleware('permission:task-assignment-documents.import,web');
 Route::patch('/bulk-status', [TaskAssignmentDocumentController::class, 'bulkUpdateStatus'])->middleware('permission:task-assignment-documents.bulkUpdateStatus,web');
 Route::post('/bulk-delete', [TaskAssignmentDocumentController::class, 'bulkDestroy'])->middleware('permission:task-assignment-documents.bulkDestroy,web');
 Route::get('/stats', [TaskAssignmentDocumentController::class, 'stats'])->middleware('permission:task-assignment-documents.stats,web');

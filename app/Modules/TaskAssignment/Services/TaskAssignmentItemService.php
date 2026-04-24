@@ -6,7 +6,6 @@ use App\Modules\Core\Services\MediaService;
 use App\Modules\TaskAssignment\Enums\TaskDeadlineTypeEnum;
 use App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum;
 use App\Modules\TaskAssignment\Exports\ItemsExport;
-use App\Modules\TaskAssignment\Imports\ItemsImport;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDepartment;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItemAttachment;
@@ -158,11 +157,6 @@ class TaskAssignmentItemService
         $filename = "bao-cao-giao-ban-{$month}.xlsx";
 
         return Excel::download(new \App\Modules\TaskAssignment\Exports\MonthlyReportExport($month), $filename);
-    }
-
-    public function import($file, int $documentId): void
-    {
-        Excel::import(new ItemsImport($documentId), $file);
     }
 
     public function updateProgress(TaskAssignmentItem $item, array $validated): TaskAssignmentItem

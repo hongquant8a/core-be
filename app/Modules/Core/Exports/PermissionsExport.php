@@ -14,20 +14,21 @@ class PermissionsExport implements FromCollection, WithHeadings
 
     public function collection()
     {
-        $items = Permission::filter($this->filters)->get();
+        $items = Permission::filter($this->filters)->orderByDesc('id')->get();
 
-        return $items->map(fn ($p) => [
-            'id' => $p->id,
+        return $items->values()->map(fn ($p, $i) => [
+            'stt' => $i + 1,
             'name' => $p->name,
             'description' => $p->description ?? '',
             'sort_order' => $p->sort_order ?? 0,
             'created_at' => $p->created_at?->format('H:i:s d/m/Y'),
             'updated_at' => $p->updated_at?->format('H:i:s d/m/Y'),
+            'id' => $p->id,
         ]);
     }
 
     public function headings(): array
     {
-        return ['ID', 'Tên quyền', 'Mô tả', 'Thứ tự', 'Ngày tạo', 'Ngày cập nhật'];
+        return ['STT', 'Tên quyền', 'Mô tả', 'Thứ tự', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
     }
 }

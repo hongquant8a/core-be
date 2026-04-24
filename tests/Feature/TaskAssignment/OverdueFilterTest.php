@@ -69,4 +69,19 @@ class OverdueFilterTest extends TestCase
         $res->assertOk();
         $res->assertJsonPath('data.is_overdue', true);
     }
+
+    public function test_filter_processing_status_overdue_matches_stats_count(): void
+    {
+        $overdue = $this->makeTask(['end_at' => now()->subDay(), 'processing_status' => 'in_progress']);
+        $onTime = $this->makeTask(['end_at' => now()->addDay(), 'processing_status' => 'in_progress']);
+        $done = $this->makeTask(['end_at' => now()->subDay(), 'processing_status' => 'done']);
+
+        // Backward-compat: ?processing_status=overdue mapped to is_overdue predicate.
+        $res = $this->getJson('/api/task-assignment-items?processing_status=overdue', ['X-Organization-Id' => $this->org->id]);
+        $res->assertOk();
+        $ids = collect($res->json('data'))->pluck('id')->all();
+        $this->assertContains($overdue->id, $ids);
+        $this->assertNotContains($onTime->id, $ids);
+        $this->assertNotContains($done->id, $ids);
+    }
 }

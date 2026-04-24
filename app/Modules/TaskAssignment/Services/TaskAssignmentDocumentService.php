@@ -5,7 +5,6 @@ namespace App\Modules\TaskAssignment\Services;
 use App\Modules\Core\Services\MediaService;
 use App\Modules\TaskAssignment\Enums\TaskAssignmentDocumentStatusEnum;
 use App\Modules\TaskAssignment\Exports\DocumentsExport;
-use App\Modules\TaskAssignment\Imports\DocumentsImport;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDocument;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDocumentAttachment;
 use App\Services\Notification\Events\DocumentIssued;
@@ -222,11 +221,6 @@ class TaskAssignmentDocumentService
     public function export(array $filters): BinaryFileResponse
     {
         return Excel::download(new DocumentsExport($filters), 'task-assignment-documents.xlsx');
-    }
-
-    public function import($file): void
-    {
-        Excel::import(new DocumentsImport, $file);
     }
 
     private function removeAttachments(TaskAssignmentDocument $document, array $attachmentIds): void

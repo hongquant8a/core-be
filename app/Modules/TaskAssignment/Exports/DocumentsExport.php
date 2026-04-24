@@ -18,9 +18,11 @@ class DocumentsExport implements FromCollection, WithHeadings
         return TaskAssignmentDocument::with(['type', 'creator', 'editor'])
             ->withCount('items')
             ->filter($this->filters)
+            ->orderByDesc('id')
             ->get()
-            ->map(fn ($doc) => [
-                'id' => $doc->id,
+            ->values()
+            ->map(fn ($doc, $i) => [
+                'stt' => $i + 1,
                 'name' => $doc->name,
                 'summary' => $this->stripHtml($doc->summary),
                 'issue_date' => $doc->issue_date?->format('d/m/Y'),
@@ -32,11 +34,12 @@ class DocumentsExport implements FromCollection, WithHeadings
                 'updated_by' => $doc->editor?->name ?? 'N/A',
                 'created_at' => $doc->created_at?->format('H:i:s d/m/Y'),
                 'updated_at' => $doc->updated_at?->format('H:i:s d/m/Y'),
+                'id' => $doc->id,
             ]);
     }
 
     public function headings(): array
     {
-        return ['ID', 'Tên văn bản', 'Tóm tắt', 'Ngày ban hành', 'Loại văn bản', 'Trạng thái', 'Thời điểm ban hành', 'Số công việc', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật'];
+        return ['STT', 'Tên văn bản', 'Tóm tắt', 'Ngày ban hành', 'Loại văn bản', 'Trạng thái', 'Thời điểm ban hành', 'Số công việc', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
     }
 }

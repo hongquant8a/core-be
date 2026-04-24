@@ -25,13 +25,13 @@ class NotificationLogsExport implements FromCollection, WithHeadings
 
         $notifications = $query->orderByDesc('id')->get();
 
-        return $notifications->map(function (Notification $n) {
+        return $notifications->values()->map(function (Notification $n, $i) {
             $deliveries = $n->deliveries;
             $channels = $deliveries->pluck('channel')->unique()->implode(', ');
             $statuses = $deliveries->pluck('status')->unique()->implode(', ');
 
             return [
-                'id' => $n->id,
+                'stt' => $i + 1,
                 'event_key' => $n->event_key,
                 'title' => $n->title,
                 'body' => $n->body,
@@ -43,6 +43,7 @@ class NotificationLogsExport implements FromCollection, WithHeadings
                 'statuses' => $statuses,
                 'read_at' => $n->read_at?->format('H:i:s d/m/Y'),
                 'created_at' => $n->created_at?->format('H:i:s d/m/Y'),
+                'id' => $n->id,
             ];
         });
     }
@@ -50,7 +51,7 @@ class NotificationLogsExport implements FromCollection, WithHeadings
     public function headings(): array
     {
         return [
-            'ID',
+            'STT',
             'Sự kiện',
             'Tiêu đề',
             'Nội dung',
@@ -62,6 +63,7 @@ class NotificationLogsExport implements FromCollection, WithHeadings
             'Trạng thái gửi',
             'Ngày đọc',
             'Ngày tạo',
+            'ID',
         ];
     }
 

@@ -18,9 +18,11 @@ class LookupExport implements FromCollection, WithHeadings
         return $model->newQuery()
             ->with(['creator', 'editor'])
             ->filter($this->filters)
+            ->orderByDesc('id')
             ->get()
-            ->map(fn ($item) => [
-                'id' => $item->id,
+            ->values()
+            ->map(fn ($item, $i) => [
+                'stt' => $i + 1,
                 'name' => $item->name,
                 'description' => $item->description,
                 'status' => $item->status,
@@ -28,11 +30,12 @@ class LookupExport implements FromCollection, WithHeadings
                 'updated_by' => $item->editor?->name ?? 'N/A',
                 'created_at' => $item->created_at?->format('H:i:s d/m/Y'),
                 'updated_at' => $item->updated_at?->format('H:i:s d/m/Y'),
+                'id' => $item->id,
             ]);
     }
 
     public function headings(): array
     {
-        return ['ID', 'Tên', 'Mô tả', 'Trạng thái', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật'];
+        return ['STT', 'Tên', 'Mô tả', 'Trạng thái', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
     }
 }

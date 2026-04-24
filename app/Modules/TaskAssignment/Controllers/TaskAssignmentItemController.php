@@ -9,7 +9,6 @@ use App\Modules\TaskAssignment\Requests\BulkDestroyItemRequest;
 use App\Modules\TaskAssignment\Requests\BulkUpdateStatusItemRequest;
 use App\Modules\TaskAssignment\Requests\ChangeStatusItemRequest;
 use App\Modules\TaskAssignment\Requests\ExportMonthlyReportRequest;
-use App\Modules\TaskAssignment\Requests\ImportItemRequest;
 use App\Modules\TaskAssignment\Requests\StatsFilterRequest;
 use App\Modules\TaskAssignment\Requests\StatsByTimeRequest;
 use App\Modules\TaskAssignment\Requests\StoreItemRequest;
@@ -292,35 +291,6 @@ class TaskAssignmentItemController extends Controller
 
     /**
      * Import danh sách công việc
-     *
-     * Cột bắt buộc: name. Cột không bắt buộc: description, deadline_type (mặc định no_deadline), start_at, end_at, processing_status (mặc định todo), completion_percent (mặc định 0), priority (mặc định medium).
-     *
-     * @bodyParam file file required File Excel (xlsx, xls, csv). Cột theo chuẩn export.
-     * @bodyParam task_assignment_document_id integer required ID văn bản giao việc. Example: 1
-     *
-     * @response 200 {"success": true, "message": "Import công việc thành công."}
-     */
-    public function import(ImportItemRequest $request)
-    {
-        $this->itemService->import($request->file('file'), (int) $request->task_assignment_document_id);
-
-        return $this->success(null, 'Import công việc thành công.');
-    }
-
-    /**
-     * Tải mẫu import công việc
-     *
-     * @response 200 scenario="File Excel mẫu"
-     */
-    public function importTemplate()
-    {
-        return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\TaskAssignment\Imports\ItemsImport::TEMPLATE_LABELS),
-            'import-items-template.xlsx'
-        );
-    }
-
-    /**
      * Cập nhật tiến độ công việc
      *
      * @urlParam taskAssignmentItem integer required ID công việc. Example: 1

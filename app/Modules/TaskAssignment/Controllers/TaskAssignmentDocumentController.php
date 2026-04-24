@@ -9,7 +9,6 @@ use App\Modules\TaskAssignment\Requests\BulkDestroyDocumentRequest;
 use App\Modules\TaskAssignment\Requests\BulkUpdateStatusDocumentRequest;
 use App\Modules\TaskAssignment\Requests\ChangeDocumentStatusRequest;
 use App\Modules\TaskAssignment\Requests\DocumentStatsByTimeRequest;
-use App\Modules\TaskAssignment\Requests\ImportLookupRequest;
 use App\Modules\TaskAssignment\Requests\StoreDocumentRequest;
 use App\Modules\TaskAssignment\Requests\UpdateDocumentRequest;
 use App\Modules\TaskAssignment\Resources\DocumentCollection;
@@ -237,32 +236,4 @@ class TaskAssignmentDocumentController extends Controller
         return $this->documentService->export($request->all());
     }
 
-    /**
-     * Import văn bản giao việc
-     *
-     * Cột bắt buộc: title. Cột không bắt buộc: status (mặc định "draft").
-     *
-     * @bodyParam file file required File Excel (xlsx, xls, csv). Cột theo chuẩn export.
-     *
-     * @response 200 {"success": true, "message": "Import văn bản giao việc thành công."}
-     */
-    public function import(ImportLookupRequest $request)
-    {
-        $this->documentService->import($request->file('file'));
-
-        return $this->success(null, 'Import văn bản giao việc thành công.');
-    }
-
-    /**
-     * Tải mẫu import văn bản giao việc
-     *
-     * @response 200 scenario="File Excel mẫu"
-     */
-    public function importTemplate()
-    {
-        return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\TaskAssignment\Imports\DocumentsImport::TEMPLATE_LABELS),
-            'import-documents-template.xlsx'
-        );
-    }
 }

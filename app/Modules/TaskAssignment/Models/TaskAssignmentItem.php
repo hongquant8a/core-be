@@ -137,7 +137,20 @@ class TaskAssignmentItem extends Model implements HasMedia
     public function scopeFilter($query, array $filters)
     {
         $query->when($filters['search'] ?? null, fn ($q, $search) => $q->where('name', 'like', '%'.$search.'%'))
-            ->when($filters['processing_status'] ?? null, fn ($q, $status) => $q->where('processing_status', $status))
+            ->when($filters['processing_status'] ?? null, function ($q, $status) {
+                // Giá trị 'overdue' không còn trong enum — map thành predicate is_overdue để đồng bộ với stats counter.
+                if ($status === 'overdue') {
+                    $q->where('deadline_type', \App\Modules\TaskAssignment\Enums\TaskDeadlineTypeEnum::HasDeadline->value)
+                        ->where('end_at', '<', now())
+                        ->whereNotIn('processing_status', [
+                            \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Done->value,
+                            \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Cancelled->value,
+                        ]);
+
+                    return;
+                }
+                $q->where('processing_status', $status);
+            })
             ->when($filters['priority'] ?? null, fn ($q, $priority) => $q->where('priority', $priority))
             ->when($filters['deadline_type'] ?? null, fn ($q, $type) => $q->where('deadline_type', $type))
             ->when($filters['task_assignment_document_id'] ?? null, fn ($q, $docId) => $q->where('task_assignment_document_id', $docId))
