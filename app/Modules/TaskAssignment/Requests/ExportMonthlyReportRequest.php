@@ -7,7 +7,7 @@ class ExportMonthlyReportRequest extends BaseRequest
     public function rules(): array
     {
         return [
-            'month' => 'required|date_format:Y-m',
+            'month' => 'nullable|date_format:Y-m',
         ];
     }
 }

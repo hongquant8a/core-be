@@ -280,13 +280,13 @@ class TaskAssignmentItemController extends Controller
      * - Sheet 2-8: Chi tiết công việc từng phòng ban
      * - Sheet cuối: Chương trình công tác tháng tiếp theo
      *
-     * @queryParam month string required Tháng báo cáo (Y-m). Example: 2026-04
+     * @queryParam month string Tháng báo cáo (Y-m). Mặc định tháng hiện tại nếu bỏ trống. Example: 2026-04
      *
      * @response 200 scenario="File Excel báo cáo giao ban"
      */
     public function exportMonthlyReport(ExportMonthlyReportRequest $request)
     {
-        return $this->itemService->exportMonthlyReport($request->month);
+        return $this->itemService->exportMonthlyReport($request->month ?? now()->format('Y-m'));
     }
 
     /**
