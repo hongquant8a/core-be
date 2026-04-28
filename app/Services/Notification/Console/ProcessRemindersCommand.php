@@ -21,7 +21,7 @@ class ProcessRemindersCommand extends Command
         TaskAssignmentReminder::with(['item.users', 'item.document', 'schedule'])
             ->where('status', 'pending')
             ->where('remind_at', '<=', now())
-            ->chunk(100, function ($reminders) use ($dispatcher, $registry, &$count) {
+            ->chunkById(100, function ($reminders) use ($dispatcher, $registry, &$count) {
                 foreach ($reminders as $reminder) {
                     $this->fireReminder($reminder, $dispatcher, $registry);
                     $count++;
