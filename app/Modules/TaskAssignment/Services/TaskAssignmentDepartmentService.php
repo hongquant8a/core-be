@@ -7,6 +7,7 @@ use App\Modules\TaskAssignment\Exports\DepartmentExport;
 use App\Modules\TaskAssignment\Imports\DepartmentImport;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDepartment;
 use App\Modules\TaskAssignment\Models\TaskAssignmentUser;
+use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -111,38 +112,72 @@ class TaskAssignmentDepartmentService
             ->get();
     }
 
-    public function syncUsers(TaskAssignmentDepartment $department, array $userIds): void
+    public function syncUsers(TaskAssignmentDepartment $department, array $userIds, ?int $representativeUserId = null): void
     {
         $orgId = getPermissionsTeamId();
 
-        $currentUserIds = TaskAssignmentUser::where('task_assignment_department_id', $department->id)
-            ->where('organization_id', $orgId)
-            ->pluck('user_id')
-            ->all();
-
-        $toRemove = array_diff($currentUserIds, $userIds);
-        $toAdd = array_diff($userIds, $currentUserIds);
-
-        if ($toRemove) {
-            TaskAssignmentUser::where('task_assignment_department_id', $department->id)
+        \Illuminate\Support\Facades\DB::transaction(function () use ($department, $userIds, $representativeUserId, $orgId) {
+            $currentUserIds = TaskAssignmentUser::where('task_assignment_department_id', $department->id)
                 ->where('organization_id', $orgId)
-                ->whereIn('user_id', $toRemove)
-                ->delete();
+                ->pluck('user_id')
+                ->all();
+
+            $toRemove = array_diff($currentUserIds, $userIds);
+            $toAdd = array_diff($userIds, $currentUserIds);
+
+            if ($toRemove) {
+                TaskAssignmentUser::where('task_assignment_department_id', $department->id)
+                    ->where('organization_id', $orgId)
+                    ->whereIn('user_id', $toRemove)
+                    ->delete();
+            }
+
+            foreach ($toAdd as $userId) {
+                $hasPrimary = TaskAssignmentUser::where('user_id', $userId)
+                    ->where('organization_id', $orgId)
+                    ->where('is_primary', true)
+                    ->exists();
+
+                TaskAssignmentUser::create([
+                    'user_id' => $userId,
+                    'task_assignment_department_id' => $department->id,
+                    'organization_id' => $orgId,
+                    'status' => 'active',
+                    'is_primary' => ! $hasPrimary,
+                ]);
+            }
+
+            if ($representativeUserId !== null) {
+                $this->setRepresentative($department, $representativeUserId);
+            }
+        });
+    }
+
+    private function setRepresentative(TaskAssignmentDepartment $department, ?int $userId): void
+    {
+        $orgId = getPermissionsTeamId();
+
+        if ($userId !== null) {
+            $exists = TaskAssignmentUser::where('task_assignment_department_id', $department->id)
+                ->where('user_id', $userId)
+                ->where('organization_id', $orgId)
+                ->exists();
+            if (! $exists) {
+                throw ValidationException::withMessages([
+                    'representative_user_id' => 'Người đại diện phải thuộc danh sách thành viên.',
+                ]);
+            }
         }
 
-        foreach ($toAdd as $userId) {
-            $hasPrimary = TaskAssignmentUser::where('user_id', $userId)
-                ->where('organization_id', $orgId)
-                ->where('is_primary', true)
-                ->exists();
+        TaskAssignmentUser::where('task_assignment_department_id', $department->id)
+            ->where('organization_id', $orgId)
+            ->update(['is_representative' => false]);
 
-            TaskAssignmentUser::create([
-                'user_id' => $userId,
-                'task_assignment_department_id' => $department->id,
-                'organization_id' => $orgId,
-                'status' => 'active',
-                'is_primary' => ! $hasPrimary,
-            ]);
+        if ($userId !== null) {
+            TaskAssignmentUser::where('task_assignment_department_id', $department->id)
+                ->where('user_id', $userId)
+                ->where('organization_id', $orgId)
+                ->update(['is_representative' => true]);
         }
     }
 

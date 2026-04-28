@@ -16,6 +16,7 @@ class TaskAssignmentUser extends Model
         'user_id',
         'task_assignment_department_id',
         'is_primary',
+        'is_representative',
         'status',
         'organization_id',
         'created_by',
@@ -24,6 +25,7 @@ class TaskAssignmentUser extends Model
 
     protected $casts = [
         'is_primary' => 'boolean',
+        'is_representative' => 'boolean',
     ];
 
     protected static function booted()

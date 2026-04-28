@@ -292,6 +292,7 @@ class TaskAssignmentDepartmentController extends Controller
                 'user_name' => $user->user_name,
                 'avatar' => $avatar ? '/storage/'.$avatar->id.'/'.$avatar->file_name : null,
                 'status' => $tau->status,
+                'is_representative' => (bool) $tau->is_representative,
             ];
         }));
     }
@@ -301,12 +302,17 @@ class TaskAssignmentDepartmentController extends Controller
      *
      * @urlParam taskAssignmentDepartment integer required ID phòng ban. Example: 1
      * @bodyParam user_ids array required Danh sách ID người dùng. Example: [1,2,3]
+     * @bodyParam representative_user_id integer ID người đại diện (phải nằm trong user_ids). Example: 2
      *
      * @response 200 {"success": true, "message": "Đồng bộ người dùng thành công!"}
      */
     public function syncUsers(SyncDepartmentUsersRequest $request, TaskAssignmentDepartment $taskAssignmentDepartment)
     {
-        $this->departmentService->syncUsers($taskAssignmentDepartment, $request->user_ids);
+        $this->departmentService->syncUsers(
+            $taskAssignmentDepartment,
+            $request->user_ids,
+            $request->input('representative_user_id'),
+        );
 
         return $this->success(null, 'Đồng bộ người dùng thành công!');
     }
