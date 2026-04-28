@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/export', [TaskAssignmentDocumentController::class, 'export'])->middleware('permission:task-assignment-documents.export,web');
 Route::patch('/bulk-status', [TaskAssignmentDocumentController::class, 'bulkUpdateStatus'])->middleware('permission:task-assignment-documents.bulkUpdateStatus,web');
-Route::post('/bulk-delete', [TaskAssignmentDocumentController::class, 'bulkDestroy'])->middleware('permission:task-assignment-documents.bulkDestroy,web');
+Route::delete('/bulk-delete', [TaskAssignmentDocumentController::class, 'bulkDestroy'])->middleware('permission:task-assignment-documents.bulkDestroy,web');
 Route::get('/stats', [TaskAssignmentDocumentController::class, 'stats'])->middleware('permission:task-assignment-documents.stats,web');
 Route::get('/stats-by-time', [TaskAssignmentDocumentController::class, 'statsByTime'])->middleware('permission:task-assignment-documents.statsByTime,web');
 Route::get('/', [TaskAssignmentDocumentController::class, 'index'])->middleware('permission:task-assignment-documents.index,web');

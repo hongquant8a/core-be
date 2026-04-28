@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/export', [TaskAssignmentItemTypeController::class, 'export'])->middleware('permission:task-assignment-item-types.export,web');
 Route::post('/import', [TaskAssignmentItemTypeController::class, 'import'])->middleware('permission:task-assignment-item-types.import,web');
 Route::get('/import-template', [TaskAssignmentItemTypeController::class, 'importTemplate'])->middleware('permission:task-assignment-item-types.import,web');
-Route::post('/bulk-delete', [TaskAssignmentItemTypeController::class, 'bulkDestroy'])->middleware('permission:task-assignment-item-types.bulkDestroy,web');
+Route::delete('/bulk-delete', [TaskAssignmentItemTypeController::class, 'bulkDestroy'])->middleware('permission:task-assignment-item-types.bulkDestroy,web');
 Route::patch('/bulk-status', [TaskAssignmentItemTypeController::class, 'bulkUpdateStatus'])->middleware('permission:task-assignment-item-types.bulkUpdateStatus,web');
 Route::get('/stats', [TaskAssignmentItemTypeController::class, 'stats'])->middleware('permission:task-assignment-item-types.stats,web');
 Route::get('/', [TaskAssignmentItemTypeController::class, 'index'])->middleware('permission:task-assignment-item-types.index,web');

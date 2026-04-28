@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/export', [TaskAssignmentDepartmentController::class, 'export'])->middleware('permission:task-assignment-departments.export,web');
 Route::post('/import', [TaskAssignmentDepartmentController::class, 'import'])->middleware('permission:task-assignment-departments.import,web');
 Route::get('/import-template', [TaskAssignmentDepartmentController::class, 'importTemplate'])->middleware('permission:task-assignment-departments.import,web');
-Route::post('/bulk-delete', [TaskAssignmentDepartmentController::class, 'bulkDestroy'])->middleware('permission:task-assignment-departments.bulkDestroy,web');
+Route::delete('/bulk-delete', [TaskAssignmentDepartmentController::class, 'bulkDestroy'])->middleware('permission:task-assignment-departments.bulkDestroy,web');
 Route::patch('/bulk-status', [TaskAssignmentDepartmentController::class, 'bulkUpdateStatus'])->middleware('permission:task-assignment-departments.bulkUpdateStatus,web');
 Route::get('/stats', [TaskAssignmentDepartmentController::class, 'stats'])->middleware('permission:task-assignment-departments.stats,web');
 Route::get('/', [TaskAssignmentDepartmentController::class, 'index'])->middleware('permission:task-assignment-departments.index,web');
