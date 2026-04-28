@@ -290,7 +290,6 @@ class TaskAssignmentItemController extends Controller
     }
 
     /**
-     * Import danh sách công việc
      * Cập nhật tiến độ công việc
      *
      * @urlParam taskAssignmentItem integer required ID công việc. Example: 1
