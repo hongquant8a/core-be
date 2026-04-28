@@ -133,4 +133,137 @@ class ReminderSchedulerTest extends TestCase
         $this->assertSame(1, TaskAssignmentReminder::where('status', 'cancelled')->count());
         $this->assertSame(0, TaskAssignmentReminder::where('status', 'pending')->count());
     }
+
+    public function test_remind_at_on_moment_preserves_seconds(): void
+    {
+        $this->addReminderSchedule('reminder_on', 'on', null, ['mail']);
+        $deadline = '2026-04-28 15:37:42';
+        $item = $this->makeItem(endAt: $deadline);
+
+        app(ReminderScheduler::class)->scheduleFor($item);
+
+        $reminder = TaskAssignmentReminder::where('moment', 'on')->first();
+        $this->assertNotNull($reminder);
+        $this->assertSame(
+            '2026-04-28 15:37:42',
+            $reminder->remind_at->format('Y-m-d H:i:s'),
+            'on-moment must equal end_at exactly, including seconds'
+        );
+    }
+
+    public function test_remind_at_after_moment_preserves_seconds(): void
+    {
+        $this->addReminderSchedule('reminder_after', 'after', 60, ['mail']);
+        $deadline = '2026-04-28 15:37:42';
+        $item = $this->makeItem(endAt: $deadline);
+
+        app(ReminderScheduler::class)->scheduleFor($item);
+
+        $reminder = TaskAssignmentReminder::where('moment', 'after')->first();
+        $this->assertNotNull($reminder);
+        $this->assertSame(
+            '2026-04-28 16:37:42',
+            $reminder->remind_at->format('Y-m-d H:i:s'),
+            'after-moment must be end_at + offset minutes, with seconds preserved'
+        );
+    }
+
+    public function test_reschedule_preserves_seconds_after_end_at_change(): void
+    {
+        $this->addReminderSchedule('reminder_before', 'before', 30, ['mail']);
+        $item = $this->makeItem(endAt: '2026-04-28 15:37:42');
+        $scheduler = app(ReminderScheduler::class);
+        $scheduler->scheduleFor($item);
+
+        $this->assertSame('2026-04-28 15:07:42', TaskAssignmentReminder::first()->remind_at->format('Y-m-d H:i:s'));
+
+        // Change end_at to a different time-of-day with different seconds
+        DB::table('task_assignment_items')->where('id', $item->id)->update(['end_at' => '2026-04-29 16:42:13']);
+        $item->refresh();
+        $scheduler->scheduleFor($item);
+
+        $this->assertSame(1, TaskAssignmentReminder::count());
+        $this->assertSame(
+            '2026-04-29 16:12:13',
+            TaskAssignmentReminder::first()->remind_at->format('Y-m-d H:i:s'),
+            'reschedule must recompute with new end_at, preserving its seconds'
+        );
+    }
+
+    public function test_creates_multiple_reminders_for_same_event_with_different_offsets(): void
+    {
+        $this->addReminderSchedule('reminder_before', 'before', 60, ['mail']);
+        $this->addReminderSchedule('reminder_before', 'before', 30, ['sms']);
+        $deadline = '2026-04-28 15:37:42';
+        $item = $this->makeItem(endAt: $deadline);
+
+        app(ReminderScheduler::class)->scheduleFor($item);
+
+        $this->assertSame(2, TaskAssignmentReminder::where('moment', 'before')->count());
+        $remindAts = TaskAssignmentReminder::where('moment', 'before')
+            ->orderBy('remind_at')
+            ->pluck('remind_at')
+            ->map(fn ($t) => $t->format('Y-m-d H:i:s'))
+            ->all();
+        $this->assertSame(['2026-04-28 14:37:42', '2026-04-28 15:07:42'], $remindAts);
+    }
+
+    public function test_skips_before_schedule_with_null_offset(): void
+    {
+        $this->addReminderSchedule('reminder_before', 'before', null, ['mail']);
+        $item = $this->makeItem(endAt: '2026-04-28 15:37:42');
+
+        app(ReminderScheduler::class)->scheduleFor($item);
+
+        $this->assertSame(0, TaskAssignmentReminder::count());
+    }
+
+    public function test_skips_after_schedule_with_null_offset(): void
+    {
+        $this->addReminderSchedule('reminder_after', 'after', null, ['mail']);
+        $item = $this->makeItem(endAt: '2026-04-28 15:37:42');
+
+        app(ReminderScheduler::class)->scheduleFor($item);
+
+        $this->assertSame(0, TaskAssignmentReminder::count());
+    }
+
+    public function test_no_reminders_when_item_status_cancelled(): void
+    {
+        $this->addReminderSchedule('reminder_before', 'before', 60, ['mail']);
+        $item = $this->makeItem(status: 'cancelled', endAt: '2026-04-28 15:37:42');
+
+        app(ReminderScheduler::class)->scheduleFor($item);
+
+        $this->assertSame(0, TaskAssignmentReminder::count());
+    }
+
+    public function test_no_reminders_when_document_has_no_organization(): void
+    {
+        $this->addReminderSchedule('reminder_before', 'before', 60, ['mail']);
+        $item = $this->makeItem(endAt: '2026-04-28 15:37:42');
+        // Null out the document's organization (FK allows null; scheduler treats as 0)
+        DB::table('task_assignment_documents')
+            ->where('id', $item->task_assignment_document_id)
+            ->update(['organization_id' => null]);
+
+        app(ReminderScheduler::class)->scheduleFor($item->fresh(['document']));
+
+        $this->assertSame(0, TaskAssignmentReminder::count());
+    }
+
+    public function test_creates_reminders_even_when_event_config_disabled(): void
+    {
+        // seedNotificationConfig creates configs with enabled=false by default.
+        // Don't enable. Just attach a schedule.
+        $this->addReminderSchedule('reminder_before', 'before', 60, ['mail']);
+        $item = $this->makeItem(endAt: '2026-04-28 15:37:42');
+
+        app(ReminderScheduler::class)->scheduleFor($item);
+
+        // Documented behavior: scheduler ignores enabled flag.
+        // The fire-time command (ProcessRemindersCommand) is the one that filters.
+        $this->assertSame(1, TaskAssignmentReminder::count());
+        $this->assertSame('pending', TaskAssignmentReminder::first()->status);
+    }
 }
