@@ -23,20 +23,24 @@ class TaskAssignmentItemService
     {
         $base = TaskAssignmentItem::filter($filters);
 
+        // ⚠ DESIGN DEBT — overdue đang là bucket RIÊNG (mutually exclusive với todo/in_progress/paused),
+        // không phải attribute flag như đúng semantic. Sum 6 buckets = total → tiện cho FE table/donut.
+        // Spec gốc + refactor đề xuất: overdue là attribute (is_overdue), subset của 3 active buckets.
+        // Refactor mai sau — xem phan-tich-module-quan-ly-giao-viec-lien-phong-ban.md "Notes về stats overdue".
         return [
             'total' => (clone $base)->count(),
             'todo' => $this->countByStatusExcludingOverdue($base, TaskProgressStatusEnum::Todo->value),
             'in_progress' => $this->countByStatusExcludingOverdue($base, TaskProgressStatusEnum::InProgress->value),
-            'done' => (clone $base)->where('processing_status', TaskProgressStatusEnum::Done->value)->count(),
             'paused' => $this->countByStatusExcludingOverdue($base, TaskProgressStatusEnum::Paused->value),
-            'cancelled' => (clone $base)->where('processing_status', TaskProgressStatusEnum::Cancelled->value)->count(),
+            'done' => (clone $base)->where('processing_status', TaskProgressStatusEnum::Done->value)->count(),
             'overdue' => $this->countOverdue($base),
+            'cancelled' => (clone $base)->where('processing_status', TaskProgressStatusEnum::Cancelled->value)->count(),
         ];
     }
 
     /**
-     * Count tasks với status cụ thể NHƯNG loại các task quá hạn
-     * (overdue được tách bucket riêng, mutually exclusive với status buckets).
+     * Count tasks với status cụ thể, LOẠI overdue (overdue tách bucket riêng).
+     * ⚠ Tạm thời, không đúng semantic. Refactor sau.
      */
     private function countByStatusExcludingOverdue($base, string $status): int
     {
@@ -50,8 +54,8 @@ class TaskAssignmentItemService
     }
 
     /**
-     * Count tasks đang quá hạn (any active status + past end_at).
-     * Mutually exclusive với todo/in_progress/paused buckets.
+     * Count tasks đang quá hạn (active status + past end_at).
+     * Hiện là bucket riêng, mutually exclusive với todo/in_progress/paused. Refactor sau thành attribute.
      */
     private function countOverdue($base): int
     {
@@ -330,10 +334,10 @@ class TaskAssignmentItemService
                 'total' => (clone $base)->count(),
                 'todo' => $this->countByStatusExcludingOverdue($base, TaskProgressStatusEnum::Todo->value),
                 'in_progress' => $this->countByStatusExcludingOverdue($base, TaskProgressStatusEnum::InProgress->value),
-                'done' => (clone $base)->where('processing_status', $done)->count(),
                 'paused' => $this->countByStatusExcludingOverdue($base, TaskProgressStatusEnum::Paused->value),
-                'cancelled' => (clone $base)->where('processing_status', $cancelled)->count(),
+                'done' => (clone $base)->where('processing_status', $done)->count(),
                 'overdue' => $this->countOverdue($base),
+                'cancelled' => (clone $base)->where('processing_status', $cancelled)->count(),
             ];
         })->all();
     }
@@ -367,6 +371,7 @@ class TaskAssignmentItemService
                 TaskAssignmentItem::whereHas('users', fn ($q) => $q->where('task_assignment_item_user.department_id', $dept->id))
             );
 
+            // 6 buckets mutually exclusive (overdue tách riêng, không phải attribute) — sum = total.
             return [
                 'department_id' => $dept->id,
                 'department_name' => $dept->name,
@@ -374,10 +379,10 @@ class TaskAssignmentItemService
                 'total' => (clone $base)->count(),
                 'todo' => $this->countByStatusExcludingOverdue($base, TaskProgressStatusEnum::Todo->value),
                 'in_progress' => $this->countByStatusExcludingOverdue($base, TaskProgressStatusEnum::InProgress->value),
-                'done' => (clone $base)->where('processing_status', $done)->count(),
                 'paused' => $this->countByStatusExcludingOverdue($base, TaskProgressStatusEnum::Paused->value),
-                'cancelled' => (clone $base)->where('processing_status', $cancelled)->count(),
+                'done' => (clone $base)->where('processing_status', $done)->count(),
                 'overdue' => $this->countOverdue($base),
+                'cancelled' => (clone $base)->where('processing_status', $cancelled)->count(),
                 'new_in_period' => ($fromDate && $toDate)
                     ? (clone $base)->whereBetween('created_at', [$fromDate, $toDateEnd])->count()
                     : null,

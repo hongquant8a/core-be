@@ -18,6 +18,27 @@
 
 ---
 
+> **⚠ Tech Debt — Stats `overdue` design (2026-04-23):**
+>
+> Hiện `overdue` đang là **bucket riêng** trong response stats (`/stats`, `/stats-by-department`, `/stats-by-item-type`), **mutually exclusive** với todo/in_progress/paused. Tức task `in_progress` quá hạn → CHỈ count vào `overdue` bucket, KHÔNG count `in_progress`.
+>
+> **Lý do tạm thời:** sum 6 buckets = total, FE table/donut render đơn giản, khớp số.
+>
+> **Vấn đề về semantic:**
+> - Thực tế "overdue" là **attribute** của task (1 task vừa `in_progress` vừa `is_overdue=true`), không phải status.
+> - Hiện count tách bucket → mất "overlap": không thể trả lời câu hỏi "có bao nhiêu task `in_progress` đang trễ hạn?" từ stats endpoint (phải gọi list endpoint với 2 filter).
+> - FE chart/filter sau này phức tạp lên thì sẽ vướng (vd: stacked bar "in_progress" cần highlight phần overdue).
+>
+> **Refactor đề xuất (sau):**
+> - Stats trả 5 buckets status (todo, in_progress, paused, done, cancelled) — sum = total.
+> - Thêm `overdue_count` riêng = subset của `todo + in_progress + paused`.
+> - 1 task `in_progress` overdue → count cả `in_progress` (status) + `overdue_count` (attribute).
+> - Resource `is_overdue` flag đã đúng semantic này — chỉ stats endpoint chưa khớp.
+>
+> Khi refactor → breaking change FE: sum 6 fields cũ ≠ total, FE phải dùng cách render khác (badge cảnh báo overdue thay vì lát donut riêng).
+
+---
+
 ## 1. Phạm vi bài toán
 
 ### 1.1 Đối tượng quản lý
