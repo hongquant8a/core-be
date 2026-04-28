@@ -93,6 +93,38 @@ class LogActivityController extends Controller
     }
 
     /**
+     * Snapshot dashboard tổng hợp
+     *
+     * Trả về stats + timeline + top users + top organizations trong 1 request,
+     * tránh sai lệch số liệu do middleware tự log mỗi request làm tăng count giữa các lời gọi.
+     *
+     * @queryParam search string Từ khóa tìm kiếm. Example: login
+     * @queryParam organization_id integer Lọc theo tổ chức. Example: 1
+     * @queryParam from_date date Từ ngày (Y-m-d). Example: 2026-01-01
+     * @queryParam to_date date Đến ngày (Y-m-d). Example: 2026-12-31
+     * @queryParam method_type string GET, POST, PUT, PATCH, DELETE. Example: GET
+     * @queryParam status_code integer Mã HTTP. Example: 200
+     * @queryParam granularity string `day` hoặc `month` (mặc định `month`). Example: month
+     * @queryParam top_users_limit integer 1-100, mặc định 5. Example: 5
+     * @queryParam top_organizations_limit integer 1-100, mặc định 5. Example: 5
+     *
+     * @response 200 {"success":true,"data":{"stats":{"total":2107,"views":2089,"creates":14,"updates":4,"deletes":0},"timeline":{"granularity":"month","data":[{"period":"2026-04","total":2107,"views":2089,"creates":14,"updates":4,"deletes":0}]},"top_users":[{"user_id":1,"name":"Admin","email":"...","user_name":"admin","total":2097}],"top_organizations":[{"organization_id":1,"name":"Sở Nội vụ","slug":"so-noi-vu","total":2107}]}}
+     */
+    public function dashboard(FilterRequest $request)
+    {
+        $granularity = (string) $request->input('granularity', 'month');
+        $topUsersLimit = (int) $request->input('top_users_limit', 5);
+        $topOrganizationsLimit = (int) $request->input('top_organizations_limit', 5);
+
+        return $this->success($this->logActivityService->dashboard(
+            $request->all(),
+            $topUsersLimit,
+            $topOrganizationsLimit,
+            $granularity,
+        ));
+    }
+
+    /**
      * Danh sách nhật ký
      *
      * @queryParam search string Tìm kiếm. Example: login

@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/export', [LogActivityController::class, 'export'])->middleware('permission:log-activities.export,web');
 Route::get('/stats', [LogActivityController::class, 'stats'])->middleware('permission:log-activities.stats,web');
+Route::get('/stats/dashboard', [LogActivityController::class, 'dashboard'])->middleware('permission:log-activities.stats,web');
 Route::get('/stats/timeline', [LogActivityController::class, 'timeline'])->middleware('permission:log-activities.stats,web');
 Route::get('/stats/top-users', [LogActivityController::class, 'topUsers'])->middleware('permission:log-activities.stats,web');
 Route::get('/stats/top-organizations', [LogActivityController::class, 'topOrganizations'])->middleware('permission:log-activities.stats,web');

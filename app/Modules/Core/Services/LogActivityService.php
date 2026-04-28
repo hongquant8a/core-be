@@ -139,6 +139,26 @@ class LogActivityService
         ])->all();
     }
 
+    /**
+     * Aggregate snapshot for dashboard. Single controller call → middleware logs +1 row total
+     * → all four sub-results count the same dataset.
+     *
+     * @return array{stats:array,timeline:array,top_users:array,top_organizations:array}
+     */
+    public function dashboard(
+        array $filters,
+        int $topUsersLimit = 5,
+        int $topOrganizationsLimit = 5,
+        string $granularity = 'month',
+    ): array {
+        return [
+            'stats' => $this->stats($filters),
+            'timeline' => $this->timeline($granularity),
+            'top_users' => $this->topUsers($filters, $topUsersLimit),
+            'top_organizations' => $this->topOrganizations($filters, $topOrganizationsLimit),
+        ];
+    }
+
     public function index(array $filters, int $limit)
     {
         return LogActivity::with('user', 'organization')
