@@ -150,6 +150,20 @@ class TaskAssignmentItem extends Model implements HasMedia
                     return;
                 }
                 $q->where('processing_status', $status);
+
+                // Active statuses (todo/in_progress/paused): loại task đang quá hạn — đồng bộ với stats `countByStatusExcludingOverdue`.
+                $activeStatuses = [
+                    \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Todo->value,
+                    \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::InProgress->value,
+                    \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Paused->value,
+                ];
+                if (in_array($status, $activeStatuses, true)) {
+                    $q->where(fn ($q2) => $q2
+                        ->where('deadline_type', '!=', \App\Modules\TaskAssignment\Enums\TaskDeadlineTypeEnum::HasDeadline->value)
+                        ->orWhereNull('end_at')
+                        ->orWhere('end_at', '>=', now())
+                    );
+                }
             })
             ->when($filters['priority'] ?? null, fn ($q, $priority) => $q->where('priority', $priority))
             ->when($filters['deadline_type'] ?? null, fn ($q, $type) => $q->where('deadline_type', $type))

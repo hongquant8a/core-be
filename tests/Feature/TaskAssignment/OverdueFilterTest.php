@@ -84,4 +84,31 @@ class OverdueFilterTest extends TestCase
         $this->assertNotContains($onTime->id, $ids);
         $this->assertNotContains($done->id, $ids);
     }
+
+    public function test_filter_active_status_excludes_overdue_to_match_stats(): void
+    {
+        // Active status filter (todo/in_progress/paused) phải loại task đang overdue
+        // — sync với stats `countByStatusExcludingOverdue`.
+        $todoOnTime = $this->makeTask(['end_at' => now()->addDay(), 'processing_status' => 'todo']);
+        $todoOverdue = $this->makeTask(['end_at' => now()->subDay(), 'processing_status' => 'todo']);
+        $todoNoDeadline = $this->makeTask(['deadline_type' => 'no_deadline', 'end_at' => null, 'processing_status' => 'todo']);
+
+        $res = $this->getJson('/api/task-assignment-items?processing_status=todo', ['X-Organization-Id' => $this->org->id]);
+        $res->assertOk();
+        $ids = collect($res->json('data'))->pluck('id')->all();
+        $this->assertContains($todoOnTime->id, $ids);
+        $this->assertContains($todoNoDeadline->id, $ids);
+        $this->assertNotContains($todoOverdue->id, $ids);
+    }
+
+    public function test_filter_done_status_keeps_past_end_at(): void
+    {
+        // Terminal status (done/cancelled) không chịu ảnh hưởng overdue logic.
+        $donePast = $this->makeTask(['end_at' => now()->subDay(), 'processing_status' => 'done']);
+
+        $res = $this->getJson('/api/task-assignment-items?processing_status=done', ['X-Organization-Id' => $this->org->id]);
+        $res->assertOk();
+        $ids = collect($res->json('data'))->pluck('id')->all();
+        $this->assertContains($donePast->id, $ids);
+    }
 }
