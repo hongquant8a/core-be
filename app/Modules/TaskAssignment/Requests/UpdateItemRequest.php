@@ -22,7 +22,7 @@ class UpdateItemRequest extends BaseRequest
             'processing_status' => ['sometimes', TaskProgressStatusEnum::rule()],
             'completion_percent' => 'nullable|integer|min:0|max:100',
             'priority' => ['sometimes', TaskPriorityEnum::rule()],
-            'users' => 'nullable|array',
+            'users' => 'sometimes|array|min:1',
             'users.*.user_id' => 'required|integer',
             'users.*.department_id' => 'required|integer|exists:task_assignment_departments,id',
             'users.*.department_role' => ['required', TaskAssignmentRoleEnum::rule()],

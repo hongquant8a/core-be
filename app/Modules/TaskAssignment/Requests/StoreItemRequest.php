@@ -37,7 +37,7 @@ class StoreItemRequest extends BaseRequest
                     $fail("Người giao việc (ID {$value}) không thuộc module giao việc của tổ chức này.");
                 }
             }],
-            'users' => 'nullable|array',
+            'users' => 'required|array|min:1',
             'users.*.user_id' => 'required|integer',
             'users.*.department_id' => 'required|integer|exists:task_assignment_departments,id',
             'users.*.department_role' => ['required', TaskAssignmentRoleEnum::rule()],
@@ -59,6 +59,15 @@ class StoreItemRequest extends BaseRequest
             }],
             'attachments' => 'nullable|array|max:10',
             'attachments.*' => $this->getAttachmentRule(),
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'users.required' => 'Phải phân công ít nhất 1 người thực hiện.',
+            'users.array' => 'Danh sách người thực hiện không hợp lệ.',
+            'users.min' => 'Phải phân công ít nhất 1 người thực hiện.',
         ];
     }
 

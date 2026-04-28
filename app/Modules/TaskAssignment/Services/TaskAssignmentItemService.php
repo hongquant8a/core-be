@@ -342,36 +342,36 @@ class TaskAssignmentItemService
     {
         $filters = $this->applyDepartmentRestriction($filters);
 
-        $departments = TaskAssignmentDepartment::where('status', 'active')
+        // Iterate ALL departments (active + inactive) — task gắn với inactive dept vẫn hiển thị.
+        $departments = TaskAssignmentDepartment::query()
             ->when($filters['department_id'] ?? null, fn ($q, $id) => $q->where('id', $id))
-            ->get(['id', 'name', 'code']);
+            ->get(['id', 'name', 'code', 'status']);
 
         $done = TaskProgressStatusEnum::Done->value;
         $cancelled = TaskProgressStatusEnum::Cancelled->value;
-        $hasDeadline = TaskDeadlineTypeEnum::HasDeadline->value;
 
-        return $departments->map(function ($dept) use ($filters, $done, $cancelled, $hasDeadline) {
-            $base = TaskAssignmentItem::whereHas('users', fn ($q) => $q->where('task_assignment_item_user.department_id', $dept->id))
-                ->when($filters['processing_status'] ?? null, fn ($q, $v) => $q->where('processing_status', $v))
-                ->when($filters['priority'] ?? null, fn ($q, $v) => $q->where('priority', $v))
-                ->when($filters['deadline_type'] ?? null, fn ($q, $v) => $q->where('deadline_type', $v))
-                ->when($filters['task_assignment_item_type_id'] ?? null, fn ($q, $v) => $q->where('task_assignment_item_type_id', $v))
-                ->when($filters['from_date'] ?? null, fn ($q, $v) => $q->where('created_at', '>=', $v))
-                ->when($filters['to_date'] ?? null, fn ($q, $v) => $q->where('created_at', '<=', Carbon::parse($v)->endOfDay()));
+        $applyCommonFilters = fn ($base) => $base
+            ->when($filters['processing_status'] ?? null, fn ($q, $v) => $q->where('processing_status', $v))
+            ->when($filters['priority'] ?? null, fn ($q, $v) => $q->where('priority', $v))
+            ->when($filters['deadline_type'] ?? null, fn ($q, $v) => $q->where('deadline_type', $v))
+            ->when($filters['task_assignment_item_type_id'] ?? null, fn ($q, $v) => $q->where('task_assignment_item_type_id', $v))
+            ->when($filters['from_date'] ?? null, fn ($q, $v) => $q->where('created_at', '>=', $v))
+            ->when($filters['to_date'] ?? null, fn ($q, $v) => $q->where('created_at', '<=', Carbon::parse($v)->endOfDay()));
 
-            $total = (clone $base)->count();
+        $fromDate = $filters['from_date'] ?? null;
+        $toDate = $filters['to_date'] ?? null;
+        $toDateEnd = $toDate ? Carbon::parse($toDate)->endOfDay() : null;
 
-            $fromDate = $filters['from_date'] ?? null;
-            $toDate = $filters['to_date'] ?? null;
-            $toDateEnd = $toDate ? Carbon::parse($toDate)->endOfDay() : null;
-
-            $deptItemBase = fn () => TaskAssignmentItem::whereHas('users', fn ($q) => $q->where('task_assignment_item_user.department_id', $dept->id));
+        $rows = $departments->map(function ($dept) use ($applyCommonFilters, $done, $cancelled, $fromDate, $toDate, $toDateEnd) {
+            $base = $applyCommonFilters(
+                TaskAssignmentItem::whereHas('users', fn ($q) => $q->where('task_assignment_item_user.department_id', $dept->id))
+            );
 
             return [
                 'department_id' => $dept->id,
                 'department_name' => $dept->name,
                 'department_code' => $dept->code,
-                'total' => $total,
+                'total' => (clone $base)->count(),
                 'todo' => $this->countByStatusExcludingOverdue($base, TaskProgressStatusEnum::Todo->value),
                 'in_progress' => $this->countByStatusExcludingOverdue($base, TaskProgressStatusEnum::InProgress->value),
                 'done' => (clone $base)->where('processing_status', $done)->count(),
@@ -379,14 +379,16 @@ class TaskAssignmentItemService
                 'cancelled' => (clone $base)->where('processing_status', $cancelled)->count(),
                 'overdue' => $this->countOverdue($base),
                 'new_in_period' => ($fromDate && $toDate)
-                    ? $deptItemBase()->whereBetween('created_at', [$fromDate, $toDateEnd])->count()
+                    ? (clone $base)->whereBetween('created_at', [$fromDate, $toDateEnd])->count()
                     : null,
                 'done_in_period' => ($fromDate && $toDate)
-                    ? $deptItemBase()->where('processing_status', $done)
+                    ? (clone $base)->where('processing_status', $done)
                         ->whereBetween('completed_at', [$fromDate, $toDateEnd])->count()
                     : null,
             ];
         })->all();
+
+        return $rows;
     }
 
     public function statsByUser(array $filters): array
