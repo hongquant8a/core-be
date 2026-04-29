@@ -77,7 +77,7 @@
                                     <div class="header-divider">&nbsp;</div>
                                     <h1 class="header-title">{{ $subjectText ?? 'Thông báo' }}</h1>
                                     @if(!empty($label))
-                                        <span class="header-label" style="background:{{ $accent }};">{{ $label }}</span>
+                                        <!-- <span class="header-label" style="background:{{ $accent }};">{{ $label }}</span> -->
                                     @endif
                                 </td>
                             </tr>
