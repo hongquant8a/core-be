@@ -12,11 +12,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $subjectText ?? 'Thông báo' }}</title>
     <style>
-        body { margin:0; padding:0; background:#F5F1EA; font-family:'Times New Roman','Source Serif Pro',Georgia,'DejaVu Serif',serif; color:#1F2937; line-height:1.65; -webkit-font-smoothing:antialiased; }
+        html, body { margin:0; padding:0; width:100%; }
+        body { background:#F5F1EA; font-family:'Times New Roman','Source Serif Pro',Georgia,'DejaVu Serif',serif; color:#1F2937; line-height:1.65; -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+        *, *::before, *::after { box-sizing:border-box; }
         table { border-collapse:collapse; }
-        img { border:0; display:block; max-width:100%; }
+        img { border:0; display:block; max-width:100%; height:auto; }
         a { color:#0B4F9C; }
-        .wrapper { width:100%; background:#F5F1EA; padding:32px 16px; }
+        .wrapper { background:#F5F1EA; padding:32px 16px; }
         .container { max-width:640px; margin:0 auto; }
         .ribbon-top, .ribbon-bot { height:5px; background:#C8102E; font-size:0; line-height:0; }
         .ribbon-gold { height:2px; background:#F4C20D; font-size:0; line-height:0; }
