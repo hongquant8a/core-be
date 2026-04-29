@@ -72,6 +72,9 @@ class AuthService
     public function logout($user): void
     {
         $user->currentAccessToken()->delete();
+        if (! empty($user->fcm_token)) {
+            $user->updateQuietly(['fcm_token' => null]);
+        }
     }
 
     public function forgotPassword(string $email): bool

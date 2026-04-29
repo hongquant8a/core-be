@@ -47,19 +47,19 @@ composer install
 ./vendor/bin/sail artisan key:generate
 ./vendor/bin/sail artisan migrate --seed
 ./vendor/bin/sail artisan storage:link
-./vendor/bin/sail npm install        # nếu cần asset
+./vendor/bin/sail npm install # nếu cần asset
 ```
 
 Chạy dev:
 ```bash
-./vendor/bin/sail composer dev       # API + queue + log + vite cùng lúc
+./vendor/bin/sail composer dev # API + queue + log + vite cùng lúc
 ```
 
 Chạy riêng:
 ```bash
 ./vendor/bin/sail artisan serve
 ./vendor/bin/sail artisan queue:listen --tries=1 --timeout=0
-./vendor/bin/sail artisan schedule:work    # nếu test cron (notification reminders)
+./vendor/bin/sail artisan schedule:work # nếu test cron (notification reminders)
 ```
 
 Test:
@@ -180,7 +180,7 @@ Model nghiệp vụ multi-tenant `use HasOrganizationScope`. Trait này:
 
 **Trong test** nhớ:
 ```php
-setPermissionsTeamId($this->org->id);   // đầu mỗi test scope multi-tenant
+setPermissionsTeamId($this->org->id); // đầu mỗi test scope multi-tenant
 ```
 
 Đa số test base class hoặc trait helper đã làm sẵn.
@@ -227,7 +227,7 @@ Roles thường gặp: `Super Admin`, `Quản trị`, `Admin`, custom roles per 
 **Trong test** muốn bypass mọi permission:
 ```php
 $this->seed(\Database\Seeders\PermissionSeeder::class);
-setPermissionsTeamId($org->id);          // sau seed, set team về org test
+setPermissionsTeamId($org->id); // sau seed, set team về org test
 $user = User::factory()->create();
 $user->assignRole('Super Admin');
 Sanctum::actingAs($user);
@@ -308,7 +308,7 @@ class XyzTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed(\Database\Seeders\PermissionSeeder::class);   // chỉ khi cần check role
+        $this->seed(\Database\Seeders\PermissionSeeder::class); // chỉ khi cần check role
         $this->org = Organization::firstOrCreate(['slug' => 'test'], ['name' => 'Test', 'status' => 'active']);
         setPermissionsTeamId($this->org->id);
     }
