@@ -73,7 +73,7 @@ class LogActivityDashboardTest extends TestCase
             'stats.total must equal sum of timeline buckets — both query the same snapshot');
     }
 
-    public function test_dashboard_top_users_subset_matches_admin_count(): void
+    public function test_dashboard_top_users_includes_admin_other_and_anonymous_guest(): void
     {
         $other = User::factory()->create();
         LogActivity::factory()->count(5)->create([
@@ -84,7 +84,7 @@ class LogActivityDashboardTest extends TestCase
             'user_id' => $other->id,
             'organization_id' => $this->org->id,
         ]);
-        // Anonymous (excluded from top_users by whereNotNull)
+        // Anonymous → grouped into 1 "Khách" row
         LogActivity::factory()->count(2)->create([
             'user_id' => null,
             'organization_id' => $this->org->id,
@@ -97,11 +97,42 @@ class LogActivityDashboardTest extends TestCase
         $topUsers = collect($res->json('data.top_users'));
         $this->assertSame(5, $topUsers->firstWhere('user_id', $this->admin->id)['total']);
         $this->assertSame(3, $topUsers->firstWhere('user_id', $other->id)['total']);
-        // Anonymous excluded
-        $this->assertNull($topUsers->firstWhere('user_id', null));
 
-        // Total includes all 10 (5 + 3 + 2 anonymous)
+        // Anonymous gathered as a single "Khách" row
+        $guest = $topUsers->firstWhere('user_id', null);
+        $this->assertNotNull($guest);
+        $this->assertSame('Khách', $guest['name']);
+        $this->assertSame(2, $guest['total']);
+
+        // Sum of top_users matches stats.total — invariant (no filter loses rows)
         $this->assertSame(10, $res->json('data.stats.total'));
+        $this->assertSame(10, $topUsers->sum('total'));
+    }
+
+    public function test_dashboard_top_organizations_includes_unknown_row_for_null_org(): void
+    {
+        LogActivity::factory()->count(4)->create([
+            'user_id' => $this->admin->id,
+            'organization_id' => $this->org->id,
+        ]);
+        LogActivity::factory()->count(3)->create([
+            'user_id' => $this->admin->id,
+            'organization_id' => null,
+        ]);
+
+        $res = $this->withHeader('X-Organization-Id', (string) $this->org->id)
+            ->getJson('/api/log-activities/stats/dashboard?top_organizations_limit=10');
+
+        $res->assertOk();
+        $topOrgs = collect($res->json('data.top_organizations'));
+        $this->assertSame(4, $topOrgs->firstWhere('organization_id', $this->org->id)['total']);
+
+        $unknown = $topOrgs->firstWhere('organization_id', null);
+        $this->assertNotNull($unknown);
+        $this->assertSame('Không xác định', $unknown['name']);
+        $this->assertSame(3, $unknown['total']);
+
+        $this->assertSame(7, $topOrgs->sum('total'));
     }
 
     public function test_dashboard_respects_filter_params(): void

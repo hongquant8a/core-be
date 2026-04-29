@@ -94,49 +94,64 @@ class LogActivityService
 
     /**
      * Top N người dùng hoạt động nhiều nhất theo filter.
+     * Bao gồm 1 row "Khách" gộp các log có user_id = NULL (anonymous traffic).
      */
     public function topUsers(array $filters, int $limit = 5): array
     {
         $rows = LogActivity::filter($filters)
             ->reorder()
             ->select('user_id', DB::raw('count(*) as total'))
-            ->whereNotNull('user_id')
             ->groupBy('user_id')
             ->orderByDesc('total')
             ->limit($limit)
             ->with('user:id,name,email,user_name')
             ->get();
 
-        return $rows->map(fn ($r) => [
-            'user_id' => (int) $r->user_id,
-            'name' => $r->user?->name,
-            'email' => $r->user?->email,
-            'user_name' => $r->user?->user_name,
-            'total' => (int) $r->total,
-        ])->all();
+        return $rows->map(fn ($r) => $r->user_id === null
+            ? [
+                'user_id' => null,
+                'name' => 'Khách',
+                'email' => null,
+                'user_name' => null,
+                'total' => (int) $r->total,
+            ]
+            : [
+                'user_id' => (int) $r->user_id,
+                'name' => $r->user?->name,
+                'email' => $r->user?->email,
+                'user_name' => $r->user?->user_name,
+                'total' => (int) $r->total,
+            ])->all();
     }
 
     /**
      * Top N tổ chức hoạt động nhiều nhất theo filter.
+     * Bao gồm 1 row "Không xác định" gộp các log có organization_id = NULL.
      */
     public function topOrganizations(array $filters, int $limit = 5): array
     {
         $rows = LogActivity::filter($filters)
             ->reorder()
             ->select('organization_id', DB::raw('count(*) as total'))
-            ->whereNotNull('organization_id')
             ->groupBy('organization_id')
             ->orderByDesc('total')
             ->limit($limit)
             ->with('organization:id,name,slug')
             ->get();
 
-        return $rows->map(fn ($r) => [
-            'organization_id' => (int) $r->organization_id,
-            'name' => $r->organization?->name,
-            'slug' => $r->organization?->slug,
-            'total' => (int) $r->total,
-        ])->all();
+        return $rows->map(fn ($r) => $r->organization_id === null
+            ? [
+                'organization_id' => null,
+                'name' => 'Không xác định',
+                'slug' => null,
+                'total' => (int) $r->total,
+            ]
+            : [
+                'organization_id' => (int) $r->organization_id,
+                'name' => $r->organization?->name,
+                'slug' => $r->organization?->slug,
+                'total' => (int) $r->total,
+            ])->all();
     }
 
     /**

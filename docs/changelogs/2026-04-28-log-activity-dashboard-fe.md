@@ -1,88 +1,63 @@
-# Changelog FE — LogActivity Dashboard snapshot endpoint
+# LogActivity dashboard — changelog FE
 
 **Ngày:** 2026-04-28
-**Branch:** `main`
-**Đối tượng:** FE team (trang Dashboard "Thống kê hoạt động")
+**Đối tượng:** FE team (trang Thống kê hoạt động)
 
-Gộp 4 request dashboard hiện tại (`stats`, `timeline`, `top-users`, `top-organizations`) thành **1 endpoint snapshot duy nhất** để 4 con số luôn khớp nhau.
-
-**Không phải breaking change.** 4 endpoint cũ giữ nguyên, FE migrate dần.
+Endpoint mới gộp 4 request dashboard thành 1, và stats giờ tính cả anonymous traffic.
 
 ---
 
-## 1. Vấn đề trước đây
-
-Trang dashboard gọi 4 request liên tiếp. Middleware `LogActivity` tự log MỖI request → mỗi call dashboard cũng được log lại → giữa các call, count tăng dần. Kết quả: 4 chỉ số hiển thị KHÁC NHAU dù lý thuyết phải bằng nhau.
-
-Ví dụ thực tế từ network tab:
-- `/stats` → `total: 2107`
-- `/stats/top-users` → Admin `total: 2097`
-- `/stats/timeline` → tooltip 04/2026 `total: 2112`
-
-→ Lệch 5 (giữa stats và timeline) là do 5 request dashboard kẹp giữa được middleware log.
-
-## 2. Giải pháp
-
-Endpoint MỚI gom tất cả vào 1 response:
+## Endpoint
 
 ```
 GET /api/log-activities/stats/dashboard
 ```
 
-Permission: `log-activities.stats` (giống endpoint cũ — **không cần thêm CASL ability**).
+Permission: `log-activities.stats` (đã có sẵn — không cần đụng CASL).
 
-## 3. Query params
+Query params (tất cả optional, sync với endpoint cũ):
 
-Tất cả optional. Sync 100% với các endpoint cũ:
+- `granularity` — `day` | `month` (default `month`)
+- `top_users_limit` — default `5`
+- `top_organizations_limit` — default `5`
+- `from_date`, `to_date`, `organization_id`, `method_type`, `status_code`, `search` — filter cho `stats` + `top_users` + `top_organizations` (timeline luôn ALL-time, không nhận date filter)
 
-| Param | Type | Default | Áp dụng cho |
-|-------|------|---------|-------------|
-| `search` | string | — | stats, top_users, top_organizations |
-| `organization_id` | int | — | stats, top_users, top_organizations |
-| `from_date` | date `Y-m-d` | — | stats, top_users, top_organizations |
-| `to_date` | date `Y-m-d` | — | stats, top_users, top_organizations |
-| `method_type` | string `GET\|POST\|PUT\|PATCH\|DELETE` | — | stats, top_users, top_organizations |
-| `status_code` | int | — | stats, top_users, top_organizations |
-| `granularity` | `day` \| `month` | `month` | timeline |
-| `top_users_limit` | int 1-100 | `5` | top_users |
-| `top_organizations_limit` | int 1-100 | `5` | top_organizations |
-
-**Lưu ý:** `timeline` luôn là ALL-time (từ log sớm nhất đến hiện tại), filter ngày KHÔNG áp dụng cho timeline (giữ behavior endpoint cũ). Nếu sau này muốn filter timeline theo date range → cần BE update.
-
-## 4. Response shape
+## Response
 
 ```json
 {
   "success": true,
   "data": {
-    "stats": {
-      "total": 2107,
-      "views": 2089,
-      "creates": 14,
-      "updates": 4,
-      "deletes": 0
-    },
+    "stats": { "total": 2362, "views": 2340, "creates": 15, "updates": 7, "deletes": 0 },
     "timeline": {
       "granularity": "month",
-      "data": [
-        { "period": "2026-04", "total": 2107, "views": 2089, "creates": 14, "updates": 4, "deletes": 0 }
-      ]
+      "data": [{ "period": "2026-04", "total": 2362, "views": 2340, "creates": 15, "updates": 7, "deletes": 0 }]
     },
     "top_users": [
-      { "user_id": 1, "name": "Admin", "email": "admin@...", "user_name": "admin", "total": 2097 }
+      { "user_id": 11, "name": "Admin", "email": "...", "user_name": "admin", "total": 2351 },
+      { "user_id": null, "name": "Khách", "email": null, "user_name": null, "total": 11 }
     ],
     "top_organizations": [
-      { "organization_id": 1, "name": "Sở Nội vụ", "slug": "so-noi-vu", "total": 2107 }
+      { "organization_id": 1, "name": "Default", "slug": "default", "total": 2354 },
+      { "organization_id": null, "name": "Không xác định", "slug": null, "total": 8 }
     ]
   }
 }
 ```
 
-Mỗi sub-section có shape **giống y hệt** endpoint cũ tương ứng — chỉ là gom lại vào 1 object.
+## Điểm cần chú ý
 
-## 5. Migration (FE)
+**1. Sum khớp**: `sum(top_users[].total) === stats.total`. Không cần tự cộng bù anonymous nữa.
 
-### Trước
+**2. Row "Khách"** trong `top_users` (`user_id: null`, `name: "Khách"`) gộp các log không có user (login form, public endpoint, deploy webhook…). Tương tự `"Không xác định"` cho `top_organizations`. Render:
+- Ẩn avatar / không cho click
+- Hiển thị bình thường, không phải lỗi
+
+**3. Sum của top khác stats không có nghĩa là bug** — có thể do `top_*_limit` cắt mất user/org xếp ngoài top N. Tăng limit nếu cần đủ.
+
+## Migration
+
+Trước: 4 request song song.
 
 ```ts
 const [stats, timeline, topUsers, topOrgs] = await Promise.all([
@@ -93,89 +68,52 @@ const [stats, timeline, topUsers, topOrgs] = await Promise.all([
 ])
 ```
 
-### Sau
+Sau: 1 request.
 
 ```ts
 const { data } = await api.get('/api/log-activities/stats/dashboard', {
-  params: {
-    granularity: 'month',
-    top_users_limit: 5,
-    top_organizations_limit: 5,
-  },
+  params: { granularity: 'month', top_users_limit: 5, top_organizations_limit: 5 },
 })
 const { stats, timeline, top_users, top_organizations } = data
 ```
 
-### Lợi ích
+→ Page load nhanh hơn ~3 round-trip. 4 con số đảm bảo cùng snapshot (không lệch do middleware tự log mỗi request).
 
-- 1 request thay vì 4 → page load nhanh hơn ~3 round-trip.
-- 4 con số HIỂN THỊ luôn khớp (cùng snapshot).
-- Dropdown "Theo tháng / Theo ngày" chỉ cần đổi `granularity` query param + refetch.
-
-## 6. Type definitions (TS gợi ý)
+## Type
 
 ```ts
-interface DashboardStats {
-  total: number;
-  views: number;       // GET
-  creates: number;     // POST
-  updates: number;     // PUT/PATCH
-  deletes: number;     // DELETE
+interface DashboardResponse {
+  stats: { total: number; views: number; creates: number; updates: number; deletes: number };
+  timeline: { granularity: 'day' | 'month'; data: TimelineBucket[] };
+  top_users: TopUser[];
+  top_organizations: TopOrganization[];
 }
 
-interface DashboardTimelineBucket {
-  period: string;      // 'YYYY-MM' nếu granularity=month, 'YYYY-MM-DD' nếu day
+interface TopUser {
+  user_id: number | null;          // null = row "Khách"
+  name: string | null;             // "Khách" khi user_id=null
+  email: string | null;
+  user_name: string | null;
+  total: number;
+}
+
+interface TopOrganization {
+  organization_id: number | null;  // null = row "Không xác định"
+  name: string | null;
+  slug: string | null;
+  total: number;
+}
+
+interface TimelineBucket {
+  period: string;                  // 'YYYY-MM' hoặc 'YYYY-MM-DD'
   total: number;
   views: number;
   creates: number;
   updates: number;
   deletes: number;
 }
-
-interface DashboardTopUser {
-  user_id: number;
-  name: string | null;
-  email: string | null;
-  user_name: string | null;
-  total: number;
-}
-
-interface DashboardTopOrganization {
-  organization_id: number;
-  name: string | null;
-  slug: string | null;
-  total: number;
-}
-
-interface LogActivityDashboardResponse {
-  stats: DashboardStats;
-  timeline: {
-    granularity: 'day' | 'month';
-    data: DashboardTimelineBucket[];
-  };
-  top_users: DashboardTopUser[];
-  top_organizations: DashboardTopOrganization[];
-}
 ```
 
-## 7. Backward compat
+## Backward compat
 
-Tất cả 4 endpoint cũ vẫn hoạt động bình thường. Không cần xóa code FE đang gọi chúng nếu đang dùng ở chỗ khác.
-
-| Endpoint cũ | Status |
-|-------------|--------|
-| `GET /api/log-activities/stats` | Còn dùng được |
-| `GET /api/log-activities/stats/timeline` | Còn dùng được |
-| `GET /api/log-activities/stats/top-users` | Còn dùng được |
-| `GET /api/log-activities/stats/top-organizations` | Còn dùng được |
-
-→ Recommended: dashboard page migrate sang endpoint mới; chỗ nào chỉ cần 1-2 chỉ số có thể giữ endpoint cũ.
-
-## 8. Tests đã có (BE)
-
-4 feature tests trong `tests/Feature/Core/LogActivityDashboardTest.php`:
-
-- `test_dashboard_returns_all_four_sections` — response có đủ shape
-- `test_dashboard_stats_and_timeline_count_same_dataset` — `stats.total` bằng tổng các bucket trong `timeline.data`
-- `test_dashboard_top_users_subset_matches_admin_count` — anonymous logs (`user_id=null`) bị loại khỏi top_users, đếm trong stats.total
-- `test_dashboard_respects_filter_params` — `?method_type=GET` áp dụng nhất quán trên stats + top_users
+4 endpoint cũ (`/stats`, `/stats/timeline`, `/stats/top-users`, `/stats/top-organizations`) vẫn hoạt động — nhưng `top-users`/`top-organizations` cũ giờ cũng include row "Khách"/"Không xác định" như endpoint mới (cùng service). FE đang dùng phải kiểm tra xử lý `user_id: null` / `organization_id: null` không bị crash.
