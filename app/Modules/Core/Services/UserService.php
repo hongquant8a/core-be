@@ -122,12 +122,50 @@ class UserService
 
     public function destroy(User $user): void
     {
+        $this->guardActiveAssignments([$user->id]);
         $user->delete();
     }
 
     public function bulkDestroy(array $ids): void
     {
+        $this->guardActiveAssignments($ids);
         User::destroy($ids);
+    }
+
+    /**
+     * Chặn xóa user nếu họ đang được giao task chưa done/cancelled.
+     * Lý do: cascadeOnDelete sẽ xóa silently các pivot row → manager mất assignee
+     * mà không hay biết. Bắt buộc transfer sạch trước khi xóa.
+     *
+     * @param  array<int>  $userIds
+     *
+     * @throws ValidationException
+     */
+    private function guardActiveAssignments(array $userIds): void
+    {
+        if (empty($userIds)) {
+            return;
+        }
+
+        $blocked = DB::table('task_assignment_item_user as tiu')
+            ->join('task_assignment_items as ti', 'ti.id', '=', 'tiu.task_assignment_item_id')
+            ->whereIn('tiu.user_id', $userIds)
+            ->whereIn('tiu.assignment_status', ['assigned', 'done'])
+            ->whereNotIn('ti.processing_status', ['done', 'cancelled'])
+            ->select('tiu.user_id', DB::raw('count(*) as task_count'))
+            ->groupBy('tiu.user_id')
+            ->get();
+
+        if ($blocked->isEmpty()) {
+            return;
+        }
+
+        $names = User::whereIn('id', $blocked->pluck('user_id'))->pluck('name', 'id');
+        $details = $blocked->map(fn ($row) => ($names[$row->user_id] ?? "User #{$row->user_id}").": {$row->task_count} công việc")->implode('; ');
+
+        throw ValidationException::withMessages([
+            'user_id' => ["Không thể xóa user đang có công việc chưa hoàn tất. Vui lòng chuyển công việc trước. Chi tiết: {$details}"],
+        ]);
     }
 
     public function bulkUpdateStatus(array $ids, string $status): void
