@@ -145,16 +145,20 @@ class DocumentIssuedContentBuilderTest extends TestCase
         $this->assertNull($payload);
     }
 
-    public function test_fcm_payload_includes_token_and_data(): void
+    public function test_fcm_payload_includes_tokens_and_data(): void
     {
         $item = $this->makeItemWithDocument();
         $recipient = $this->makeRecipient();
+        \App\Modules\Core\Models\FcmToken::create([
+            'user_id' => $recipient->id, 'device_id' => 'd1',
+            'fcm_token' => 'fcm-token-xyz', 'last_used_at' => now(),
+        ]);
 
         $payload = (new DocumentIssuedContentBuilder)->build('fcm', $recipient, $item);
 
         $this->assertInstanceOf(NotificationPayload::class, $payload);
         $this->assertSame(['fcm'], $payload->channels);
-        $this->assertSame('fcm-token-xyz', $payload->recipient->fcmToken);
+        $this->assertSame(['fcm-token-xyz'], $payload->recipient->fcmTokens);
         $this->assertStringContainsString('Rà soát báo cáo', $payload->content);
         $this->assertSame("/task-assignment-items/{$item->id}", $payload->context['url']);
         $this->assertSame('document_issued', $payload->context['type']);

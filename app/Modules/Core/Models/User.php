@@ -36,7 +36,6 @@ class User extends Authenticatable implements HasMedia
         'user_name',
         'password',
         'status',
-        'fcm_token',
         'created_by',
         'updated_by',
     ];
@@ -58,6 +57,12 @@ class User extends Authenticatable implements HasMedia
                 $user->pendingPhone = $user->attributes['phone'];
                 $user->hasPendingPhone = true;
                 unset($user->attributes['phone']);
+            }
+            // BC: code/test cũ pass 'fcm_token' qua mass-assign — silently drop
+            // (không còn là column trên users, đã move sang fcm_tokens table).
+            // Để register device đúng, FE phải gửi header X-FCM-Token + X-Device-Id.
+            if (array_key_exists('fcm_token', $user->attributes)) {
+                unset($user->attributes['fcm_token']);
             }
         });
         static::saved(function (User $user) {
@@ -137,6 +142,12 @@ class User extends Authenticatable implements HasMedia
     public function scopeWithLastLogin($query)
     {
         return $query->withMax('tokens', 'created_at');
+    }
+
+    /** FCM tokens registered cho user này — N device. Push notification gửi tới tất cả. */
+    public function fcmTokens()
+    {
+        return $this->hasMany(FcmToken::class);
     }
 
     public function socials()

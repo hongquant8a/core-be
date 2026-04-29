@@ -119,11 +119,15 @@ class TaskConfirmedContentBuilderTest extends TestCase
     {
         $item = $this->makeItem();
         $r = $this->makeRecipient();
+        \App\Modules\Core\Models\FcmToken::create([
+            'user_id' => $r->id, 'device_id' => 'd1',
+            'fcm_token' => 'fcm-a-xyz', 'last_used_at' => now(),
+        ]);
         $p = (new TaskConfirmedContentBuilder)->build('fcm', $r, $item);
 
         $this->assertInstanceOf(NotificationPayload::class, $p);
         $this->assertSame(['fcm'], $p->channels);
-        $this->assertSame('fcm-a-xyz', $p->recipient->fcmToken);
+        $this->assertSame(['fcm-a-xyz'], $p->recipient->fcmTokens);
         $this->assertSame('task_confirmed', $p->context['type']);
         $this->assertSame("/task-assignment-items/{$item->id}", $p->context['url']);
     }

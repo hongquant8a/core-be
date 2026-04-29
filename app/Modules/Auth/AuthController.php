@@ -88,7 +88,7 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
-        $this->authService->logout($request->user());
+        $this->authService->logout($request->user(), $request->header('X-Device-Id'));
 
         return $this->success(null, 'Đã đăng xuất');
     }

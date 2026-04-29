@@ -104,13 +104,14 @@ class TaskCompletedContentBuilder implements ContentBuilder
 
     private function toFcm(User $recipient, TaskAssignmentItem $item): ?NotificationPayload
     {
-        if (! $recipient->fcm_token) {
+        $tokens = $recipient->fcmTokens()->pluck('fcm_token')->all();
+        if (empty($tokens)) {
             return null;
         }
 
         return new NotificationPayload(
             channels: ['fcm'],
-            recipient: new Recipient(fcmToken: $recipient->fcm_token),
+            recipient: new Recipient(fcmTokens: $tokens),
             content: "'{$item->name}' đã báo cáo hoàn thành, chờ xác nhận.",
             subject: 'Công việc chờ xác nhận',
             context: [

@@ -31,25 +31,42 @@ class AuthHardeningTest extends TestCase
         $sixth->assertStatus(429);
     }
 
-    public function test_logout_clears_fcm_token(): void
+    public function test_logout_clears_fcm_token_for_current_device_only(): void
     {
-        $user = User::factory()->create(['fcm_token' => 'fcm-device-A-abc123']);
+        $user = User::factory()->create();
+        // 2 devices đăng ký cho user
+        \App\Modules\Core\Models\FcmToken::create([
+            'user_id' => $user->id, 'device_id' => 'device-A',
+            'fcm_token' => 'token-A', 'last_used_at' => now(),
+        ]);
+        \App\Modules\Core\Models\FcmToken::create([
+            'user_id' => $user->id, 'device_id' => 'device-B',
+            'fcm_token' => 'token-B', 'last_used_at' => now(),
+        ]);
         Sanctum::actingAs($user);
 
-        $res = $this->postJson('/api/auth/logout');
+        $res = $this->withHeader('X-Device-Id', 'device-A')->postJson('/api/auth/logout');
 
         $res->assertOk();
-        $this->assertNull($user->fresh()->fcm_token, 'fcm_token must be cleared on logout');
+        $this->assertSame(0, \App\Modules\Core\Models\FcmToken::where('device_id', 'device-A')->count(),
+            'device-A FCM bị xóa');
+        $this->assertSame(1, \App\Modules\Core\Models\FcmToken::where('device_id', 'device-B')->count(),
+            'device-B FCM giữ nguyên — vẫn nhận push');
     }
 
-    public function test_logout_when_no_fcm_token_does_not_fail(): void
+    public function test_logout_without_device_id_keeps_all_fcm_tokens(): void
     {
-        $user = User::factory()->create(['fcm_token' => null]);
+        $user = User::factory()->create();
+        \App\Modules\Core\Models\FcmToken::create([
+            'user_id' => $user->id, 'device_id' => 'device-X',
+            'fcm_token' => 'token-X', 'last_used_at' => now(),
+        ]);
         Sanctum::actingAs($user);
 
-        $res = $this->postJson('/api/auth/logout');
+        $res = $this->postJson('/api/auth/logout'); // no X-Device-Id
 
         $res->assertOk();
-        $this->assertNull($user->fresh()->fcm_token);
+        $this->assertSame(1, \App\Modules\Core\Models\FcmToken::where('user_id', $user->id)->count(),
+            'no device_id header → don\'t guess, keep all');
     }
 }

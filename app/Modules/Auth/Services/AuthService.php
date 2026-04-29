@@ -69,11 +69,16 @@ class AuthService
         ];
     }
 
-    public function logout($user): void
+    public function logout($user, ?string $deviceId = null): void
     {
         $user->currentAccessToken()->delete();
-        if (! empty($user->fcm_token)) {
-            $user->updateQuietly(['fcm_token' => null]);
+
+        // Xóa FCM token của THIẾT BỊ ĐÓ thôi (các device khác giữ nguyên — vẫn nhận push).
+        // Identify device qua header X-Device-Id (FE phải gửi).
+        if ($deviceId) {
+            \App\Modules\Core\Models\FcmToken::where('user_id', $user->id)
+                ->where('device_id', $deviceId)
+                ->delete();
         }
     }
 

@@ -108,14 +108,15 @@ class TaskAssignedContentBuilder implements ContentBuilder
 
     private function toFcm(User $recipient, TaskAssignmentItem $item): ?NotificationPayload
     {
-        if (! $recipient->fcm_token) {
+        $tokens = $recipient->fcmTokens()->pluck('fcm_token')->all();
+        if (empty($tokens)) {
             return null;
         }
         $deadline = $item->end_at ? " (hạn {$item->end_at->format('d/m/Y')})" : '';
 
         return new NotificationPayload(
             channels: ['fcm'],
-            recipient: new Recipient(fcmToken: $recipient->fcm_token),
+            recipient: new Recipient(fcmTokens: $tokens),
             content: "Bạn vừa được giao '{$item->name}'{$deadline}.",
             subject: 'Công việc mới',
             context: [

@@ -109,13 +109,14 @@ class DocumentIssuedContentBuilder implements ContentBuilder
 
     private function toFcm(User $recipient, TaskAssignmentItem $item, $document): ?NotificationPayload
     {
-        if (! $recipient->fcm_token) {
+        $tokens = $recipient->fcmTokens()->pluck('fcm_token')->all();
+        if (empty($tokens)) {
             return null;
         }
 
         return new NotificationPayload(
             channels: ['fcm'],
-            recipient: new Recipient(fcmToken: $recipient->fcm_token),
+            recipient: new Recipient(fcmTokens: $tokens),
             content: "Công việc mới: {$item->name}",
             subject: 'Giao việc',
             context: [

@@ -7,13 +7,18 @@ use App\Services\Notification\Channels\FcmChannel;
 use App\Services\Notification\DTOs\NotificationPayload;
 use App\Services\Notification\DTOs\Recipient;
 use App\Services\Notification\DTOs\SendResult;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Kreait\Firebase\Contract\Messaging as FirebaseMessaging;
+use Kreait\Firebase\Messaging\MessageTarget;
+use Kreait\Firebase\Messaging\MulticastSendReport;
+use Kreait\Firebase\Messaging\SendReport;
 use Mockery;
 use Tests\TestCase;
 
 class FcmChannelTest extends TestCase
 {
     use \Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
+    use RefreshDatabase;
 
     private const DEFAULT_SERVICE_ACCOUNT = '__default__';
 
@@ -45,9 +50,29 @@ class FcmChannelTest extends TestCase
         return new FcmChannel($settings, $messaging);
     }
 
-    private function send(FcmChannel $ch, ?string $fcmToken, string $content = 'hi', ?string $subject = null, array $context = []): SendResult
+    /**
+     * Build real MulticastSendReport — class final không mock được, dùng SendReport::success / ::failure.
+     *
+     * @param  array<string>  $successTokens  tokens trả OK
+     * @param  array<string>  $invalidTokens  tokens trả NotFound/Invalid (sẽ bị xóa khỏi DB)
+     */
+    private function makeReport(array $successTokens, array $invalidTokens = []): MulticastSendReport
     {
-        $recipient = new Recipient(fcmToken: $fcmToken);
+        $items = [];
+        foreach ($successTokens as $t) {
+            $items[] = SendReport::success(MessageTarget::with(MessageTarget::TOKEN, $t), ['name' => 'msg-'.$t]);
+        }
+        foreach ($invalidTokens as $t) {
+            $err = new \Kreait\Firebase\Exception\Messaging\NotFound('Requested entity was not found.');
+            $items[] = SendReport::failure(MessageTarget::with(MessageTarget::TOKEN, $t), $err);
+        }
+
+        return MulticastSendReport::withItems($items);
+    }
+
+    private function send(FcmChannel $ch, ?array $tokens, string $content = 'hi', ?string $subject = null, array $context = []): SendResult
+    {
+        $recipient = $tokens ? new Recipient(fcmTokens: $tokens) : new Recipient;
         $payload = new NotificationPayload(['fcm'], $recipient, $content, subject: $subject, context: $context);
 
         return $ch->send($recipient, $payload);
@@ -63,7 +88,7 @@ class FcmChannelTest extends TestCase
     public function test_returns_failure_when_disabled(): void
     {
         $ch = new FcmChannel($this->makeSettings(enabled: false));
-        $r = $this->send($ch, 'token-1');
+        $r = $this->send($ch, ['token-1']);
 
         $this->assertFalse($r->success);
         $this->assertSame('FCM is disabled', $r->error);
@@ -72,16 +97,16 @@ class FcmChannelTest extends TestCase
     public function test_returns_failure_when_service_account_missing(): void
     {
         $ch = new FcmChannel($this->makeSettings(serviceAccount: null));
-        $r = $this->send($ch, 'token-1');
+        $r = $this->send($ch, ['token-1']);
 
         $this->assertFalse($r->success);
         $this->assertSame('FCM not configured', $r->error);
     }
 
-    public function test_returns_failure_when_fcm_token_missing(): void
+    public function test_returns_failure_when_no_tokens(): void
     {
         $messaging = Mockery::mock(FirebaseMessaging::class);
-        $messaging->shouldNotReceive('send');
+        $messaging->shouldNotReceive('sendMulticast');
 
         $ch = $this->makeChannelWithMessaging($messaging);
         $r = $this->send($ch, null);
@@ -90,92 +115,114 @@ class FcmChannelTest extends TestCase
         $this->assertSame('Missing FCM device token', $r->error);
     }
 
-    public function test_sends_correct_payload_to_fcm(): void
+    public function test_sends_multicast_with_correct_payload(): void
     {
+        $capturedMessage = null;
+        $capturedTokens = null;
         $messaging = Mockery::mock(FirebaseMessaging::class);
-        $messaging->shouldReceive('send')->withArgs(function ($message) {
-            $payload = $message->jsonSerialize();
+        $messaging->shouldReceive('sendMulticast')->andReturnUsing(function ($message, $tokens) use (&$capturedMessage, &$capturedTokens) {
+            $capturedMessage = $message;
+            $capturedTokens = $tokens;
 
-            return $payload['token'] === 'device-token-abc'
-                && $payload['notification']['title'] === 'Title'
-                && $payload['notification']['body'] === 'Hello'
-                && $payload['data']['task_id'] === '5';
-        })->andReturn(['name' => 'projects/my-project-id/messages/123']);
+            return $this->makeReport(['device-token-abc']);
+        });
 
         $ch = $this->makeChannelWithMessaging($messaging);
-        $r = $this->send($ch, 'device-token-abc', 'Hello', 'Title', ['task_id' => 5]);
+        $r = $this->send($ch, ['device-token-abc'], 'Hello', 'Title', ['task_id' => 5]);
 
-        $this->assertTrue($r->success);
-        $this->assertSame('projects/my-project-id/messages/123', $r->messageId);
+        $this->assertTrue($r->success, 'r->error = '.($r->error ?? 'null').' / capturedTokens='.json_encode($capturedTokens));
+        $this->assertSame('multicast:1/1', $r->messageId);
         $this->assertNull($r->error);
+        $this->assertSame(['device-token-abc'], $capturedTokens);
+        $payload = $capturedMessage->jsonSerialize();
+        $this->assertSame('Title', $payload['notification']['title']);
+        $this->assertSame('Hello', $payload['notification']['body']);
+        $this->assertSame('5', $payload['data']['task_id']);
     }
 
     public function test_uses_default_title_when_no_subject(): void
     {
         $messaging = Mockery::mock(FirebaseMessaging::class);
-        $messaging->shouldReceive('send')->withArgs(function ($message) {
+        $messaging->shouldReceive('sendMulticast')->withArgs(function ($message, $tokens) {
             $payload = $message->jsonSerialize();
 
             return $payload['notification']['title'] === 'Thông báo';
-        })->andReturn(['name' => 'projects/my-project-id/messages/123']);
+        })->andReturn($this->makeReport(['device-token-abc']));
 
         $ch = $this->makeChannelWithMessaging($messaging);
-        $r = $this->send($ch, 'device-token-abc', 'Hello');
+        $r = $this->send($ch, ['device-token-abc'], 'Hello');
 
         $this->assertTrue($r->success);
-        $this->assertNull($r->error);
     }
 
     public function test_omits_data_when_context_empty(): void
     {
         $messaging = Mockery::mock(FirebaseMessaging::class);
-        $messaging->shouldReceive('send')->withArgs(function ($message) {
+        $messaging->shouldReceive('sendMulticast')->withArgs(function ($message, $tokens) {
             $payload = $message->jsonSerialize();
 
             return ! isset($payload['data']);
-        })->andReturn(['name' => 'projects/my-project-id/messages/123']);
+        })->andReturn($this->makeReport(['device-token-abc']));
 
         $ch = $this->makeChannelWithMessaging($messaging);
-        $r = $this->send($ch, 'device-token-abc', 'Hello');
+        $r = $this->send($ch, ['device-token-abc'], 'Hello');
 
         $this->assertTrue($r->success);
-        $this->assertNull($r->error);
     }
 
-    public function test_success_when_fcm_returns_success_1(): void
+    public function test_partial_success_when_some_tokens_fail(): void
     {
         $messaging = Mockery::mock(FirebaseMessaging::class);
-        $messaging->shouldReceive('send')->andReturn(['name' => 'projects/my-project-id/messages/msg-abc']);
+        $messaging->shouldReceive('sendMulticast')->andReturn($this->makeReport(['token-1', 'token-2'], ['bad-token-1']));
 
         $ch = $this->makeChannelWithMessaging($messaging);
-        $r = $this->send($ch, 'device-token');
+        $r = $this->send($ch, ['token-1', 'token-2', 'bad-token-1']);
 
         $this->assertTrue($r->success);
-        $this->assertSame('projects/my-project-id/messages/msg-abc', $r->messageId);
-        $this->assertNull($r->error);
+        $this->assertSame('multicast:2/3', $r->messageId);
     }
 
-    public function test_failure_when_fcm_returns_success_0(): void
+    public function test_full_failure_when_all_tokens_invalid(): void
     {
         $messaging = Mockery::mock(FirebaseMessaging::class);
-        $messaging->shouldReceive('send')->andThrow(new \RuntimeException('InvalidRegistration'));
+        $messaging->shouldReceive('sendMulticast')->andReturn($this->makeReport([], ['bad-1', 'bad-2']));
 
         $ch = $this->makeChannelWithMessaging($messaging);
-        $r = $this->send($ch, 'bad-token');
+        $r = $this->send($ch, ['bad-1', 'bad-2']);
 
         $this->assertFalse($r->success);
-        $this->assertSame('FCM send failed: InvalidRegistration', $r->error);
+        $this->assertStringContainsString('all 2 tokens failed', $r->error);
     }
 
     public function test_catches_http_exception(): void
     {
         $messaging = Mockery::mock(FirebaseMessaging::class);
-        $messaging->shouldReceive('send')->andThrow(new \RuntimeException('Network down'));
+        $messaging->shouldReceive('sendMulticast')->andThrow(new \RuntimeException('Network down'));
 
         $ch = $this->makeChannelWithMessaging($messaging);
-        $r = $this->send($ch, 'device-token');
+        $r = $this->send($ch, ['device-token']);
 
         $this->assertFalse($r->success);
         $this->assertStringContainsString('Network down', $r->error);
+    }
+
+    public function test_invalid_tokens_are_deleted_from_db(): void
+    {
+        $user = \App\Modules\Core\Models\User::factory()->create();
+        \App\Modules\Core\Models\FcmToken::create([
+            'user_id' => $user->id, 'device_id' => 'd1', 'fcm_token' => 'good', 'last_used_at' => now(),
+        ]);
+        \App\Modules\Core\Models\FcmToken::create([
+            'user_id' => $user->id, 'device_id' => 'd2', 'fcm_token' => 'bad', 'last_used_at' => now(),
+        ]);
+
+        $messaging = Mockery::mock(FirebaseMessaging::class);
+        $messaging->shouldReceive('sendMulticast')->andReturn($this->makeReport(['good'], ['bad']));
+
+        $ch = $this->makeChannelWithMessaging($messaging);
+        $this->send($ch, ['good', 'bad']);
+
+        $this->assertTrue(\App\Modules\Core\Models\FcmToken::where('fcm_token', 'good')->exists());
+        $this->assertFalse(\App\Modules\Core\Models\FcmToken::where('fcm_token', 'bad')->exists());
     }
 }

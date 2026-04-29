@@ -160,11 +160,16 @@ class ReminderContentBuilderTest extends TestCase
     {
         $item = $this->makeItem();
         $r = $this->makeRecipient();
+        \App\Modules\Core\Models\FcmToken::create([
+            'user_id' => $r->id, 'device_id' => 'd1',
+            'fcm_token' => 'fcm-a-xyz', 'last_used_at' => now(),
+        ]);
         $p = (new ReminderContentBuilder('before'))->build('fcm', $r, $item);
 
         $this->assertInstanceOf(NotificationPayload::class, $p);
         $this->assertSame('reminder_before', $p->context['type']);
         $this->assertSame("/task-assignment-items/{$item->id}", $p->context['url']);
+        $this->assertSame(['fcm-a-xyz'], $p->recipient->fcmTokens);
     }
 
     public function test_fcm_null_when_no_token(): void

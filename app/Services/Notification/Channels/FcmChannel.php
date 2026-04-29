@@ -42,12 +42,13 @@ class FcmChannel implements NotificationChannel
             return $this->fail('FCM not configured');
         }
 
-        if (! $recipient->fcmToken) {
+        // Lấy danh sách tokens — ưu tiên array (multi-device), fallback single token (BC).
+        $tokens = $recipient->fcmTokens ?? ($recipient->fcmToken ? [$recipient->fcmToken] : []);
+        if (empty($tokens)) {
             return $this->fail('Missing FCM device token');
         }
 
         $message = CloudMessage::new()
-            ->withToken($recipient->fcmToken)
             ->withNotification(FirebaseNotification::create($payload->subject ?: 'Thông báo', $payload->content));
 
         if (! empty($payload->context)) {
@@ -58,15 +59,33 @@ class FcmChannel implements NotificationChannel
         }
 
         try {
-            $response = $messaging->send($message);
+            $report = $messaging->sendMulticast($message, array_values($tokens));
         } catch (Throwable $e) {
             return $this->fail('FCM send failed: '.$e->getMessage());
+        }
+
+        // Cleanup tokens BE biết là không còn dùng được:
+        // - messageTargetWasInvalid: token sai format (Firebase reject ngay)
+        // - messageWasSentToUnknownToken: token format OK nhưng device unregister (app uninstall)
+        $tokensToDelete = [];
+        foreach ($report->failures()->getItems() as $failure) {
+            if ($failure->messageTargetWasInvalid() || $failure->messageWasSentToUnknownToken()) {
+                $tokensToDelete[] = $failure->target()->value();
+            }
+        }
+        if (! empty($tokensToDelete)) {
+            \App\Modules\Core\Models\FcmToken::whereIn('fcm_token', $tokensToDelete)->delete();
+        }
+
+        $successCount = $report->successes()->count();
+        if ($successCount === 0) {
+            return $this->fail('FCM multicast: all '.count($tokens).' tokens failed');
         }
 
         return new SendResult(
             channel: 'fcm',
             success: true,
-            messageId: $response['name'] ?? null,
+            messageId: 'multicast:'.$successCount.'/'.count($tokens),
         );
     }
 
