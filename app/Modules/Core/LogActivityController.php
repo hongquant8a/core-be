@@ -28,6 +28,7 @@ class LogActivityController extends Controller
      *
      * @queryParam search string Tìm kiếm (description, route, ip_address, country, user_type). Example: 127.0.0.1
      * @queryParam organization_id integer Lọc theo tổ chức. Example: 1
+     * @queryParam user_id integer Lọc theo người thực hiện. Example: 1
      * @queryParam from_date date Lọc từ ngày (Y-m-d). Example: 2026-01-01
      * @queryParam to_date date Lọc đến ngày (Y-m-d). Example: 2026-12-31
      * @queryParam method_type string GET, POST, PUT, PATCH, DELETE. Example: GET
@@ -100,6 +101,7 @@ class LogActivityController extends Controller
      *
      * @queryParam search string Từ khóa tìm kiếm. Example: login
      * @queryParam organization_id integer Lọc theo tổ chức. Example: 1
+     * @queryParam user_id integer Lọc theo người thực hiện. Example: 1
      * @queryParam from_date date Từ ngày (Y-m-d). Example: 2026-01-01
      * @queryParam to_date date Đến ngày (Y-m-d). Example: 2026-12-31
      * @queryParam method_type string GET, POST, PUT, PATCH, DELETE. Example: GET
@@ -130,6 +132,7 @@ class LogActivityController extends Controller
      *
      * @queryParam search string Tìm kiếm. Example: login
      * @queryParam organization_id integer Lọc theo tổ chức. Example: 1
+     * @queryParam user_id integer Lọc theo người thực hiện. Example: 1
      * @queryParam from_date date Từ ngày. Example: 2026-01-01
      * @queryParam to_date date Đến ngày. Example: 2026-12-31
      * @queryParam method_type string GET, POST, PUT, PATCH, DELETE.
@@ -158,6 +161,7 @@ class LogActivityController extends Controller
      *
      * @queryParam search string Tìm kiếm (description, route, ip_address, country, user_type).
      * @queryParam organization_id integer Lọc theo tổ chức. Example: 1
+     * @queryParam user_id integer Lọc theo người thực hiện. Example: 1
      * @queryParam from_date date Lọc từ ngày (Y-m-d). Example: 2026-01-01
      * @queryParam to_date date Lọc đến ngày (Y-m-d). Example: 2026-12-31
      * @queryParam method_type string GET, POST, PUT, PATCH, DELETE. Example: GET
