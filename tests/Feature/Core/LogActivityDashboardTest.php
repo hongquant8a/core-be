@@ -156,6 +156,45 @@ class LogActivityDashboardTest extends TestCase
         $this->assertTrue($items->every(fn ($r) => $r['user_id'] === $other->id));
     }
 
+    public function test_timeline_respects_date_range_and_user_id(): void
+    {
+        // 5 logs for admin in 2026-04, 3 for admin in 2026-07, 2 for other in 2026-04
+        $other = User::factory()->create();
+        LogActivity::factory()->count(5)->create([
+            'user_id' => $this->admin->id,
+            'organization_id' => $this->org->id,
+            'created_at' => '2026-04-15 10:00:00',
+        ]);
+        LogActivity::factory()->count(3)->create([
+            'user_id' => $this->admin->id,
+            'organization_id' => $this->org->id,
+            'created_at' => '2026-07-20 10:00:00',
+        ]);
+        LogActivity::factory()->count(2)->create([
+            'user_id' => $other->id,
+            'organization_id' => $this->org->id,
+            'created_at' => '2026-04-15 10:00:00',
+        ]);
+
+        $res = $this->withHeader('X-Organization-Id', (string) $this->org->id)
+            ->getJson('/api/log-activities/stats/timeline'
+                .'?from_date=2026-01-01&to_date=2026-12-31'
+                .'&granularity=month'
+                ."&user_id={$this->admin->id}");
+
+        $res->assertOk();
+        $data = $res->json('data.data');
+        $this->assertCount(12, $data, '12 buckets T1..T12');
+
+        $april = collect($data)->firstWhere('period', '2026-04');
+        $july = collect($data)->firstWhere('period', '2026-07');
+        $may = collect($data)->firstWhere('period', '2026-05');
+
+        $this->assertSame(5, $april['total'], 'admin có 5 log tháng 4');
+        $this->assertSame(3, $july['total'], 'admin có 3 log tháng 7');
+        $this->assertSame(0, $may['total'], 'tháng không có activity → 0 (padded)');
+    }
+
     public function test_dashboard_respects_filter_params(): void
     {
         // 7 GETs and 3 POSTs

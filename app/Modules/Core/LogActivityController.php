@@ -57,7 +57,7 @@ class LogActivityController extends Controller
     {
         $granularity = (string) $request->input('granularity', 'month');
 
-        return $this->success($this->logActivityService->timeline($granularity));
+        return $this->success($this->logActivityService->timeline($granularity, $request->all()));
     }
 
     /**

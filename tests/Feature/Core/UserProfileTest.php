@@ -194,6 +194,48 @@ class UserProfileTest extends TestCase
         $this->assertSame('Combined update', $fresh->profile->permanent_address);
     }
 
+    public function test_last_login_at_accessor_returns_max_token_created_at(): void
+    {
+        $u = User::factory()->create();
+        $this->assertNull($u->last_login_at, 'no token yet → null');
+
+        $u->createToken('first');
+        usleep(1500); // separate timestamps
+        $second = $u->createToken('second')->accessToken;
+
+        $u->refresh()->load('tokens');
+        $this->assertNotNull($u->last_login_at);
+        $this->assertSame(
+            $second->created_at->format('Y-m-d H:i:s'),
+            $u->last_login_at->format('Y-m-d H:i:s'),
+        );
+    }
+
+    public function test_me_endpoint_includes_last_login_at(): void
+    {
+        // Sanctum::actingAs ở setUp không tạo token DB thật; issue token tay để có row.
+        $this->admin->createToken('test-login');
+
+        $res = $this->withHeader('X-Organization-Id', (string) $this->org->id)
+            ->getJson('/api/user');
+
+        $res->assertOk();
+        $this->assertArrayHasKey('last_login_at', $res->json('data.user'));
+        $this->assertNotNull($res->json('data.user.last_login_at'));
+    }
+
+    public function test_users_resource_does_not_expose_last_login_at(): void
+    {
+        $u = User::factory()->create();
+        $u->createToken('test');
+
+        $res = $this->withHeader('X-Organization-Id', (string) $this->org->id)
+            ->getJson("/api/users/{$u->id}");
+
+        $res->assertOk();
+        $this->assertArrayNotHasKey('last_login_at', $res->json('data'));
+    }
+
     public function test_put_users_combined_update_validates_profile_fields(): void
     {
         $u = User::factory()->create();

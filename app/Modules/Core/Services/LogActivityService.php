@@ -34,30 +34,34 @@ class LogActivityService
     }
 
     /**
-     * Timeline cho line chart dashboard. Stat ALL-time, pad mốc trống = 0.
+     * Timeline cho line chart. Pad mốc trống = 0.
      *
-     * Range: từ mốc sớm nhất có log → hiện tại. Không có log → trả mảng rỗng.
+     * Filters hỗ trợ: from_date / to_date / user_id / organization_id / method_type / status_code / search.
+     * Range cố định nếu có from_date+to_date; không thì tự dò từ MIN(created_at) → now.
      *
      * @return array{granularity:string,data:array<int,array<string,mixed>>}
      */
-    public function timeline(string $granularity = 'month'): array
+    public function timeline(string $granularity = 'month', array $filters = []): array
     {
         $granularity = $granularity === 'day' ? 'day' : 'month';
         $format = $granularity === 'day' ? '%Y-%m-%d' : '%Y-%m';
 
-        $earliest = LogActivity::query()->min('created_at');
-        if (! $earliest) {
-            return ['granularity' => $granularity, 'data' => []];
+        // Range: nếu FE truyền from_date+to_date → dùng đó (bucket cố định cho chart "T1..T12 năm 2026").
+        // Không thì auto từ log sớm nhất → hiện tại.
+        if (! empty($filters['from_date']) && ! empty($filters['to_date'])) {
+            $start = Carbon::parse($filters['from_date'])->startOf($granularity === 'day' ? 'day' : 'month');
+            $end = Carbon::parse($filters['to_date'])->endOf($granularity === 'day' ? 'day' : 'month');
+        } else {
+            $earliest = LogActivity::filter($filters)->reorder()->min('created_at');
+            if (! $earliest) {
+                return ['granularity' => $granularity, 'data' => []];
+            }
+            $start = Carbon::parse($earliest)->startOf($granularity === 'day' ? 'day' : 'month');
+            $end = Carbon::now()->endOf($granularity === 'day' ? 'day' : 'month');
         }
 
-        $start = $granularity === 'day'
-            ? Carbon::parse($earliest)->startOfDay()
-            : Carbon::parse($earliest)->startOfMonth();
-        $end = $granularity === 'day'
-            ? Carbon::now()->endOfDay()
-            : Carbon::now()->endOfMonth();
-
-        $rows = LogActivity::query()
+        $rows = LogActivity::filter($filters)
+            ->reorder()
             ->selectRaw("
                 DATE_FORMAT(created_at, ?) as period,
                 count(*) as total,
@@ -168,7 +172,7 @@ class LogActivityService
     ): array {
         return [
             'stats' => $this->stats($filters),
-            'timeline' => $this->timeline($granularity),
+            'timeline' => $this->timeline($granularity, $filters),
             'top_users' => $this->topUsers($filters, $topUsersLimit),
             'top_organizations' => $this->topOrganizations($filters, $topOrganizationsLimit),
         ];

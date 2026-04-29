@@ -106,6 +106,39 @@ class User extends Authenticatable implements HasMedia
         return $this->profile?->phone;
     }
 
+    /**
+     * Lần đăng nhập gần nhất — derive từ personal_access_tokens.created_at max.
+     * Mỗi lần Sanctum issue token mới = 1 lần login. Không có token = chưa từng login.
+     *
+     * Tránh N+1: query nên dùng ->withMax('tokens', 'created_at') để load aggregate
+     * trong cùng 1 round-trip (Service có scope `loadLastLogin`).
+     */
+    public function getLastLoginAtAttribute(): ?\Carbon\Carbon
+    {
+        // Đã withMax → attribute 'tokens_max_created_at' đã có sẵn
+        if (array_key_exists('tokens_max_created_at', $this->attributes)) {
+            return $this->attributes['tokens_max_created_at']
+                ? \Carbon\Carbon::parse($this->attributes['tokens_max_created_at'])
+                : null;
+        }
+
+        // Đã eager-load tokens collection
+        if ($this->relationLoaded('tokens')) {
+            $max = $this->tokens->max('created_at');
+            return $max ? \Carbon\Carbon::parse($max) : null;
+        }
+
+        // Fallback: 1 query (single user case OK; list không nên rơi vào nhánh này)
+        $val = $this->tokens()->max('created_at');
+        return $val ? \Carbon\Carbon::parse($val) : null;
+    }
+
+    /** Helper scope: query builder eager-load aggregate last_login_at, tránh N+1. */
+    public function scopeWithLastLogin($query)
+    {
+        return $query->withMax('tokens', 'created_at');
+    }
+
     public function socials()
     {
         return $this->hasMany(UserSocial::class);

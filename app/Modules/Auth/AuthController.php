@@ -64,11 +64,15 @@ class AuthController extends Controller
     public function me(Request $request)
     {
         $user = $request->user();
+        $user->loadMax('tokens', 'created_at');
         // getAllPermissions() = direct + từ vai trò
         $permissions = $user->getAllPermissions()->pluck('name')->values()->unique()->all();
 
         return $this->success([
-            'user' => (new UserResource($user))->resolve(),
+            'user' => array_merge(
+                (new UserResource($user))->resolve(),
+                ['last_login_at' => $user->last_login_at?->toIso8601String()],
+            ),
             'roles' => $user->getRoleNames()->values()->all(),
             'permissions' => $permissions,
             'abilities' => CaslAbilityConverter::toCaslAbilities($permissions),
