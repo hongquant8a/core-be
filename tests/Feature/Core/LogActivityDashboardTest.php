@@ -135,6 +135,27 @@ class LogActivityDashboardTest extends TestCase
         $this->assertSame(7, $topOrgs->sum('total'));
     }
 
+    public function test_index_respects_user_id_filter(): void
+    {
+        $other = User::factory()->create();
+        LogActivity::factory()->count(3)->create([
+            'user_id' => $this->admin->id,
+            'organization_id' => $this->org->id,
+        ]);
+        LogActivity::factory()->count(2)->create([
+            'user_id' => $other->id,
+            'organization_id' => $this->org->id,
+        ]);
+
+        $res = $this->withHeader('X-Organization-Id', (string) $this->org->id)
+            ->getJson('/api/log-activities?user_id='.$other->id);
+
+        $res->assertOk();
+        $items = collect($res->json('data'));
+        $this->assertCount(2, $items);
+        $this->assertTrue($items->every(fn ($r) => $r['user_id'] === $other->id));
+    }
+
     public function test_dashboard_respects_filter_params(): void
     {
         // 7 GETs and 3 POSTs
