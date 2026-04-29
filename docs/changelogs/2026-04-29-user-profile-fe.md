@@ -99,6 +99,26 @@ interface UpdateUserProfileBody {
 }
 ```
 
+## ⚠ Avatar — vẫn dùng endpoint cũ
+
+Avatar **không** thuộc profile. Để upload/đổi avatar, vẫn gọi `PUT /api/users/{id}` với multipart `avatar` field như trước. Spatie media collection nằm trên model `User`, không move sang profile.
+
+```ts
+// Upload avatar
+const fd = new FormData()
+fd.append('avatar', file)
+await api.put(`/api/users/${userId}`, fd, {
+  headers: { 'Content-Type': 'multipart/form-data' },
+})
+
+// Update các field profile (riêng biệt, JSON)
+await api.put(`/api/users/${userId}/profile`, {
+  phone, gender, birth_date, ...
+})
+```
+
+→ Trang "Hồ sơ cá nhân" có 2 component → 2 call riêng. Avatar có thể save ngay khi user click "Tải Lên Ảnh Mới" (không cần submit form), profile fields save khi click "Lưu".
+
 ## Migration cho FE
 
 ### 1. Trang "Hồ sơ cá nhân" / "Thông tin cá nhân"
