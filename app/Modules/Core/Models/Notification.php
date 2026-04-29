@@ -2,12 +2,14 @@
 
 namespace App\Modules\Core\Models;
 
+use App\Modules\Core\Traits\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Notification extends Model
 {
     use HasFactory;
+    use HasOrganizationScope;
 
     protected static function newFactory()
     {

@@ -171,12 +171,46 @@ class TaskAssignmentDocumentService
 
     public function destroy(TaskAssignmentDocument $document): void
     {
-        $document->delete();
+        DB::transaction(function () use ($document) {
+            $this->cleanupOrphanNotifications($document->items()->pluck('id')->all());
+            $document->delete();
+        });
     }
 
     public function bulkDestroy(array $ids): void
     {
-        TaskAssignmentDocument::whereIn('id', $ids)->delete();
+        DB::transaction(function () use ($ids) {
+            $itemIds = TaskAssignmentItem::whereIn('task_assignment_document_id', $ids)->pluck('id')->all();
+            $this->cleanupOrphanNotifications($itemIds);
+            TaskAssignmentDocument::whereIn('id', $ids)->delete();
+        });
+    }
+
+    /**
+     * Xóa Notification + NotificationDelivery liên quan đến items trước khi document bị xóa.
+     * FK của notifications là polymorphic (notifiable_type + notifiable_id) → không cascade
+     * theo FK schema. Nếu không xóa, in-app notification còn lại trỏ đến item không tồn tại
+     * (404 khi user click), worker xử lý job sẽ mark delivery 'failed' với message "Notifiable
+     * no longer exists".
+     *
+     * @param  array<int>  $itemIds
+     */
+    private function cleanupOrphanNotifications(array $itemIds): void
+    {
+        if (empty($itemIds)) {
+            return;
+        }
+
+        $notificationIds = Notification::where('notifiable_type', TaskAssignmentItem::class)
+            ->whereIn('notifiable_id', $itemIds)
+            ->pluck('id')
+            ->all();
+        if (empty($notificationIds)) {
+            return;
+        }
+
+        // Delivery FK has cascadeOnDelete on notification_id → tự xóa cùng Notification
+        Notification::whereIn('id', $notificationIds)->delete();
     }
 
     public function bulkUpdateStatus(array $ids, string $status): void

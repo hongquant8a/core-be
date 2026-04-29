@@ -266,6 +266,47 @@ class TaskAssignedFlowTest extends TestCase
         $this->assertSame('Document reverted to draft', $delivery->fresh()->error_message);
     }
 
+    public function test_destroy_document_cleans_up_orphan_notifications_and_deliveries(): void
+    {
+        [$document, $item, $deptId] = $this->makeIssuedDocWithItem();
+        $user = User::factory()->create();
+        DB::table('task_assignment_item_user')->insert([
+            'task_assignment_item_id' => $item->id,
+            'user_id' => $user->id,
+            'department_id' => $deptId,
+            'department_role' => 'main',
+            'assignment_role' => 'main',
+            'assignment_status' => 'assigned',
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        // Tạo Notification + Delivery trỏ đến item
+        $notification = \App\Modules\Core\Models\Notification::create([
+            'user_id' => $user->id,
+            'organization_id' => $this->resolveTestOrganization()->id,
+            'event_key' => 'task_assigned',
+            'notifiable_type' => \App\Modules\TaskAssignment\Models\TaskAssignmentItem::class,
+            'notifiable_id' => $item->id,
+            'title' => 'x',
+            'body' => 'x',
+        ]);
+        NotificationDelivery::create([
+            'notification_id' => $notification->id,
+            'channel' => 'mail',
+            'status' => 'pending',
+        ]);
+
+        $this->assertSame(1, \App\Modules\Core\Models\Notification::count());
+        $this->assertSame(1, NotificationDelivery::count());
+
+        $docSvc = app(\App\Modules\TaskAssignment\Services\TaskAssignmentDocumentService::class);
+        $docSvc->destroy($document);
+
+        // Notification + Delivery (cascade FK) bị xóa
+        $this->assertSame(0, \App\Modules\Core\Models\Notification::count());
+        $this->assertSame(0, NotificationDelivery::count());
+    }
+
     public function test_re_issue_recreates_reminders(): void
     {
         $this->enableEvent('reminder_before', []);

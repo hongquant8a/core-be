@@ -71,7 +71,7 @@ class LogActivityController extends Controller
      */
     public function topUsers(FilterRequest $request)
     {
-        $limit = (int) $request->input('limit', 5);
+        $limit = max(1, min(50, (int) $request->input('limit', 5)));
 
         return $this->success($this->logActivityService->topUsers($request->all(), $limit));
     }
@@ -87,7 +87,7 @@ class LogActivityController extends Controller
      */
     public function topOrganizations(FilterRequest $request)
     {
-        $limit = (int) $request->input('limit', 5);
+        $limit = max(1, min(50, (int) $request->input('limit', 5)));
 
         return $this->success($this->logActivityService->topOrganizations($request->all(), $limit));
     }
@@ -113,8 +113,9 @@ class LogActivityController extends Controller
     public function dashboard(FilterRequest $request)
     {
         $granularity = (string) $request->input('granularity', 'month');
-        $topUsersLimit = (int) $request->input('top_users_limit', 5);
-        $topOrganizationsLimit = (int) $request->input('top_organizations_limit', 5);
+        // Clamp 1..50 để tránh request gửi limit=99999 quét full table.
+        $topUsersLimit = max(1, min(50, (int) $request->input('top_users_limit', 5)));
+        $topOrganizationsLimit = max(1, min(50, (int) $request->input('top_organizations_limit', 5)));
 
         return $this->success($this->logActivityService->dashboard(
             $request->all(),

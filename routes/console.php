@@ -10,6 +10,8 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 // Register + schedule notification reminder processing.
+// Lock TTL = 10 phút: nếu cron crash giữa chừng (OOM, segfault), lock tự release sau 10p
+// thay vì stuck 24h (default Laravel). 10p > thời gian thực thi bình thường (vài giây).
 Schedule::command(ProcessRemindersCommand::class)
     ->everyMinute()
-    ->withoutOverlapping();
+    ->withoutOverlapping(10);
