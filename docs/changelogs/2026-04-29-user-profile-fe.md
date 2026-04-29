@@ -99,6 +99,28 @@ interface UpdateUserProfileBody {
 }
 ```
 
+## 🚀 Update v2 — gộp combined update qua `PUT /users/{id}`
+
+`PUT /api/users/{id}` giờ **chấp nhận luôn cả profile fields** (gender, birth_date, citizen_id, permanent_address, temporary_address). BE tự route vào `user_profiles` trong cùng DB transaction.
+
+→ Form trộn user + profile fields (như UI mockup) chỉ cần **1 call**:
+
+```ts
+await api.put(`/api/users/${userId}`, {
+  // user fields
+  name, email, user_name, status,
+  // profile fields — BE auto-route vào user_profiles
+  phone, gender, birth_date, citizen_id,
+  permanent_address, temporary_address,
+})
+```
+
+**Atomic**: nếu validation fail bất kỳ field nào → 422, không update gì hết. Không có partial state.
+
+`PUT /users/{id}/profile` vẫn giữ — dùng khi FE muốn submit RIÊNG profile (vd tab "Thông tin cá nhân" tách biệt với form chính).
+
+→ FE tự chọn: 1 endpoint cho form combined, hoặc 2 endpoint cho form tách.
+
 ## ⚠ Avatar — vẫn dùng endpoint cũ
 
 Avatar **không** thuộc profile. Để upload/đổi avatar, vẫn gọi `PUT /api/users/{id}` với multipart `avatar` field như trước. Spatie media collection nằm trên model `User`, không move sang profile.

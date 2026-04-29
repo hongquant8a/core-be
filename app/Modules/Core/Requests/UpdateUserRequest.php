@@ -21,11 +21,13 @@ class UpdateUserRequest extends FormRequest
 
     public function rules(): array
     {
+        $userId = $this->route('user')?->id;
+
         return [
             'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|email|unique:users,email,'.$this->route('user')?->id,
+            'email' => 'sometimes|email|unique:users,email,'.$userId,
             'phone' => 'sometimes|nullable|string|max:20',
-            'user_name' => 'sometimes|nullable|string|max:100|unique:users,user_name,'.$this->route('user')?->id.'|regex:/^[a-zA-Z0-9._-]*$/',
+            'user_name' => 'sometimes|nullable|string|max:100|unique:users,user_name,'.$userId.'|regex:/^[a-zA-Z0-9._-]*$/',
             'password' => 'sometimes|string|min:6|confirmed',
             'status' => ['sometimes', 'in:'.implode(',', UserStatusEnum::values())],
             'avatar' => 'nullable|image|mimes:jpg,jpeg,png,svg,webp|max:5120',
@@ -33,6 +35,16 @@ class UpdateUserRequest extends FormRequest
             'assignments.*.role_id' => 'required|integer|distinct|exists:roles,id',
             'assignments.*.organization_ids' => 'required|array|min:1',
             'assignments.*.organization_ids.*' => 'integer|distinct|exists:organizations,id',
+
+            // Profile fields — BE tự route sang user_profiles trong cùng transaction
+            'gender' => 'sometimes|nullable|in:male,female,other',
+            'birth_date' => 'sometimes|nullable|date|before:today',
+            'citizen_id' => [
+                'sometimes', 'nullable', 'string', 'max:20',
+                \Illuminate\Validation\Rule::unique('user_profiles', 'citizen_id')->ignore($userId, 'user_id'),
+            ],
+            'permanent_address' => 'sometimes|nullable|string|max:500',
+            'temporary_address' => 'sometimes|nullable|string|max:500',
         ];
     }
 
@@ -64,6 +76,9 @@ class UpdateUserRequest extends FormRequest
             'assignments.*.organization_ids.*.integer' => 'ID tổ chức phải là số nguyên.',
             'assignments.*.organization_ids.*.distinct' => 'Tổ chức bị trùng trong cùng một vai trò.',
             'assignments.*.organization_ids.*.exists' => 'Tổ chức không tồn tại.',
+            'gender.in' => 'Giới tính chỉ được là male, female hoặc other.',
+            'birth_date.before' => 'Ngày sinh phải trước ngày hiện tại.',
+            'citizen_id.unique' => 'Số CCCD/CMND này đã được sử dụng bởi người dùng khác.',
         ];
     }
 

@@ -100,13 +100,27 @@ class UserService
             $hasAvatar = array_key_exists('avatar', $data);
             $hasAssignments = array_key_exists('assignments', $data);
             $assignments = $this->normalizeAssignments($data['assignments'] ?? []);
+
+            // Tách profile fields: BE auto-route sang user_profiles trong cùng transaction.
+            // 'phone' không tách ở đây vì model User đã có boot routing (saving/saved).
+            $profileFields = ['gender', 'birth_date', 'citizen_id', 'permanent_address', 'temporary_address'];
+            $profileData = array_intersect_key($data, array_flip($profileFields));
+
             unset($data['assignments'], $data['avatar']);
+            foreach ($profileFields as $f) {
+                unset($data[$f]);
+            }
 
             if (isset($data['password'])) {
                 $data['password'] = Hash::make($data['password']);
             }
 
             $user->update($data);
+
+            if (! empty($profileData)) {
+                \App\Modules\Core\Models\UserProfile::firstOrCreate(['user_id' => $user->id])
+                    ->update($profileData);
+            }
 
             if ($hasAssignments) {
                 $this->syncUserAssignments($user, $assignments);

@@ -172,4 +172,39 @@ class UserProfileTest extends TestCase
 
         $this->assertSame('0904444444', $u->fresh()->phone);
     }
+
+    public function test_put_users_endpoint_routes_profile_fields_into_user_profiles(): void
+    {
+        $u = User::factory()->create(['name' => 'Old Name']);
+
+        $res = $this->withHeader('X-Organization-Id', (string) $this->org->id)
+            ->putJson("/api/users/{$u->id}", [
+                'name' => 'New Name',
+                'gender' => 'male',
+                'birth_date' => '1995-08-20',
+                'permanent_address' => 'Combined update',
+            ]);
+
+        $res->assertOk();
+
+        $fresh = $u->fresh();
+        $this->assertSame('New Name', $fresh->name);
+        $this->assertSame('male', $fresh->profile->gender);
+        $this->assertSame('1995-08-20', $fresh->profile->birth_date->format('Y-m-d'));
+        $this->assertSame('Combined update', $fresh->profile->permanent_address);
+    }
+
+    public function test_put_users_combined_update_validates_profile_fields(): void
+    {
+        $u = User::factory()->create();
+
+        $res = $this->withHeader('X-Organization-Id', (string) $this->org->id)
+            ->putJson("/api/users/{$u->id}", [
+                'name' => 'X',
+                'gender' => 'invalid',
+            ]);
+
+        $res->assertStatus(422);
+        $res->assertJsonValidationErrors('gender');
+    }
 }
