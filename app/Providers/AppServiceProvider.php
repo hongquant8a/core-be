@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Modules\Core\Models\User;
+use App\Modules\Core\Observers\UserObserver;
 use App\Modules\Core\Services\SettingService;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -24,6 +26,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Auto-create UserProfile mỗi khi tạo User.
+        User::observe(UserObserver::class);
+
         // Giữ nguyên header Excel khi import (không lowercase/snake_case).
         // Cho phép import dùng header tiếng Việt giống hệt template export.
         // Mỗi Import class tự dịch label → field key trong prepareForValidation.

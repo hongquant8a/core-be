@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Core\UserController;
+use App\Modules\Core\UserProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/export', [UserController::class, 'export'])->middleware('permission:users.export,web');
@@ -17,3 +18,5 @@ Route::put('/{user}', [UserController::class, 'update'])->middleware('permission
 Route::patch('/{user}', [UserController::class, 'update'])->middleware('permission:users.update,web');
 Route::delete('/{user}', [UserController::class, 'destroy'])->middleware('permission:users.destroy,web');
 Route::patch('/{user}/status', [UserController::class, 'changeStatus'])->middleware('permission:users.changeStatus,web');
+Route::get('/{user}/profile', [UserProfileController::class, 'show'])->middleware('permission:users.show,web');
+Route::put('/{user}/profile', [UserProfileController::class, 'update'])->middleware('permission:users.update,web');

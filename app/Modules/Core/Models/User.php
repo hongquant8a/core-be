@@ -18,6 +18,12 @@ class User extends Authenticatable implements HasMedia
     /** Spatie luôn dùng guard 'web' cho quyền (dùng chung cho cả web và API Sanctum). */
     protected $guard_name = 'web';
 
+    /** Transient stash: phone gán qua mass-assign hoặc setter sẽ giữ ở đây giữa saving + saved. */
+    protected ?string $pendingPhone = null;
+
+    /** Marker để biết phone có được set hay không (phân biệt null = "unset" vs null = "set null"). */
+    protected bool $hasPendingPhone = false;
+
     protected static function newFactory()
     {
         return \Database\Factories\UserFactory::new();
@@ -26,7 +32,7 @@ class User extends Authenticatable implements HasMedia
     protected $fillable = [
         'name',
         'email',
-        'phone',
+        'phone',  // không phải column thật — booted() route sang user_profiles.phone (BC)
         'user_name',
         'password',
         'status',
@@ -44,6 +50,24 @@ class User extends Authenticatable implements HasMedia
     {
         static::creating(fn ($user) => $user->created_by = $user->updated_by = auth()->id());
         static::updating(fn ($user) => $user->updated_by = auth()->id());
+
+        // BC routing cho 'phone': mass-assign hoặc $user->phone = '...' không insert vào users
+        // mà stash → sau khi save xong, apply vào user_profiles.phone.
+        static::saving(function (User $user) {
+            if (array_key_exists('phone', $user->attributes)) {
+                $user->pendingPhone = $user->attributes['phone'];
+                $user->hasPendingPhone = true;
+                unset($user->attributes['phone']);
+            }
+        });
+        static::saved(function (User $user) {
+            if ($user->hasPendingPhone) {
+                UserProfile::firstOrCreate(['user_id' => $user->id])
+                    ->update(['phone' => $user->pendingPhone]);
+                $user->hasPendingPhone = false;
+                $user->pendingPhone = null;
+            }
+        });
     }
 
     protected function casts(): array
@@ -68,6 +92,18 @@ class User extends Authenticatable implements HasMedia
     public function preference()
     {
         return $this->hasOne(UserPreference::class);
+    }
+
+    /** Profile cá nhân (phone, gender, birth_date, citizen_id, address...). Auto-create qua UserObserver. */
+    public function profile()
+    {
+        return $this->hasOne(UserProfile::class);
+    }
+
+    /** BC accessor: code cũ dùng $user->phone vẫn work, đọc qua profile. */
+    public function getPhoneAttribute(): ?string
+    {
+        return $this->profile?->phone;
     }
 
     public function socials()
