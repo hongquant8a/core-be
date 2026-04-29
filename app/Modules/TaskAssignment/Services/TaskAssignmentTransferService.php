@@ -114,6 +114,15 @@ class TaskAssignmentTransferService
                 'organization_id' => $item->organization_id,
             ]);
 
+            // 4. Fire TaskAssigned cho to_user nếu document đã issued (assignee mới cần biết)
+            $item->loadMissing('document');
+            if ($item->document?->status === \App\Modules\TaskAssignment\Enums\TaskAssignmentDocumentStatusEnum::Issued->value) {
+                $toUser = \App\Modules\Core\Models\User::find($toUserId);
+                if ($toUser) {
+                    event(new \App\Services\Notification\Events\TaskAssigned($item, $toUser));
+                }
+            }
+
             return $transfer->load(['fromUser', 'toUser', 'transferredBy', 'department']);
         });
     }

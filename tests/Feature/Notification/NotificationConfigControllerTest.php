@@ -40,8 +40,9 @@ class NotificationConfigControllerTest extends TestCase
         $res->assertOk();
         $res->assertJsonPath('data.0.key', 'task_assignment');
         $res->assertJsonPath('data.0.label', 'Giao việc');
-        $this->assertCount(6, $res->json('data.0.events'));
-        $this->assertTrue($res->json('data.0.events.3.is_reminder'));
+        $this->assertCount(7, $res->json('data.0.events'));
+        // events: document_issued, task_assigned, task_completed, task_confirmed, reminder_before, reminder_on, reminder_after
+        $this->assertTrue($res->json('data.0.events.4.is_reminder'));
     }
 
     public function test_event_config_index_returns_schedules_eager(): void
@@ -52,7 +53,7 @@ class NotificationConfigControllerTest extends TestCase
         $res = $this->getJson('/api/task-assignment/notification-config/event-configs');
 
         $res->assertOk();
-        $this->assertCount(6, $res->json('data'));
+        $this->assertCount(7, $res->json('data'));
         $documentIssued = collect($res->json('data'))->firstWhere('event_key', 'document_issued');
         $this->assertTrue($documentIssued['enabled']);
         $this->assertCount(1, $documentIssued['schedules']);

@@ -5,6 +5,7 @@ namespace App\Services\Notification\Enums;
 enum NotificationEventEnum: string
 {
     case DocumentIssued = 'document_issued';
+    case TaskAssigned = 'task_assigned';
     case TaskCompleted = 'task_completed';
     case TaskConfirmed = 'task_confirmed';
     case ReminderBefore = 'reminder_before';
@@ -23,6 +24,7 @@ enum NotificationEventEnum: string
     {
         return match ($this) {
             self::DocumentIssued,
+            self::TaskAssigned,
             self::TaskCompleted,
             self::TaskConfirmed,
             self::ReminderBefore,
@@ -35,6 +37,7 @@ enum NotificationEventEnum: string
     {
         return match ($this) {
             self::DocumentIssued => 'Văn bản được ban hành',
+            self::TaskAssigned => 'Được giao việc mới',
             self::TaskCompleted => 'Công việc báo cáo hoàn thành',
             self::TaskConfirmed => 'Công việc được xác nhận',
             self::ReminderBefore => 'Nhắc trước hạn',

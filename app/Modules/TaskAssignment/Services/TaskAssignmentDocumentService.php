@@ -2,12 +2,16 @@
 
 namespace App\Modules\TaskAssignment\Services;
 
+use App\Modules\Core\Models\Notification;
+use App\Modules\Core\Models\NotificationDelivery;
 use App\Modules\Core\Services\MediaService;
 use App\Modules\TaskAssignment\Enums\TaskAssignmentDocumentStatusEnum;
 use App\Modules\TaskAssignment\Exports\DocumentsExport;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDocument;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDocumentAttachment;
+use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Services\Notification\Events\DocumentIssued;
+use App\Services\Notification\Services\ReminderScheduler;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
@@ -15,7 +19,10 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class TaskAssignmentDocumentService
 {
-    public function __construct(private MediaService $mediaService) {}
+    public function __construct(
+        private MediaService $mediaService,
+        private ReminderScheduler $reminderScheduler,
+    ) {}
 
     public function stats(array $filters): array
     {
@@ -186,8 +193,10 @@ class TaskAssignmentDocumentService
     public function changeStatus(TaskAssignmentDocument $document, string $status): TaskAssignmentDocument
     {
         $previousStatus = $document->status;
+        $issued = TaskAssignmentDocumentStatusEnum::Issued->value;
+        $draft = TaskAssignmentDocumentStatusEnum::Draft->value;
 
-        if ($status === TaskAssignmentDocumentStatusEnum::Issued->value) {
+        if ($status === $issued) {
             if ($document->items()->count() === 0) {
                 throw \Illuminate\Validation\ValidationException::withMessages([
                     'status' => ['Văn bản phải có ít nhất một công việc trước khi ban hành.'],
@@ -210,12 +219,50 @@ class TaskAssignmentDocumentService
             $document->update(['status' => $status, 'issued_at' => null]);
         }
 
-        // Dispatch event khi status chuyển sang 'issued' (mỗi lần chuyển đều bắn — không dedupe)
-        if ($status === TaskAssignmentDocumentStatusEnum::Issued->value && $previousStatus !== $status) {
+        // Revert issued → draft: dọn reminder pending + cancel notifications/deliveries chưa gửi
+        if ($previousStatus === $issued && $status === $draft) {
+            $this->cancelPendingNotificationsForDocument($document);
+        }
+
+        // Re-issue draft → issued: re-create reminder cho items đang còn (đã bị cancel ở revert)
+        if ($status === $issued && $previousStatus !== $status) {
+            foreach ($document->items as $item) {
+                $this->reminderScheduler->scheduleFor($item);
+            }
             event(new DocumentIssued($document->fresh()));
         }
 
         return $document->load(['type', 'attachments.media', 'creator.media', 'editor.media']);
+    }
+
+    /**
+     * Khi revert document `issued → draft`: cancel mọi reminder pending + Notification/Delivery
+     * pending của items thuộc document. Mục đích: không gửi nhắc lệch context, không gửi
+     * mail/SMS ban hành đang queue chưa xử lý.
+     */
+    private function cancelPendingNotificationsForDocument(TaskAssignmentDocument $document): void
+    {
+        $itemIds = $document->items()->pluck('id')->all();
+        if (empty($itemIds)) {
+            return;
+        }
+
+        // 1. Cancel reminders pending
+        foreach ($document->items as $item) {
+            $this->reminderScheduler->cancelPending($item);
+        }
+
+        // 2. Cancel Notification + Delivery pending của items này
+        $notificationIds = Notification::where('notifiable_type', TaskAssignmentItem::class)
+            ->whereIn('notifiable_id', $itemIds)
+            ->pluck('id')
+            ->all();
+        if (empty($notificationIds)) {
+            return;
+        }
+        NotificationDelivery::whereIn('notification_id', $notificationIds)
+            ->where('status', 'pending')
+            ->update(['status' => 'skipped', 'error_message' => 'Document reverted to draft']);
     }
 
     public function export(array $filters): BinaryFileResponse

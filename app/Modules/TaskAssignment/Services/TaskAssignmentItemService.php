@@ -96,11 +96,14 @@ class TaskAssignmentItemService
                 $data = collect($validated)->except(['users', 'attachments', 'remove_attachment_ids'])->all();
                 $item = TaskAssignmentItem::create($data);
 
+                $addedUserIds = [];
                 if (! empty($users)) {
-                    $this->syncUsers($item, $users);
+                    $addedUserIds = $this->syncUsers($item, $users);
                 }
 
                 $this->uploadAttachments($item, $files, $storedFiles);
+
+                $this->fireTaskAssignedForNewUsers($item, $addedUserIds);
 
                 return $item->load(['document', 'itemType', 'users', 'attachments.media', 'creator.media', 'editor.media']);
             });
@@ -121,8 +124,9 @@ class TaskAssignmentItemService
                 $data = collect($validated)->except(['users', 'attachments', 'remove_attachment_ids'])->all();
                 $item->update($data);
 
+                $addedUserIds = [];
                 if ($users !== null) {
-                    $this->syncUsers($item, $users);
+                    $addedUserIds = $this->syncUsers($item, $users);
                 }
 
                 if (! empty($removeAttachmentIds)) {
@@ -130,6 +134,8 @@ class TaskAssignmentItemService
                 }
 
                 $this->uploadAttachments($item, $files, $storedFiles);
+
+                $this->fireTaskAssignedForNewUsers($item, $addedUserIds);
 
                 return $item->load(['document', 'itemType', 'users', 'attachments.media', 'creator.media', 'editor.media']);
             });
@@ -285,8 +291,15 @@ class TaskAssignmentItemService
         }
     }
 
-    private function syncUsers(TaskAssignmentItem $item, array $users): void
+    /**
+     * Đồng bộ pivot user — trả về list user_id MỚI thêm vào (không tính các user đã có trong list cũ).
+     *
+     * @return array<int> user_ids vừa được add (để fire TaskAssigned event)
+     */
+    private function syncUsers(TaskAssignmentItem $item, array $users): array
     {
+        $previousIds = $item->users()->pluck('users.id')->all();
+
         $syncData = [];
         foreach ($users as $user) {
             $syncData[$user['user_id']] = [
@@ -298,6 +311,32 @@ class TaskAssignmentItemService
             ];
         }
         $item->users()->sync($syncData);
+
+        $newIds = array_keys($syncData);
+
+        return array_values(array_diff($newIds, $previousIds));
+    }
+
+    /**
+     * Fire TaskAssigned event cho các user vừa được thêm vào item — chỉ khi document đã issued.
+     *
+     * @param  array<int>  $userIds
+     */
+    private function fireTaskAssignedForNewUsers(TaskAssignmentItem $item, array $userIds): void
+    {
+        if (empty($userIds)) {
+            return;
+        }
+
+        $item->loadMissing('document');
+        if ($item->document?->status !== \App\Modules\TaskAssignment\Enums\TaskAssignmentDocumentStatusEnum::Issued->value) {
+            return;
+        }
+
+        $users = \App\Modules\Core\Models\User::whereIn('id', $userIds)->get();
+        foreach ($users as $user) {
+            event(new \App\Services\Notification\Events\TaskAssigned($item, $user));
+        }
     }
 
     private function applyDepartmentRestriction(array $filters): array

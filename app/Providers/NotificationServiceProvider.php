@@ -11,12 +11,15 @@ use App\Services\Notification\Channels\SmsChannel;
 use App\Services\Notification\Channels\ZaloChannel;
 use App\Services\Notification\ContentBuilders\DocumentIssuedContentBuilder;
 use App\Services\Notification\ContentBuilders\ReminderContentBuilder;
+use App\Services\Notification\ContentBuilders\TaskAssignedContentBuilder;
 use App\Services\Notification\ContentBuilders\TaskCompletedContentBuilder;
 use App\Services\Notification\ContentBuilders\TaskConfirmedContentBuilder;
 use App\Services\Notification\Events\DocumentIssued;
+use App\Services\Notification\Events\TaskAssigned;
 use App\Services\Notification\Events\TaskCompleted;
 use App\Services\Notification\Events\TaskConfirmed;
 use App\Services\Notification\Listeners\SendDocumentIssuedNotifications;
+use App\Services\Notification\Listeners\SendTaskAssignedNotifications;
 use App\Services\Notification\Listeners\SendTaskCompletedNotifications;
 use App\Services\Notification\Listeners\SendTaskConfirmedNotifications;
 use App\Services\Notification\NotificationService;
@@ -51,6 +54,7 @@ class NotificationServiceProvider extends ServiceProvider
         // Register content builders
         $registry = $this->app->make(ContentBuilderRegistry::class);
         $registry->register('document_issued', $this->app->make(DocumentIssuedContentBuilder::class));
+        $registry->register('task_assigned', $this->app->make(TaskAssignedContentBuilder::class));
         $registry->register('task_completed', $this->app->make(TaskCompletedContentBuilder::class));
         $registry->register('task_confirmed', $this->app->make(TaskConfirmedContentBuilder::class));
         $registry->register('reminder_before', new ReminderContentBuilder('before'));
@@ -59,6 +63,7 @@ class NotificationServiceProvider extends ServiceProvider
 
         // Register event listeners
         Event::listen(DocumentIssued::class, SendDocumentIssuedNotifications::class);
+        Event::listen(TaskAssigned::class, SendTaskAssignedNotifications::class);
         Event::listen(TaskCompleted::class, SendTaskCompletedNotifications::class);
         Event::listen(TaskConfirmed::class, SendTaskConfirmedNotifications::class);
 
