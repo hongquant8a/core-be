@@ -9,6 +9,7 @@ Route::get('/export', [MeetingAttendeeController::class, 'export'])->middleware(
 Route::post('/import', [MeetingAttendeeController::class, 'import'])->middleware('permission:meeting-attendees.import,web');
 Route::get('/import-template', [MeetingAttendeeController::class, 'importTemplate'])->middleware('permission:meeting-attendees.import,web');
 Route::get('/stats', [MeetingAttendeeController::class, 'stats'])->middleware('permission:meeting-attendees.stats,web');
+Route::get('/user-options', [MeetingAttendeeController::class, 'userOptions'])->middleware('permission:meeting-attendees.store,web');
 Route::get('/', [MeetingAttendeeController::class, 'index'])->middleware('permission:meeting-attendees.index,web');
 Route::get('/{meetingAttendee}', [MeetingAttendeeController::class, 'show'])->middleware('permission:meeting-attendees.show,web');
 Route::post('/', [MeetingAttendeeController::class, 'store'])->middleware('permission:meeting-attendees.store,web');

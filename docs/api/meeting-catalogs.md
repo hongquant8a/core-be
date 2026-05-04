@@ -171,6 +171,7 @@ Response: `CatalogResource`.
 | Method | Path | Mô tả |
 |---|---|---|
 | GET | `/api/meeting-attendees/stats` | `{ total, active, inactive }`. Query: `search`, `status`, `meeting_attendee_group_id`. |
+| GET | `/api/meeting-attendees/user-options` | Dropdown chọn user khi tạo đại biểu (xem [User options](#user-options)). |
 | GET | `/api/meeting-attendees` | Danh sách phân trang. Query: `search` (theo tên/email/đơn vị), `meeting_attendee_group_id`, `status`, `sort_by`, `sort_order`, `limit`. |
 | GET | `/api/meeting-attendees/{id}` | Chi tiết. |
 | POST | `/api/meeting-attendees` | Tạo. Body: [Attendee body](#attendee-body). |
@@ -183,7 +184,28 @@ Response: `CatalogResource`.
 | POST | `/api/meeting-attendees/import` | Nhập Excel. Cột bắt buộc: `name`. |
 | GET | `/api/meeting-attendees/import-template` | Tải file mẫu `import-meeting-attendees-template.xlsx`. |
 
-### 5.1 Response item (MeetingAttendeeResource)
+### <a id="user-options"></a>5.1 User options dropdown (`GET /api/meeting-attendees/user-options`)
+
+FE dùng cho ô chọn `user_id` khi tạo đại biểu.
+
+| | |
+|---|---|
+| **Method** | GET |
+| **Path** | `/api/meeting-attendees/user-options` |
+| **Auth** | Bắt buộc + `X-Organization-Id`. |
+| **Permission** | `meeting-attendees.store` (dùng chung quyền tạo đại biểu — **không cần** `users.index` để khỏi đụng CASL ở FE). |
+| **Query** | `search` (tên/email), `limit` (mặc định 50). |
+| **Response** | `{ "success": true, "data": [{ "id": 12, "name": "Nguyễn Văn A", "email": "a@example.com", "phone": "0901234567" }] }` |
+
+Quy tắc lọc:
+
+- Chỉ trả user `status=active` thuộc tổ chức hiện tại (có ít nhất một role trong `model_has_roles` của org).
+- **Loại trừ** user đã được link với một `meeting_attendee` trong cùng org → tránh tạo đại biểu trùng.
+- Sắp xếp `name asc`.
+
+> Field `user_id` trong [Attendee body](#attendee-body) **không bắt buộc** — vẫn cho phép đại biểu ngoài hệ thống (không có account). Khi đó FE để trống `user_id` và nhập trực tiếp `name`/`email`/`phone`.
+
+### 5.2 Response item (MeetingAttendeeResource)
 
 ```json
 {

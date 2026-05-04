@@ -37,6 +37,21 @@ class MeetingAttendeeController extends Controller
     }
 
     /**
+     * Danh sách user trong tổ chức để chọn khi tạo đại biểu (dropdown).
+     *
+     * Trả `[{id, name, email, phone}]`. Dùng chung permission `meeting-attendees.store`
+     * — FE không cần `users.index` để mở dropdown này, tránh CASL conflict.
+     * Loại trừ user đã được link với một đại biểu trong tổ chức hiện tại.
+     *
+     * @queryParam search string Tìm theo tên/email. Example: nguyen
+     * @queryParam limit integer Giới hạn số bản ghi (mặc định 50). Example: 20
+     */
+    public function userOptions(FilterRequest $request)
+    {
+        return $this->success($this->meetingAttendeeService->userOptions($request->all()));
+    }
+
+    /**
      * Danh sách đại biểu.
      *
      * @queryParam search string Từ khóa tìm kiếm theo tên/email/đơn vị. Example: nguyen van a
