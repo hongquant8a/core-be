@@ -401,16 +401,20 @@ class PermissionSeeder extends Seeder
 
         $superAdmin = Role::where('name', 'Super Admin')->where('guard_name', self::GUARD)->first();
 
-        $superAdminUser = User::updateOrCreate(
-            ['email' => 'admin@example.com'],
-            [
+        $superAdminUser = User::where('user_name', 'admin')
+            ->orWhere('email', 'admin@example.com')
+            ->first();
+
+        if (! $superAdminUser) {
+            $superAdminUser = User::create([
+                'email' => 'admin@example.com',
                 'name' => 'Admin',
                 'user_name' => 'admin',
                 'password' => 'quandcore**11',
                 'status' => StatusEnum::Active->value,
                 'email_verified_at' => now(),
-            ]
-        );
+            ]);
+        }
         $superAdminUser->forceFill([
             'created_by' => $superAdminUser->id,
             'updated_by' => $superAdminUser->id,
@@ -430,18 +434,21 @@ class PermissionSeeder extends Seeder
             ['email' => 'truongphong@example.com', 'user_name' => 'truongphong', 'name' => 'Trưởng Phòng', 'role' => $truongPhongRole],
             ['email' => 'nhanvien@example.com', 'user_name' => 'nhanvien', 'name' => 'Nhân viên', 'role' => $nhanVienRole],
         ] as $userData) {
-            $user = User::updateOrCreate(
-                [
+            // Tìm user đã tồn tại theo user_name HOẶC email — tránh duplicate khi prod đã có account.
+            $user = User::where('user_name', $userData['user_name'])
+                ->orWhere('email', $userData['email'])
+                ->first();
+
+            if (! $user) {
+                $user = User::create([
                     'email' => $userData['email'],
-                ],
-                [
                     'user_name' => $userData['user_name'],
                     'name' => $userData['name'],
                     'password' => 'quandcore**11',
                     'status' => StatusEnum::Active->value,
                     'email_verified_at' => now(),
-                ]
-            );
+                ]);
+            }
             $user->forceFill([
                 'created_by' => $superAdminUser->id,
                 'updated_by' => $superAdminUser->id,
