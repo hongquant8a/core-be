@@ -255,6 +255,16 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
 
 `MeetingParticipant` = mapping giữa `meeting` và `meeting_attendee` (= user). Lưu **snapshot** thông tin đại biểu lúc mời (per spec — báo cáo/giấy mời không thay đổi khi user update profile sau).
 
+> **Chủ trì + Thư ký = role của participant** (KHÔNG có column riêng trên `meetings`). Single source of truth = `meeting_participants.role` enum:
+> - `delegate` (mặc định) — đại biểu thường
+> - `chairperson` — chủ trì
+> - `operator` — thư ký/điều hành
+> - `guest` — khách mời (không có quyền biểu quyết)
+>
+> **Set chủ trì**: `PATCH /api/meeting-participants/{id}` body `{"role":"chairperson"}`. FE phải tự demote chủ trì cũ về `delegate` trước (BE không enforce unique). Tương tự cho thư ký.
+>
+> **Query chủ trì cuộc họp X**: `GET /api/meeting-participants?meeting_id=X&role=chairperson`. Hoặc lấy từ `participants` array đã preload trong `GET /api/meetings/{X}` (xem [Section 1.4](#meeting-body)).
+
 | Method | Path | Mô tả |
 |---|---|---|
 | GET | `/api/meeting-participants/stats` | `{ total, accepted, declined }`. Query: `meeting_id`, `response_status`, `role`, `search`. |
