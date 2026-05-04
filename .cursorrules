@@ -4,15 +4,15 @@
     - **Bắt buộc**: Sử dụng tiếng Việt cho toàn bộ tài liệu, phản hồi và comment giải thích logic.
 - **Môi trường**:
     - **Bắt buộc**: Luôn sử dụng lệnh `sail` thay thế cho `php` khi thực thi công việc. Ví dụ: `sail artisan migrate`.
-- **Cấu trúc Thư mục**: 
-    - **Bắt buộc**: Luôn làm việc theo cấu trúc Modular tại `/app/Modules/`. 
+- **Cấu trúc Thư mục**:
+    - **Bắt buộc**: Luôn làm việc theo cấu trúc Modular tại `/app/Modules/`.
     - **Bắt buộc**: Namespace phải khớp chính xác với cấu trúc thư mục (ví dụ: `App\Modules\Voter\Controllers`).
     - **Khuyến nghị**: Ưu tiên tạo file mới trong module thay vì các thư mục mặc định của Laravel.
     - **Bắt buộc**: Mỗi module có thư mục `Enums/` chứa enum (trạng thái, loại, ...). Ví dụ: `Core/Enums/UserStatusEnum.php`, `Post/Enums/PostStatusEnum.php`. Enum dùng `rule()` và `values()` cho validation.
     - **Bắt buộc**: Với các bảng danh mục liên quan trực tiếp tới module chức năng, tên bảng phải có tiền tố module để dễ phân biệt và tránh xung đột (ví dụ module `Document`: `document_types`, `document_fields`; module `Post`: `post_categories`).
     - **Bắt buộc**: Với bảng pivot thuộc module chức năng, tên bảng phải nhất quán theo resource của module và có nhận diện module rõ ràng (ưu tiên tiền tố module), ví dụ: `post_post_category`, `document_document_type`, `document_document_field`.
 
-- **Module Chức năng Chuẩn**: 
+- **Module Chức năng Chuẩn**:
     - **Bắt buộc**: Một module mới mặc định phải bao gồm các hàm: `stats`, `index`, `show`, `store`, `update`, `destroy`, `bulk delete`, `bulk update status`, `change status`, `export`, `import`.
     - **Bắt buộc**: Bộ lọc `index` phải có tìm kiếm theo tên (hoặc trường chính), trạng thái (`status`), khoảng ngày tạo (`created_at` từ ngày - đến ngày), và sắp xếp theo `id`, `created_at`, `updated_at` cùng các trường phù hợp (ví dụ: `title`, `sort_order`, `view_count`).
 
@@ -114,6 +114,10 @@
 
 - **FormRequest cho Scribe (chuẩn tài liệu)**:
     - **Bắt buộc**: Tất cả `FormRequest` dùng cho endpoint API phải có `bodyParameters()`; với request chỉ dùng query thì có thể trả `[]`.
+    - **Bắt buộc**: Tất cả `FormRequest` phải có `messages()` để trả thông báo lỗi validate rõ ràng bằng tiếng Việt; không để mặc định message tiếng Anh.
+    - **Bắt buộc**: `messages()` tối thiểu phải bao phủ các rule đang dùng trong request (required, string, integer, array, file, mimes, max, min, date, after_or_equal, exists, unique, in, boolean...).
+    - **Bắt buộc**: Khai báo `attributes()` để map tên trường thân thiện tiếng Việt khi trả lỗi (ưu tiên tên nghiệp vụ thay vì key kỹ thuật).
+    - **Bắt buộc**: Không để `attributes()` rỗng nếu `rules()` có khai báo field validate; phải map tối thiểu toàn bộ key top-level và key lồng nhau quan trọng (ví dụ: `items.*.id`).
     - **Khuyến nghị**: Request lọc chung (ví dụ `FilterRequest`) nên có cả `queryParameters()` để mô tả search/status/from_date/to_date/sort_by/sort_order/limit.
     - **Bắt buộc**: Khi thêm request mới cho API, cập nhật luôn mô tả tham số để tránh warning `No bodyParameters()/No queryParameters()` khi generate Scribe.
 

@@ -63,3 +63,131 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+
+# Laravel Modular & Documentation Rules for Quân
+
+- **Ngôn ngữ**:
+    - **Bắt buộc**: Sử dụng tiếng Việt cho toàn bộ tài liệu, phản hồi và comment giải thích logic.
+- **Môi trường**:
+    - **Bắt buộc**: Luôn sử dụng lệnh `sail` thay thế cho `php` khi thực thi công việc. Ví dụ: `sail artisan migrate`.
+- **Cấu trúc Thư mục**:
+    - **Bắt buộc**: Luôn làm việc theo cấu trúc Modular tại `/app/Modules/`.
+    - **Bắt buộc**: Namespace phải khớp chính xác với cấu trúc thư mục (ví dụ: `App\Modules\Voter\Controllers`).
+    - **Khuyến nghị**: Ưu tiên tạo file mới trong module thay vì các thư mục mặc định của Laravel.
+    - **Bắt buộc**: Mỗi module có thư mục `Enums/` chứa enum (trạng thái, loại, ...). Ví dụ: `Core/Enums/UserStatusEnum.php`, `Post/Enums/PostStatusEnum.php`. Enum dùng `rule()` và `values()` cho validation.
+    - **Bắt buộc**: Với các bảng danh mục liên quan trực tiếp tới module chức năng, tên bảng phải có tiền tố module để dễ phân biệt và tránh xung đột (ví dụ module `Document`: `document_types`, `document_fields`; module `Post`: `post_categories`).
+    - **Bắt buộc**: Với bảng pivot thuộc module chức năng, tên bảng phải nhất quán theo resource của module và có nhận diện module rõ ràng (ưu tiên tiền tố module), ví dụ: `post_post_category`, `document_document_type`, `document_document_field`.
+
+- **Module Chức năng Chuẩn**:
+    - **Bắt buộc**: Một module mới mặc định phải bao gồm các hàm: `stats`, `index`, `show`, `store`, `update`, `destroy`, `bulk delete`, `bulk update status`, `change status`, `export`, `import`.
+    - **Bắt buộc**: Bộ lọc `index` phải có tìm kiếm theo tên (hoặc trường chính), trạng thái (`status`), khoảng ngày tạo (`created_at` từ ngày - đến ngày), và sắp xếp theo `id`, `created_at`, `updated_at` cùng các trường phù hợp (ví dụ: `title`, `sort_order`, `view_count`).
+
+- **Export (xuất Excel)**:
+    - **Bắt buộc**: Xuất đầy đủ các trường thông tin giống danh sách index (Resource).
+    - **Bắt buộc**: Các trường quan hệ (created_by, created_at, updated_by, updated_at, status, categories, ...) phải có trong export tương ứng index.
+    - **Scribe**: PHPDoc action `export` phải có mô tả "Xuất ra các trường: [liệt kê từng trường]".
+
+- **Import (nhập Excel)**:
+    - **Bắt buộc**: FormRequest validate `file` — `required|file|mimes:xlsx,xls,csv|max:10240`.
+    - **Bắt buộc**: Cột file khớp chuẩn Export; trường bắt buộc = required trong StoreRequest, trường không bắt buộc có default.
+    - **Scribe**: PHPDoc action `import` phải có mô tả "Cột bắt buộc: [liệt kê]. Cột không bắt buộc: [liệt kê, ghi rõ giá trị mặc định]".
+
+- **API Response (Trait RespondsWithJson)**:
+    - **Bắt buộc**: Dùng trait `App\Modules\Core\Traits\RespondsWithJson` qua Controller base. Chuẩn response: `success` (bool), `message` (optional), `data` (optional).
+    - **Bắt buộc**: `$this->success($data, $message)` – stats, destroy, bulk, import.
+    - **Bắt buộc**: `$this->successResource(JsonResource, $message)` – show, store, update, changeStatus.
+    - **Bắt buộc**: `$this->successCollection(ResourceCollection, $message)` – index, tree.
+    - **Bắt buộc**: `$this->error($message, $code, $errors, $errorCode)` – lỗi chung.
+    - **Khuyến nghị**: Dùng shortcut `$this->unauthorized()`, `$this->forbidden()`, `$this->notFound()`, `$this->conflict()`.
+
+- **Service Layer & Transaction**:
+    - **Bắt buộc**: Mỗi module phải có `Services/` để chứa nghiệp vụ. Namespace chuẩn: `App\Modules\<Module>\Services`. Quy ước tên: `{Resource}Service` (ví dụ: `PostService`, `UserService`).
+    - **Bắt buộc**: Controller chỉ điều phối theo luồng: nhận request -> validate (FormRequest) -> gọi Service -> trả response chuẩn (`success/successResource/successCollection/error`).
+    - **Bắt buộc**: Không đặt nghiệp vụ xử lý dữ liệu phức tạp trong Controller (query nhiều bước, sync quan hệ, xử lý trạng thái, import/export, ...).
+    - **Bắt buộc**: Service phải ưu tiên giữ bộ method chuẩn theo module: `stats`, `index`, `show`, `store`, `update`, `destroy`, `bulkDestroy`, `bulkUpdateStatus`, `changeStatus`, `export`, `import` (áp dụng theo resource có hỗ trợ).
+    - **Bắt buộc**: Dùng `DB::transaction()` cho các luồng ghi nhiều bước có phụ thuộc nhau (ví dụ: create/update + sync quan hệ + xóa/thêm dữ liệu liên quan).
+    - **Khuyến nghị**: Với thao tác hàng loạt nhiều bước (bulk delete theo từng bản ghi, bulk sync...), bọc transaction để đảm bảo toàn vẹn dữ liệu.
+    - **Bắt buộc**: Các thao tác chỉ đọc dữ liệu hoặc chỉ một câu lệnh ghi đơn lẻ thì không cần transaction để tránh lạm dụng.
+    - **Bắt buộc**: Nếu trong transaction có thao tác file (upload/delete file trong storage), phải có cơ chế bù trừ khi lỗi (cleanup file) bằng `try/catch` hoặc cơ chế tương đương để tránh lệch giữa DB và file system.
+    - **Bắt buộc**: Tất cả luồng upload/xóa media phải đi qua `App\Modules\Core\Services\MediaService` (upload 1 file, upload nhiều file, xóa theo id). Không gọi trực tiếp `addMedia()`, `Storage::put/delete` trong service của từng module nếu đã có `MediaService`.
+    - **Khuyến nghị**: Validate định dạng/kích thước file ở `FormRequest`; `MediaService` giữ vai trò chuẩn hóa thao tác media dùng chung đa module.
+    - **Bắt buộc (đa tổ chức / tenant)**: Với resource nghiệp vụ thuộc ngữ cảnh tổ chức (ví dụ: `posts`, `documents`), bảng dữ liệu phải có `organization_id` và mọi truy vấn đọc/ghi phải scope theo tổ chức hiện tại từ middleware `set.permissions.team` (`X-Organization-Id`).
+    - **Bắt buộc (đa tổ chức / tenant)**: Các thao tác theo ID (`show`, `update`, `destroy`, `changeStatus`, `incrementView`) và thao tác bulk phải chặn vượt tenant (không được tác động bản ghi khác `organization_id` hiện tại).
+    - **Bắt buộc (đa tổ chức / tenant)**: Luồng `store`/`import` phải gán `organization_id` theo ngữ cảnh hiện tại, không nhận `organization_id` trực tiếp từ client cho endpoint tenant thông thường.
+    - **Checklist review PR (Service & Transaction)**:
+        - [ ] Controller không chứa nghiệp vụ phức tạp; chỉ validate -> gọi service -> trả response.
+        - [ ] Mỗi endpoint nghiệp vụ có method tương ứng trong Service của module.
+        - [ ] Luồng ghi nhiều bước đã được bọc `DB::transaction()`.
+        - [ ] Không lạm dụng transaction cho read/single-write đơn giản.
+        - [ ] Luồng có thao tác file trong transaction có cơ chế cleanup khi lỗi.
+        - [ ] Luồng upload media sử dụng `Core\\Services\\MediaService`, không xử lý lưu file trực tiếp ở service module.
+        - [ ] Sau refactor, response format và HTTP status code vẫn giữ đúng chuẩn hiện tại.
+        - [ ] Resource thuộc tenant đã scope theo `organization_id` ở tất cả luồng read/write và không cho truy cập chéo tổ chức.
+
+- **API Resource & Localization**:
+    - **Bắt buộc**: Luôn sử dụng Resource để trả về dữ liệu API.
+    - **Bắt buộc**: Trong Resource, chuyển đổi dữ liệu thời gian về định dạng Việt Nam:
+        - **Bắt buộc**: Các trường chỉ có ngày (ví dụ: birthday): `d/m/Y`.
+        - **Bắt buộc**: Các trường có cả giờ (ví dụ: created_at, updated_at): `H:i:s d/m/Y`.
+    - **Ví dụ**: `'created_at' => $this->created_at->format('H:i:s d/m/Y')`.
+
+- **Tài liệu & Thiết kế**:
+    - **Bắt buộc**: Lưu các phân tích, đánh giá tổng quan hệ thống, giải thích kiến trúc hoặc giải pháp phức tạp vào `/docs/answer`.
+    - **Bắt buộc**: Khi tạo/cập nhật Controller, cập nhật file Markdown tương ứng trong `/docs/api` (gồm: Method, Path, Request Body, Response mẫu).
+    - **Bắt buộc**: Cập nhật sơ đồ bảng vào `DATABASE_DESIGN.md` khi có Migration mới.
+    - **Bắt buộc**: Cập nhật thông tin chi tiết tập tin/thư mục vào `docs/STRUCTURE_DESIGN.md` khi có thay đổi.
+
+- **Scribe (API documentation)**:
+    - **Bắt buộc**: Khi tạo hoặc thay đổi Controller API, bổ sung PHPDoc cho Scribe để sinh tài liệu API (`sail artisan scribe:generate`).
+    - **Bắt buộc**: Trên class dùng `@group Tên nhóm` (ví dụ: `@group Core - User`) và mô tả ngắn chức năng controller.
+    - **Bắt buộc**: Trên từng action (method):
+        - **Bắt buộc**: Mô tả ngắn bằng tiếng Việt cho từng endpoint.
+        - **Bắt buộc**: `@queryParam` cho tham số query (search, status, sort_by, sort_order, limit, from_date, to_date, ...): ghi rõ kiểu, mô tả, Example nếu cần.
+        - **Bắt buộc**: `@urlParam` cho tham số đường dẫn (ví dụ: `{user}`, `{id}`): required/optional, mô tả, Example.
+        - **Bắt buộc**: `@bodyParam` cho request body (POST/PUT/PATCH): tên trường, kiểu, required/optional, mô tả, Example.
+        - **Bắt buộc** với action **export**: Ghi rõ "Xuất ra các trường: id, [các trường chính], status, [quan hệ nếu có], created_by, updated_by, created_at, updated_at" (liệt kê đúng Export class).
+        - **Bắt buộc** với action **import**: Ghi rõ "Cột bắt buộc: [name, email, ...]. Cột không bắt buộc: [status mặc định active, password mặc định password, ...]" trong mô tả hoặc @bodyParam file.
+        - **Bắt buộc** với endpoint **yêu cầu X-Organization-Id**: Thêm `@header X-Organization-Id` (required, ID tổ chức làm việc).
+        - **Khuyến nghị**: `@response` hoặc `@responseField` khi cần mô tả response mẫu cụ thể.
+    - **Bắt buộc**: Đồng bộ chuẩn module, mỗi action (stats, index, show, store, update, destroy, bulkDestroy, bulkUpdateStatus, changeStatus, export, import) phải có block PHPDoc đầy đủ tham số.
+    - **Khuyến nghị**: Tham khảo style trong `app/Modules/Post/PostController.php` và `app/Modules/Post/PostCategoryController.php`.
+
+- **Seed Permission (phân quyền)**:
+    - **Bắt buộc**: Danh sách permission chuẩn nằm trong `database/seeders/PermissionSeeder.php` (mảng `PERMISSIONS`: resource => [actions]).
+    - **Bắt buộc**: Khi có thay đổi/bổ sung chức năng (thêm resource mới hoặc action mới như `duplicate`), phải cập nhật mảng permission trong `PermissionSeeder`, sau đó chạy `sail artisan db:seed --class=PermissionSeeder` (hoặc `migrate:fresh --seed`) để đồng bộ quyền.
+    - **Bắt buộc**: Định dạng permission: `{resource}.{action}` (resource trùng prefix API: users, permissions, roles, organizations, posts, post-categories, log-activities).
+    - **Bắt buộc**: Dùng guard `web` cho cả web và API Sanctum (đồng bộ với Spatie Permission).
+
+- **LogActivity Middleware (mô tả nhật ký)**:
+    - **Bắt buộc**: Khi thêm resource hoặc action mới, cập nhật `app/Modules/Core/Middleware/LogActivity.php`: `resourceLabel()`, `actionLabels`, `pathActions`, route params.
+
+- **Public Catalog APIs (dùng cho dropdown/chức năng công khai)**:
+    - **Bắt buộc**: Với danh mục dùng cho form/chức năng công khai, phải có endpoint public riêng, không yêu cầu auth (đặt ngoài nhóm `auth:sanctum` trong `routes/api.php`).
+    - **Bắt buộc**: Chuẩn endpoint gồm 2 loại:
+        - `GET /api/{resource}/public`: dữ liệu công khai đầy đủ theo resource hiện có.
+        - `GET /api/{resource}/public-options`: dữ liệu tối giản cho dropdown chỉ gồm `id`, `name`, `description`.
+    - **Bắt buộc**: Endpoint `public-options` phải ưu tiên hiệu năng:
+        - Chỉ select các cột cần thiết (`id`, `name`, `description`).
+        - Lọc `status=active`.
+        - Sắp xếp ổn định (`name asc` hoặc theo `tree/sort_order` với dữ liệu phân cấp).
+    - **Khuyến nghị**: Dùng resource dùng chung cho dropdown, ví dụ `App\Modules\Core\Resources\PublicOptionResource`.
+    - **Khuyến nghị**: Giữ backward compatibility: thêm endpoint mới thay vì đổi format endpoint cũ đang được frontend sử dụng.
+
+- **Scribe cho endpoint public**:
+    - **Bắt buộc**: Dự án giữ `config/scribe.php` với `auth.enabled=true` và `auth.default=true`.
+    - **Bắt buộc**: Tất cả method public/public-options phải có `@unauthenticated` trong PHPDoc, nếu không Scribe sẽ hiển thị sai badge `requires authentication`.
+    - **Bắt buộc**: Sau khi chỉnh route/controller/request liên quan API docs, phải chạy `sail artisan scribe:generate` và kiểm tra lại endpoint trong `.scribe/endpoints/*.yaml` có `authenticated: false` với API public.
+
+- **FormRequest cho Scribe (chuẩn tài liệu)**:
+    - **Bắt buộc**: Tất cả `FormRequest` dùng cho endpoint API phải có `bodyParameters()`; với request chỉ dùng query thì có thể trả `[]`.
+    - **Bắt buộc**: Tất cả `FormRequest` phải có `messages()` để trả thông báo lỗi validate rõ ràng bằng tiếng Việt; không để mặc định message tiếng Anh.
+    - **Bắt buộc**: `messages()` tối thiểu phải bao phủ các rule đang dùng trong request (required, string, integer, array, file, mimes, max, min, date, after_or_equal, exists, unique, in, boolean...).
+    - **Bắt buộc**: Khai báo `attributes()` để map tên trường thân thiện tiếng Việt khi trả lỗi (ưu tiên tên nghiệp vụ thay vì key kỹ thuật).
+    - **Bắt buộc**: Không để `attributes()` rỗng nếu `rules()` có khai báo field validate; phải map tối thiểu toàn bộ key top-level và key lồng nhau quan trọng (ví dụ: `items.*.id`).
+    - **Khuyến nghị**: Request lọc chung (ví dụ `FilterRequest`) nên có cả `queryParameters()` để mô tả search/status/from_date/to_date/sort_by/sort_order/limit.
+    - **Bắt buộc**: Khi thêm request mới cho API, cập nhật luôn mô tả tham số để tránh warning `No bodyParameters()/No queryParameters()` khi generate Scribe.
+
+- **Factory phục vụ Scribe model examples**:
+    - **Bắt buộc**: Model dùng `HasFactory` phải có factory tương ứng đúng namespace để Scribe không báo `Couldn't get example model ... via factoryCreate/factoryMake`.
+    - **Bắt buộc**: Với model trong module, namespace factory phải khớp convention Laravel của module model (ví dụ `Database\Factories\Modules\Document\Models\...Factory`).
+
