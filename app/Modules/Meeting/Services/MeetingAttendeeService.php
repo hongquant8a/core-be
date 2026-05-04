@@ -3,8 +3,12 @@
 namespace App\Modules\Meeting\Services;
 
 use App\Modules\Meeting\Enums\MeetingCatalogStatusEnum;
+use App\Modules\Meeting\Exports\MeetingAttendeeExport;
+use App\Modules\Meeting\Imports\MeetingAttendeeImport;
 use App\Modules\Meeting\Models\MeetingAttendee;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class MeetingAttendeeService
 {
@@ -71,6 +75,16 @@ class MeetingAttendeeService
         $meetingAttendee->update(['status' => $status]);
 
         return $meetingAttendee->load(['group', 'creator', 'editor']);
+    }
+
+    public function export(array $filters, string $fileName = 'meeting-attendees.xlsx'): BinaryFileResponse
+    {
+        return Excel::download(new MeetingAttendeeExport($filters), $fileName);
+    }
+
+    public function import($file): void
+    {
+        Excel::import(new MeetingAttendeeImport, $file);
     }
 
     private function resolveCurrentOrganizationId(): int

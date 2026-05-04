@@ -9,6 +9,7 @@ use App\Modules\Meeting\Models\MeetingLocation;
 use App\Modules\Meeting\Requests\BulkDestroyCatalogRequest;
 use App\Modules\Meeting\Requests\BulkUpdateStatusCatalogRequest;
 use App\Modules\Meeting\Requests\ChangeStatusCatalogRequest;
+use App\Modules\Meeting\Requests\ImportMeetingFileRequest;
 use App\Modules\Meeting\Requests\StoreCatalogRequest;
 use App\Modules\Meeting\Requests\UpdateCatalogRequest;
 use App\Modules\Meeting\Resources\CatalogCollection;
@@ -165,5 +166,30 @@ class MeetingLocationController extends Controller
         $item = $this->catalogService->changeStatus($meetingLocation, $request->status);
 
         return $this->successResource(new CatalogResource($item), 'Đổi trạng thái thành công!');
+    }
+
+    /**
+     * Xuất Excel địa điểm họp.
+     *
+     * Xuất ra các trường: STT, Tên, Mô tả, Địa chỉ, Vĩ độ, Kinh độ, Google Maps URL, Thứ tự, Trạng thái, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID.
+     *
+     * @queryParam search string Từ khóa tìm kiếm theo tên. Example: hội trường
+     * @queryParam status string Lọc theo trạng thái. Example: active
+     */
+    public function export(FilterRequest $request)
+    {
+        return $this->catalogService->export(MeetingLocation::class, $request->all(), 'meeting-locations.xlsx');
+    }
+
+    /**
+     * Nhập Excel địa điểm họp.
+     *
+     * Cột bắt buộc: name. Cột không bắt buộc: description, address, latitude, longitude, google_maps_url, sort_order, status (mặc định active).
+     */
+    public function import(ImportMeetingFileRequest $request)
+    {
+        $this->catalogService->import(MeetingLocation::class, $request->file('file'));
+
+        return $this->success(null, 'Nhập địa điểm họp thành công!');
     }
 }

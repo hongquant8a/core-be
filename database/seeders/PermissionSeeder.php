@@ -137,25 +137,25 @@ class PermissionSeeder extends Seeder
         // Meeting - Loại cuộc họp
         'meeting-types' => [
             'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus',
+            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
         ],
         // Meeting - Địa điểm họp
         'meeting-locations' => [
             'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus',
+            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
         ],
         // Meeting - Loại tài liệu họp
         'meeting-document-types' => [
             'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus',
+            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
         ],
         'meeting-attendee-groups' => [
             'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus',
+            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
         ],
         'meeting-attendees' => [
             'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus',
+            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
         ],
         'meeting-agendas' => [
             'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',

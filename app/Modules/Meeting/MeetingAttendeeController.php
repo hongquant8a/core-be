@@ -8,6 +8,7 @@ use App\Modules\Meeting\Models\MeetingAttendee;
 use App\Modules\Meeting\Requests\BulkDestroyCatalogRequest;
 use App\Modules\Meeting\Requests\BulkUpdateStatusCatalogRequest;
 use App\Modules\Meeting\Requests\ChangeStatusCatalogRequest;
+use App\Modules\Meeting\Requests\ImportMeetingFileRequest;
 use App\Modules\Meeting\Requests\StoreMeetingAttendeeRequest;
 use App\Modules\Meeting\Requests\UpdateMeetingAttendeeRequest;
 use App\Modules\Meeting\Resources\MeetingAttendeeCollection;
@@ -147,5 +148,31 @@ class MeetingAttendeeController extends Controller
         $item = $this->meetingAttendeeService->changeStatus($meetingAttendee, $request->status);
 
         return $this->successResource(new MeetingAttendeeResource($item), 'Đổi trạng thái thành công!');
+    }
+
+    /**
+     * Xuất Excel đại biểu.
+     *
+     * Xuất ra các trường: STT, Họ tên, Nhóm đại biểu, Chức vụ, Đơn vị, Email, Số điện thoại, Trạng thái, Ghi chú, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID.
+     *
+     * @queryParam search string Từ khóa tìm kiếm theo tên/email/đơn vị. Example: nguyen van a
+     * @queryParam meeting_attendee_group_id integer Lọc theo nhóm đại biểu. Example: 1
+     * @queryParam status string Lọc theo trạng thái. Example: active
+     */
+    public function export(FilterRequest $request)
+    {
+        return $this->meetingAttendeeService->export($request->all());
+    }
+
+    /**
+     * Nhập Excel đại biểu.
+     *
+     * Cột bắt buộc: name. Cột không bắt buộc: position_name, department_name, email, phone, note, status (mặc định active).
+     */
+    public function import(ImportMeetingFileRequest $request)
+    {
+        $this->meetingAttendeeService->import($request->file('file'));
+
+        return $this->success(null, 'Nhập đại biểu thành công!');
     }
 }

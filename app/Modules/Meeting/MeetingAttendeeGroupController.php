@@ -8,6 +8,7 @@ use App\Modules\Meeting\Models\MeetingAttendeeGroup;
 use App\Modules\Meeting\Requests\BulkDestroyCatalogRequest;
 use App\Modules\Meeting\Requests\BulkUpdateStatusCatalogRequest;
 use App\Modules\Meeting\Requests\ChangeStatusCatalogRequest;
+use App\Modules\Meeting\Requests\ImportMeetingFileRequest;
 use App\Modules\Meeting\Requests\StoreCatalogRequest;
 use App\Modules\Meeting\Requests\UpdateCatalogRequest;
 use App\Modules\Meeting\Resources\CatalogCollection;
@@ -138,5 +139,30 @@ class MeetingAttendeeGroupController extends Controller
         $item = $this->catalogService->changeStatus($meetingAttendeeGroup, $request->status);
 
         return $this->successResource(new CatalogResource($item), 'Đổi trạng thái thành công!');
+    }
+
+    /**
+     * Xuất Excel nhóm đại biểu.
+     *
+     * Xuất ra các trường: STT, Tên, Mô tả, Địa chỉ, Vĩ độ, Kinh độ, Google Maps URL, Thứ tự, Trạng thái, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID. Cột địa lý để trống.
+     *
+     * @queryParam search string Từ khóa tìm kiếm theo tên nhóm. Example: tổ đại biểu 1
+     * @queryParam status string Lọc theo trạng thái. Example: active
+     */
+    public function export(FilterRequest $request)
+    {
+        return $this->catalogService->export(MeetingAttendeeGroup::class, $request->all(), 'meeting-attendee-groups.xlsx');
+    }
+
+    /**
+     * Nhập Excel nhóm đại biểu.
+     *
+     * Cột bắt buộc: name. Cột không bắt buộc: description, sort_order, status (mặc định active).
+     */
+    public function import(ImportMeetingFileRequest $request)
+    {
+        $this->catalogService->import(MeetingAttendeeGroup::class, $request->file('file'));
+
+        return $this->success(null, 'Nhập nhóm đại biểu thành công!');
     }
 }

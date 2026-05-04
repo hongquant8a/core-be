@@ -3,8 +3,12 @@
 namespace App\Modules\Meeting\Services;
 
 use App\Modules\Meeting\Enums\MeetingCatalogStatusEnum;
+use App\Modules\Meeting\Exports\CatalogExport;
+use App\Modules\Meeting\Imports\CatalogImport;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class CatalogService
 {
@@ -119,6 +123,16 @@ class CatalogService
         $model->update(['status' => $status]);
 
         return $model->load(['creator', 'editor']);
+    }
+
+    public function export(string $modelClass, array $filters, string $fileName): BinaryFileResponse
+    {
+        return Excel::download(new CatalogExport($modelClass, $filters), $fileName);
+    }
+
+    public function import(string $modelClass, $file): void
+    {
+        Excel::import(new CatalogImport($modelClass), $file);
     }
 
     private function resolveCurrentOrganizationId(): int

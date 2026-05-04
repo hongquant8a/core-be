@@ -9,6 +9,7 @@ use App\Modules\Meeting\Models\MeetingType;
 use App\Modules\Meeting\Requests\BulkDestroyCatalogRequest;
 use App\Modules\Meeting\Requests\BulkUpdateStatusCatalogRequest;
 use App\Modules\Meeting\Requests\ChangeStatusCatalogRequest;
+use App\Modules\Meeting\Requests\ImportMeetingFileRequest;
 use App\Modules\Meeting\Requests\StoreCatalogRequest;
 use App\Modules\Meeting\Requests\UpdateCatalogRequest;
 use App\Modules\Meeting\Resources\CatalogCollection;
@@ -165,5 +166,30 @@ class MeetingTypeController extends Controller
         $item = $this->catalogService->changeStatus($meetingType, $request->status);
 
         return $this->successResource(new CatalogResource($item), 'Đổi trạng thái thành công!');
+    }
+
+    /**
+     * Xuất Excel loại cuộc họp.
+     *
+     * Xuất ra các trường: STT, Tên, Mô tả, Địa chỉ, Vĩ độ, Kinh độ, Google Maps URL, Thứ tự, Trạng thái, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID. Cột địa lý để trống cho loại cuộc họp.
+     *
+     * @queryParam search string Từ khóa tìm kiếm theo tên. Example: giao ban
+     * @queryParam status string Lọc theo trạng thái. Example: active
+     */
+    public function export(FilterRequest $request)
+    {
+        return $this->catalogService->export(MeetingType::class, $request->all(), 'meeting-types.xlsx');
+    }
+
+    /**
+     * Nhập Excel loại cuộc họp.
+     *
+     * Cột bắt buộc: name. Cột không bắt buộc: description, sort_order, status (mặc định active).
+     */
+    public function import(ImportMeetingFileRequest $request)
+    {
+        $this->catalogService->import(MeetingType::class, $request->file('file'));
+
+        return $this->success(null, 'Nhập loại cuộc họp thành công!');
     }
 }
