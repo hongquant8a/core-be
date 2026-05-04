@@ -85,36 +85,49 @@ class MeetingDocumentController extends Controller
     }
 
     /**
-     * Tạo tài liệu họp.
+     * Tạo tài liệu họp (hỗ trợ nhiều file đính kèm trong 1 transaction).
      *
      * @bodyParam meeting_id integer required ID cuộc họp. Example: 1
      * @bodyParam title string required Tiêu đề tài liệu. Example: Dự thảo nghị quyết
      * @bodyParam meeting_document_type_id integer ID loại tài liệu họp. Example: 1
-     * @bodyParam file file required Tệp tài liệu đính kèm. Example: (binary)
-     * @bodyParam description string Mô tả tài liệu. Example: Tài liệu phục vụ thảo luận phiên sáng
-     * @bodyParam status string Trạng thái tài liệu. Example: draft
+     * @bodyParam files file[] Mảng tệp đính kèm (multipart/form-data, key `files[]`). Mỗi tệp ≤10MB.
+     * @bodyParam summary string Trích yếu tài liệu. Example: Tài liệu phục vụ thảo luận phiên sáng
+     * @bodyParam is_public boolean required Công khai. Example: true
+     * @bodyParam status string required Trạng thái tài liệu. Example: draft
      */
     public function store(StoreMeetingDocumentRequest $request)
     {
-        $item = $this->meetingDocumentService->store($request->validated(), $request->file('file'));
+        $item = $this->meetingDocumentService->store(
+            $request->validated(),
+            (array) $request->file('files', [])
+        );
 
         return $this->successResource(new MeetingDocumentResource($item), 'Tạo tài liệu họp thành công!', 201);
     }
 
     /**
-     * Cập nhật tài liệu họp.
+     * Cập nhật tài liệu họp (thêm/xóa từng file qua attachments).
      *
      * @urlParam meetingDocument integer required ID tài liệu họp. Example: 1
-     * @bodyParam meeting_id integer ID cuộc họp. Example: 1
      * @bodyParam title string Tiêu đề tài liệu. Example: Dự thảo nghị quyết đã chỉnh sửa
      * @bodyParam meeting_document_type_id integer ID loại tài liệu họp. Example: 1
-     * @bodyParam file file Tệp tài liệu mới (nếu thay thế). Example: (binary)
-     * @bodyParam description string Mô tả tài liệu. Example: Bản cập nhật sau góp ý
+     * @bodyParam files file[] Tệp đính kèm thêm vào (không thay thế attachments cũ). Example: (binary)
+     * @bodyParam remove_attachment_ids integer[] ID `meeting_document_attachments` cần xóa. Example: [12,13]
+     * @bodyParam summary string Trích yếu tài liệu. Example: Bản cập nhật sau góp ý
      * @bodyParam status string Trạng thái tài liệu. Example: published
      */
     public function update(UpdateMeetingDocumentRequest $request, MeetingDocument $meetingDocument)
     {
-        $item = $this->meetingDocumentService->update($meetingDocument, $request->validated(), $request->file('file'));
+        $validated = $request->validated();
+        $removeAttachmentIds = (array) ($validated['remove_attachment_ids'] ?? []);
+        unset($validated['remove_attachment_ids']);
+
+        $item = $this->meetingDocumentService->update(
+            $meetingDocument,
+            $validated,
+            (array) $request->file('files', []),
+            $removeAttachmentIds,
+        );
 
         return $this->successResource(new MeetingDocumentResource($item), 'Cập nhật tài liệu họp thành công!');
     }

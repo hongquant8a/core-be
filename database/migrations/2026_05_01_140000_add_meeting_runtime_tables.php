@@ -69,7 +69,6 @@ return new class extends Migration
             $table->string('title');
             $table->string('document_number')->nullable();
             $table->text('summary')->nullable();
-            $table->foreignId('media_id')->nullable()->constrained('media')->nullOnDelete();
             $table->boolean('is_public')->default(false);
             $table->string('status')->default('draft');
             $table->unsignedInteger('view_count')->default(0);
@@ -80,6 +79,25 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['organization_id', 'meeting_id', 'sort_order'], 'meeting_documents_org_mtg_sort_idx');
+            $table->foreign('created_by')->references('id')->on('users')->nullOnDelete();
+            $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
+        });
+
+        // Multi-file attachments cho meeting_documents (mirror pattern TaskAssignment).
+        Schema::create('meeting_document_attachments', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('organization_id')->constrained('organizations')->cascadeOnDelete();
+            $table->foreignId('meeting_document_id')
+                ->constrained(table: 'meeting_documents', indexName: 'meeting_doc_attach_doc_id_fk')
+                ->cascadeOnDelete();
+            $table->foreignId('media_id')->constrained('media')->cascadeOnDelete();
+            $table->string('file_name')->nullable();
+            $table->unsignedInteger('sort_order')->default(0);
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->unsignedBigInteger('updated_by')->nullable();
+            $table->timestamps();
+
+            $table->index(['organization_id', 'meeting_document_id', 'sort_order'], 'meeting_doc_attach_org_doc_sort_idx');
             $table->foreign('created_by')->references('id')->on('users')->nullOnDelete();
             $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
         });
@@ -108,6 +126,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('meeting_participants');
+        Schema::dropIfExists('meeting_document_attachments');
         Schema::dropIfExists('meeting_documents');
         Schema::dropIfExists('meeting_agendas');
         Schema::dropIfExists('meeting_attendees');

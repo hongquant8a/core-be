@@ -20,11 +20,13 @@ class UpdateMeetingDocumentRequest extends FormRequest
             'title' => 'sometimes|string|max:255',
             'document_number' => 'nullable|string|max:255',
             'summary' => 'nullable|string',
-            'file' => 'nullable|file|max:10240',
+            'files' => 'nullable|array',
+            'files.*' => 'file|max:10240',
+            'remove_attachment_ids' => 'nullable|array',
+            'remove_attachment_ids.*' => 'integer|exists:meeting_document_attachments,id',
             'is_public' => 'sometimes|boolean',
             'status' => ['sometimes', MeetingDocumentStatusEnum::rule()],
             'sort_order' => 'nullable|integer|min:0',
-            'remove_file' => 'nullable|boolean',
         ];
     }
 
@@ -56,11 +58,12 @@ class UpdateMeetingDocumentRequest extends FormRequest
             'title' => 'Tiêu đề',
             'document_number' => 'document number',
             'summary' => 'summary',
-            'file' => 'Tệp tải lên',
+            'files' => 'Danh sách tệp đính kèm thêm',
+            'files.*' => 'Tệp đính kèm',
+            'remove_attachment_ids' => 'Danh sách ID tệp cần xóa',
             'is_public' => 'Trạng thái công khai',
             'status' => 'Trạng thái',
             'sort_order' => 'Thứ tự sắp xếp',
-            'remove_file' => 'remove file',
         ];
     }
     public function bodyParameters(): array
@@ -69,10 +72,10 @@ class UpdateMeetingDocumentRequest extends FormRequest
             'title' => ['description' => 'Tiêu đề tài liệu.', 'example' => 'Báo cáo cập nhật'],
             'document_number' => ['description' => 'Số hiệu tài liệu.', 'example' => 'BC-02/2026'],
             'summary' => ['description' => 'Trích yếu.', 'example' => 'Tóm tắt nội dung cập nhật'],
-            'file' => ['description' => 'Tệp tài liệu thay thế hoặc bổ sung.'],
+            'files' => ['description' => 'Mảng tệp đính kèm thêm (multipart/form-data với key `files[]`). Mỗi tệp ≤10MB.'],
+            'remove_attachment_ids' => ['description' => 'Mảng ID `meeting_document_attachments` cần xóa khỏi document.', 'example' => [12, 13]],
             'is_public' => ['description' => 'Công khai tài liệu.', 'example' => false],
             'status' => ['description' => 'Trạng thái tài liệu.', 'example' => 'published'],
-            'remove_file' => ['description' => 'Xóa file hiện tại hay không.', 'example' => false],
         ];
     }
 }

@@ -4,8 +4,10 @@ namespace App\Modules\Meeting\Services;
 
 use App\Modules\Core\Services\MediaService;
 use App\Modules\Meeting\Models\MeetingDocument;
+use App\Modules\Meeting\Models\MeetingDocumentAttachment;
 use App\Modules\Meeting\Models\MeetingView;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 
 class MeetingDocumentService
@@ -14,7 +16,7 @@ class MeetingDocumentService
 
     public function publicIndex(array $filters, int $limit)
     {
-        return MeetingDocument::with(['agenda', 'documentType', 'mediaFile'])
+        return MeetingDocument::with(['agenda', 'documentType', 'attachments.media'])
             ->where('status', 'published')
             ->where('is_public', true)
             ->whereHas('meeting', function ($query) {
@@ -52,40 +54,39 @@ class MeetingDocumentService
             'viewed_at' => now(),
         ]);
 
-        return $meetingDocument->fresh()->load(['agenda', 'documentType', 'mediaFile']);
+        return $meetingDocument->fresh()->load(['agenda', 'documentType', 'attachments.media']);
     }
 
     public function index(array $filters, int $limit)
     {
-        return MeetingDocument::with(['agenda', 'documentType', 'mediaFile', 'creator', 'editor'])
+        return MeetingDocument::with(['agenda', 'documentType', 'attachments.media', 'creator', 'editor'])
             ->filter($filters)
             ->paginate($limit);
     }
 
     public function show(MeetingDocument $meetingDocument): MeetingDocument
     {
-        return $meetingDocument->load(['agenda', 'documentType', 'mediaFile', 'creator', 'editor']);
+        return $meetingDocument->load(['agenda', 'documentType', 'attachments.media', 'creator', 'editor']);
     }
 
-    public function store(array $validated, $file = null): MeetingDocument
+    /**
+     * @param  array<UploadedFile>  $files
+     */
+    public function store(array $validated, array $files = []): MeetingDocument
     {
         $storedFiles = [];
 
         try {
-            return DB::transaction(function () use ($validated, $file, &$storedFiles) {
+            return DB::transaction(function () use ($validated, $files, &$storedFiles) {
                 if (! array_key_exists('sort_order', $validated)) {
                     $validated['sort_order'] = $this->nextSortOrder($validated['meeting_id']);
                 }
                 $validated['organization_id'] = $this->resolveCurrentOrganizationId();
                 $document = MeetingDocument::create($validated);
 
-                if ($file) {
-                    $media = $this->mediaService->uploadOne($document, $file, 'meeting-document-attachments', ['disk' => 'public']);
-                    $storedFiles[] = ['disk' => $media->disk, 'path' => $media->getPathRelativeToRoot()];
-                    $document->update(['media_id' => $media->id]);
-                }
+                $this->attachFiles($document, $files, $storedFiles);
 
-                return $document->load(['agenda', 'documentType', 'mediaFile', 'creator', 'editor']);
+                return $document->load(['agenda', 'documentType', 'attachments.media', 'creator', 'editor']);
             });
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);
@@ -93,30 +94,24 @@ class MeetingDocumentService
         }
     }
 
-    public function update(MeetingDocument $meetingDocument, array $validated, $file = null): MeetingDocument
+    /**
+     * @param  array<UploadedFile>  $files
+     * @param  array<int>  $removeAttachmentIds
+     */
+    public function update(MeetingDocument $meetingDocument, array $validated, array $files = [], array $removeAttachmentIds = []): MeetingDocument
     {
         $storedFiles = [];
         try {
-            return DB::transaction(function () use ($meetingDocument, $validated, $file, &$storedFiles) {
-                $removeFile = (bool) ($validated['remove_file'] ?? false);
-                unset($validated['remove_file']);
+            return DB::transaction(function () use ($meetingDocument, $validated, $files, $removeAttachmentIds, &$storedFiles) {
                 $meetingDocument->update($validated);
 
-                if ($removeFile && $meetingDocument->media_id) {
-                    $this->mediaService->removeByIds($meetingDocument, [$meetingDocument->media_id], 'meeting-document-attachments');
-                    $meetingDocument->update(['media_id' => null]);
+                if (! empty($removeAttachmentIds)) {
+                    $this->removeAttachments($meetingDocument, $removeAttachmentIds);
                 }
 
-                if ($file) {
-                    if ($meetingDocument->media_id) {
-                        $this->mediaService->removeByIds($meetingDocument, [$meetingDocument->media_id], 'meeting-document-attachments');
-                    }
-                    $media = $this->mediaService->uploadOne($meetingDocument, $file, 'meeting-document-attachments', ['disk' => 'public']);
-                    $storedFiles[] = ['disk' => $media->disk, 'path' => $media->getPathRelativeToRoot()];
-                    $meetingDocument->update(['media_id' => $media->id]);
-                }
+                $this->attachFiles($meetingDocument, $files, $storedFiles);
 
-                return $meetingDocument->load(['agenda', 'documentType', 'mediaFile', 'creator', 'editor']);
+                return $meetingDocument->load(['agenda', 'documentType', 'attachments.media', 'creator', 'editor']);
             });
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);
@@ -149,7 +144,7 @@ class MeetingDocumentService
     {
         $meetingDocument->update(['status' => $status]);
 
-        return $meetingDocument->load(['agenda', 'documentType', 'mediaFile', 'creator', 'editor']);
+        return $meetingDocument->load(['agenda', 'documentType', 'attachments.media', 'creator', 'editor']);
     }
 
     public function reorder(array $items): void
@@ -162,6 +157,52 @@ class MeetingDocumentService
                     ->update(['sort_order' => $item['sort_order']]);
             }
         });
+    }
+
+    /**
+     * Upload từng file → tạo Media + MeetingDocumentAttachment row.
+     *
+     * @param  array<UploadedFile>  $files
+     * @param  array<array{disk: string, path: string}>  $storedFiles  collected paths để cleanup khi rollback
+     */
+    private function attachFiles(MeetingDocument $document, array $files, array &$storedFiles): void
+    {
+        $orgId = $this->resolveCurrentOrganizationId();
+        foreach ($files as $file) {
+            if (! $file instanceof UploadedFile || ! $file->isValid()) {
+                continue;
+            }
+            $media = $this->mediaService->uploadOne($document, $file, 'meeting-document-attachments', ['disk' => 'public']);
+            $storedFiles[] = ['disk' => $media->disk, 'path' => $media->getPathRelativeToRoot()];
+
+            MeetingDocumentAttachment::create([
+                'organization_id' => $orgId,
+                'meeting_document_id' => $document->id,
+                'media_id' => $media->id,
+                'file_name' => $file->getClientOriginalName(),
+                'sort_order' => 0,
+            ]);
+        }
+    }
+
+    /**
+     * @param  array<int>  $attachmentIds
+     */
+    private function removeAttachments(MeetingDocument $document, array $attachmentIds): void
+    {
+        $attachments = MeetingDocumentAttachment::query()
+            ->where('meeting_document_id', $document->id)
+            ->whereIn('id', $attachmentIds)
+            ->get();
+
+        $mediaIds = $attachments->pluck('media_id')->filter()->all();
+        if (! empty($mediaIds)) {
+            $this->mediaService->removeByIds($document, $mediaIds, 'meeting-document-attachments');
+        }
+        MeetingDocumentAttachment::query()
+            ->where('meeting_document_id', $document->id)
+            ->whereIn('id', $attachmentIds)
+            ->delete();
     }
 
     private function nextSortOrder(int $meetingId): int

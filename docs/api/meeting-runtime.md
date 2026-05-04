@@ -105,7 +105,7 @@ Datetime: `H:i:s d/m/Y` (vd `08:30:00 01/05/2026`). Time-only (giờ chương tr
     { "id": 1, "sort_order": 1, "start_time": "08:00:00", "end_time": "08:30:00", "content": "Khai mạc kỳ họp.", ... }
   ],
   "documents": [
-    { "id": 1, "title": "Tờ trình ngân sách", "file_url": "https://...", "is_public": true, "status": "published", ... }
+    { "id": 1, "title": "Tờ trình ngân sách", "attachments": [{ "id": 12, "file_name": "to-trinh.pdf", "file_url": "https://..." }], "is_public": true, "status": "published", ... }
   ]
 }
 ```
@@ -199,8 +199,8 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
 |---|---|---|
 | GET | `/api/meeting-documents` | Danh sách phân trang. Query: `meeting_id`, `meeting_agenda_id`, `meeting_document_type_id`, `search` (title/document_number), `status`, `is_public`, `sort_by` (`id\|sort_order\|created_at\|updated_at`), `sort_order`, `limit`. |
 | GET | `/api/meeting-documents/{id}` | Chi tiết. |
-| POST | `/api/meeting-documents` | Tạo. Body: **multipart/form-data** (xem [Document body](#document-body)). |
-| PUT \| PATCH | `/api/meeting-documents/{id}` | Cập nhật. Có thể upload file mới (replace) hoặc gửi `remove_file=true` để xóa file cũ. |
+| POST | `/api/meeting-documents` | Tạo (hỗ trợ **nhiều file** đính kèm). Body: **multipart/form-data** với `files[]` (xem [Document body](#document-body)). |
+| PUT \| PATCH | `/api/meeting-documents/{id}` | Cập nhật metadata + thêm/xóa attachments. `files[]` thêm mới, `remove_attachment_ids[]` xóa các attachment hiện có. |
 | DELETE | `/api/meeting-documents/{id}` | Xóa. |
 | POST | `/api/meeting-documents/bulk-delete` | Body `{ "ids": [...] }`. |
 | PATCH | `/api/meeting-documents/bulk-status` | Body `{ "ids": [...], "status": "draft\|published" }`. |
@@ -211,17 +211,19 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
 
 | Field | Type | Required | Ghi chú |
 |---|---|---|---|
-| `meeting_id` | integer | ✅ | FK `meetings.id`. |
+| `meeting_id` | integer | ✅ (store) | FK `meetings.id`. |
 | `meeting_agenda_id` | integer | — | FK `meeting_agendas.id` — gắn vào chương trình cụ thể. |
 | `meeting_document_type_id` | integer | — | FK `meeting_document_types.id`. |
-| `title` | string (≤255) | ✅ | Tiêu đề tài liệu. |
+| `title` | string (≤255) | ✅ (store) | Tiêu đề tài liệu. |
 | `document_number` | string (≤255) | — | Số văn bản (vd `01/TTr-UBND`). |
 | `summary` | text | — | Tóm tắt. |
-| `file` | file (≤10 MB) | — | File đính kèm. Lưu vào collection `meeting-document-attachments` (disk `public`). |
-| `is_public` | boolean | ✅ | Hiển thị ngoài trang công khai (kèm theo cờ public của meeting). |
-| `status` | enum | ✅ | `draft` \| `published`. |
+| `files[]` | file (≤10 MB mỗi tệp) | — | Mảng tệp đính kèm. Mỗi tệp tạo 1 row `meeting_document_attachments` + 1 Media. Cùng transaction → rollback all nếu lỗi. |
+| `remove_attachment_ids[]` | integer[] | — | **Chỉ trên `update`** — IDs `meeting_document_attachments` cần xóa (và xóa file media tương ứng). |
+| `is_public` | boolean | ✅ (store) | Hiển thị ngoài trang công khai (kèm theo cờ public của meeting). |
+| `status` | enum | ✅ (store) | `draft` \| `published`. |
 | `sort_order` | integer (≥0) | — | Auto-tăng nếu không truyền (last + 1 trong meeting). |
-| `remove_file` | boolean | — | **Chỉ trên `update`** — xóa file hiện có. |
+
+> **Multi-file upload pattern (mirror TaskAssignment)**: 1 record `meeting_documents` ↔ N rows `meeting_document_attachments` ↔ N Media. Tạo/xóa file qua `files[]` + `remove_attachment_ids[]`, không có endpoint riêng cho attachment.
 
 ### 3.4 Response (MeetingDocumentResource)
 
@@ -235,8 +237,10 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
   "title": "Tờ trình về phân bổ ngân sách bổ sung 2026",
   "document_number": "01/TTr-UBND",
   "summary": "...",
-  "media_id": 42,
-  "file_url": "https://example.com/storage/.../to-trinh.pdf",
+  "attachments": [
+    { "id": 12, "media_id": 42, "file_name": "to-trinh.pdf", "file_url": "https://.../storage/.../to-trinh.pdf", "sort_order": 0 },
+    { "id": 13, "media_id": 43, "file_name": "phu-luc.docx", "file_url": "https://.../storage/.../phu-luc.docx", "sort_order": 1 }
+  ],
   "is_public": true,
   "status": "published",
   "view_count": 56,
@@ -248,6 +252,8 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
   "updated_at": "08:00:00 01/05/2026"
 }
 ```
+
+> Để xóa 1 file đính kèm: `PATCH /api/meeting-documents/{id}` với body `{ "remove_attachment_ids": [12] }`. Để thêm: gửi `files[]`. Có thể combine cả 2 trong 1 request.
 
 ---
 
@@ -357,6 +363,6 @@ Truy cập qua `{id}` cho bản ghi của tổ chức khác → middleware `ensu
 
 1. **Trang tạo cuộc họp** — form đơn giản, chọn `meeting_type_id`/`meeting_location_id` từ dropdown public-options của các catalog.
 2. **Trang chương trình họp** — list theo `meeting_id`, hỗ trợ kéo thả qua `/reorder`.
-3. **Trang tài liệu** — list theo `meeting_id`, upload file qua `multipart/form-data`. Hiển thị `file_url` để FE tải file.
+3. **Trang tài liệu** — list theo `meeting_id`, upload **nhiều file** qua `multipart/form-data` field `files[]`. 1 document → N attachments → N Media. Hiển thị `attachments[*].file_url` để FE tải từng file.
 4. **Trang đại biểu tham dự** — chọn đại biểu qua dropdown từ `/api/meeting-attendees` (đã filter theo org). Snapshot tự động khi store.
 5. **Publish cuộc họp** — gọi `PATCH /meetings/{id}/status` với `{"status":"published"}`. BE tự gửi giấy mời (FCM/email) cho participants. FE chỉ cần chờ response và hiển thị "Đã gửi giấy mời".
