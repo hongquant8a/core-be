@@ -26,7 +26,7 @@ class NotificationConfigController extends Controller
             'events' => collect($module->events())->map(fn (NotificationEventEnum $e) => [
                 'key' => $e->value,
                 'label' => $e->label(),
-                'is_reminder' => str_starts_with($e->value, 'reminder_'),
+                'is_reminder' => str_contains($e->value, 'reminder_'),
             ])->all(),
         ])->all();
 
@@ -79,7 +79,7 @@ class NotificationConfigController extends Controller
             ->firstOrFail();
 
         // Non-reminder event: moment/offset bị force về null
-        $isReminder = str_starts_with($eventKey, 'reminder_');
+        $isReminder = str_contains($eventKey, 'reminder_');
         $data = $request->validated() + ['notification_event_config_id' => $cfg->id];
         if (! $isReminder) {
             $data['moment'] = null;

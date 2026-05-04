@@ -4,6 +4,7 @@ namespace App\Modules\Meeting\Services;
 
 use App\Modules\Core\Services\MediaService;
 use App\Modules\Meeting\Models\MeetingDocument;
+use App\Modules\Meeting\Models\MeetingView;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 
@@ -40,6 +41,16 @@ class MeetingDocumentService
         }
 
         $meetingDocument->increment('view_count');
+
+        $request = request();
+        MeetingView::create([
+            'meeting_id' => $meetingDocument->meeting_id,
+            'meeting_document_id' => $meetingDocument->id,
+            'user_id' => auth()->id(),
+            'ip_address' => $request?->ip(),
+            'user_agent' => $request?->userAgent(),
+            'viewed_at' => now(),
+        ]);
 
         return $meetingDocument->fresh()->load(['agenda', 'documentType', 'mediaFile']);
     }

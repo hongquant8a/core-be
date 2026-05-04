@@ -66,6 +66,11 @@ class Meeting extends Model
         return $this->belongsTo(MeetingLocation::class, 'meeting_location_id');
     }
 
+    public function participants()
+    {
+        return $this->hasMany(MeetingParticipant::class, 'meeting_id');
+    }
+
     public function scopeFilter($query, array $filters)
     {
         $organizationId = function_exists('getPermissionsTeamId') ? getPermissionsTeamId() : null;

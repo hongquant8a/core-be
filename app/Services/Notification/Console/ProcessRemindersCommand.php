@@ -2,6 +2,8 @@
 
 namespace App\Services\Notification\Console;
 
+use App\Modules\Core\Models\User;
+use App\Modules\Meeting\Models\MeetingReminder;
 use App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum;
 use App\Modules\TaskAssignment\Models\TaskAssignmentReminder;
 use App\Services\Notification\Services\ContentBuilderRegistry;
@@ -28,9 +30,75 @@ class ProcessRemindersCommand extends Command
                 }
             });
 
+        MeetingReminder::with(['meeting', 'schedule.eventConfig'])
+            ->where('status', 'pending')
+            ->where('scheduled_at', '<=', now())
+            ->whereNotNull('notification_schedule_id')
+            ->chunkById(100, function ($reminders) use ($dispatcher, $registry, &$count) {
+                foreach ($reminders as $reminder) {
+                    $this->fireMeetingReminder($reminder, $dispatcher, $registry);
+                    $count++;
+                }
+            });
+
         $this->info("Processed {$count} reminders.");
 
         return self::SUCCESS;
+    }
+
+    private function fireMeetingReminder(MeetingReminder $reminder, NotificationDispatcher $dispatcher, ContentBuilderRegistry $registry): void
+    {
+        $meeting = $reminder->meeting;
+        if (! $meeting) {
+            $reminder->update(['status' => 'cancelled', 'fired_at' => now()]);
+
+            return;
+        }
+
+        if (in_array($meeting->status, ['cancelled', 'completed'], true)) {
+            $reminder->update(['status' => 'cancelled', 'fired_at' => now()]);
+
+            return;
+        }
+
+        $schedule = $reminder->schedule;
+        $config = $schedule?->eventConfig;
+        $organizationId = (int) $reminder->organization_id;
+
+        if (! $config || (int) $config->organization_id !== $organizationId || ! $config->enabled || empty($schedule->channels)) {
+            $reminder->update(['status' => 'cancelled', 'fired_at' => now()]);
+
+            return;
+        }
+
+        $channels = $schedule->channels;
+        $eventKey = "meeting_reminder_{$reminder->moment}";
+        $builder = $registry->for($eventKey);
+
+        $userIds = $meeting->participants()
+            ->with('attendee')
+            ->get()
+            ->pluck('attendee.user_id')
+            ->filter()
+            ->unique()
+            ->all();
+
+        foreach ($userIds as $userId) {
+            $user = User::find($userId);
+            if (! $user) {
+                continue;
+            }
+            $dispatcher->dispatch(
+                eventKey: $eventKey,
+                recipient: $user,
+                notifiable: $meeting,
+                channels: $channels,
+                builder: $builder,
+                organizationId: $organizationId,
+            );
+        }
+
+        $reminder->update(['status' => 'fired', 'fired_at' => now()]);
     }
 
     private function fireReminder(TaskAssignmentReminder $reminder, NotificationDispatcher $dispatcher, ContentBuilderRegistry $registry): void

@@ -11,7 +11,8 @@ use App\Services\Notification\Enums\NotificationModuleEnum;
 trait InteractsWithNotifications
 {
     /**
-     * Seed 6 event configs (disabled) cho default organization + set team context.
+     * Seed event configs (disabled) cho default organization + set team context.
+     * Mỗi event được stamp module_key đúng theo NotificationEventEnum::module().
      */
     protected function seedNotificationConfig(): void
     {
@@ -21,10 +22,13 @@ trait InteractsWithNotifications
             $this->withHeader('X-Organization-Id', (string) $org->id);
         }
 
-        $moduleKey = NotificationModuleEnum::TaskAssignment->value;
         foreach (NotificationEventEnum::cases() as $event) {
             NotificationEventConfig::firstOrCreate(
-                ['module_key' => $moduleKey, 'event_key' => $event->value, 'organization_id' => $org->id],
+                [
+                    'module_key' => $event->module()->value,
+                    'event_key' => $event->value,
+                    'organization_id' => $org->id,
+                ],
                 ['enabled' => false]
             );
         }
@@ -35,7 +39,7 @@ trait InteractsWithNotifications
      */
     protected function enableEvent(string $eventKey, array $channels): NotificationEventConfig
     {
-        $moduleKey = NotificationModuleEnum::TaskAssignment->value;
+        $moduleKey = NotificationEventEnum::from($eventKey)->module()->value;
         $org = $this->resolveTestOrganization();
         $config = NotificationEventConfig::firstOrCreate(
             ['module_key' => $moduleKey, 'event_key' => $eventKey, 'organization_id' => $org->id],
@@ -43,7 +47,7 @@ trait InteractsWithNotifications
         );
         $config->update(['enabled' => true]);
 
-        if (! str_starts_with($eventKey, 'reminder_')) {
+        if (! str_contains($eventKey, 'reminder_')) {
             NotificationSchedule::firstOrCreate(
                 ['notification_event_config_id' => $config->id, 'moment' => null, 'offset_minutes' => null],
                 ['channels' => $channels, 'label' => 'Instant', 'sort_order' => 0]
@@ -58,8 +62,9 @@ trait InteractsWithNotifications
      */
     protected function addReminderSchedule(string $eventKey, string $moment, ?int $offsetMinutes, array $channels): NotificationSchedule
     {
+        $moduleKey = NotificationEventEnum::from($eventKey)->module()->value;
         $org = $this->resolveTestOrganization();
-        $config = NotificationEventConfig::where('module_key', NotificationModuleEnum::TaskAssignment->value)
+        $config = NotificationEventConfig::where('module_key', $moduleKey)
             ->where('organization_id', $org->id)
             ->where('event_key', $eventKey)
             ->firstOrFail();

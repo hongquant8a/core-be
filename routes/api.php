@@ -92,6 +92,11 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
         require base_path('app/Modules/TaskAssignment/Routes/notification_config.php');
     });
 
+    // Notification config scoped cho module Meeting
+    Route::prefix('meeting/notification-config')->group(function () {
+        require base_path('app/Modules/Meeting/Routes/notification_config.php');
+    });
+
     // Meeting module
         Route::prefix('meetings')->middleware('ensure.route.org')->group(function () {
         require base_path('app/Modules/Meeting/Routes/meeting.php');

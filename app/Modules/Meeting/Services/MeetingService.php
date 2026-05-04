@@ -4,7 +4,13 @@ namespace App\Modules\Meeting\Services;
 
 use App\Modules\Meeting\Enums\MeetingStatusEnum;
 use App\Modules\Meeting\Models\Meeting;
+use App\Modules\Meeting\Models\MeetingInvitation;
+use App\Modules\Meeting\Models\MeetingParticipant;
+use App\Modules\Meeting\Models\MeetingView;
+use App\Services\Notification\Events\MeetingPublished;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 
 class MeetingService
 {
@@ -28,6 +34,7 @@ class MeetingService
         }
 
         $meeting->increment('view_count');
+        $this->logView($meeting->id, null);
 
         return $meeting->fresh()->load(['meetingType', 'meetingLocation']);
     }
@@ -95,9 +102,65 @@ class MeetingService
 
     public function changeStatus(Meeting $meeting, string $status): Meeting
     {
-        $meeting->update(['status' => $status]);
+        $previous = $meeting->status;
+
+        DB::transaction(function () use ($meeting, $status) {
+            $meeting->update(['status' => $status]);
+
+            if ($status === MeetingStatusEnum::Published->value) {
+                $this->createInvitationsForParticipants($meeting);
+            }
+        });
+
+        if ($previous !== MeetingStatusEnum::Published->value
+            && $status === MeetingStatusEnum::Published->value) {
+            Event::dispatch(new MeetingPublished($meeting->fresh()));
+        }
 
         return $meeting->load(['meetingType', 'meetingLocation', 'creator', 'editor']);
+    }
+
+    /**
+     * Tạo invitation cho từng participant — idempotent: bỏ qua participant đã có invitation pending/sent.
+     */
+    private function createInvitationsForParticipants(Meeting $meeting): void
+    {
+        $participants = MeetingParticipant::query()
+            ->where('meeting_id', $meeting->id)
+            ->where('organization_id', $meeting->organization_id)
+            ->pluck('id');
+
+        $existing = MeetingInvitation::query()
+            ->where('meeting_id', $meeting->id)
+            ->whereIn('meeting_participant_id', $participants)
+            ->pluck('meeting_participant_id')
+            ->all();
+
+        foreach ($participants as $participantId) {
+            if (in_array($participantId, $existing, true)) {
+                continue;
+            }
+            MeetingInvitation::create([
+                'organization_id' => $meeting->organization_id,
+                'meeting_id' => $meeting->id,
+                'meeting_participant_id' => $participantId,
+                'send_type' => 'now',
+                'status' => 'pending',
+            ]);
+        }
+    }
+
+    private function logView(int $meetingId, ?int $documentId): void
+    {
+        $request = request();
+        MeetingView::create([
+            'meeting_id' => $meetingId,
+            'meeting_document_id' => $documentId,
+            'user_id' => auth()->id(),
+            'ip_address' => $request?->ip(),
+            'user_agent' => $request?->userAgent(),
+            'viewed_at' => now(),
+        ]);
     }
 
     private function resolveCurrentOrganizationId(): int

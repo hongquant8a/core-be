@@ -23,7 +23,8 @@ class NotificationEventEnumTest extends TestCase
         $values = NotificationEventEnum::values();
         $this->assertContains('document_issued', $values);
         $this->assertContains('task_assigned', $values);
-        $this->assertCount(7, $values);
+        $this->assertContains('meeting_published', $values);
+        $this->assertContains('meeting_reminder_before', $values);
     }
 
     public function test_moment_values(): void

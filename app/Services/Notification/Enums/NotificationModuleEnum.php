@@ -9,11 +9,13 @@ namespace App\Services\Notification\Enums;
 enum NotificationModuleEnum: string
 {
     case TaskAssignment = 'task_assignment';
+    case Meeting = 'meeting';
 
     public function label(): string
     {
         return match ($this) {
             self::TaskAssignment => 'Giao việc',
+            self::Meeting => 'Cuộc họp',
         };
     }
 

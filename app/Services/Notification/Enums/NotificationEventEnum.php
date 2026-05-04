@@ -11,6 +11,10 @@ enum NotificationEventEnum: string
     case ReminderBefore = 'reminder_before';
     case ReminderOn = 'reminder_on';
     case ReminderAfter = 'reminder_after';
+    case MeetingPublished = 'meeting_published';
+    case MeetingReminderBefore = 'meeting_reminder_before';
+    case MeetingReminderOn = 'meeting_reminder_on';
+    case MeetingReminderAfter = 'meeting_reminder_after';
 
     public static function values(): array
     {
@@ -30,6 +34,10 @@ enum NotificationEventEnum: string
             self::ReminderBefore,
             self::ReminderOn,
             self::ReminderAfter => NotificationModuleEnum::TaskAssignment,
+            self::MeetingPublished,
+            self::MeetingReminderBefore,
+            self::MeetingReminderOn,
+            self::MeetingReminderAfter => NotificationModuleEnum::Meeting,
         };
     }
 
@@ -43,6 +51,10 @@ enum NotificationEventEnum: string
             self::ReminderBefore => 'Nhắc trước hạn',
             self::ReminderOn => 'Nhắc đến hạn',
             self::ReminderAfter => 'Nhắc quá hạn',
+            self::MeetingPublished => 'Cuộc họp đã được phát hành',
+            self::MeetingReminderBefore => 'Nhắc trước cuộc họp',
+            self::MeetingReminderOn => 'Nhắc đến giờ họp',
+            self::MeetingReminderAfter => 'Nhắc sau cuộc họp',
         };
     }
 }
