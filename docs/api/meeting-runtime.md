@@ -74,6 +74,8 @@ Datetime: `H:i:s d/m/Y` (vd `08:30:00 01/05/2026`). Time-only (giờ chương tr
 
 ### 1.4 Response (MeetingResource)
 
+`show` (`GET /api/meetings/{id}`) **preload nested**: `participants` (kèm role), `agendas`, `documents`. `index` không load để giảm payload.
+
 ```json
 {
   "id": 1,
@@ -93,9 +95,22 @@ Datetime: `H:i:s d/m/Y` (vd `08:30:00 01/05/2026`). Time-only (giờ chương tr
   "created_by": "Admin",
   "updated_by": "Admin",
   "created_at": "08:00:00 01/05/2026",
-  "updated_at": "08:00:00 08/05/2026"
+  "updated_at": "08:00:00 08/05/2026",
+  "participants": [
+    { "id": 12, "role": "chairperson", "display_name": "Nguyễn Văn Hùng", "email": "...", "phone": "...", "response_status": "accepted", ... },
+    { "id": 13, "role": "operator", "display_name": "Trần Thị Mai", ... },
+    { "id": 14, "role": "delegate", "display_name": "Lê Hoàng Nam", ... }
+  ],
+  "agendas": [
+    { "id": 1, "sort_order": 1, "start_time": "08:00:00", "end_time": "08:30:00", "content": "Khai mạc kỳ họp.", ... }
+  ],
+  "documents": [
+    { "id": 1, "title": "Tờ trình ngân sách", "file_url": "https://...", "is_public": true, "status": "published", ... }
+  ]
 }
 ```
+
+> Trả ở `show` only; `index` (list view) **không** trả 3 mảng này — gọi `/api/meeting-{participants,agendas,documents}?meeting_id=X` riêng nếu cần phân trang/filter.
 
 > **Side-effects khi publish (`changeStatus` → `published`)**:
 > - Tạo idempotent `meeting_invitations` cho từng participant (status=`pending`).

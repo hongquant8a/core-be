@@ -62,7 +62,16 @@ class MeetingService
 
     public function show(Meeting $meeting): Meeting
     {
-        return $meeting->load(['meetingType', 'meetingLocation', 'creator', 'editor']);
+        return $meeting->load([
+            'meetingType',
+            'meetingLocation',
+            'creator',
+            'editor',
+            'participants.attendee.user',
+            'agendas',
+            'documents.documentType',
+            'documents.mediaFile',
+        ]);
     }
 
     public function store(array $validated): Meeting

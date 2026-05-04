@@ -28,6 +28,11 @@ class MeetingResource extends JsonResource
             'updated_by' => $this->editor?->name ?? 'N/A',
             'created_at' => $this->created_at?->format('H:i:s d/m/Y'),
             'updated_at' => $this->updated_at?->format('H:i:s d/m/Y'),
+
+            // Nested relations — chỉ trả khi đã load (show endpoint), không có ở index để tránh payload nặng.
+            'participants' => MeetingParticipantResource::collection($this->whenLoaded('participants')),
+            'agendas' => MeetingAgendaResource::collection($this->whenLoaded('agendas')),
+            'documents' => MeetingDocumentResource::collection($this->whenLoaded('documents')),
         ];
     }
 }
