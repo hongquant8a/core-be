@@ -21,8 +21,8 @@ class StoreMeetingDocumentRequest extends FormRequest
             'title' => 'required|string|max:255',
             'document_number' => 'nullable|string|max:255',
             'summary' => 'nullable|string',
-            'files' => 'nullable|array',
-            'files.*' => 'file|max:10240',
+            'attachments' => 'nullable|array',
+            'attachments.*' => 'file|max:10240',
             'is_public' => 'required|boolean',
             'status' => ['required', MeetingDocumentStatusEnum::rule()],
             'sort_order' => 'nullable|integer|min:0',
@@ -58,8 +58,8 @@ class StoreMeetingDocumentRequest extends FormRequest
             'title' => 'Tiêu đề',
             'document_number' => 'document number',
             'summary' => 'summary',
-            'files' => 'Danh sách tệp đính kèm',
-            'files.*' => 'Tệp đính kèm',
+            'attachments' => 'Danh sách tệp đính kèm',
+            'attachments.*' => 'Tệp đính kèm',
             'is_public' => 'Trạng thái công khai',
             'status' => 'Trạng thái',
             'sort_order' => 'Thứ tự sắp xếp',
@@ -92,8 +92,8 @@ class StoreMeetingDocumentRequest extends FormRequest
                 'description' => 'Trích yếu nội dung.',
                 'example' => 'Nội dung chính của tài liệu.',
             ],
-            'files' => [
-                'description' => 'Mảng tệp đính kèm (multipart/form-data với key `files[]`). Mỗi tệp ≤10MB.',
+            'attachments' => [
+                'description' => 'Mảng tệp đính kèm (multipart/form-data với key `attachments[]`). Mỗi tệp ≤10MB.',
             ],
             'is_public' => [
                 'description' => 'Công khai tài liệu hay không.',

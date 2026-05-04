@@ -199,8 +199,8 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
 |---|---|---|
 | GET | `/api/meeting-documents` | Danh sách phân trang. Query: `meeting_id`, `meeting_agenda_id`, `meeting_document_type_id`, `search` (title/document_number), `status`, `is_public`, `sort_by` (`id\|sort_order\|created_at\|updated_at`), `sort_order`, `limit`. |
 | GET | `/api/meeting-documents/{id}` | Chi tiết. |
-| POST | `/api/meeting-documents` | Tạo (hỗ trợ **nhiều file** đính kèm). Body: **multipart/form-data** với `files[]` (xem [Document body](#document-body)). |
-| PUT \| PATCH | `/api/meeting-documents/{id}` | Cập nhật metadata + thêm/xóa attachments. `files[]` thêm mới, `remove_attachment_ids[]` xóa các attachment hiện có. |
+| POST | `/api/meeting-documents` | Tạo (hỗ trợ **nhiều file** đính kèm). Body: **multipart/form-data** với `attachments[]` (xem [Document body](#document-body)). |
+| PUT \| PATCH | `/api/meeting-documents/{id}` | Cập nhật metadata + thêm/xóa attachments. `attachments[]` thêm mới, `remove_attachment_ids[]` xóa các attachment hiện có. |
 | DELETE | `/api/meeting-documents/{id}` | Xóa. |
 | POST | `/api/meeting-documents/bulk-delete` | Body `{ "ids": [...] }`. |
 | PATCH | `/api/meeting-documents/bulk-status` | Body `{ "ids": [...], "status": "draft\|published" }`. |
@@ -217,13 +217,13 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
 | `title` | string (≤255) | ✅ (store) | Tiêu đề tài liệu. |
 | `document_number` | string (≤255) | — | Số văn bản (vd `01/TTr-UBND`). |
 | `summary` | text | — | Tóm tắt. |
-| `files[]` | file (≤10 MB mỗi tệp) | — | Mảng tệp đính kèm. Mỗi tệp tạo 1 row `meeting_document_attachments` + 1 Media. Cùng transaction → rollback all nếu lỗi. |
+| `attachments[]` | file (≤10 MB mỗi tệp) | — | Mảng tệp đính kèm. Mỗi tệp tạo 1 row `meeting_document_attachments` + 1 Media. Cùng transaction → rollback all nếu lỗi. |
 | `remove_attachment_ids[]` | integer[] | — | **Chỉ trên `update`** — IDs `meeting_document_attachments` cần xóa (và xóa file media tương ứng). |
 | `is_public` | boolean | ✅ (store) | Hiển thị ngoài trang công khai (kèm theo cờ public của meeting). |
 | `status` | enum | ✅ (store) | `draft` \| `published`. |
 | `sort_order` | integer (≥0) | — | Auto-tăng nếu không truyền (last + 1 trong meeting). |
 
-> **Multi-file upload pattern (mirror TaskAssignment)**: 1 record `meeting_documents` ↔ N rows `meeting_document_attachments` ↔ N Media. Tạo/xóa file qua `files[]` + `remove_attachment_ids[]`, không có endpoint riêng cho attachment.
+> **Multi-file upload pattern (mirror TaskAssignment)**: 1 record `meeting_documents` ↔ N rows `meeting_document_attachments` ↔ N Media. Tạo/xóa file qua `attachments[]` + `remove_attachment_ids[]`, không có endpoint riêng cho attachment.
 
 ### 3.4 Response (MeetingDocumentResource)
 
@@ -253,7 +253,7 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
 }
 ```
 
-> Để xóa 1 file đính kèm: `PATCH /api/meeting-documents/{id}` với body `{ "remove_attachment_ids": [12] }`. Để thêm: gửi `files[]`. Có thể combine cả 2 trong 1 request.
+> Để xóa 1 file đính kèm: `PATCH /api/meeting-documents/{id}` với body `{ "remove_attachment_ids": [12] }`. Để thêm: gửi `attachments[]`. Có thể combine cả 2 trong 1 request.
 
 ---
 
@@ -363,6 +363,6 @@ Truy cập qua `{id}` cho bản ghi của tổ chức khác → middleware `ensu
 
 1. **Trang tạo cuộc họp** — form đơn giản, chọn `meeting_type_id`/`meeting_location_id` từ dropdown public-options của các catalog.
 2. **Trang chương trình họp** — list theo `meeting_id`, hỗ trợ kéo thả qua `/reorder`.
-3. **Trang tài liệu** — list theo `meeting_id`, upload **nhiều file** qua `multipart/form-data` field `files[]`. 1 document → N attachments → N Media. Hiển thị `attachments[*].file_url` để FE tải từng file.
+3. **Trang tài liệu** — list theo `meeting_id`, upload **nhiều file** qua `multipart/form-data` field `attachments[]`. 1 document → N attachments → N Media. Hiển thị `attachments[*].file_url` để FE tải từng file.
 4. **Trang đại biểu tham dự** — chọn đại biểu qua dropdown từ `/api/meeting-attendees` (đã filter theo org). Snapshot tự động khi store.
 5. **Publish cuộc họp** — gọi `PATCH /meetings/{id}/status` với `{"status":"published"}`. BE tự gửi giấy mời (FCM/email) cho participants. FE chỉ cần chờ response và hiển thị "Đã gửi giấy mời".

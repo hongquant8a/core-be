@@ -90,7 +90,7 @@ class MeetingDocumentController extends Controller
      * @bodyParam meeting_id integer required ID cuộc họp. Example: 1
      * @bodyParam title string required Tiêu đề tài liệu. Example: Dự thảo nghị quyết
      * @bodyParam meeting_document_type_id integer ID loại tài liệu họp. Example: 1
-     * @bodyParam files file[] Mảng tệp đính kèm (multipart/form-data, key `files[]`). Mỗi tệp ≤10MB.
+     * @bodyParam attachments file[] Mảng tệp đính kèm (multipart/form-data, key `attachments[]`). Mỗi tệp ≤10MB.
      * @bodyParam summary string Trích yếu tài liệu. Example: Tài liệu phục vụ thảo luận phiên sáng
      * @bodyParam is_public boolean required Công khai. Example: true
      * @bodyParam status string required Trạng thái tài liệu. Example: draft
@@ -99,7 +99,7 @@ class MeetingDocumentController extends Controller
     {
         $item = $this->meetingDocumentService->store(
             $request->validated(),
-            (array) $request->file('files', [])
+            (array) $request->file('attachments', [])
         );
 
         return $this->successResource(new MeetingDocumentResource($item), 'Tạo tài liệu họp thành công!', 201);
@@ -111,7 +111,7 @@ class MeetingDocumentController extends Controller
      * @urlParam meetingDocument integer required ID tài liệu họp. Example: 1
      * @bodyParam title string Tiêu đề tài liệu. Example: Dự thảo nghị quyết đã chỉnh sửa
      * @bodyParam meeting_document_type_id integer ID loại tài liệu họp. Example: 1
-     * @bodyParam files file[] Tệp đính kèm thêm vào (không thay thế attachments cũ). Example: (binary)
+     * @bodyParam attachments file[] Tệp đính kèm thêm vào (không thay thế attachments cũ). Example: (binary)
      * @bodyParam remove_attachment_ids integer[] ID `meeting_document_attachments` cần xóa. Example: [12,13]
      * @bodyParam summary string Trích yếu tài liệu. Example: Bản cập nhật sau góp ý
      * @bodyParam status string Trạng thái tài liệu. Example: published
@@ -125,7 +125,7 @@ class MeetingDocumentController extends Controller
         $item = $this->meetingDocumentService->update(
             $meetingDocument,
             $validated,
-            (array) $request->file('files', []),
+            (array) $request->file('attachments', []),
             $removeAttachmentIds,
         );
 

@@ -70,21 +70,21 @@ class MeetingDocumentService
     }
 
     /**
-     * @param  array<UploadedFile>  $files
+     * @param  array<UploadedFile>  $attachments
      */
-    public function store(array $validated, array $files = []): MeetingDocument
+    public function store(array $validated, array $attachments = []): MeetingDocument
     {
         $storedFiles = [];
 
         try {
-            return DB::transaction(function () use ($validated, $files, &$storedFiles) {
+            return DB::transaction(function () use ($validated, $attachments, &$storedFiles) {
                 if (! array_key_exists('sort_order', $validated)) {
                     $validated['sort_order'] = $this->nextSortOrder($validated['meeting_id']);
                 }
                 $validated['organization_id'] = $this->resolveCurrentOrganizationId();
                 $document = MeetingDocument::create($validated);
 
-                $this->attachFiles($document, $files, $storedFiles);
+                $this->attachFiles($document, $attachments, $storedFiles);
 
                 return $document->load(['agenda', 'documentType', 'attachments.media', 'creator', 'editor']);
             });
@@ -95,21 +95,21 @@ class MeetingDocumentService
     }
 
     /**
-     * @param  array<UploadedFile>  $files
+     * @param  array<UploadedFile>  $attachments
      * @param  array<int>  $removeAttachmentIds
      */
-    public function update(MeetingDocument $meetingDocument, array $validated, array $files = [], array $removeAttachmentIds = []): MeetingDocument
+    public function update(MeetingDocument $meetingDocument, array $validated, array $attachments = [], array $removeAttachmentIds = []): MeetingDocument
     {
         $storedFiles = [];
         try {
-            return DB::transaction(function () use ($meetingDocument, $validated, $files, $removeAttachmentIds, &$storedFiles) {
+            return DB::transaction(function () use ($meetingDocument, $validated, $attachments, $removeAttachmentIds, &$storedFiles) {
                 $meetingDocument->update($validated);
 
                 if (! empty($removeAttachmentIds)) {
                     $this->removeAttachments($meetingDocument, $removeAttachmentIds);
                 }
 
-                $this->attachFiles($meetingDocument, $files, $storedFiles);
+                $this->attachFiles($meetingDocument, $attachments, $storedFiles);
 
                 return $meetingDocument->load(['agenda', 'documentType', 'attachments.media', 'creator', 'editor']);
             });
@@ -162,13 +162,13 @@ class MeetingDocumentService
     /**
      * Upload từng file → tạo Media + MeetingDocumentAttachment row.
      *
-     * @param  array<UploadedFile>  $files
+     * @param  array<UploadedFile>  $attachments
      * @param  array<array{disk: string, path: string}>  $storedFiles  collected paths để cleanup khi rollback
      */
-    private function attachFiles(MeetingDocument $document, array $files, array &$storedFiles): void
+    private function attachFiles(MeetingDocument $document, array $attachments, array &$storedFiles): void
     {
         $orgId = $this->resolveCurrentOrganizationId();
-        foreach ($files as $file) {
+        foreach ($attachments as $file) {
             if (! $file instanceof UploadedFile || ! $file->isValid()) {
                 continue;
             }
