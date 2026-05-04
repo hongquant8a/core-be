@@ -11,7 +11,11 @@ class MeetingObserver
 
     public function saved(Meeting $meeting): void
     {
-        if (in_array($meeting->status, ['cancelled', 'completed'], true)) {
+        // Cancel pending reminders nếu meeting bị hủy hoặc đã kết thúc (end_time đã qua).
+        $isFinished = $meeting->status === 'cancelled'
+            || ($meeting->end_time && $meeting->end_time->isPast());
+
+        if ($isFinished) {
             $this->scheduler->cancelPending($meeting);
 
             return;

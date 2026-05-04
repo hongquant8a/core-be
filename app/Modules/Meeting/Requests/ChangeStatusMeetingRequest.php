@@ -49,8 +49,8 @@ class ChangeStatusMeetingRequest extends FormRequest
     {
         return [
             'status' => [
-                'description' => 'Trạng thái mới của cuộc họp.',
-                'example' => 'in_progress',
+                'description' => 'Trạng thái mới của cuộc họp (draft | published | cancelled).',
+                'example' => 'published',
             ],
         ];
     }

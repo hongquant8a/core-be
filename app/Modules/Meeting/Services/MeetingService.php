@@ -117,7 +117,14 @@ class MeetingService
         $previous = $meeting->status;
 
         DB::transaction(function () use ($meeting, $status) {
-            $meeting->update(['status' => $status]);
+            $payload = ['status' => $status];
+
+            // Auto-set published_at lần đầu publish; republish sau đó không ghi đè (giữ mốc gốc).
+            if ($status === MeetingStatusEnum::Published->value && $meeting->published_at === null) {
+                $payload['published_at'] = now();
+            }
+
+            $meeting->update($payload);
 
             if ($status === MeetingStatusEnum::Published->value) {
                 $this->createInvitationsForParticipants($meeting);

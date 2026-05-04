@@ -52,8 +52,8 @@ Datetime: `H:i:s d/m/Y` (vd `08:30:00 01/05/2026`). Time-only (giờ chương tr
 | PUT \| PATCH | `/api/meetings/{id}` | Cập nhật. |
 | DELETE | `/api/meetings/{id}` | Xóa. |
 | POST | `/api/meetings/bulk-delete` | Body `{ "ids": [1,2,3] }`. |
-| PATCH | `/api/meetings/bulk-status` | Body `{ "ids": [...], "status": "draft\|published\|in_progress\|completed\|cancelled" }`. |
-| PATCH | `/api/meetings/{id}/status` | **Quan trọng**: khi `draft → published`, BE tự động tạo `meeting_invitations` cho tất cả participants + dispatch event `MeetingPublished` (gửi FCM/email theo cấu hình `meeting/notification-config`). |
+| PATCH | `/api/meetings/bulk-status` | Body `{ "ids": [...], "status": "draft\|published\|cancelled" }`. |
+| PATCH | `/api/meetings/{id}/status` | **Quan trọng**: khi `draft → published`, BE tự động (1) tạo `meeting_invitations` cho tất cả participants, (2) dispatch event `MeetingPublished` (gửi FCM/email), (3) set `published_at = now()` lần đầu publish (republish không ghi đè). |
 | GET | `/api/meetings/export` | Tải Excel `meetings.xlsx`. Query giống `index`. Cột: `STT, Tiêu đề, Loại, Địa điểm, Công khai, Bắt đầu, Kết thúc, Trạng thái, Lượt xem, Phát hành, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID`. |
 
 > Meetings **không hỗ trợ import** — bao gồm relationships phức tạp (agendas/documents/participants), tạo qua UI thay vì bulk-import.
@@ -69,7 +69,7 @@ Datetime: `H:i:s d/m/Y` (vd `08:30:00 01/05/2026`). Time-only (giờ chương tr
 | `start_time` | datetime `Y-m-d H:i:s` | ✅ | Thời gian bắt đầu. |
 | `end_time` | datetime `Y-m-d H:i:s` | — | Phải `>= start_time`. |
 | `content` | text | — | Nội dung cuộc họp. |
-| `status` | enum | ✅ | `draft` \| `published` \| `in_progress` \| `completed` \| `cancelled`. |
+| `status` | enum | ✅ | `draft` \| `published` \| `cancelled`. **Không có `in_progress`/`completed`** — FE tự derive từ `start_time`/`end_time` vs `now()`. |
 | `published_at` | datetime | — | Tự set khi publish. |
 
 ### 1.4 Response (MeetingResource)
@@ -115,7 +115,22 @@ Datetime: `H:i:s d/m/Y` (vd `08:30:00 01/05/2026`). Time-only (giờ chương tr
 > **Side-effects khi publish (`changeStatus` → `published`)**:
 > - Tạo idempotent `meeting_invitations` cho từng participant (status=`pending`).
 > - Dispatch event `MeetingPublished` → listener đọc `notification_event_configs` (module `meeting`) để gửi FCM/email/SMS. Nếu admin chưa enable event → không gửi.
+> - Set `published_at = now()` **chỉ lần đầu** publish (`published_at` đang null). Republish sau đó giữ nguyên giá trị cũ.
 > - Re-publish (đã từng publish trước đó) **không** tạo invitation trùng.
+
+> **Phase derived ở FE** (BE chỉ giữ 3 status: `draft / published / cancelled`):
+> ```js
+> function getMeetingPhase(meeting) {
+>   if (meeting.status === 'cancelled') return 'cancelled'   // "Đã hủy"
+>   if (meeting.status === 'draft')     return 'draft'       // "Bản nháp"
+>   const now = new Date()
+>   const start = parseDateTime(meeting.start_time)
+>   const end = meeting.end_time ? parseDateTime(meeting.end_time) : null
+>   if (now < start)                  return 'upcoming'      // "Sắp diễn ra"
+>   if (end && now > end)             return 'finished'      // "Đã kết thúc"
+>   return 'in_progress'                                      // "Đang diễn ra"
+> }
+> ```
 
 ---
 

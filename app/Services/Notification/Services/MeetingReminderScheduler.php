@@ -16,7 +16,11 @@ class MeetingReminderScheduler
      */
     public function scheduleFor(Meeting $meeting): void
     {
-        if (! $meeting->start_time || in_array($meeting->status, ['cancelled', 'completed'], true)) {
+        // Hủy pending nếu meeting bị cancelled hoặc đã kết thúc (end_time đã qua).
+        $isFinished = $meeting->status === 'cancelled'
+            || ($meeting->end_time && $meeting->end_time->isPast());
+
+        if (! $meeting->start_time || $isFinished) {
             $this->cancelPending($meeting);
 
             return;

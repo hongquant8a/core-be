@@ -2,12 +2,14 @@
 
 namespace App\Modules\Meeting\Enums;
 
+/**
+ * Enum trạng thái meeting — chỉ giữ 3 trạng thái thực sự cần manual.
+ * `in_progress` / `completed` derived ở FE từ start_time/end_time vs now.
+ */
 enum MeetingStatusEnum: string
 {
     case Draft = 'draft';
     case Published = 'published';
-    case InProgress = 'in_progress';
-    case Completed = 'completed';
     case Cancelled = 'cancelled';
 
     public static function values(): array

@@ -55,7 +55,8 @@ class ProcessRemindersCommand extends Command
             return;
         }
 
-        if (in_array($meeting->status, ['cancelled', 'completed'], true)) {
+        // Skip nếu meeting bị hủy (status=cancelled). Reminders sau end_time vẫn được fire (vd: nhắc "đã kết thúc" — moment=after).
+        if ($meeting->status === 'cancelled') {
             $reminder->update(['status' => 'cancelled', 'fired_at' => now()]);
 
             return;
