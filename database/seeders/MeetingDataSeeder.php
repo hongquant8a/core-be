@@ -99,7 +99,6 @@ class MeetingDataSeeder extends Seeder
             [
                 'name' => 'Hội trường lớn UBND TP Đà Nẵng',
                 'address' => '24 Trần Phú, Hải Châu, Đà Nẵng',
-                'latitude' => 16.0739, 'longitude' => 108.2240,
                 'google_maps_url' => 'https://maps.google.com/?q=16.0739,108.2240',
                 'description' => 'Hội trường chính tầng 2.',
                 'sort_order' => 1,
@@ -107,14 +106,12 @@ class MeetingDataSeeder extends Seeder
             [
                 'name' => 'Phòng họp tầng 5 - Sở Nội vụ',
                 'address' => 'Số 1 Trần Phú, Đà Nẵng',
-                'latitude' => 16.0681, 'longitude' => 108.2208,
                 'description' => 'Phòng họp dùng chung tầng 5.',
                 'sort_order' => 2,
             ],
             [
                 'name' => 'Phòng họp HĐND TP',
                 'address' => '24 Trần Phú, Hải Châu, Đà Nẵng',
-                'latitude' => 16.0739, 'longitude' => 108.2240,
                 'description' => 'Phòng họp riêng HĐND.',
                 'sort_order' => 3,
             ],

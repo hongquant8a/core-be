@@ -34,8 +34,6 @@ class CatalogExport implements FromCollection, WithHeadings
                 'name' => $item->name,
                 'description' => $item->description,
                 'address' => $hasLocation ? $item->address : null,
-                'latitude' => $hasLocation ? $item->latitude : null,
-                'longitude' => $hasLocation ? $item->longitude : null,
                 'google_maps_url' => $hasLocation ? $item->google_maps_url : null,
                 'sort_order' => $item->sort_order ?? 0,
                 'status' => $item->status,
@@ -51,7 +49,7 @@ class CatalogExport implements FromCollection, WithHeadings
     {
         return [
             'STT', 'Tên', 'Mô tả',
-            'Địa chỉ', 'Vĩ độ', 'Kinh độ', 'Google Maps URL',
+            'Địa chỉ', 'Google Maps URL',
             'Thứ tự', 'Trạng thái',
             'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID',
         ];
@@ -59,6 +57,6 @@ class CatalogExport implements FromCollection, WithHeadings
 
     private function modelHasLocationFields(Model $model): bool
     {
-        return in_array('latitude', $model->getFillable(), true);
+        return in_array('address', $model->getFillable(), true);
     }
 }

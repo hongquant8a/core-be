@@ -13,7 +13,7 @@ use Maatwebsite\Excel\Concerns\WithValidation;
 
 /**
  * Import chung cho 4 catalog: MeetingType / MeetingLocation / MeetingDocumentType / MeetingAttendeeGroup.
- * Cột địa lý chỉ được mass-assign khi model có khai báo trong $fillable.
+ * Cột địa chỉ + Google Maps URL chỉ được mass-assign khi model có khai báo trong $fillable.
  */
 class CatalogImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFailure
 {
@@ -23,8 +23,6 @@ class CatalogImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnF
         'name' => 'Tên',
         'description' => 'Mô tả',
         'address' => 'Địa chỉ',
-        'latitude' => 'Vĩ độ',
-        'longitude' => 'Kinh độ',
         'google_maps_url' => 'Google Maps URL',
         'sort_order' => 'Thứ tự',
         'status' => 'Trạng thái',
@@ -39,8 +37,6 @@ class CatalogImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnF
         'name' => 'Tên',
         'description' => 'Mô tả',
         'address' => 'Địa chỉ',
-        'latitude' => 'Vĩ độ',
-        'longitude' => 'Kinh độ',
         'google_maps_url' => 'Google Maps URL',
     ];
 
@@ -62,8 +58,6 @@ class CatalogImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnF
 
         if (in_array('address', $fillable, true)) {
             $payload['address'] = $row['address'] ?? null;
-            $payload['latitude'] = isset($row['latitude']) ? (float) $row['latitude'] : null;
-            $payload['longitude'] = isset($row['longitude']) ? (float) $row['longitude'] : null;
             $payload['google_maps_url'] = $row['google_maps_url'] ?? null;
         }
 
@@ -83,8 +77,6 @@ class CatalogImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnF
         return [
             'name' => 'required|string|max:255',
             'status' => 'nullable|in:active,inactive',
-            'latitude' => 'nullable|numeric|between:-90,90',
-            'longitude' => 'nullable|numeric|between:-180,180',
         ];
     }
 
@@ -94,8 +86,6 @@ class CatalogImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnF
             'name.required' => 'Tên không được để trống.',
             'name.max' => 'Tên không được vượt quá 255 ký tự.',
             'status.in' => 'Trạng thái phải là active hoặc inactive.',
-            'latitude.between' => 'Vĩ độ phải nằm trong khoảng -90 đến 90.',
-            'longitude.between' => 'Kinh độ phải nằm trong khoảng -180 đến 180.',
         ];
     }
 
@@ -104,8 +94,6 @@ class CatalogImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnF
         return [
             'name' => 'Tên',
             'status' => 'Trạng thái',
-            'latitude' => 'Vĩ độ',
-            'longitude' => 'Kinh độ',
         ];
     }
 }

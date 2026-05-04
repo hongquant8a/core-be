@@ -14,8 +14,6 @@ class MeetingLocation extends Model
         'organization_id',
         'name',
         'address',
-        'latitude',
-        'longitude',
         'google_maps_url',
         'description',
         'status',

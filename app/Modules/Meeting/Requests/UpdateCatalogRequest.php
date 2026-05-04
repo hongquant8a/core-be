@@ -20,8 +20,6 @@ class UpdateCatalogRequest extends FormRequest
             'status' => ['sometimes', MeetingCatalogStatusEnum::rule()],
             'sort_order' => 'nullable|integer|min:0',
             'address' => 'nullable|string|max:255',
-            'latitude' => 'nullable|numeric|between:-90,90',
-            'longitude' => 'nullable|numeric|between:-180,180',
             'google_maps_url' => 'nullable|url|max:255',
         ];
     }
@@ -54,9 +52,7 @@ class UpdateCatalogRequest extends FormRequest
             'status' => 'Trạng thái',
             'sort_order' => 'Thứ tự sắp xếp',
             'address' => 'Địa chỉ',
-            'latitude' => 'latitude',
-            'longitude' => 'longitude',
-            'google_maps_url' => 'google maps url',
+            'google_maps_url' => 'Link Google Maps',
         ];
     }
     public function bodyParameters(): array

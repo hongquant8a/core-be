@@ -29,8 +29,6 @@ return new class extends Migration
             $table->foreignId('organization_id')->nullable()->constrained('organizations')->nullOnDelete();
             $table->string('name');
             $table->string('address')->nullable();
-            $table->decimal('latitude', 10, 7)->nullable();
-            $table->decimal('longitude', 10, 7)->nullable();
             $table->string('google_maps_url')->nullable();
             $table->text('description')->nullable();
             $table->string('status')->default('active');

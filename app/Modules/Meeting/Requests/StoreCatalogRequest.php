@@ -20,8 +20,6 @@ class StoreCatalogRequest extends FormRequest
             'status' => ['required', MeetingCatalogStatusEnum::rule()],
             'sort_order' => 'nullable|integer|min:0',
             'address' => 'nullable|string|max:255',
-            'latitude' => 'nullable|numeric|between:-90,90',
-            'longitude' => 'nullable|numeric|between:-180,180',
             'google_maps_url' => 'nullable|url|max:255',
         ];
     }
@@ -54,9 +52,7 @@ class StoreCatalogRequest extends FormRequest
             'status' => 'Trạng thái',
             'sort_order' => 'Thứ tự sắp xếp',
             'address' => 'Địa chỉ',
-            'latitude' => 'latitude',
-            'longitude' => 'longitude',
-            'google_maps_url' => 'google maps url',
+            'google_maps_url' => 'Link Google Maps',
         ];
     }
     public function bodyParameters(): array
@@ -81,14 +77,6 @@ class StoreCatalogRequest extends FormRequest
             'address' => [
                 'description' => 'Địa chỉ (áp dụng cho địa điểm họp).',
                 'example' => 'Số 1 Trần Phú',
-            ],
-            'latitude' => [
-                'description' => 'Vĩ độ (áp dụng cho địa điểm).',
-                'example' => 21.0278,
-            ],
-            'longitude' => [
-                'description' => 'Kinh độ (áp dụng cho địa điểm).',
-                'example' => 105.8342,
             ],
             'google_maps_url' => [
                 'description' => 'Link Google Maps (áp dụng cho địa điểm).',

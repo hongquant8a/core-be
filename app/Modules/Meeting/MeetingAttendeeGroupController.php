@@ -144,7 +144,7 @@ class MeetingAttendeeGroupController extends Controller
     /**
      * Xuất Excel nhóm đại biểu.
      *
-     * Xuất ra các trường: STT, Tên, Mô tả, Địa chỉ, Vĩ độ, Kinh độ, Google Maps URL, Thứ tự, Trạng thái, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID. Cột địa lý để trống.
+     * Xuất ra các trường: STT, Tên, Mô tả, Địa chỉ, Google Maps URL, Thứ tự, Trạng thái, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID. Cột địa chỉ/Google Maps để trống.
      *
      * @queryParam search string Từ khóa tìm kiếm theo tên nhóm. Example: tổ đại biểu 1
      * @queryParam status string Lọc theo trạng thái. Example: active

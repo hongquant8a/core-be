@@ -15,8 +15,6 @@ class CatalogResource extends JsonResource
             'name' => $this->name,
             'description' => $this->description,
             'address' => $this->address ?? null,
-            'latitude' => $this->latitude ?? null,
-            'longitude' => $this->longitude ?? null,
             'google_maps_url' => $this->google_maps_url ?? null,
             'status' => $this->status,
             'sort_order' => $this->sort_order ?? 0,

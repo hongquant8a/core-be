@@ -75,8 +75,6 @@ Có endpoint công khai (không cần auth) để FE landing/portal dùng.
   "name": "Họp giao ban",
   "description": "Họp giao ban định kỳ tuần",
   "address": null,
-  "latitude": null,
-  "longitude": null,
   "google_maps_url": null,
   "status": "active",
   "sort_order": 0,
@@ -87,7 +85,7 @@ Có endpoint công khai (không cần auth) để FE landing/portal dùng.
 }
 ```
 
-> Các trường `address`, `latitude`, `longitude`, `google_maps_url` luôn được trả về (null nếu không áp dụng) — chỉ `meeting-locations` mới có giá trị thực.
+> Các trường `address`, `google_maps_url` luôn được trả về (null nếu không áp dụng) — chỉ `meeting-locations` mới có giá trị thực.
 
 ---
 
@@ -102,7 +100,7 @@ Có endpoint public + public-options giống mục 1.
 | GET | `/api/meeting-locations/stats` | `{ total, active, inactive }`. |
 | GET | `/api/meeting-locations` | Danh sách phân trang. Query giống mục 1.2. |
 | GET | `/api/meeting-locations/{id}` | Chi tiết. |
-| POST | `/api/meeting-locations` | Tạo. Body: [Catalog body](#catalog-body) — **địa điểm dùng cả `address`, `latitude`, `longitude`, `google_maps_url`**. |
+| POST | `/api/meeting-locations` | Tạo. Body: [Catalog body](#catalog-body) — **địa điểm dùng cả `address`, `google_maps_url`**. |
 | PUT \| PATCH | `/api/meeting-locations/{id}` | Cập nhật. |
 | DELETE | `/api/meeting-locations/{id}` | Xóa. |
 | POST | `/api/meeting-locations/bulk-delete` | Body `{ "ids": [...] }`. |
@@ -243,8 +241,6 @@ Dùng chung 1 FormRequest cho 4 danh mục:
 | `status` | enum | ✅ | Tất cả | `active` \| `inactive`. |
 | `sort_order` | integer (≥0) | — | Tất cả | Thứ tự hiển thị. |
 | `address` | string (≤255) | — | **Locations** | Địa chỉ. |
-| `latitude` | numeric [-90, 90] | — | **Locations** | Vĩ độ. |
-| `longitude` | numeric [-180, 180] | — | **Locations** | Kinh độ. |
 | `google_maps_url` | url (≤255) | — | **Locations** | Link Google Maps. |
 
 Ví dụ tạo địa điểm:
@@ -256,8 +252,6 @@ Ví dụ tạo địa điểm:
   "status": "active",
   "sort_order": 1,
   "address": "Số 1 Trần Phú",
-  "latitude": 21.0278,
-  "longitude": 105.8342,
   "google_maps_url": "https://maps.google.com/?q=21.0278,105.8342"
 }
 ```
@@ -336,7 +330,7 @@ Mọi catalog đều hỗ trợ export + import (cùng format header, cùng patt
 - Auth bắt buộc, permission `{resource}.export`.
 - Query giống `index` (`search`, `status`, `meeting_attendee_group_id` cho attendees…).
 - Response: `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` — file Excel tải xuống trực tiếp.
-- Cột xuất chung cho 4 catalog: `STT, Tên, Mô tả, Địa chỉ, Vĩ độ, Kinh độ, Google Maps URL, Thứ tự, Trạng thái, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID` — 4 cột địa lý chỉ có dữ liệu với `meeting-locations`.
+- Cột xuất chung cho 4 catalog: `STT, Tên, Mô tả, Địa chỉ, Google Maps URL, Thứ tự, Trạng thái, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID` — 2 cột địa chỉ/Google Maps chỉ có dữ liệu với `meeting-locations`.
 - Cột xuất cho `meeting-attendees`: `STT, Họ tên, Nhóm đại biểu, Chức vụ, Đơn vị, Email, Số điện thoại, Trạng thái, Ghi chú, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID`.
 
 **Import** (`POST /api/{resource}/import`)
@@ -351,19 +345,19 @@ Mọi catalog đều hỗ trợ export + import (cùng format header, cùng patt
 - Trả về file Excel rỗng chỉ có header (theo nhãn tiếng Việt) — FE dùng nút "Tải mẫu" trên màn import.
 - Header của template (cột nghiệp vụ — `sort_order` và `status` lấy default `0` / `active`):
   - Type / DocType / AttendeeGroup: `Tên, Mô tả`.
-  - Locations: `Tên, Mô tả, Địa chỉ, Vĩ độ, Kinh độ, Google Maps URL`.
+  - Locations: `Tên, Mô tả, Địa chỉ, Google Maps URL`.
   - Attendees: `Họ tên, Chức vụ, Đơn vị, Email, Số điện thoại, Ghi chú`.
 
 | Catalog | Cột bắt buộc | Cột không bắt buộc (default) |
 |---|---|---|
 | `meeting-types` | `name` | `description`, `sort_order`, `status` (default `active`) |
-| `meeting-locations` | `name` | `description`, `address`, `latitude`, `longitude`, `google_maps_url`, `sort_order`, `status` (default `active`) |
+| `meeting-locations` | `name` | `description`, `address`, `google_maps_url`, `sort_order`, `status` (default `active`) |
 | `meeting-document-types` | `name` | `description`, `sort_order`, `status` (default `active`) |
 | `meeting-attendee-groups` | `name` | `description`, `sort_order`, `status` (default `active`) |
 | `meeting-attendees` | `name` | `position_name`, `department_name`, `email`, `phone`, `note`, `status` (default `active`) |
 
 - Response thành công: `{ "success": true, "message": "Nhập ... thành công!" }`.
-- Validate row-level skip (tiếp tục import các dòng hợp lệ); `name.required`, `status.in:active,inactive`, `latitude.between:-90,90`, `longitude.between:-180,180`, `email.email`.
+- Validate row-level skip (tiếp tục import các dòng hợp lệ); `name.required`, `status.in:active,inactive`, `email.email`.
 
 ### Validation lỗi (422)
 
@@ -392,6 +386,6 @@ Mọi catalog đều hỗ trợ export + import (cùng format header, cùng patt
 2. **5 trang quản trị** (cùng pattern CRUD + bulk + status):
    - Loại cuộc họp / Địa điểm / Loại tài liệu / Nhóm đại biểu → dùng `CatalogResource` + `StoreCatalogRequest`.
    - Đại biểu → resource riêng (`MeetingAttendeeResource`), thêm filter theo nhóm.
-3. **Form địa điểm** mở rộng thêm 4 trường địa lý (`address`, `latitude`, `longitude`, `google_maps_url`).
+3. **Form địa điểm** mở rộng thêm 2 trường địa chỉ (`address`, `google_maps_url`).
 4. **Form đại biểu** không dùng địa lý, có thêm `meeting_attendee_group_id`, `user_id`, `position_name`, `department_name`, `email`, `phone`, `note`.
 5. Mọi response list theo cấu trúc `data.items` + `data.pagination` (envelope của `MeetingCollection`/`CatalogCollection`).
