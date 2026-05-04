@@ -140,16 +140,23 @@ class TaskAssignmentDataSeeder extends Seeder
 
         $deptCodes = array_keys($this->deptIds);
         foreach ($users as $i => $user) {
+            // Skip nếu user đã có ít nhất 1 assignment trong org — giữ nguyên phân công cũ ở prod.
+            $hasAssignment = TaskAssignmentUser::where('user_id', $user->id)
+                ->where('organization_id', $orgId)
+                ->exists();
+            if ($hasAssignment) {
+                continue;
+            }
+
             $code = $deptCodes[$i % count($deptCodes)];
-            TaskAssignmentUser::updateOrCreate(
-                ['user_id' => $user->id, 'organization_id' => $orgId],
-                [
-                    'task_assignment_department_id' => $this->deptIds[$code],
-                    'status' => 'active',
-                    'created_by' => $user->id,
-                    'updated_by' => $user->id,
-                ]
-            );
+            TaskAssignmentUser::create([
+                'user_id' => $user->id,
+                'organization_id' => $orgId,
+                'task_assignment_department_id' => $this->deptIds[$code],
+                'status' => 'active',
+                'created_by' => $user->id,
+                'updated_by' => $user->id,
+            ]);
         }
 
         $this->usersByDept = TaskAssignmentUser::with('user')
