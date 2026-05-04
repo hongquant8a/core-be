@@ -131,7 +131,7 @@ class FcmChannelTest extends TestCase
         $r = $this->send($ch, ['device-token-abc'], 'Hello', 'Title', ['task_id' => 5]);
 
         $this->assertTrue($r->success, 'r->error = '.($r->error ?? 'null').' / capturedTokens='.json_encode($capturedTokens));
-        $this->assertSame('multicast:1/1', $r->messageId);
+        $this->assertSame('Đã gửi 1 thiết bị', $r->messageId);
         $this->assertNull($r->error);
         $this->assertSame(['device-token-abc'], $capturedTokens);
         $payload = $capturedMessage->jsonSerialize();
@@ -179,7 +179,7 @@ class FcmChannelTest extends TestCase
         $r = $this->send($ch, ['token-1', 'token-2', 'bad-token-1']);
 
         $this->assertTrue($r->success);
-        $this->assertSame('multicast:2/3', $r->messageId);
+        $this->assertSame('Đã gửi 2/3 thiết bị', $r->messageId);
     }
 
     public function test_full_failure_when_all_tokens_invalid(): void

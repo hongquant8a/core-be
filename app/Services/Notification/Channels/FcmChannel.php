@@ -82,10 +82,15 @@ class FcmChannel implements NotificationChannel
             return $this->fail('FCM multicast: all '.count($tokens).' tokens failed');
         }
 
+        $totalCount = count($tokens);
+        $messageId = $successCount === $totalCount
+            ? "Đã gửi {$totalCount} thiết bị"
+            : "Đã gửi {$successCount}/{$totalCount} thiết bị";
+
         return new SendResult(
             channel: 'fcm',
             success: true,
-            messageId: 'multicast:'.$successCount.'/'.count($tokens),
+            messageId: $messageId,
         );
     }
 
