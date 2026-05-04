@@ -638,8 +638,6 @@ Bảng danh mục địa điểm họp.
 | `organization_id` | bigint | Tổ chức sở hữu |
 | `name` | string | Tên địa điểm/phòng họp |
 | `address` | string nullable | Địa chỉ |
-| `latitude` | decimal nullable | Vĩ độ |
-| `longitude` | decimal nullable | Kinh độ |
 | `google_maps_url` | string nullable | Link chỉ đường Google Maps |
 | `description` | text nullable | Mô tả |
 | `status` | string | Trạng thái: `active`, `inactive` |
