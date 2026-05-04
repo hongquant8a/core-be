@@ -129,6 +129,65 @@ class PermissionSeeder extends Seeder
         'my-assigned-tasks' => [
             'index',
         ],
+        // Meeting - Cuộc họp
+        'meetings' => [
+            'stats', 'index', 'show', 'store', 'update', 'destroy',
+            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus',
+        ],
+        // Meeting - Loại cuộc họp
+        'meeting-types' => [
+            'stats', 'index', 'show', 'store', 'update', 'destroy',
+            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus',
+        ],
+        // Meeting - Địa điểm họp
+        'meeting-locations' => [
+            'stats', 'index', 'show', 'store', 'update', 'destroy',
+            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus',
+        ],
+        // Meeting - Loại tài liệu họp
+        'meeting-document-types' => [
+            'stats', 'index', 'show', 'store', 'update', 'destroy',
+            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus',
+        ],
+        'meeting-attendee-groups' => [
+            'stats', 'index', 'show', 'store', 'update', 'destroy',
+            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus',
+        ],
+        'meeting-attendees' => [
+            'stats', 'index', 'show', 'store', 'update', 'destroy',
+            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus',
+        ],
+        'meeting-agendas' => [
+            'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
+        ],
+        'meeting-documents' => [
+            'index', 'show', 'store', 'update', 'destroy',
+            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus',
+        ],
+        'meeting-participants' => [
+            'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
+        ],
+        'meeting-attendances' => [
+            'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
+        ],
+        'meeting-vote-topics' => [
+            'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
+        ],
+        'meeting-vote-responses' => [
+            'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
+        ],
+        'meeting-conclusions' => [
+            'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
+        ],
+        'meeting-discussion-registrations' => [
+            'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
+        ],
+        'meeting-personal-notes' => [
+            'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
+        ],
+        'meeting-personal-note-attachments' => [
+            'index', 'store', 'update', 'destroy',
+        ],
     ];
 
     public function run(): void
@@ -186,6 +245,22 @@ class PermissionSeeder extends Seeder
         'notifications.logs' => 'Nhật ký gửi thông báo',
         'my-received-tasks' => 'Công việc được giao',
         'my-assigned-tasks' => 'Công việc đang giao',
+        'meetings' => 'Cuộc họp',
+        'meeting-types' => 'Loại cuộc họp',
+        'meeting-locations' => 'Địa điểm họp',
+        'meeting-document-types' => 'Loại tài liệu họp',
+        'meeting-attendee-groups' => 'Nhóm đại biểu họp',
+        'meeting-attendees' => 'Đại biểu họp',
+        'meeting-agendas' => 'Chương trình họp',
+        'meeting-documents' => 'Tài liệu họp',
+        'meeting-participants' => 'Người tham dự họp',
+        'meeting-attendances' => 'Điểm danh họp',
+        'meeting-vote-topics' => 'Chương trình biểu quyết',
+        'meeting-vote-responses' => 'Phiếu biểu quyết',
+        'meeting-conclusions' => 'Kết luận họp',
+        'meeting-discussion-registrations' => 'Đăng ký thảo luận/chất vấn',
+        'meeting-personal-notes' => 'Ghi chú cá nhân họp',
+        'meeting-personal-note-attachments' => 'File ghi chú cá nhân',
     ];
 
     /** Nhãn action (để description). */
