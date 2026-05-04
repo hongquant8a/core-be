@@ -77,7 +77,6 @@ Có endpoint công khai (không cần auth) để FE landing/portal dùng.
   "address": null,
   "google_maps_url": null,
   "status": "active",
-  "sort_order": 0,
   "created_by": "Admin",
   "updated_by": "Admin",
   "created_at": "08:00:00 01/05/2026",
@@ -148,7 +147,7 @@ Body và response giống mục 1.
 | GET | `/api/meeting-attendee-groups/stats` | Thống kê. |
 | GET | `/api/meeting-attendee-groups` | Danh sách phân trang. Query: `search`, `status`, `sort_by`, `sort_order`, `limit`. |
 | GET | `/api/meeting-attendee-groups/{id}` | Chi tiết. |
-| POST | `/api/meeting-attendee-groups` | Tạo. Body: [Catalog body](#catalog-body) (chỉ dùng `name`, `description`, `status`, `sort_order`). |
+| POST | `/api/meeting-attendee-groups` | Tạo. Body: [Catalog body](#catalog-body) (chỉ dùng `name`, `description`, `status`). |
 | PUT \| PATCH | `/api/meeting-attendee-groups/{id}` | Cập nhật. |
 | DELETE | `/api/meeting-attendee-groups/{id}` | Xóa. |
 | POST | `/api/meeting-attendee-groups/bulk-delete` | Bulk xóa. |
@@ -239,7 +238,6 @@ Dùng chung 1 FormRequest cho 4 danh mục:
 | `name` | string (≤255) | ✅ | Tất cả | Tên danh mục. |
 | `description` | string (≤65535) | — | Tất cả | Mô tả. |
 | `status` | enum | ✅ | Tất cả | `active` \| `inactive`. |
-| `sort_order` | integer (≥0) | — | Tất cả | Thứ tự hiển thị. |
 | `address` | string (≤255) | — | **Locations** | Địa chỉ. |
 | `google_maps_url` | url (≤255) | — | **Locations** | Link Google Maps. |
 
@@ -250,7 +248,6 @@ Ví dụ tạo địa điểm:
   "name": "Hội trường tầng 5",
   "description": "Hội trường UBND",
   "status": "active",
-  "sort_order": 1,
   "address": "Số 1 Trần Phú",
   "google_maps_url": "https://maps.google.com/?q=21.0278,105.8342"
 }
@@ -259,7 +256,7 @@ Ví dụ tạo địa điểm:
 Ví dụ tạo loại cuộc họp / loại tài liệu / nhóm đại biểu:
 
 ```json
-{ "name": "Họp giao ban", "description": "Định kỳ tuần", "status": "active", "sort_order": 0 }
+{ "name": "Họp giao ban", "description": "Định kỳ tuần", "status": "active" }
 ```
 
 ### <a id="attendee-body"></a>Attendee body (`/api/meeting-attendees`)
@@ -316,7 +313,7 @@ Ví dụ tạo loại cuộc họp / loại tài liệu / nhóm đại biểu:
 | `search` | string | Tìm theo tên (đại biểu thêm email/đơn vị). |
 | `status` | string | `active` \| `inactive`. |
 | `meeting_attendee_group_id` | integer | Chỉ áp dụng cho `/meeting-attendees`. |
-| `sort_by` | string | `id` \| `name` \| `sort_order` \| `created_at` \| `updated_at`. |
+| `sort_by` | string | `id` \| `name` \| `created_at` \| `updated_at`. |
 | `sort_order` | string | `asc` \| `desc` (mặc định `asc` cho catalog, `desc` cho attendee). |
 | `limit` | int | 1-100, mặc định 10. |
 | `from_date` / `to_date` | date `Y-m-d` | Lọc theo `created_at`. |
@@ -330,7 +327,7 @@ Mọi catalog đều hỗ trợ export + import (cùng format header, cùng patt
 - Auth bắt buộc, permission `{resource}.export`.
 - Query giống `index` (`search`, `status`, `meeting_attendee_group_id` cho attendees…).
 - Response: `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` — file Excel tải xuống trực tiếp.
-- Cột xuất chung cho 4 catalog: `STT, Tên, Mô tả, Địa chỉ, Google Maps URL, Thứ tự, Trạng thái, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID` — 2 cột địa chỉ/Google Maps chỉ có dữ liệu với `meeting-locations`.
+- Cột xuất chung cho 4 catalog: `STT, Tên, Mô tả, Địa chỉ, Google Maps URL, Trạng thái, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID` — 2 cột địa chỉ/Google Maps chỉ có dữ liệu với `meeting-locations`.
 - Cột xuất cho `meeting-attendees`: `STT, Họ tên, Nhóm đại biểu, Chức vụ, Đơn vị, Email, Số điện thoại, Trạng thái, Ghi chú, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID`.
 
 **Import** (`POST /api/{resource}/import`)
@@ -343,17 +340,17 @@ Mọi catalog đều hỗ trợ export + import (cùng format header, cùng patt
 
 - Auth bắt buộc, **dùng chung permission `{resource}.import`** (không có quyền riêng).
 - Trả về file Excel rỗng chỉ có header (theo nhãn tiếng Việt) — FE dùng nút "Tải mẫu" trên màn import.
-- Header của template (cột nghiệp vụ — `sort_order` và `status` lấy default `0` / `active`):
+- Header của template (cột nghiệp vụ — `status` lấy default `active`):
   - Type / DocType / AttendeeGroup: `Tên, Mô tả`.
   - Locations: `Tên, Mô tả, Địa chỉ, Google Maps URL`.
   - Attendees: `Họ tên, Chức vụ, Đơn vị, Email, Số điện thoại, Ghi chú`.
 
 | Catalog | Cột bắt buộc | Cột không bắt buộc (default) |
 |---|---|---|
-| `meeting-types` | `name` | `description`, `sort_order`, `status` (default `active`) |
-| `meeting-locations` | `name` | `description`, `address`, `google_maps_url`, `sort_order`, `status` (default `active`) |
-| `meeting-document-types` | `name` | `description`, `sort_order`, `status` (default `active`) |
-| `meeting-attendee-groups` | `name` | `description`, `sort_order`, `status` (default `active`) |
+| `meeting-types` | `name` | `description`, `status` (default `active`) |
+| `meeting-locations` | `name` | `description`, `address`, `google_maps_url`, `status` (default `active`) |
+| `meeting-document-types` | `name` | `description`, `status` (default `active`) |
+| `meeting-attendee-groups` | `name` | `description`, `status` (default `active`) |
 | `meeting-attendees` | `name` | `position_name`, `department_name`, `email`, `phone`, `note`, `status` (default `active`) |
 
 - Response thành công: `{ "success": true, "message": "Nhập ... thành công!" }`.

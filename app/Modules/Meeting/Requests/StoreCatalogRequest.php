@@ -18,7 +18,6 @@ class StoreCatalogRequest extends FormRequest
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:65535',
             'status' => ['required', MeetingCatalogStatusEnum::rule()],
-            'sort_order' => 'nullable|integer|min:0',
             'address' => 'nullable|string|max:255',
             'google_maps_url' => 'nullable|url|max:255',
         ];
@@ -50,7 +49,6 @@ class StoreCatalogRequest extends FormRequest
             'name' => 'Tên',
             'description' => 'Mô tả',
             'status' => 'Trạng thái',
-            'sort_order' => 'Thứ tự sắp xếp',
             'address' => 'Địa chỉ',
             'google_maps_url' => 'Link Google Maps',
         ];
@@ -69,10 +67,6 @@ class StoreCatalogRequest extends FormRequest
             'status' => [
                 'description' => 'Trạng thái danh mục.',
                 'example' => 'active',
-            ],
-            'sort_order' => [
-                'description' => 'Thứ tự hiển thị.',
-                'example' => 1,
             ],
             'address' => [
                 'description' => 'Địa chỉ (áp dụng cho địa điểm họp).',

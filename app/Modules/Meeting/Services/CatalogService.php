@@ -20,7 +20,7 @@ class CatalogService
         $publicFilters = [
             ...$filters,
             'status' => MeetingCatalogStatusEnum::Active->value,
-            'sort_by' => $filters['sort_by'] ?? 'sort_order',
+            'sort_by' => $filters['sort_by'] ?? 'name',
             'sort_order' => $filters['sort_order'] ?? 'asc',
         ];
 

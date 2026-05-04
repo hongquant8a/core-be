@@ -171,7 +171,7 @@ class MeetingTypeController extends Controller
     /**
      * Xuất Excel loại cuộc họp.
      *
-     * Xuất ra các trường: STT, Tên, Mô tả, Địa chỉ, Google Maps URL, Thứ tự, Trạng thái, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID. Cột địa chỉ/Google Maps để trống cho loại cuộc họp.
+     * Xuất ra các trường: STT, Tên, Mô tả, Địa chỉ, Google Maps URL, Trạng thái, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID. Cột địa chỉ/Google Maps để trống cho loại cuộc họp.
      *
      * @queryParam search string Từ khóa tìm kiếm theo tên. Example: giao ban
      * @queryParam status string Lọc theo trạng thái. Example: active
@@ -184,7 +184,7 @@ class MeetingTypeController extends Controller
     /**
      * Nhập Excel loại cuộc họp.
      *
-     * Cột bắt buộc: name. Cột không bắt buộc: description, sort_order, status (mặc định active).
+     * Cột bắt buộc: name. Cột không bắt buộc: description, status (mặc định active).
      */
     public function import(ImportMeetingFileRequest $request)
     {

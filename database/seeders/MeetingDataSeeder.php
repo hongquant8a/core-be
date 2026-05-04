@@ -74,18 +74,18 @@ class MeetingDataSeeder extends Seeder
     private function seedMeetingTypes(): array
     {
         $rows = [
-            ['name' => 'HĐND thường kỳ', 'description' => 'Kỳ họp HĐND tổ chức định kỳ theo quy định.', 'sort_order' => 1],
-            ['name' => 'HĐND chuyên đề', 'description' => 'Kỳ họp HĐND chuyên đề về một lĩnh vực cụ thể.', 'sort_order' => 2],
-            ['name' => 'Họp giao ban', 'description' => 'Họp nội bộ giao ban tuần/tháng.', 'sort_order' => 3],
-            ['name' => 'Họp chuyên đề', 'description' => 'Họp chuyên đề theo lĩnh vực, dự án.', 'sort_order' => 4],
-            ['name' => 'Họp đột xuất', 'description' => 'Họp đột xuất theo yêu cầu lãnh đạo.', 'sort_order' => 5],
+            ['name' => 'HĐND thường kỳ', 'description' => 'Kỳ họp HĐND tổ chức định kỳ theo quy định.'],
+            ['name' => 'HĐND chuyên đề', 'description' => 'Kỳ họp HĐND chuyên đề về một lĩnh vực cụ thể.'],
+            ['name' => 'Họp giao ban', 'description' => 'Họp nội bộ giao ban tuần/tháng.'],
+            ['name' => 'Họp chuyên đề', 'description' => 'Họp chuyên đề theo lĩnh vực, dự án.'],
+            ['name' => 'Họp đột xuất', 'description' => 'Họp đột xuất theo yêu cầu lãnh đạo.'],
         ];
 
         $out = [];
         foreach ($rows as $row) {
             $out[$row['name']] = MeetingType::firstOrCreate(
                 ['name' => $row['name'], 'organization_id' => $this->orgId],
-                ['description' => $row['description'], 'sort_order' => $row['sort_order'], 'status' => 'active']
+                ['description' => $row['description'], 'status' => 'active']
             );
         }
 
@@ -101,25 +101,21 @@ class MeetingDataSeeder extends Seeder
                 'address' => '24 Trần Phú, Hải Châu, Đà Nẵng',
                 'google_maps_url' => 'https://maps.google.com/?q=16.0739,108.2240',
                 'description' => 'Hội trường chính tầng 2.',
-                'sort_order' => 1,
             ],
             [
                 'name' => 'Phòng họp tầng 5 - Sở Nội vụ',
                 'address' => 'Số 1 Trần Phú, Đà Nẵng',
                 'description' => 'Phòng họp dùng chung tầng 5.',
-                'sort_order' => 2,
             ],
             [
                 'name' => 'Phòng họp HĐND TP',
                 'address' => '24 Trần Phú, Hải Châu, Đà Nẵng',
                 'description' => 'Phòng họp riêng HĐND.',
-                'sort_order' => 3,
             ],
             [
                 'name' => 'Họp trực tuyến (Zoom)',
                 'address' => null,
                 'description' => 'Phòng họp ảo qua Zoom.',
-                'sort_order' => 4,
             ],
         ];
 
@@ -138,17 +134,17 @@ class MeetingDataSeeder extends Seeder
     private function seedDocumentTypes(): array
     {
         $rows = [
-            ['name' => 'Tờ trình', 'description' => 'Tờ trình HĐND, UBND.', 'sort_order' => 1],
-            ['name' => 'Báo cáo', 'description' => 'Báo cáo công tác.', 'sort_order' => 2],
-            ['name' => 'Dự thảo nghị quyết', 'description' => 'Dự thảo nghị quyết chờ biểu quyết.', 'sort_order' => 3],
-            ['name' => 'Tài liệu tham khảo', 'description' => 'Tài liệu tham khảo bổ trợ.', 'sort_order' => 4],
+            ['name' => 'Tờ trình', 'description' => 'Tờ trình HĐND, UBND.'],
+            ['name' => 'Báo cáo', 'description' => 'Báo cáo công tác.'],
+            ['name' => 'Dự thảo nghị quyết', 'description' => 'Dự thảo nghị quyết chờ biểu quyết.'],
+            ['name' => 'Tài liệu tham khảo', 'description' => 'Tài liệu tham khảo bổ trợ.'],
         ];
 
         $out = [];
         foreach ($rows as $row) {
             $out[$row['name']] = MeetingDocumentType::firstOrCreate(
                 ['name' => $row['name'], 'organization_id' => $this->orgId],
-                ['description' => $row['description'], 'sort_order' => $row['sort_order'], 'status' => 'active']
+                ['description' => $row['description'], 'status' => 'active']
             );
         }
 
@@ -159,16 +155,16 @@ class MeetingDataSeeder extends Seeder
     private function seedAttendeeGroups(): array
     {
         $rows = [
-            ['name' => 'Thường trực HĐND', 'description' => 'Thường trực HĐND TP.', 'sort_order' => 1],
-            ['name' => 'Đại biểu HĐND khóa X', 'description' => 'Đại biểu HĐND khóa X (2021-2026).', 'sort_order' => 2],
-            ['name' => 'Khách mời', 'description' => 'Khách mời ngoài thành phần đại biểu.', 'sort_order' => 3],
+            ['name' => 'Thường trực HĐND', 'description' => 'Thường trực HĐND TP.'],
+            ['name' => 'Đại biểu HĐND khóa X', 'description' => 'Đại biểu HĐND khóa X (2021-2026).'],
+            ['name' => 'Khách mời', 'description' => 'Khách mời ngoài thành phần đại biểu.'],
         ];
 
         $out = [];
         foreach ($rows as $row) {
             $out[$row['name']] = MeetingAttendeeGroup::firstOrCreate(
                 ['name' => $row['name'], 'organization_id' => $this->orgId],
-                ['description' => $row['description'], 'sort_order' => $row['sort_order'], 'status' => 'active']
+                ['description' => $row['description'], 'status' => 'active']
             );
         }
 

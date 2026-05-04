@@ -24,7 +24,6 @@ class CatalogImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnF
         'description' => 'Mô tả',
         'address' => 'Địa chỉ',
         'google_maps_url' => 'Google Maps URL',
-        'sort_order' => 'Thứ tự',
         'status' => 'Trạng thái',
     ];
 
@@ -51,7 +50,6 @@ class CatalogImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnF
         $payload = [
             'name' => $row['name'] ?? null,
             'description' => $row['description'] ?? null,
-            'sort_order' => isset($row['sort_order']) ? (int) $row['sort_order'] : 0,
             'status' => $row['status'] ?? 'active',
             'organization_id' => function_exists('getPermissionsTeamId') ? getPermissionsTeamId() : null,
         ];

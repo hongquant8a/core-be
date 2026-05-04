@@ -171,7 +171,7 @@ class MeetingLocationController extends Controller
     /**
      * Xuất Excel địa điểm họp.
      *
-     * Xuất ra các trường: STT, Tên, Mô tả, Địa chỉ, Google Maps URL, Thứ tự, Trạng thái, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID.
+     * Xuất ra các trường: STT, Tên, Mô tả, Địa chỉ, Google Maps URL, Trạng thái, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID.
      *
      * @queryParam search string Từ khóa tìm kiếm theo tên. Example: hội trường
      * @queryParam status string Lọc theo trạng thái. Example: active
@@ -184,7 +184,7 @@ class MeetingLocationController extends Controller
     /**
      * Nhập Excel địa điểm họp.
      *
-     * Cột bắt buộc: name. Cột không bắt buộc: description, address, google_maps_url, sort_order, status (mặc định active).
+     * Cột bắt buộc: name. Cột không bắt buộc: description, address, google_maps_url, status (mặc định active).
      */
     public function import(ImportMeetingFileRequest $request)
     {

@@ -15,7 +15,6 @@ class MeetingAttendeeGroup extends Model
         'name',
         'description',
         'status',
-        'sort_order',
         'created_by',
         'updated_by',
     ];
@@ -44,9 +43,9 @@ class MeetingAttendeeGroup extends Model
             ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
             ->when($filters['from_date'] ?? null, fn ($q, $date) => $q->whereDate('created_at', '>=', $date))
             ->when($filters['to_date'] ?? null, fn ($q, $date) => $q->whereDate('created_at', '<=', $date))
-            ->when($filters['sort_by'] ?? 'sort_order', function ($q, $sortBy) use ($filters) {
-                $allowed = ['id', 'name', 'sort_order', 'created_at', 'updated_at'];
-                $column = in_array($sortBy, $allowed, true) ? $sortBy : 'sort_order';
+            ->when($filters['sort_by'] ?? 'name', function ($q, $sortBy) use ($filters) {
+                $allowed = ['id', 'name', 'created_at', 'updated_at'];
+                $column = in_array($sortBy, $allowed, true) ? $sortBy : 'name';
                 $q->orderBy($column, $filters['sort_order'] ?? 'asc');
             });
     }

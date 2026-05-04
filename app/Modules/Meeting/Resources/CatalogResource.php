@@ -17,7 +17,6 @@ class CatalogResource extends JsonResource
             'address' => $this->address ?? null,
             'google_maps_url' => $this->google_maps_url ?? null,
             'status' => $this->status,
-            'sort_order' => $this->sort_order ?? 0,
             'created_by' => $this->creator?->name ?? 'N/A',
             'updated_by' => $this->editor?->name ?? 'N/A',
             'created_at' => $this->created_at?->format('H:i:s d/m/Y'),

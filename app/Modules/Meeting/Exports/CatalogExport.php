@@ -35,7 +35,6 @@ class CatalogExport implements FromCollection, WithHeadings
                 'description' => $item->description,
                 'address' => $hasLocation ? $item->address : null,
                 'google_maps_url' => $hasLocation ? $item->google_maps_url : null,
-                'sort_order' => $item->sort_order ?? 0,
                 'status' => $item->status,
                 'created_by' => $item->creator?->name ?? 'N/A',
                 'updated_by' => $item->editor?->name ?? 'N/A',
@@ -50,7 +49,7 @@ class CatalogExport implements FromCollection, WithHeadings
         return [
             'STT', 'Tên', 'Mô tả',
             'Địa chỉ', 'Google Maps URL',
-            'Thứ tự', 'Trạng thái',
+            'Trạng thái',
             'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID',
         ];
     }
