@@ -187,4 +187,20 @@ class MeetingController extends Controller
 
         return $this->successResource(new MeetingResource($meeting), 'Đổi trạng thái cuộc họp thành công!');
     }
+
+    /**
+     * Xuất Excel cuộc họp.
+     *
+     * Xuất ra các trường: STT, Tiêu đề, Loại cuộc họp, Địa điểm, Công khai, Thời gian bắt đầu, Thời gian kết thúc, Trạng thái, Lượt xem, Thời gian phát hành, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID.
+     *
+     * @queryParam search string Từ khóa tìm kiếm theo tiêu đề. Example: HĐND
+     * @queryParam meeting_type_id integer Lọc theo loại cuộc họp. Example: 1
+     * @queryParam status string Lọc theo trạng thái. Example: published
+     * @queryParam from_date date Lọc từ ngày tạo (Y-m-d). Example: 2026-05-01
+     * @queryParam to_date date Lọc đến ngày tạo (Y-m-d). Example: 2026-05-31
+     */
+    public function export(FilterRequest $request)
+    {
+        return $this->meetingService->export($request->all());
+    }
 }

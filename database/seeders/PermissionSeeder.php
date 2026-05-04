@@ -132,7 +132,7 @@ class PermissionSeeder extends Seeder
         // Meeting - Cuộc họp
         'meetings' => [
             'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus',
+            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
         ],
         // Meeting - Loại cuộc họp
         'meeting-types' => [

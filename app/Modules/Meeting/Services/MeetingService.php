@@ -3,6 +3,7 @@
 namespace App\Modules\Meeting\Services;
 
 use App\Modules\Meeting\Enums\MeetingStatusEnum;
+use App\Modules\Meeting\Exports\MeetingExport;
 use App\Modules\Meeting\Models\Meeting;
 use App\Modules\Meeting\Models\MeetingInvitation;
 use App\Modules\Meeting\Models\MeetingParticipant;
@@ -11,6 +12,8 @@ use App\Services\Notification\Events\MeetingPublished;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class MeetingService
 {
@@ -148,6 +151,11 @@ class MeetingService
                 'status' => 'pending',
             ]);
         }
+    }
+
+    public function export(array $filters, string $fileName = 'meetings.xlsx'): BinaryFileResponse
+    {
+        return Excel::download(new MeetingExport($filters), $fileName);
     }
 
     private function logView(int $meetingId, ?int $documentId): void

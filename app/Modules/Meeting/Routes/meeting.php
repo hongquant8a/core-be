@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/bulk-delete', [MeetingController::class, 'bulkDestroy'])->middleware('permission:meetings.bulkDestroy,web');
 Route::patch('/bulk-status', [MeetingController::class, 'bulkUpdateStatus'])->middleware('permission:meetings.bulkUpdateStatus,web');
+Route::get('/export', [MeetingController::class, 'export'])->middleware('permission:meetings.export,web');
 Route::get('/stats', [MeetingController::class, 'stats'])->middleware('permission:meetings.stats,web');
 Route::get('/', [MeetingController::class, 'index'])->middleware('permission:meetings.index,web');
 Route::get('/{meeting}', [MeetingController::class, 'show'])->middleware('permission:meetings.show,web');
