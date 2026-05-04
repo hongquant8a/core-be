@@ -7,6 +7,7 @@ Route::post('/bulk-delete', [MeetingTypeController::class, 'bulkDestroy'])->midd
 Route::patch('/bulk-status', [MeetingTypeController::class, 'bulkUpdateStatus'])->middleware('permission:meeting-types.bulkUpdateStatus,web');
 Route::get('/export', [MeetingTypeController::class, 'export'])->middleware('permission:meeting-types.export,web');
 Route::post('/import', [MeetingTypeController::class, 'import'])->middleware('permission:meeting-types.import,web');
+Route::get('/import-template', [MeetingTypeController::class, 'importTemplate'])->middleware('permission:meeting-types.import,web');
 Route::get('/stats', [MeetingTypeController::class, 'stats'])->middleware('permission:meeting-types.stats,web');
 Route::get('/', [MeetingTypeController::class, 'index'])->middleware('permission:meeting-types.index,web');
 Route::get('/{meetingType}', [MeetingTypeController::class, 'show'])->middleware('permission:meeting-types.show,web');

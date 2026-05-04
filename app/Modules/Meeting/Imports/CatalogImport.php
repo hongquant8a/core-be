@@ -32,16 +32,16 @@ class CatalogImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnF
 
     public const TEMPLATE_LABELS = [
         'name' => 'Tên',
-        'status' => 'Trạng thái',
+        'description' => 'Mô tả',
     ];
 
     public const TEMPLATE_LABELS_LOCATION = [
         'name' => 'Tên',
+        'description' => 'Mô tả',
         'address' => 'Địa chỉ',
         'latitude' => 'Vĩ độ',
         'longitude' => 'Kinh độ',
         'google_maps_url' => 'Google Maps URL',
-        'status' => 'Trạng thái',
     ];
 
     public function __construct(private string $modelClass) {}

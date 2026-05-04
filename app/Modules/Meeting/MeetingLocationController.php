@@ -192,4 +192,17 @@ class MeetingLocationController extends Controller
 
         return $this->success(null, 'Nhập địa điểm họp thành công!');
     }
+
+    /**
+     * Tải mẫu import địa điểm họp.
+     *
+     * @response 200 scenario="File Excel mẫu"
+     */
+    public function importTemplate()
+    {
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Meeting\Imports\CatalogImport::TEMPLATE_LABELS_LOCATION),
+            'import-meeting-locations-template.xlsx'
+        );
+    }
 }

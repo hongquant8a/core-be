@@ -29,6 +29,14 @@ class MeetingCatalogExportImportTest extends TestCase
         Sanctum::actingAs($admin);
     }
 
+    public function test_meeting_types_import_template_returns_xlsx(): void
+    {
+        $res = $this->get('/api/meeting-types/import-template', ['X-Organization-Id' => $this->org->id]);
+
+        $res->assertOk();
+        $this->assertStringContainsString('spreadsheetml', $res->headers->get('Content-Type'));
+    }
+
     public function test_meeting_types_export_returns_xlsx(): void
     {
         MeetingType::create(['organization_id' => $this->org->id, 'name' => 'Họp giao ban', 'status' => 'active']);

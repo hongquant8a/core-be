@@ -27,7 +27,11 @@ class MeetingAttendeeImport implements ToModel, WithHeadingRow, WithValidation, 
 
     public const TEMPLATE_LABELS = [
         'name' => 'Họ tên',
-        'status' => 'Trạng thái',
+        'position_name' => 'Chức vụ',
+        'department_name' => 'Đơn vị',
+        'email' => 'Email',
+        'phone' => 'Số điện thoại',
+        'note' => 'Ghi chú',
     ];
 
     public function model(array $row)

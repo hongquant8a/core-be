@@ -192,4 +192,17 @@ class MeetingTypeController extends Controller
 
         return $this->success(null, 'Nhập loại cuộc họp thành công!');
     }
+
+    /**
+     * Tải mẫu import loại cuộc họp.
+     *
+     * @response 200 scenario="File Excel mẫu"
+     */
+    public function importTemplate()
+    {
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Meeting\Imports\CatalogImport::TEMPLATE_LABELS),
+            'import-meeting-types-template.xlsx'
+        );
+    }
 }

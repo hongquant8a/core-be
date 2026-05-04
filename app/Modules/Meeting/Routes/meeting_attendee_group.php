@@ -7,6 +7,7 @@ Route::post('/bulk-delete', [MeetingAttendeeGroupController::class, 'bulkDestroy
 Route::patch('/bulk-status', [MeetingAttendeeGroupController::class, 'bulkUpdateStatus'])->middleware('permission:meeting-attendee-groups.bulkUpdateStatus,web');
 Route::get('/export', [MeetingAttendeeGroupController::class, 'export'])->middleware('permission:meeting-attendee-groups.export,web');
 Route::post('/import', [MeetingAttendeeGroupController::class, 'import'])->middleware('permission:meeting-attendee-groups.import,web');
+Route::get('/import-template', [MeetingAttendeeGroupController::class, 'importTemplate'])->middleware('permission:meeting-attendee-groups.import,web');
 Route::get('/stats', [MeetingAttendeeGroupController::class, 'stats'])->middleware('permission:meeting-attendee-groups.stats,web');
 Route::get('/', [MeetingAttendeeGroupController::class, 'index'])->middleware('permission:meeting-attendee-groups.index,web');
 Route::get('/{meetingAttendeeGroup}', [MeetingAttendeeGroupController::class, 'show'])->middleware('permission:meeting-attendee-groups.show,web');

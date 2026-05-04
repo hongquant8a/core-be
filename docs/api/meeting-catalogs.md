@@ -64,6 +64,7 @@ Có endpoint công khai (không cần auth) để FE landing/portal dùng.
 | PATCH | `/api/meeting-types/{id}/status` | Body `{ "status": "active\|inactive" }`. |
 | GET | `/api/meeting-types/export` | Tải Excel `meeting-types.xlsx`. Query giống index. |
 | POST | `/api/meeting-types/import` | `multipart/form-data` field `file` (xlsx\|xls\|csv ≤10MB). Xem [Import](#import). |
+| GET | `/api/meeting-types/import-template` | Tải file mẫu `import-meeting-types-template.xlsx` (chỉ header). |
 
 ### 1.3 Response item (CatalogResource)
 
@@ -109,6 +110,7 @@ Có endpoint public + public-options giống mục 1.
 | PATCH | `/api/meeting-locations/{id}/status` | Body `{ "status": "active\|inactive" }`. |
 | GET | `/api/meeting-locations/export` | Tải Excel `meeting-locations.xlsx`. |
 | POST | `/api/meeting-locations/import` | `multipart/form-data` field `file`. Hỗ trợ cột địa lý. |
+| GET | `/api/meeting-locations/import-template` | Tải file mẫu `import-meeting-locations-template.xlsx` (kèm cột địa lý). |
 
 Response: cùng `CatalogResource` (xem 1.3) — các trường địa lý có giá trị thực.
 
@@ -133,6 +135,7 @@ Có public + public-options.
 | PATCH | `/api/meeting-document-types/{id}/status` | Đổi trạng thái. |
 | GET | `/api/meeting-document-types/export` | Tải Excel `meeting-document-types.xlsx`. |
 | POST | `/api/meeting-document-types/import` | Nhập Excel. |
+| GET | `/api/meeting-document-types/import-template` | Tải file mẫu. |
 
 Body và response giống mục 1.
 
@@ -155,6 +158,7 @@ Body và response giống mục 1.
 | PATCH | `/api/meeting-attendee-groups/{id}/status` | Đổi trạng thái. |
 | GET | `/api/meeting-attendee-groups/export` | Tải Excel `meeting-attendee-groups.xlsx`. |
 | POST | `/api/meeting-attendee-groups/import` | Nhập Excel. |
+| GET | `/api/meeting-attendee-groups/import-template` | Tải file mẫu. |
 
 Response: `CatalogResource`.
 
@@ -177,6 +181,7 @@ Response: `CatalogResource`.
 | PATCH | `/api/meeting-attendees/{id}/status` | Đổi trạng thái. |
 | GET | `/api/meeting-attendees/export` | Tải Excel `meeting-attendees.xlsx`. Query: `search`, `meeting_attendee_group_id`, `status`. |
 | POST | `/api/meeting-attendees/import` | Nhập Excel. Cột bắt buộc: `name`. |
+| GET | `/api/meeting-attendees/import-template` | Tải file mẫu `import-meeting-attendees-template.xlsx`. |
 
 ### 5.1 Response item (MeetingAttendeeResource)
 
@@ -317,6 +322,15 @@ Mọi catalog đều hỗ trợ export + import (cùng format header, cùng patt
 - Auth bắt buộc, permission `{resource}.import`.
 - `Content-Type: multipart/form-data`, field `file`: xlsx | xls | csv, ≤ 10240 KB.
 - Cột nhận theo header (tiếng Việt khớp file export hoặc dùng `name`/`status`/… key snake_case).
+
+**Import template** (`GET /api/{resource}/import-template`)
+
+- Auth bắt buộc, **dùng chung permission `{resource}.import`** (không có quyền riêng).
+- Trả về file Excel rỗng chỉ có header (theo nhãn tiếng Việt) — FE dùng nút "Tải mẫu" trên màn import.
+- Header của template (cột nghiệp vụ — `sort_order` và `status` lấy default `0` / `active`):
+  - Type / DocType / AttendeeGroup: `Tên, Mô tả`.
+  - Locations: `Tên, Mô tả, Địa chỉ, Vĩ độ, Kinh độ, Google Maps URL`.
+  - Attendees: `Họ tên, Chức vụ, Đơn vị, Email, Số điện thoại, Ghi chú`.
 
 | Catalog | Cột bắt buộc | Cột không bắt buộc (default) |
 |---|---|---|

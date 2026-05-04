@@ -175,4 +175,17 @@ class MeetingAttendeeController extends Controller
 
         return $this->success(null, 'Nhập đại biểu thành công!');
     }
+
+    /**
+     * Tải mẫu import đại biểu.
+     *
+     * @response 200 scenario="File Excel mẫu"
+     */
+    public function importTemplate()
+    {
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Meeting\Imports\MeetingAttendeeImport::TEMPLATE_LABELS),
+            'import-meeting-attendees-template.xlsx'
+        );
+    }
 }

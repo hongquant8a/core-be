@@ -7,6 +7,7 @@ Route::post('/bulk-delete', [MeetingLocationController::class, 'bulkDestroy'])->
 Route::patch('/bulk-status', [MeetingLocationController::class, 'bulkUpdateStatus'])->middleware('permission:meeting-locations.bulkUpdateStatus,web');
 Route::get('/export', [MeetingLocationController::class, 'export'])->middleware('permission:meeting-locations.export,web');
 Route::post('/import', [MeetingLocationController::class, 'import'])->middleware('permission:meeting-locations.import,web');
+Route::get('/import-template', [MeetingLocationController::class, 'importTemplate'])->middleware('permission:meeting-locations.import,web');
 Route::get('/stats', [MeetingLocationController::class, 'stats'])->middleware('permission:meeting-locations.stats,web');
 Route::get('/', [MeetingLocationController::class, 'index'])->middleware('permission:meeting-locations.index,web');
 Route::get('/{meetingLocation}', [MeetingLocationController::class, 'show'])->middleware('permission:meeting-locations.show,web');
