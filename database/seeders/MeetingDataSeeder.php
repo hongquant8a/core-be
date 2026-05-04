@@ -177,40 +177,30 @@ class MeetingDataSeeder extends Seeder
      */
     private function seedAttendees(array $groups): array
     {
-        // Mix: vài đại biểu link với user, vài đại biểu khách mời ngoài hệ thống.
+        // Mỗi đại biểu link với 1 user nội bộ (1-1 unique trong org).
         $rows = [
-            // Thường trực HĐND — link user nội bộ
-            ['name' => 'Nguyễn Văn Hùng', 'position_name' => 'Chủ tịch HĐND', 'department_name' => 'HĐND TP', 'email' => 'nvhung@snvdn.gov.vn', 'phone' => '0901111111', 'group' => 'Thường trực HĐND', 'user_email' => 'nvhung@snvdn.gov.vn'],
-            ['name' => 'Trần Thị Mai', 'position_name' => 'Phó Chủ tịch HĐND', 'department_name' => 'HĐND TP', 'email' => 'ttmai@snvdn.gov.vn', 'phone' => '0902222222', 'group' => 'Thường trực HĐND', 'user_email' => 'ttmai@snvdn.gov.vn'],
-
-            // Đại biểu HĐND
-            ['name' => 'Lê Hoàng Nam', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở Kế hoạch & Đầu tư', 'email' => 'lhnam@snvdn.gov.vn', 'phone' => '0903333333', 'group' => 'Đại biểu HĐND khóa X', 'user_email' => 'lhnam@snvdn.gov.vn'],
-            ['name' => 'Phạm Thị Hồng', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở Tài chính', 'email' => 'pthong@snvdn.gov.vn', 'phone' => '0904444444', 'group' => 'Đại biểu HĐND khóa X', 'user_email' => 'pthong@snvdn.gov.vn'],
-            ['name' => 'Võ Đức Thắng', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'UBND quận Hải Châu', 'email' => 'vdthang@snvdn.gov.vn', 'phone' => '0905555555', 'group' => 'Đại biểu HĐND khóa X', 'user_email' => 'vdthang@snvdn.gov.vn'],
-            ['name' => 'Huỳnh Thị Lan', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở Y tế', 'email' => 'htlan@snvdn.gov.vn', 'phone' => '0906666666', 'group' => 'Đại biểu HĐND khóa X', 'user_email' => 'htlan@snvdn.gov.vn'],
-            ['name' => 'Đặng Minh Tuấn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở Giáo dục', 'email' => 'dmtuan@snvdn.gov.vn', 'phone' => '0907777777', 'group' => 'Đại biểu HĐND khóa X', 'user_email' => 'dmtuan@snvdn.gov.vn'],
-            ['name' => 'Bùi Thị Ngọc', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở LĐ-TB-XH', 'email' => 'btngoc@snvdn.gov.vn', 'phone' => '0908888888', 'group' => 'Đại biểu HĐND khóa X', 'user_email' => 'btngoc@snvdn.gov.vn'],
-
-            // Khách mời ngoài hệ thống (không có user_id)
-            ['name' => 'TS. Nguyễn Thanh Bình', 'position_name' => 'Chuyên gia kinh tế', 'department_name' => 'Đại học Kinh tế Đà Nẵng', 'email' => 'binhnt@due.udn.vn', 'phone' => '0911111222', 'group' => 'Khách mời', 'user_email' => null],
-            ['name' => 'Bà Lê Thị Phương', 'position_name' => 'Đại diện cộng đồng', 'department_name' => 'Hội phụ nữ TP', 'email' => null, 'phone' => '0912222333', 'group' => 'Khách mời', 'user_email' => null],
+            ['user_email' => 'nvhung@snvdn.gov.vn', 'position_name' => 'Chủ tịch HĐND', 'department_name' => 'HĐND TP', 'group' => 'Thường trực HĐND'],
+            ['user_email' => 'ttmai@snvdn.gov.vn', 'position_name' => 'Phó Chủ tịch HĐND', 'department_name' => 'HĐND TP', 'group' => 'Thường trực HĐND'],
+            ['user_email' => 'lhnam@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở Kế hoạch & Đầu tư', 'group' => 'Đại biểu HĐND khóa X'],
+            ['user_email' => 'pthong@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở Tài chính', 'group' => 'Đại biểu HĐND khóa X'],
+            ['user_email' => 'vdthang@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'UBND quận Hải Châu', 'group' => 'Đại biểu HĐND khóa X'],
+            ['user_email' => 'htlan@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở Y tế', 'group' => 'Đại biểu HĐND khóa X'],
+            ['user_email' => 'dmtuan@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở Giáo dục', 'group' => 'Đại biểu HĐND khóa X'],
+            ['user_email' => 'btngoc@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở LĐ-TB-XH', 'group' => 'Đại biểu HĐND khóa X'],
         ];
 
         $out = [];
         foreach ($rows as $row) {
-            $userId = null;
-            if ($row['user_email']) {
-                $userId = User::where('email', $row['user_email'])->value('id');
+            $userId = User::where('email', $row['user_email'])->value('id');
+            if (! $userId) {
+                continue;
             }
             $attendee = MeetingAttendee::firstOrCreate(
-                ['name' => $row['name'], 'organization_id' => $this->orgId],
+                ['organization_id' => $this->orgId, 'user_id' => $userId],
                 [
                     'meeting_attendee_group_id' => $groups[$row['group']]->id,
-                    'user_id' => $userId,
                     'position_name' => $row['position_name'],
                     'department_name' => $row['department_name'],
-                    'email' => $row['email'],
-                    'phone' => $row['phone'],
                     'status' => 'active',
                 ]
             );
@@ -293,30 +283,27 @@ class MeetingDataSeeder extends Seeder
             );
         }
 
-        // Participants — toàn bộ attendees thuộc 'Thường trực HĐND' + 'Đại biểu HĐND khóa X' + 1 khách mời
+        // Participants — toàn bộ 8 attendees nội bộ (Thường trực HĐND + Đại biểu khóa X)
         $participants = [];
         foreach ($attendees as $idx => $attendee) {
-            // Bỏ qua khách mời thứ 2 cho meeting này
-            if ($idx === 9) {
-                continue;
-            }
+            $attendee->loadMissing('user.profile');
             $role = match (true) {
                 $idx === 0 => 'chairperson', // Nguyễn Văn Hùng - chủ trì
                 $idx === 1 => 'operator',    // Trần Thị Mai - thư ký
                 default => 'delegate',
             };
-            $responseStatus = $idx <= 6 ? 'accepted' : 'pending';
+            $responseStatus = $idx <= 5 ? 'accepted' : 'pending';
 
             $participants[] = MeetingParticipant::firstOrCreate(
                 ['meeting_id' => $meeting->id, 'meeting_attendee_id' => $attendee->id],
                 [
                     'organization_id' => $this->orgId,
                     'role' => $role,
-                    'display_name' => $attendee->name,
+                    'display_name' => $attendee->user?->name,
                     'position_name' => $attendee->position_name,
                     'department_name' => $attendee->department_name,
-                    'email' => $attendee->email,
-                    'phone' => $attendee->phone,
+                    'email' => $attendee->user?->email,
+                    'phone' => $attendee->user?->profile?->phone,
                     'response_status' => $responseStatus,
                     'responded_at' => $responseStatus === 'accepted' ? $start->copy()->subDays(3) : null,
                 ]
@@ -439,16 +426,17 @@ class MeetingDataSeeder extends Seeder
 
         // Participants — chỉ vài đại biểu nội bộ
         foreach (array_slice($attendees, 2, 5) as $attendee) {
+            $attendee->loadMissing('user.profile');
             MeetingParticipant::firstOrCreate(
                 ['meeting_id' => $meeting->id, 'meeting_attendee_id' => $attendee->id],
                 [
                     'organization_id' => $this->orgId,
                     'role' => 'delegate',
-                    'display_name' => $attendee->name,
+                    'display_name' => $attendee->user?->name,
                     'position_name' => $attendee->position_name,
                     'department_name' => $attendee->department_name,
-                    'email' => $attendee->email,
-                    'phone' => $attendee->phone,
+                    'email' => $attendee->user?->email,
+                    'phone' => $attendee->user?->profile?->phone,
                     'response_status' => 'accepted',
                     'responded_at' => $start->copy()->subHours(4),
                 ]
@@ -496,16 +484,17 @@ class MeetingDataSeeder extends Seeder
 
         // Một vài attendee dự kiến (chưa publish nên chưa có invitations)
         foreach (array_slice($attendees, 5, 3) as $attendee) {
+            $attendee->loadMissing('user.profile');
             MeetingParticipant::firstOrCreate(
                 ['meeting_id' => $meeting->id, 'meeting_attendee_id' => $attendee->id],
                 [
                     'organization_id' => $this->orgId,
                     'role' => 'delegate',
-                    'display_name' => $attendee->name,
+                    'display_name' => $attendee->user?->name,
                     'position_name' => $attendee->position_name,
                     'department_name' => $attendee->department_name,
-                    'email' => $attendee->email,
-                    'phone' => $attendee->phone,
+                    'email' => $attendee->user?->email,
+                    'phone' => $attendee->user?->profile?->phone,
                     'response_status' => 'pending',
                 ]
             );

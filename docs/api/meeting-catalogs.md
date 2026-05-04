@@ -178,7 +178,7 @@ Response: `CatalogResource`.
 | PATCH | `/api/meeting-attendees/bulk-status` | Bulk đổi trạng thái. |
 | PATCH | `/api/meeting-attendees/{id}/status` | Đổi trạng thái. |
 | GET | `/api/meeting-attendees/export` | Tải Excel `meeting-attendees.xlsx`. Query: `search`, `meeting_attendee_group_id`, `status`. |
-| POST | `/api/meeting-attendees/import` | Nhập Excel. Cột bắt buộc: `name`. |
+| POST | `/api/meeting-attendees/import` | Nhập Excel. Cột bắt buộc: `email` (lookup user). |
 | GET | `/api/meeting-attendees/import-template` | Tải file mẫu `import-meeting-attendees-template.xlsx`. |
 
 ### <a id="user-options"></a>5.1 User options dropdown (`GET /api/meeting-attendees/user-options`)
@@ -200,7 +200,7 @@ Quy tắc lọc:
 - **Loại trừ** user đã được link với một `meeting_attendee` trong cùng org → tránh tạo đại biểu trùng.
 - Sắp xếp `name asc`.
 
-> Field `user_id` trong [Attendee body](#attendee-body) **không bắt buộc** — vẫn cho phép đại biểu ngoài hệ thống (không có account). Khi đó FE để trống `user_id` và nhập trực tiếp `name`/`email`/`phone`.
+> `user_id` là **bắt buộc** + **unique trong org** — mỗi user chỉ là 1 đại biểu trong một tổ chức. `name`/`email`/`phone` đọc qua accessor từ `users` + `user_profiles` (không lưu trùng vào `meeting_attendees`).
 
 ### 5.2 Response item (MeetingAttendeeResource)
 
@@ -263,25 +263,21 @@ Ví dụ tạo loại cuộc họp / loại tài liệu / nhóm đại biểu:
 
 | Field | Type | Required | Ghi chú |
 |---|---|---|---|
-| `name` | string (≤255) | ✅ | Họ tên đại biểu. |
+| `user_id` | integer | ✅ | FK `users.id` — unique theo `(organization_id, user_id)`. Tên/email/SĐT đọc trực tiếp từ user. |
 | `meeting_attendee_group_id` | integer | — | FK `meeting_attendee_groups.id`. |
-| `user_id` | integer | — | FK `users.id` — link tới tài khoản hệ thống (cho phép FCM/notification khi mời họp). |
-| `position_name` | string (≤255) | — | Chức vụ. |
-| `department_name` | string (≤255) | — | Đơn vị. |
-| `email` | email (≤255) | — | Email. |
-| `phone` | string (≤50) | — | Số điện thoại. |
+| `position_name` | string (≤255) | — | Chức vụ override cho ngữ cảnh họp (mặc định lấy từ user). |
+| `department_name` | string (≤255) | — | Đơn vị override. |
 | `status` | enum | ✅ | `active` \| `inactive`. |
 | `note` | string | — | Ghi chú nội bộ. |
 
+> `name`, `email`, `phone` **không có** trong body — backend đọc từ User (và `user_profiles.phone`). Resource trả về 3 trường này qua accessor cho FE hiển thị.
+
 ```json
 {
-  "name": "Nguyễn Văn A",
-  "meeting_attendee_group_id": 1,
   "user_id": 12,
+  "meeting_attendee_group_id": 1,
   "position_name": "Phó chủ tịch",
   "department_name": "UBND phường",
-  "email": "a@example.com",
-  "phone": "0901234567",
   "status": "active",
   "note": "Đại biểu mời thường xuyên"
 }
@@ -328,7 +324,7 @@ Mọi catalog đều hỗ trợ export + import (cùng format header, cùng patt
 - Query giống `index` (`search`, `status`, `meeting_attendee_group_id` cho attendees…).
 - Response: `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` — file Excel tải xuống trực tiếp.
 - Cột xuất chung cho 4 catalog: `STT, Tên, Mô tả, Địa chỉ, Google Maps URL, Trạng thái, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID` — 2 cột địa chỉ/Google Maps chỉ có dữ liệu với `meeting-locations`.
-- Cột xuất cho `meeting-attendees`: `STT, Họ tên, Nhóm đại biểu, Chức vụ, Đơn vị, Email, Số điện thoại, Trạng thái, Ghi chú, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID`.
+- Cột xuất cho `meeting-attendees`: `STT, Họ tên, Email, Số điện thoại, Nhóm đại biểu, Chức vụ, Đơn vị, Trạng thái, Ghi chú, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID`. Họ tên/Email/SĐT đọc từ User+UserProfile (read-only).
 
 **Import** (`POST /api/{resource}/import`)
 
@@ -343,7 +339,7 @@ Mọi catalog đều hỗ trợ export + import (cùng format header, cùng patt
 - Header của template (cột nghiệp vụ — `status` lấy default `active`):
   - Type / DocType / AttendeeGroup: `Tên, Mô tả`.
   - Locations: `Tên, Mô tả, Địa chỉ, Google Maps URL`.
-  - Attendees: `Họ tên, Chức vụ, Đơn vị, Email, Số điện thoại, Ghi chú`.
+  - Attendees: `Email, Chức vụ, Đơn vị, Ghi chú` (Email tra cứu user; Họ tên/SĐT lấy từ user — không cho phép override).
 
 | Catalog | Cột bắt buộc | Cột không bắt buộc (default) |
 |---|---|---|
@@ -351,7 +347,7 @@ Mọi catalog đều hỗ trợ export + import (cùng format header, cùng patt
 | `meeting-locations` | `name` | `description`, `address`, `google_maps_url`, `status` (default `active`) |
 | `meeting-document-types` | `name` | `description`, `status` (default `active`) |
 | `meeting-attendee-groups` | `name` | `description`, `status` (default `active`) |
-| `meeting-attendees` | `name` | `position_name`, `department_name`, `email`, `phone`, `note`, `status` (default `active`) |
+| `meeting-attendees` | `email` (match user) | `position_name`, `department_name`, `note`, `status` (default `active`) |
 
 - Response thành công: `{ "success": true, "message": "Nhập ... thành công!" }`.
 - Validate row-level skip (tiếp tục import các dòng hợp lệ); `name.required`, `status.in:active,inactive`, `email.email`.
@@ -384,5 +380,5 @@ Mọi catalog đều hỗ trợ export + import (cùng format header, cùng patt
    - Loại cuộc họp / Địa điểm / Loại tài liệu / Nhóm đại biểu → dùng `CatalogResource` + `StoreCatalogRequest`.
    - Đại biểu → resource riêng (`MeetingAttendeeResource`), thêm filter theo nhóm.
 3. **Form địa điểm** mở rộng thêm 2 trường địa chỉ (`address`, `google_maps_url`).
-4. **Form đại biểu** không dùng địa lý, có thêm `meeting_attendee_group_id`, `user_id`, `position_name`, `department_name`, `email`, `phone`, `note`.
+4. **Form đại biểu** chỉ submit `user_id` (chọn từ `user-options` dropdown) + `meeting_attendee_group_id`, `position_name`, `department_name` (override), `note`. Tên/email/SĐT đọc trực tiếp từ user.
 5. Mọi response list theo cấu trúc `data.items` + `data.pagination` (envelope của `MeetingCollection`/`CatalogCollection`).

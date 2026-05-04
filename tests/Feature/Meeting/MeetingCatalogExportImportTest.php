@@ -69,9 +69,12 @@ class MeetingCatalogExportImportTest extends TestCase
 
     public function test_meeting_attendees_import_creates_rows(): void
     {
+        $u1 = User::factory()->create(['email' => 'a@example.com']);
+        $u2 = User::factory()->create(['email' => 'b@example.com']);
+
         $rows = [
-            ['name' => 'Nguyễn Văn A', 'email' => 'a@example.com', 'phone' => '', 'status' => 'active'],
-            ['name' => 'Trần Thị B', 'email' => '', 'phone' => '0901234567', 'status' => 'active'],
+            ['email' => 'a@example.com', 'position_name' => 'Đại biểu', 'status' => 'active'],
+            ['email' => 'b@example.com', 'position_name' => 'Khách mời', 'status' => 'active'],
         ];
         $file = $this->makeXlsxUpload($rows);
 
@@ -83,7 +86,8 @@ class MeetingCatalogExportImportTest extends TestCase
 
         $res->assertOk();
         $this->assertSame(2, MeetingAttendee::where('organization_id', $this->org->id)->count());
-        $this->assertDatabaseHas('meeting_attendees', ['name' => 'Nguyễn Văn A', 'email' => 'a@example.com']);
+        $this->assertDatabaseHas('meeting_attendees', ['user_id' => $u1->id, 'position_name' => 'Đại biểu']);
+        $this->assertDatabaseHas('meeting_attendees', ['user_id' => $u2->id, 'position_name' => 'Khách mời']);
     }
 
     /** Build an xlsx in-memory file with header from first row keys + value rows. */

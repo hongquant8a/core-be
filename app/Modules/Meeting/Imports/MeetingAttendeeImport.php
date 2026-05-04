@@ -2,6 +2,7 @@
 
 namespace App\Modules\Meeting\Imports;
 
+use App\Modules\Core\Models\User;
 use App\Modules\Core\Traits\TranslatesExcelHeadings;
 use App\Modules\Meeting\Models\MeetingAttendee;
 use Maatwebsite\Excel\Concerns\Importable;
@@ -11,47 +12,56 @@ use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
 
+/**
+ * Import đại biểu — match user theo email. Row không tìm thấy user → skip (validation fail).
+ */
 class MeetingAttendeeImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFailure
 {
     use Importable, SkipsFailures, TranslatesExcelHeadings;
 
     public const FIELD_LABELS = [
-        'name' => 'Họ tên',
+        'email' => 'Email',
         'position_name' => 'Chức vụ',
         'department_name' => 'Đơn vị',
-        'email' => 'Email',
-        'phone' => 'Số điện thoại',
         'status' => 'Trạng thái',
         'note' => 'Ghi chú',
     ];
 
     public const TEMPLATE_LABELS = [
-        'name' => 'Họ tên',
+        'email' => 'Email',
         'position_name' => 'Chức vụ',
         'department_name' => 'Đơn vị',
-        'email' => 'Email',
-        'phone' => 'Số điện thoại',
         'note' => 'Ghi chú',
     ];
 
     public function model(array $row)
     {
+        $user = User::where('email', $row['email'])->first();
+        if (! $user) {
+            return null; // skip — validation đã đảm bảo email exists, nhưng phòng race
+        }
+
+        $orgId = function_exists('getPermissionsTeamId') ? getPermissionsTeamId() : null;
+
+        // Skip nếu attendee đã tồn tại (unique org+user_id sẽ throw nếu không kiểm)
+        if (MeetingAttendee::where('organization_id', $orgId)->where('user_id', $user->id)->exists()) {
+            return null;
+        }
+
         return new MeetingAttendee([
-            'name' => $row['name'] ?? null,
+            'organization_id' => $orgId,
+            'user_id' => $user->id,
             'position_name' => $row['position_name'] ?? null,
             'department_name' => $row['department_name'] ?? null,
-            'email' => $row['email'] ?? null,
-            'phone' => isset($row['phone']) ? (string) $row['phone'] : null,
             'status' => $row['status'] ?? 'active',
             'note' => $row['note'] ?? null,
-            'organization_id' => function_exists('getPermissionsTeamId') ? getPermissionsTeamId() : null,
         ]);
     }
 
     public function prepareForValidation($data, $index)
     {
         $data = $this->translateHeadings($data);
-        $data['name'] = isset($data['name']) ? (string) $data['name'] : null;
+        $data['email'] = isset($data['email']) ? (string) $data['email'] : null;
 
         return $data;
     }
@@ -59,9 +69,7 @@ class MeetingAttendeeImport implements ToModel, WithHeadingRow, WithValidation, 
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'phone' => 'nullable|string|max:50',
+            'email' => 'required|email|exists:users,email',
             'status' => 'nullable|in:active,inactive',
         ];
     }
@@ -69,8 +77,9 @@ class MeetingAttendeeImport implements ToModel, WithHeadingRow, WithValidation, 
     public function customValidationMessages(): array
     {
         return [
-            'name.required' => 'Họ tên không được để trống.',
+            'email.required' => 'Email không được để trống.',
             'email.email' => 'Email không đúng định dạng.',
+            'email.exists' => 'Không tìm thấy user với email này.',
             'status.in' => 'Trạng thái phải là active hoặc inactive.',
         ];
     }
@@ -78,9 +87,7 @@ class MeetingAttendeeImport implements ToModel, WithHeadingRow, WithValidation, 
     public function customValidationAttributes(): array
     {
         return [
-            'name' => 'Họ tên',
             'email' => 'Email',
-            'phone' => 'Số điện thoại',
             'status' => 'Trạng thái',
         ];
     }

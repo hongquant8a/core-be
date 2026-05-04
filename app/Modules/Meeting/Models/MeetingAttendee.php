@@ -14,16 +14,18 @@ class MeetingAttendee extends Model
         'organization_id',
         'meeting_attendee_group_id',
         'user_id',
-        'name',
         'position_name',
         'department_name',
-        'email',
-        'phone',
         'status',
         'note',
         'created_by',
         'updated_by',
     ];
+
+    /** Tự load user (+profile) khi serialize → name/email/phone accessor không bị N+1. */
+    protected $with = ['user.profile'];
+
+    protected $appends = ['name', 'email', 'phone'];
 
     protected static function booted()
     {
@@ -41,9 +43,29 @@ class MeetingAttendee extends Model
         return $this->belongsTo(User::class, 'updated_by');
     }
 
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
     public function group()
     {
         return $this->belongsTo(MeetingAttendeeGroup::class, 'meeting_attendee_group_id');
+    }
+
+    public function getNameAttribute(): ?string
+    {
+        return $this->user?->name;
+    }
+
+    public function getEmailAttribute(): ?string
+    {
+        return $this->user?->email;
+    }
+
+    public function getPhoneAttribute(): ?string
+    {
+        return $this->user?->profile?->phone;
     }
 
     public function scopeFilter($query, array $filters)
@@ -51,10 +73,9 @@ class MeetingAttendee extends Model
         $organizationId = function_exists('getPermissionsTeamId') ? getPermissionsTeamId() : null;
         $query->when($organizationId, fn ($q, $orgId) => $q->where('organization_id', (int) $orgId))
             ->when($filters['search'] ?? null, function ($q, $search) {
-                $q->where(function ($sub) use ($search) {
+                $q->whereHas('user', function ($sub) use ($search) {
                     $sub->where('name', 'like', '%'.$search.'%')
-                        ->orWhere('email', 'like', '%'.$search.'%')
-                        ->orWhere('phone', 'like', '%'.$search.'%');
+                        ->orWhere('email', 'like', '%'.$search.'%');
                 });
             })
             ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
@@ -62,7 +83,7 @@ class MeetingAttendee extends Model
             ->when($filters['from_date'] ?? null, fn ($q, $date) => $q->whereDate('created_at', '>=', $date))
             ->when($filters['to_date'] ?? null, fn ($q, $date) => $q->whereDate('created_at', '<=', $date))
             ->when($filters['sort_by'] ?? 'created_at', function ($q, $sortBy) use ($filters) {
-                $allowed = ['id', 'name', 'created_at', 'updated_at'];
+                $allowed = ['id', 'created_at', 'updated_at'];
                 $column = in_array($sortBy, $allowed, true) ? $sortBy : 'created_at';
                 $q->orderBy($column, $filters['sort_order'] ?? 'desc');
             });

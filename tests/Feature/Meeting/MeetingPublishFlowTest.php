@@ -45,16 +45,18 @@ class MeetingPublishFlowTest extends TestCase
 
     private function makeParticipant(Meeting $meeting): MeetingParticipant
     {
+        $user = User::factory()->create();
         $attendee = MeetingAttendee::create([
             'organization_id' => $this->org->id,
-            'name' => 'A',
+            'user_id' => $user->id,
+            'status' => 'active',
         ]);
 
         return MeetingParticipant::create([
             'organization_id' => $this->org->id,
             'meeting_id' => $meeting->id,
             'meeting_attendee_id' => $attendee->id,
-            'display_name' => $attendee->name,
+            'display_name' => $user->name,
             'response_status' => 'pending',
         ]);
     }

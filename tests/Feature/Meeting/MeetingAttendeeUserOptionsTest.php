@@ -55,7 +55,6 @@ class MeetingAttendeeUserOptionsTest extends TestCase
         MeetingAttendee::create([
             'organization_id' => $this->org->id,
             'user_id' => $u1->id,
-            'name' => $u1->name,
             'status' => 'active',
         ]);
 

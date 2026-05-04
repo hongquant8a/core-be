@@ -79,15 +79,14 @@ class MeetingAttendeeController extends Controller
     }
 
     /**
-     * Tạo đại biểu.
+     * Tạo đại biểu — link tới user hiện có trong tổ chức (1-1, unique theo org).
      *
-     * @bodyParam name string required Họ tên đại biểu. Example: Nguyễn Văn A
-     * @bodyParam email string Email đại biểu. Example: nva@example.com
-     * @bodyParam phone string Số điện thoại đại biểu. Example: 0901234567
+     * @bodyParam user_id integer required ID user. Example: 12
      * @bodyParam meeting_attendee_group_id integer ID nhóm đại biểu. Example: 1
-     * @bodyParam organization_name string Đơn vị công tác. Example: Sở Nội vụ
-     * @bodyParam position_name string Chức vụ. Example: Chuyên viên
+     * @bodyParam position_name string Chức vụ override (mặc định lấy từ user). Example: Phó chủ tịch
+     * @bodyParam department_name string Đơn vị override. Example: HĐND TP
      * @bodyParam status string Trạng thái đại biểu. Example: active
+     * @bodyParam note string Ghi chú. Example: Đại biểu mời thường xuyên
      */
     public function store(StoreMeetingAttendeeRequest $request)
     {
@@ -97,15 +96,12 @@ class MeetingAttendeeController extends Controller
     }
 
     /**
-     * Cập nhật đại biểu.
+     * Cập nhật đại biểu (chỉ trường meeting-specific; không đổi user_id).
      *
      * @urlParam meetingAttendee integer required ID đại biểu. Example: 1
-     * @bodyParam name string Họ tên đại biểu. Example: Trần Thị B
-     * @bodyParam email string Email đại biểu. Example: ttb@example.com
-     * @bodyParam phone string Số điện thoại đại biểu. Example: 0912345678
      * @bodyParam meeting_attendee_group_id integer ID nhóm đại biểu. Example: 2
-     * @bodyParam organization_name string Đơn vị công tác. Example: Văn phòng HĐND
-     * @bodyParam position_name string Chức vụ. Example: Phó phòng
+     * @bodyParam position_name string Chức vụ override. Example: Trưởng ban
+     * @bodyParam department_name string Đơn vị override. Example: UBND quận
      * @bodyParam status string Trạng thái đại biểu. Example: inactive
      */
     public function update(UpdateMeetingAttendeeRequest $request, MeetingAttendee $meetingAttendee)

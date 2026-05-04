@@ -27,20 +27,18 @@ return new class extends Migration
             $table->id();
             $table->foreignId('organization_id')->constrained('organizations')->cascadeOnDelete();
             $table->foreignId('meeting_attendee_group_id')->nullable()->constrained('meeting_attendee_groups')->nullOnDelete();
-            $table->unsignedBigInteger('user_id')->nullable();
-            $table->string('name');
+            $table->unsignedBigInteger('user_id');
             $table->string('position_name')->nullable();
             $table->string('department_name')->nullable();
-            $table->string('email')->nullable();
-            $table->string('phone')->nullable();
             $table->string('status')->default('active');
             $table->text('note')->nullable();
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();
 
+            $table->unique(['organization_id', 'user_id'], 'meeting_attendees_org_user_unique');
             $table->index(['organization_id', 'status']);
-            $table->foreign('user_id')->references('id')->on('users')->nullOnDelete();
+            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
             $table->foreign('created_by')->references('id')->on('users')->nullOnDelete();
             $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
         });

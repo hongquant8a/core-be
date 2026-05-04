@@ -35,18 +35,21 @@ class MeetingParticipantService
 
     public function store(array $validated): MeetingParticipant
     {
-        $attendee = MeetingAttendee::query()->findOrFail($validated['meeting_attendee_id']);
+        $attendee = MeetingAttendee::query()
+            ->with('user.profile')
+            ->findOrFail($validated['meeting_attendee_id']);
 
         return MeetingParticipant::create([
             'organization_id' => $this->resolveCurrentOrganizationId(),
             'meeting_id' => $validated['meeting_id'],
             'meeting_attendee_id' => $attendee->id,
             'role' => $validated['role'] ?? MeetingParticipantRoleEnum::Delegate->value,
-            'display_name' => $attendee->name,
+            // Snapshot per spec: copy data lúc tạo participant — không thay đổi khi user đổi profile sau.
+            'display_name' => $attendee->user?->name,
             'position_name' => $attendee->position_name,
             'department_name' => $attendee->department_name,
-            'email' => $attendee->email,
-            'phone' => $attendee->phone,
+            'email' => $attendee->user?->email,
+            'phone' => $attendee->user?->profile?->phone,
             'response_status' => $validated['response_status'] ?? MeetingParticipantResponseStatusEnum::Pending->value,
             'absence_reason' => $validated['absence_reason'] ?? null,
         ])->load(['attendee']);
