@@ -81,6 +81,11 @@ class Meeting extends Model
         return $this->hasMany(MeetingDocument::class, 'meeting_id')->orderBy('sort_order');
     }
 
+    public function voteTopics()
+    {
+        return $this->hasMany(MeetingVoteTopic::class, 'meeting_id')->orderBy('sort_order');
+    }
+
     public function scopeFilter($query, array $filters)
     {
         $organizationId = function_exists('getPermissionsTeamId') ? getPermissionsTeamId() : null;

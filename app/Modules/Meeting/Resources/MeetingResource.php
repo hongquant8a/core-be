@@ -33,6 +33,7 @@ class MeetingResource extends JsonResource
             'participants' => MeetingParticipantResource::collection($this->whenLoaded('participants')),
             'agendas' => MeetingAgendaResource::collection($this->whenLoaded('agendas')),
             'documents' => MeetingDocumentResource::collection($this->whenLoaded('documents')),
+            'vote_topics' => MeetingVoteTopicResource::collection($this->whenLoaded('voteTopics')),
         ];
     }
 }

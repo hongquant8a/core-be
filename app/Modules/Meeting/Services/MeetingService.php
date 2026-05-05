@@ -71,6 +71,7 @@ class MeetingService
             'agendas',
             'documents.documentType',
             'documents.mediaFile',
+            'voteTopics',
         ]);
     }
 

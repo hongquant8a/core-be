@@ -8,6 +8,8 @@ Tài liệu cho FE implement luồng tạo/quản lý cuộc họp:
 | Chương trình họp | `/api/meeting-agendas` | Meeting Agenda |
 | Tài liệu họp | `/api/meeting-documents` | Meeting Document |
 | Đại biểu tham dự | `/api/meeting-participants` | Meeting Participant |
+| Chương trình biểu quyết | `/api/meeting-vote-topics` | Meeting Vote Topic |
+| Phiếu biểu quyết | `/api/meeting-vote-responses` | Meeting Vote Response |
 
 **Header bắt buộc (auth):** `Authorization: Bearer {token}` + `X-Organization-Id: {organization_id}`.
 
@@ -106,11 +108,14 @@ Datetime: `H:i:s d/m/Y` (vd `08:30:00 01/05/2026`). Time-only (giờ chương tr
   ],
   "documents": [
     { "id": 1, "title": "Tờ trình ngân sách", "media_id": 42, "file_url": "https://...", "is_public": true, "status": "published", ... }
+  ],
+  "vote_topics": [
+    { "id": 1, "title": "Biểu quyết thông qua nghị quyết", "vote_type": "agree_disagree_abstain", "ballot_mode": "public_named", "status": "draft", "sort_order": 1, ... }
   ]
 }
 ```
 
-> Trả ở `show` only; `index` (list view) **không** trả 3 mảng này — gọi `/api/meeting-{participants,agendas,documents}?meeting_id=X` riêng nếu cần phân trang/filter.
+> Trả ở `show` only; `index` (list view) **không** trả 4 mảng này — gọi `/api/meeting-{participants,agendas,documents,vote-topics}?meeting_id=X` riêng nếu cần phân trang/filter.
 
 > **Side-effects khi publish (`changeStatus` → `published`)**:
 > - Tạo idempotent `meeting_invitations` cho từng participant (status=`pending`).
@@ -337,6 +342,136 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
   "updated_at": "10:30:00 12/05/2026"
 }
 ```
+
+---
+
+## 5. Chương trình biểu quyết — `/api/meeting-vote-topics`
+
+`MeetingVoteTopic` = chủ đề biểu quyết trong meeting (vd: "Thông qua nghị quyết phân bổ ngân sách"). Mỗi topic có vote_type (loại lựa chọn) + ballot_mode (ẩn danh / công khai). Đại biểu vote vào `meeting_vote_responses`.
+
+### 5.1 CRUD
+
+| Method | Path | Mô tả |
+|---|---|---|
+| GET | `/api/meeting-vote-topics/stats` | `{ total, draft, opened, closed }`. Query: `meeting_id`. |
+| GET | `/api/meeting-vote-topics` | Danh sách phân trang. Query: `meeting_id`, `status`, `search`, `sort_by` (`id\|sort_order\|created_at\|updated_at`), `sort_order`, `limit`. |
+| GET | `/api/meeting-vote-topics/{id}` | Chi tiết. |
+| POST | `/api/meeting-vote-topics` | Tạo (thường ở giai đoạn soạn meeting). Body: [Vote topic body](#vote-topic-body). |
+| PUT \| PATCH | `/api/meeting-vote-topics/{id}` | Cập nhật (chỉ khi `status=draft`). |
+| DELETE | `/api/meeting-vote-topics/{id}` | Xóa. |
+| POST | `/api/meeting-vote-topics/bulk-delete` | Body `{ "ids": [...] }`. |
+| PATCH | `/api/meeting-vote-topics/reorder` | Body `{ "items": [{ "id": 1, "sort_order": 1 }, ...] }`. |
+| **PATCH** | `/api/meeting-vote-topics/{id}/open` | **Mở phiếu** — set `status=opened`, `opened_at=now()`, đại biểu mới vote được. Permission `meeting-vote-topics.update`. |
+| **PATCH** | `/api/meeting-vote-topics/{id}/close` | **Đóng phiếu** — set `status=closed`, `closed_at=now()`, không cho vote thêm. |
+
+### <a id="vote-topic-body"></a>5.2 Vote topic body
+
+| Field | Type | Required | Ghi chú |
+|---|---|---|---|
+| `meeting_id` | integer | ✅ | FK `meetings.id`. |
+| `meeting_agenda_id` | integer | — | FK `meeting_agendas.id` — gắn vào chương trình họp cụ thể. |
+| `title` | string (≤255) | ✅ | Tên chương trình biểu quyết. |
+| `vote_type` | enum | ✅ | `agree_disagree_abstain` (Đồng ý/Không đồng ý/Không ý kiến) \| `approve_reject_abstain` (Tán thành/Không tán thành/Không ý kiến). |
+| `ballot_mode` | enum | ✅ | `anonymous` (ẩn danh) \| `public_named` (công khai danh tính). |
+| `show_result_on_projector` | boolean | — | Hiển thị tổng hợp trên màn chiếu. |
+| `show_result_on_personal_device` | boolean | — | Hiển thị tổng hợp trên thiết bị cá nhân của đại biểu. |
+| `sort_order` | integer (≥0) | — | Thứ tự hiển thị. |
+| `status` | enum | — | `draft` (mặc định) \| `opened` \| `closed`. Nên để BE tự đổi qua `/open` `/close`. |
+
+```json
+{
+  "meeting_id": 1,
+  "meeting_agenda_id": 4,
+  "title": "Biểu quyết thông qua nghị quyết phân bổ ngân sách 2026",
+  "vote_type": "agree_disagree_abstain",
+  "ballot_mode": "public_named",
+  "show_result_on_projector": true,
+  "show_result_on_personal_device": true,
+  "sort_order": 1
+}
+```
+
+### 5.3 Response (MeetingVoteTopicResource)
+
+```json
+{
+  "id": 1,
+  "meeting_id": 1,
+  "meeting_agenda_id": 4,
+  "title": "Biểu quyết thông qua nghị quyết phân bổ ngân sách 2026",
+  "vote_type": "agree_disagree_abstain",
+  "ballot_mode": "public_named",
+  "show_result_on_projector": true,
+  "show_result_on_personal_device": true,
+  "sort_order": 1,
+  "status": "opened",
+  "opened_at": "10:15:00 15/05/2026",
+  "closed_at": null,
+  "created_at": "08:00:00 08/05/2026",
+  "updated_at": "10:15:00 15/05/2026"
+}
+```
+
+### 5.4 Phiếu biểu quyết — `/api/meeting-vote-responses`
+
+| Method | Path | Mô tả |
+|---|---|---|
+| GET | `/api/meeting-vote-responses/stats` | `{ total, agree, disagree, approve, reject, abstain }`. Query: `meeting_vote_topic_id`. |
+| GET | `/api/meeting-vote-responses` | Danh sách phiếu. Query: `meeting_vote_topic_id`, `limit`. **Tôn trọng `ballot_mode`**: nếu `anonymous` thì FE phải ẩn `participant_name`. |
+| POST | `/api/meeting-vote-responses` | Đại biểu gửi phiếu. Body: [Response body](#vote-response-body). |
+| PATCH | `/api/meeting-vote-responses/{id}` | Sửa phiếu (chỉ khi topic chưa `closed`). |
+| DELETE | `/api/meeting-vote-responses/{id}` | Xóa phiếu (admin). |
+| POST | `/api/meeting-vote-responses/bulk-delete` | Body `{ "ids": [...] }`. |
+
+### <a id="vote-response-body"></a>5.5 Vote response body
+
+| Field | Type | Required | Ghi chú |
+|---|---|---|---|
+| `meeting_vote_topic_id` | integer | ✅ | FK `meeting_vote_topics.id`. |
+| `meeting_participant_id` | integer | ✅ | FK `meeting_participants.id`. **Phải thuộc cùng meeting với topic** — BE check. |
+| `option` | enum | ✅ | `agree \| disagree \| approve \| reject \| abstain`. Phải hợp lệ với `topic.vote_type`. |
+
+```json
+{
+  "meeting_vote_topic_id": 1,
+  "meeting_participant_id": 12,
+  "option": "agree"
+}
+```
+
+> **Unique** `(meeting_vote_topic_id, meeting_participant_id)` — 1 đại biểu chỉ 1 phiếu / topic. Re-submit sẽ update phiếu cũ (khi topic chưa closed).
+> **Snapshot `voted_at`** = `now()` lúc tạo/update.
+
+### 5.6 Workflow đầy đủ (theo spec mục 2.5 + Giai đoạn C)
+
+```
+[Soạn meeting]              [Trong họp]                    [Sau khi đóng]
+    │                            │                                │
+    ▼                            ▼                                ▼
+status=draft  ──open()──▶  status=opened  ──close()──▶  status=closed
+                                │
+                                ▼
+                        Đại biểu vote (POST /vote-responses)
+                        - Phải status=opened
+                        - 1 phiếu / participant / topic
+                        - Validate option ∈ vote_type
+```
+
+**Rules quan trọng:**
+1. Vote chỉ accept khi `topic.status = 'opened'`
+2. Sau `closed`, FE phải block UI sửa phiếu
+3. `anonymous` → FE/BE ẩn danh tính trong list responses
+4. `public_named` → chỉ admin/chủ trì xem detail per-person; vai trò khác chỉ xem aggregate
+5. Aggregate hiển thị theo `show_result_on_*` flags
+
+### 5.7 FE flow điều hành phiên họp
+
+1. Lúc soạn meeting: `POST /meeting-vote-topics` (nhiều lần) — tạo các chủ đề biểu quyết, status=`draft`
+2. Trong họp, đến phần biểu quyết:
+   - `PATCH /meeting-vote-topics/{id}/open` → đại biểu thấy modal vote
+3. Đại biểu vote: `POST /meeting-vote-responses` với `option`
+4. Điều hành đóng: `PATCH /meeting-vote-topics/{id}/close`
+5. FE hiển thị kết quả tổng hợp từ `GET /meeting-vote-responses/stats?meeting_vote_topic_id=X`
 
 ---
 
