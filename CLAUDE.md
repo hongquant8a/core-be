@@ -82,6 +82,13 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
     - **Bắt buộc**: Một module mới mặc định phải bao gồm các hàm: `stats`, `index`, `show`, `store`, `update`, `destroy`, `bulk delete`, `bulk update status`, `change status`, `export`, `import`.
     - **Bắt buộc**: Bộ lọc `index` phải có tìm kiếm theo tên (hoặc trường chính), trạng thái (`status`), khoảng ngày tạo (`created_at` từ ngày - đến ngày), và sắp xếp theo `id`, `created_at`, `updated_at` cùng các trường phù hợp (ví dụ: `title`, `sort_order`, `view_count`).
 
+- **HTTP Method Convention**:
+    - **Bắt buộc**: `bulk-delete` luôn dùng HTTP `DELETE` (không phải `POST`). Body `{ "ids": [...] }` truyền qua `$request->input('ids')` — Laravel tự parse JSON body cho cả DELETE.
+        - Đúng: `Route::delete('/bulk-delete', [Controller::class, 'bulkDestroy'])`.
+        - Sai: `Route::post('/bulk-delete', ...)` — di sản scaffold cũ, không được dùng cho code mới.
+    - **Bắt buộc**: `bulk-status` dùng `PATCH`; `change-status` (single) dùng `PATCH /{id}/status`; `reorder` dùng `PATCH /reorder`.
+    - **Khuyến nghị**: Mọi thao tác mutate hàng loạt theo HTTP convention — DELETE cho xóa, PATCH cho update/partial.
+
 - **Export (xuất Excel)**:
     - **Bắt buộc**: Xuất đầy đủ các trường thông tin giống danh sách index (Resource).
     - **Bắt buộc**: Các trường quan hệ (created_by, created_at, updated_by, updated_at, status, categories, ...) phải có trong export tương ứng index.

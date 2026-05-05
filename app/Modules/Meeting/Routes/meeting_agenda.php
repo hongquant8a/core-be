@@ -3,7 +3,7 @@
 use App\Modules\Meeting\MeetingAgendaController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/bulk-delete', [MeetingAgendaController::class, 'bulkDestroy'])->middleware('permission:meeting-agendas.bulkDestroy,web');
+Route::delete('/bulk-delete', [MeetingAgendaController::class, 'bulkDestroy'])->middleware('permission:meeting-agendas.bulkDestroy,web');
 Route::patch('/reorder', [MeetingAgendaController::class, 'reorder'])->middleware('permission:meeting-agendas.update,web');
 Route::get('/', [MeetingAgendaController::class, 'index'])->middleware('permission:meeting-agendas.index,web');
 Route::get('/{meetingAgenda}', [MeetingAgendaController::class, 'show'])->middleware('permission:meeting-agendas.show,web');

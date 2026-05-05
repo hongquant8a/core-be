@@ -3,7 +3,7 @@
 use App\Modules\Meeting\MeetingDiscussionRegistrationController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/bulk-delete', [MeetingDiscussionRegistrationController::class, 'bulkDestroy'])->middleware('permission:meeting-discussion-registrations.bulkDestroy,web');
+Route::delete('/bulk-delete', [MeetingDiscussionRegistrationController::class, 'bulkDestroy'])->middleware('permission:meeting-discussion-registrations.bulkDestroy,web');
 Route::patch('/reorder', [MeetingDiscussionRegistrationController::class, 'reorder'])->middleware('permission:meeting-discussion-registrations.update,web');
 Route::get('/stats', [MeetingDiscussionRegistrationController::class, 'stats'])->middleware('permission:meeting-discussion-registrations.stats,web');
 Route::get('/', [MeetingDiscussionRegistrationController::class, 'index'])->middleware('permission:meeting-discussion-registrations.index,web');

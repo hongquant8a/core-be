@@ -27,7 +27,7 @@ Route::middleware('notification.module:meeting')->group(function () {
         ->middleware('permission:notifications.logs.index,web');
     Route::get('/logs/export', [NotificationLogController::class, 'export'])
         ->middleware('permission:notifications.logs.export,web');
-    Route::post('/logs/bulk-delete', [NotificationLogController::class, 'bulkDestroy'])
+    Route::delete('/logs/bulk-delete', [NotificationLogController::class, 'bulkDestroy'])
         ->middleware('permission:notifications.logs.bulkDestroy,web');
     Route::get('/logs', [NotificationLogController::class, 'index'])
         ->middleware('permission:notifications.logs.index,web');

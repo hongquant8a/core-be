@@ -3,7 +3,7 @@
 use App\Modules\Meeting\MeetingConclusionController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/bulk-delete', [MeetingConclusionController::class, 'bulkDestroy'])->middleware('permission:meeting-conclusions.bulkDestroy,web');
+Route::delete('/bulk-delete', [MeetingConclusionController::class, 'bulkDestroy'])->middleware('permission:meeting-conclusions.bulkDestroy,web');
 Route::get('/stats', [MeetingConclusionController::class, 'stats'])->middleware('permission:meeting-conclusions.stats,web');
 Route::get('/', [MeetingConclusionController::class, 'index'])->middleware('permission:meeting-conclusions.index,web');
 Route::get('/{meetingConclusion}', [MeetingConclusionController::class, 'show'])->middleware('permission:meeting-conclusions.show,web');

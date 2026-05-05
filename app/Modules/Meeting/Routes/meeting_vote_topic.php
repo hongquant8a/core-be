@@ -3,7 +3,7 @@
 use App\Modules\Meeting\MeetingVoteTopicController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/bulk-delete', [MeetingVoteTopicController::class, 'bulkDestroy'])->middleware('permission:meeting-vote-topics.bulkDestroy,web');
+Route::delete('/bulk-delete', [MeetingVoteTopicController::class, 'bulkDestroy'])->middleware('permission:meeting-vote-topics.bulkDestroy,web');
 Route::patch('/reorder', [MeetingVoteTopicController::class, 'reorder'])->middleware('permission:meeting-vote-topics.update,web');
 Route::patch('/{meetingVoteTopic}/open', [MeetingVoteTopicController::class, 'open'])->middleware('permission:meeting-vote-topics.update,web');
 Route::patch('/{meetingVoteTopic}/close', [MeetingVoteTopicController::class, 'close'])->middleware('permission:meeting-vote-topics.update,web');

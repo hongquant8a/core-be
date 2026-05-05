@@ -3,7 +3,7 @@
 use App\Modules\Meeting\MeetingLocationController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/bulk-delete', [MeetingLocationController::class, 'bulkDestroy'])->middleware('permission:meeting-locations.bulkDestroy,web');
+Route::delete('/bulk-delete', [MeetingLocationController::class, 'bulkDestroy'])->middleware('permission:meeting-locations.bulkDestroy,web');
 Route::patch('/bulk-status', [MeetingLocationController::class, 'bulkUpdateStatus'])->middleware('permission:meeting-locations.bulkUpdateStatus,web');
 Route::get('/export', [MeetingLocationController::class, 'export'])->middleware('permission:meeting-locations.export,web');
 Route::post('/import', [MeetingLocationController::class, 'import'])->middleware('permission:meeting-locations.import,web');

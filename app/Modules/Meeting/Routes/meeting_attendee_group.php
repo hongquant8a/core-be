@@ -3,7 +3,7 @@
 use App\Modules\Meeting\MeetingAttendeeGroupController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/bulk-delete', [MeetingAttendeeGroupController::class, 'bulkDestroy'])->middleware('permission:meeting-attendee-groups.bulkDestroy,web');
+Route::delete('/bulk-delete', [MeetingAttendeeGroupController::class, 'bulkDestroy'])->middleware('permission:meeting-attendee-groups.bulkDestroy,web');
 Route::patch('/bulk-status', [MeetingAttendeeGroupController::class, 'bulkUpdateStatus'])->middleware('permission:meeting-attendee-groups.bulkUpdateStatus,web');
 Route::get('/export', [MeetingAttendeeGroupController::class, 'export'])->middleware('permission:meeting-attendee-groups.export,web');
 Route::post('/import', [MeetingAttendeeGroupController::class, 'import'])->middleware('permission:meeting-attendee-groups.import,web');
