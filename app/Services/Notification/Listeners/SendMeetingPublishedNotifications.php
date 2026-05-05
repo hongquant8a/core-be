@@ -34,16 +34,23 @@ class SendMeetingPublishedNotifications implements ShouldQueue
 
         $builder = $this->registry->for('meeting_published');
 
-        // Mỗi participant -> 1 invitation; chỉ gửi cho attendee có user_id linked.
-        $invitations = MeetingInvitation::with(['participant.attendee'])
+        // Invitation = participant (đại biểu) HOẶC attendee trực tiếp (chủ trì + thư ký).
+        // Resolve user_id linh hoạt theo nguồn — luôn track audit trail qua status row.
+        $invitations = MeetingInvitation::with(['participant.attendee', 'attendee'])
             ->where('meeting_id', $meeting->id)
             ->where('organization_id', $organizationId)
             ->where('status', 'pending')
             ->get();
 
+        $sentUserIds = [];
+
         foreach ($invitations as $invitation) {
-            $userId = $invitation->participant?->attendee?->user_id;
-            if (! $userId) {
+            $userId = (int) (
+                $invitation->participant?->attendee?->user_id
+                ?? $invitation->attendee?->user_id
+                ?? 0
+            );
+            if ($userId === 0 || in_array($userId, $sentUserIds, true)) {
                 continue;
             }
             $user = User::find($userId);
@@ -64,6 +71,7 @@ class SendMeetingPublishedNotifications implements ShouldQueue
             } catch (Throwable $e) {
                 $invitation->update(['status' => 'failed', 'error_message' => $e->getMessage()]);
             }
+            $sentUserIds[] = $userId;
         }
     }
 

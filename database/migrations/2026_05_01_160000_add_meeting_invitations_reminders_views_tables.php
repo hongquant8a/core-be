@@ -9,11 +9,14 @@ return new class extends Migration
     public function up(): void
     {
         // Giấy mời theo từng đại biểu — tạo khi publish meeting.
+        // Recipient = participant (đại biểu mời) HOẶC attendee trực tiếp (chủ trì + thư ký, không cần qua participants).
+        // Constraint: 1 trong 2 phải có giá trị (enforce ở app layer, MySQL không hỗ trợ CHECK trước 8.0.16).
         Schema::create('meeting_invitations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('organization_id')->constrained('organizations')->cascadeOnDelete();
             $table->foreignId('meeting_id')->constrained('meetings')->cascadeOnDelete();
-            $table->foreignId('meeting_participant_id')->constrained('meeting_participants')->cascadeOnDelete();
+            $table->foreignId('meeting_participant_id')->nullable()->constrained('meeting_participants')->cascadeOnDelete();
+            $table->foreignId('meeting_attendee_id')->nullable()->constrained('meeting_attendees')->cascadeOnDelete();
             $table->string('send_type')->default('now'); // now | scheduled
             $table->dateTime('scheduled_at')->nullable();
             $table->dateTime('sent_at')->nullable();

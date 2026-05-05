@@ -81,8 +81,17 @@ class ProcessRemindersCommand extends Command
             ->get()
             ->pluck('attendee.user_id')
             ->filter()
-            ->unique()
             ->all();
+
+        // Bổ sung chủ trì + thư ký (FK trên meetings, không nằm trong participants).
+        $meeting->loadMissing(['chairperson', 'operator']);
+        foreach ([$meeting->chairperson?->user_id, $meeting->operator?->user_id] as $extraUserId) {
+            if ($extraUserId) {
+                $userIds[] = $extraUserId;
+            }
+        }
+
+        $userIds = collect($userIds)->filter()->unique()->values()->all();
 
         foreach ($userIds as $userId) {
             $user = User::find($userId);

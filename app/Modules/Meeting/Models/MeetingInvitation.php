@@ -12,6 +12,7 @@ class MeetingInvitation extends Model
         'organization_id',
         'meeting_id',
         'meeting_participant_id',
+        'meeting_attendee_id',
         'send_type',
         'scheduled_at',
         'sent_at',
@@ -32,5 +33,10 @@ class MeetingInvitation extends Model
     public function participant()
     {
         return $this->belongsTo(MeetingParticipant::class, 'meeting_participant_id');
+    }
+
+    public function attendee()
+    {
+        return $this->belongsTo(MeetingAttendee::class, 'meeting_attendee_id');
     }
 }

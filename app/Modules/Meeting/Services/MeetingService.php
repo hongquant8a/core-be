@@ -143,29 +143,66 @@ class MeetingService
     }
 
     /**
-     * Tạo invitation cho từng participant — idempotent: bỏ qua participant đã có invitation pending/sent.
+     * Tạo invitation cho participant + chủ trì + thư ký — idempotent.
+     * Recipient = participant (đại biểu) HOẶC attendee trực tiếp (chair/operator).
      */
     private function createInvitationsForParticipants(Meeting $meeting): void
     {
-        $participants = MeetingParticipant::query()
+        $participantIds = MeetingParticipant::query()
             ->where('meeting_id', $meeting->id)
             ->where('organization_id', $meeting->organization_id)
-            ->pluck('id');
+            ->pluck('id')
+            ->all();
 
-        $existing = MeetingInvitation::query()
+        $existingParticipantIds = MeetingInvitation::query()
             ->where('meeting_id', $meeting->id)
-            ->whereIn('meeting_participant_id', $participants)
+            ->whereNotNull('meeting_participant_id')
             ->pluck('meeting_participant_id')
             ->all();
 
-        foreach ($participants as $participantId) {
-            if (in_array($participantId, $existing, true)) {
+        foreach ($participantIds as $participantId) {
+            if (in_array($participantId, $existingParticipantIds, true)) {
                 continue;
             }
             MeetingInvitation::create([
                 'organization_id' => $meeting->organization_id,
                 'meeting_id' => $meeting->id,
                 'meeting_participant_id' => $participantId,
+                'send_type' => 'now',
+                'status' => 'pending',
+            ]);
+        }
+
+        // Chủ trì + thư ký — gửi giấy mời qua attendee_id (không qua participants).
+        $chairOpAttendeeIds = array_values(array_filter([
+            $meeting->chairperson_meeting_attendee_id,
+            $meeting->operator_meeting_attendee_id,
+        ]));
+        if (empty($chairOpAttendeeIds)) {
+            return;
+        }
+
+        // Tránh trùng nếu chair/operator đồng thời là 1 participant đã được mời.
+        $participantAttendeeIds = MeetingParticipant::query()
+            ->where('meeting_id', $meeting->id)
+            ->whereIn('meeting_attendee_id', $chairOpAttendeeIds)
+            ->pluck('meeting_attendee_id')
+            ->all();
+
+        $existingAttendeeIds = MeetingInvitation::query()
+            ->where('meeting_id', $meeting->id)
+            ->whereIn('meeting_attendee_id', $chairOpAttendeeIds)
+            ->pluck('meeting_attendee_id')
+            ->all();
+
+        foreach (array_unique($chairOpAttendeeIds) as $attendeeId) {
+            if (in_array($attendeeId, $participantAttendeeIds, true) || in_array($attendeeId, $existingAttendeeIds, true)) {
+                continue;
+            }
+            MeetingInvitation::create([
+                'organization_id' => $meeting->organization_id,
+                'meeting_id' => $meeting->id,
+                'meeting_attendee_id' => $attendeeId,
                 'send_type' => 'now',
                 'status' => 'pending',
             ]);
