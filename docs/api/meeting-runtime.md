@@ -141,7 +141,7 @@ Datetime: `H:i:s d/m/Y` (vd `08:30:00 01/05/2026`). Time-only (giờ chương tr
 
 ## 2. Chương trình cuộc họp — `/api/meeting-agendas`
 
-Mỗi cuộc họp có nhiều chương trình (agenda) — sắp theo `sort_order`. Hỗ trợ phân cấp 2 tầng qua `parent_id`.
+Mỗi cuộc họp có nhiều chương trình (agenda) — sắp theo `sort_order`. Hỗ trợ **phân cấp tối đa 2-3 tầng** qua `parent_id` (theo spec line 102: "giới hạn 2-3 cấp phân cấp để dễ theo dõi trên màn chiếu").
 
 | Method | Path | Mô tả |
 |---|---|---|
@@ -199,6 +199,60 @@ Mỗi cuộc họp có nhiều chương trình (agenda) — sắp theo `sort_ord
   "updated_at": "08:00:00 01/05/2026"
 }
 ```
+
+### 2.3 Cấu trúc phân cấp (parent/child)
+
+Spec cho phép tới 2-3 cấp. FE quản lý tree client-side từ flat list.
+
+**Tạo chương trình con**:
+```json
+POST /api/meeting-agendas
+{
+  "meeting_id": 1,
+  "parent_id": 5,            // ID chương trình cha
+  "content": "Mục con của chương trình 5",
+  "sort_order": 1            // thứ tự trong cùng cấp (anh em với các con khác của parent_id=5)
+}
+```
+
+**Cách lấy data**:
+- **(A) Flat all** (recommend cho FE tự build tree): `GET /api/meeting-agendas?meeting_id=X` → trả tất cả mixed (cả root + child). FE group theo `parent_id` để build tree.
+- **(B) Theo cấp**: `GET /api/meeting-agendas?meeting_id=X&parent_id=null` → root level only; sau đó từng node `?parent_id=5` để lấy con.
+
+**Ví dụ flat response**:
+```json
+{
+  "data": {
+    "items": [
+      { "id": 1, "parent_id": null, "sort_order": 1, "content": "Khai mạc" },
+      { "id": 2, "parent_id": null, "sort_order": 2, "content": "Báo cáo KT-XH" },
+      { "id": 3, "parent_id": 2, "sort_order": 1, "content": "  Tình hình ngân sách" },
+      { "id": 4, "parent_id": 2, "sort_order": 2, "content": "  Đầu tư công" },
+      { "id": 5, "parent_id": null, "sort_order": 3, "content": "Bế mạc" }
+    ]
+  }
+}
+```
+
+FE build tree:
+```js
+function buildAgendaTree(items) {
+  const map = new Map(items.map(it => [it.id, { ...it, children: [] }]))
+  const roots = []
+  for (const node of map.values()) {
+    if (node.parent_id) {
+      map.get(node.parent_id)?.children.push(node)
+    } else {
+      roots.push(node)
+    }
+  }
+  return roots  // sort theo sort_order ở mỗi level
+}
+```
+
+**Reorder + đẩy vào mục con**: `PATCH /api/meeting-agendas/reorder` chỉ update `sort_order`. Để **đổi parent** (drag từ level A sang level B), gửi `PATCH /api/meeting-agendas/{id}` body `{ "parent_id": 5, "sort_order": 1 }`.
+
+> **Validate cycle**: BE chưa enforce "không cho 1 node là cha của chính nó hoặc tạo vòng lặp". FE tự ngăn drag-drop tạo cycle (không cho thả parent vào dưới một trong các child của nó).
 
 ---
 
