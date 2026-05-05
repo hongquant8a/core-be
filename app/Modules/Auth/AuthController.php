@@ -59,7 +59,7 @@ class AuthController extends Controller
      *
      * Dùng để Vue Casl khởi tạo ability khi refresh trang. Cần header X-Organization-Id (middleware set.permissions.team đã đặt ngữ cảnh).
      *
-     * @response 200 {"success": true, "data": {"user": {"id": 1, "name": "Admin"}, "current_organization_id": 1, "roles": ["admin"], "permissions": ["users.index", "users.store"], "abilities": [{"action": "index", "subject": "User"}, {"action": "store", "subject": "User"}]}}
+     * @response 200 {"success": true, "data": {"user": {"id": 1, "name": "Admin"}, "current_organization_id": 1, "available_organizations": [{"id": 1, "name": "Sở Nội vụ"}, {"id": 2, "name": "UBND TP"}], "roles": ["admin"], "permissions": ["users.index", "users.store"], "abilities": [{"action": "index", "subject": "User"}, {"action": "store", "subject": "User"}]}}
      */
     public function me(Request $request)
     {
@@ -75,6 +75,7 @@ class AuthController extends Controller
                 ['last_login_at' => $user->last_login_at?->toIso8601String()],
             ),
             'current_organization_id' => $currentOrganizationId !== null ? (int) $currentOrganizationId : null,
+            'available_organizations' => $this->authService->getAccessibleOrganizations($user),
             'roles' => $user->getRoleNames()->values()->all(),
             'permissions' => $permissions,
             'abilities' => CaslAbilityConverter::toCaslAbilities($permissions),

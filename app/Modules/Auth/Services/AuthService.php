@@ -142,7 +142,7 @@ class AuthService
         ];
     }
 
-    protected function getAccessibleOrganizations(User $user): array
+    public function getAccessibleOrganizations(User $user): array
     {
         $organizationIds = $this->getAccessibleOrganizationIds((int) $user->id);
         if (empty($organizationIds)) {
