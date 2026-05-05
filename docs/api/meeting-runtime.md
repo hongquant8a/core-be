@@ -115,7 +115,7 @@ Datetime: `H:i:s d/m/Y` (vd `08:30:00 01/05/2026`). Time-only (giờ chương tr
     { "id": 1, "sort_order": 1, "start_time": "08:00:00", "end_time": "08:30:00", "content": "Khai mạc kỳ họp.", ... }
   ],
   "documents": [
-    { "id": 1, "title": "Tờ trình ngân sách", "media_id": 42, "file_url": "https://...", "is_public": true, "status": "published", ... }
+    { "id": 1, "title": "Tờ trình ngân sách", "media_id": 42, "file_url": "/storage/42/to-trinh.pdf", "file_name": "to-trinh.pdf", "is_public": true, "status": "published", ... }
   ],
   "vote_topics": [
     { "id": 1, "title": "Biểu quyết thông qua nghị quyết", "vote_type": "agree_disagree_abstain", "ballot_mode": "public_named", "status": "draft", "sort_order": 1, ... }
@@ -320,7 +320,8 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
   "document_number": "01/TTr-UBND",
   "summary": "...",
   "media_id": 42,
-  "file_url": "https://example.com/storage/.../to-trinh.pdf",
+  "file_url": "/storage/42/to-trinh.pdf",
+  "file_name": "to-trinh.pdf",
   "is_public": true,
   "status": "published",
   "view_count": 56,
