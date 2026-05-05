@@ -43,6 +43,20 @@ return new class extends Migration
             $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
         });
 
+        // Bổ sung FK chairperson/operator vào meetings (chỉ thêm được sau khi meeting_attendees tồn tại).
+        Schema::table('meetings', function (Blueprint $table) {
+            $table->foreignId('chairperson_meeting_attendee_id')
+                ->nullable()
+                ->after('meeting_location_id')
+                ->constrained(table: 'meeting_attendees', indexName: 'meetings_chairperson_attendee_fk')
+                ->nullOnDelete();
+            $table->foreignId('operator_meeting_attendee_id')
+                ->nullable()
+                ->after('chairperson_meeting_attendee_id')
+                ->constrained(table: 'meeting_attendees', indexName: 'meetings_operator_attendee_fk')
+                ->nullOnDelete();
+        });
+
         Schema::create('meeting_agendas', function (Blueprint $table) {
             $table->id();
             $table->foreignId('organization_id')->constrained('organizations')->cascadeOnDelete();

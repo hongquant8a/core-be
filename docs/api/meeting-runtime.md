@@ -67,12 +67,16 @@ Datetime: `H:i:s d/m/Y` (vd `08:30:00 01/05/2026`). Time-only (giờ chương tr
 | `title` | string (≤255) | ✅ | Tiêu đề cuộc họp. |
 | `meeting_type_id` | integer | — | FK `meeting_types.id`. |
 | `meeting_location_id` | integer | — | FK `meeting_locations.id`. |
+| `chairperson_meeting_attendee_id` | integer | — | FK `meeting_attendees.id` — chủ trì. **BE auto-tạo participant nếu chưa có.** |
+| `operator_meeting_attendee_id` | integer | — | FK `meeting_attendees.id` — thư ký/điều hành. **BE auto-tạo participant nếu chưa có.** |
 | `is_public` | boolean | ✅ | Có cho phép xem ở trang công khai không. |
 | `start_time` | datetime `Y-m-d H:i:s` | ✅ | Thời gian bắt đầu. |
 | `end_time` | datetime `Y-m-d H:i:s` | — | Phải `>= start_time`. |
 | `content` | text | — | Nội dung cuộc họp. |
 | `status` | enum | ✅ | `draft` \| `published` \| `cancelled`. **Không có `in_progress`/`completed`** — FE tự derive từ `start_time`/`end_time` vs `now()`. |
 | `published_at` | datetime | — | Tự set khi publish. |
+
+> **Chủ trì + Thư ký** lưu trực tiếp trên `meetings` qua 2 FK (singular cardinality). FE chọn từ `/api/meeting-attendees/user-options` rồi gửi `chairperson_meeting_attendee_id` + `operator_meeting_attendee_id` lúc tạo/update meeting. BE tự động tạo `meeting_participants` row cho 2 attendee đó nếu chưa có (role=`delegate`) — đảm bảo họ có mặt trong danh sách điểm danh + nhận giấy mời khi publish.
 
 ### 1.4 Response (MeetingResource)
 
@@ -86,6 +90,10 @@ Datetime: `H:i:s d/m/Y` (vd `08:30:00 01/05/2026`). Time-only (giờ chương tr
   "meeting_type_name": "HĐND thường kỳ",
   "meeting_location_id": 1,
   "meeting_location_name": "Hội trường lớn UBND TP Đà Nẵng",
+  "chairperson_meeting_attendee_id": 12,
+  "chairperson": { "id": 12, "name": "Nguyễn Văn Hùng", "email": "nvhung@...", "position_name": "Chủ tịch HĐND", "department_name": "HĐND TP" },
+  "operator_meeting_attendee_id": 13,
+  "operator": { "id": 13, "name": "Trần Thị Mai", "email": "ttmai@...", "position_name": "Phó CT HĐND", "department_name": "HĐND TP" },
   "title": "Kỳ họp HĐND thường kỳ tháng 5/2026",
   "is_public": true,
   "content": "...",
@@ -99,9 +107,9 @@ Datetime: `H:i:s d/m/Y` (vd `08:30:00 01/05/2026`). Time-only (giờ chương tr
   "created_at": "08:00:00 01/05/2026",
   "updated_at": "08:00:00 08/05/2026",
   "participants": [
-    { "id": 12, "role": "chairperson", "display_name": "Nguyễn Văn Hùng", "email": "...", "phone": "...", "response_status": "accepted", ... },
-    { "id": 13, "role": "operator", "display_name": "Trần Thị Mai", ... },
-    { "id": 14, "role": "delegate", "display_name": "Lê Hoàng Nam", ... }
+    { "id": 12, "role": "delegate", "display_name": "Nguyễn Văn Hùng", "email": "...", "phone": "...", "response_status": "accepted", ... },
+    { "id": 13, "role": "delegate", "display_name": "Trần Thị Mai", ... },
+    { "id": 14, "role": "guest", "display_name": "TS. Bình", ... }
   ],
   "agendas": [
     { "id": 1, "sort_order": 1, "start_time": "08:00:00", "end_time": "08:30:00", "content": "Khai mạc kỳ họp.", ... }
@@ -333,15 +341,11 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
 
 `MeetingParticipant` = mapping giữa `meeting` và `meeting_attendee` (= user). Lưu **snapshot** thông tin đại biểu lúc mời (per spec — báo cáo/giấy mời không thay đổi khi user update profile sau).
 
-> **Chủ trì + Thư ký = role của participant** (KHÔNG có column riêng trên `meetings`). Single source of truth = `meeting_participants.role` enum:
+> **Chủ trì + Thư ký KHÔNG ở đây** — đã chuyển lên FK trên `meetings` (`chairperson_meeting_attendee_id`, `operator_meeting_attendee_id`) vì cardinality 1-1. Xem [Section 1.3](#meeting-body).
+>
+> Role enum của participant chỉ còn 2 giá trị:
 > - `delegate` (mặc định) — đại biểu thường
-> - `chairperson` — chủ trì
-> - `operator` — thư ký/điều hành
 > - `guest` — khách mời (không có quyền biểu quyết)
->
-> **Set chủ trì**: `PATCH /api/meeting-participants/{id}` body `{"role":"chairperson"}`. FE phải tự demote chủ trì cũ về `delegate` trước (BE không enforce unique). Tương tự cho thư ký.
->
-> **Query chủ trì cuộc họp X**: `GET /api/meeting-participants?meeting_id=X&role=chairperson`. Hoặc lấy từ `participants` array đã preload trong `GET /api/meetings/{X}` (xem [Section 1.4](#meeting-body)).
 
 | Method | Path | Mô tả |
 |---|---|---|
@@ -359,7 +363,7 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
 |---|---|---|---|
 | `meeting_id` | integer | ✅ | FK `meetings.id`. |
 | `meeting_attendee_id` | integer | ✅ | FK `meeting_attendees.id`. Snapshot `display_name/email/phone` được copy từ `attendee.user`. |
-| `role` | enum | — | `delegate` (mặc định) \| `chairperson` \| `operator` \| `guest`. |
+| `role` | enum | — | `delegate` (mặc định) \| `guest`. (chair/operator → set qua FK trên meeting). |
 | `response_status` | enum | — | `pending` (mặc định) \| `accepted` \| `declined`. |
 | `absence_reason` | text | — | Lý do vắng (khi `declined`). |
 
@@ -383,7 +387,7 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
   "meeting_id": 1,
   "meeting_attendee_id": 12,
   "attendee_name": "Nguyễn Văn A",
-  "role": "chairperson",
+  "role": "delegate",
   "display_name": "Nguyễn Văn A",
   "position_name": "Chủ tịch HĐND",
   "department_name": "HĐND TP",

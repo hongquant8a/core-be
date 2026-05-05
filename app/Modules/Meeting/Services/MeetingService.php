@@ -5,6 +5,7 @@ namespace App\Modules\Meeting\Services;
 use App\Modules\Meeting\Enums\MeetingStatusEnum;
 use App\Modules\Meeting\Exports\MeetingExport;
 use App\Modules\Meeting\Models\Meeting;
+use App\Modules\Meeting\Models\MeetingAttendee;
 use App\Modules\Meeting\Models\MeetingInvitation;
 use App\Modules\Meeting\Models\MeetingParticipant;
 use App\Modules\Meeting\Models\MeetingView;
@@ -65,6 +66,8 @@ class MeetingService
         return $meeting->load([
             'meetingType',
             'meetingLocation',
+            'chairperson',
+            'operator',
             'creator',
             'editor',
             'participants.attendee.user',
@@ -82,14 +85,55 @@ class MeetingService
             'organization_id' => $this->resolveCurrentOrganizationId(),
         ];
 
-        return Meeting::create($payload)->load(['meetingType', 'meetingLocation', 'creator', 'editor']);
+        return DB::transaction(function () use ($payload) {
+            $meeting = Meeting::create($payload);
+            $this->ensureChairAndOperatorAreParticipants($meeting);
+
+            return $meeting->load(['meetingType', 'meetingLocation', 'chairperson', 'operator', 'creator', 'editor']);
+        });
     }
 
     public function update(Meeting $meeting, array $validated): Meeting
     {
-        $meeting->update($validated);
+        return DB::transaction(function () use ($meeting, $validated) {
+            $meeting->update($validated);
+            $this->ensureChairAndOperatorAreParticipants($meeting);
 
-        return $meeting->load(['meetingType', 'meetingLocation', 'creator', 'editor']);
+            return $meeting->load(['meetingType', 'meetingLocation', 'chairperson', 'operator', 'creator', 'editor']);
+        });
+    }
+
+    /**
+     * Khi set chair/operator_meeting_attendee_id, đảm bảo attendee đó cũng nằm trong
+     * meeting_participants để xuất hiện trong danh sách điểm danh + nhận giấy mời.
+     */
+    private function ensureChairAndOperatorAreParticipants(Meeting $meeting): void
+    {
+        $attendeeIds = array_filter([
+            $meeting->chairperson_meeting_attendee_id,
+            $meeting->operator_meeting_attendee_id,
+        ]);
+
+        foreach ($attendeeIds as $attendeeId) {
+            $attendee = MeetingAttendee::with('user.profile')->find($attendeeId);
+            if (! $attendee) {
+                continue;
+            }
+
+            MeetingParticipant::firstOrCreate(
+                ['meeting_id' => $meeting->id, 'meeting_attendee_id' => $attendee->id],
+                [
+                    'organization_id' => $meeting->organization_id,
+                    'role' => 'delegate',
+                    'display_name' => $attendee->user?->name,
+                    'position_name' => $attendee->position_name,
+                    'department_name' => $attendee->department_name,
+                    'email' => $attendee->user?->email,
+                    'phone' => $attendee->user?->profile?->phone,
+                    'response_status' => 'pending',
+                ]
+            );
+        }
     }
 
     public function destroy(Meeting $meeting): void

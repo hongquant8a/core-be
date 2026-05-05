@@ -222,11 +222,15 @@ class MeetingDataSeeder extends Seeder
     {
         $start = Carbon::parse('2026-05-15 08:00:00');
 
+        // attendees[0] = Nguyễn Văn Hùng → chủ trì
+        // attendees[1] = Trần Thị Mai → thư ký
         $meeting = Meeting::firstOrCreate(
             ['title' => 'Kỳ họp HĐND thường kỳ tháng 5/2026', 'organization_id' => $this->orgId],
             [
                 'meeting_type_id' => $types['HĐND thường kỳ']->id,
                 'meeting_location_id' => $locations['Hội trường lớn UBND TP Đà Nẵng']->id,
+                'chairperson_meeting_attendee_id' => $attendees[0]->id ?? null,
+                'operator_meeting_attendee_id' => $attendees[1]->id ?? null,
                 'is_public' => true,
                 'content' => 'Xem xét tình hình KT-XH 4 tháng đầu năm; thông qua nghị quyết phân bổ ngân sách bổ sung; chất vấn lãnh đạo các sở.',
                 'start_time' => $start,
@@ -283,15 +287,11 @@ class MeetingDataSeeder extends Seeder
             );
         }
 
-        // Participants — toàn bộ 8 attendees nội bộ (Thường trực HĐND + Đại biểu khóa X)
+        // Participants — toàn bộ 8 attendees nội bộ. Chair/operator được set qua FK trên meeting (không qua role enum).
         $participants = [];
         foreach ($attendees as $idx => $attendee) {
             $attendee->loadMissing('user.profile');
-            $role = match (true) {
-                $idx === 0 => 'chairperson', // Nguyễn Văn Hùng - chủ trì
-                $idx === 1 => 'operator',    // Trần Thị Mai - thư ký
-                default => 'delegate',
-            };
+            $role = 'delegate';
             $responseStatus = $idx <= 5 ? 'accepted' : 'pending';
 
             $participants[] = MeetingParticipant::firstOrCreate(

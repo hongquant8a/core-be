@@ -17,6 +17,8 @@ class StoreMeetingRequest extends FormRequest
         return [
             'meeting_type_id' => 'nullable|integer|exists:meeting_types,id',
             'meeting_location_id' => 'nullable|integer|exists:meeting_locations,id',
+            'chairperson_meeting_attendee_id' => 'nullable|integer|exists:meeting_attendees,id',
+            'operator_meeting_attendee_id' => 'nullable|integer|exists:meeting_attendees,id',
             'title' => 'required|string|max:255',
             'is_public' => 'required|boolean',
             'content' => 'nullable|string',

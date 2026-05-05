@@ -17,6 +17,8 @@ class UpdateMeetingRequest extends FormRequest
         return [
             'meeting_type_id' => 'nullable|integer|exists:meeting_types,id',
             'meeting_location_id' => 'nullable|integer|exists:meeting_locations,id',
+            'chairperson_meeting_attendee_id' => 'nullable|integer|exists:meeting_attendees,id',
+            'operator_meeting_attendee_id' => 'nullable|integer|exists:meeting_attendees,id',
             'title' => 'sometimes|string|max:255',
             'is_public' => 'sometimes|boolean',
             'content' => 'nullable|string',

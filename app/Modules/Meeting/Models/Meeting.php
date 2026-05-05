@@ -14,6 +14,8 @@ class Meeting extends Model
         'organization_id',
         'meeting_type_id',
         'meeting_location_id',
+        'chairperson_meeting_attendee_id',
+        'operator_meeting_attendee_id',
         'title',
         'is_public',
         'content',
@@ -64,6 +66,16 @@ class Meeting extends Model
     public function meetingLocation()
     {
         return $this->belongsTo(MeetingLocation::class, 'meeting_location_id');
+    }
+
+    public function chairperson()
+    {
+        return $this->belongsTo(MeetingAttendee::class, 'chairperson_meeting_attendee_id');
+    }
+
+    public function operator()
+    {
+        return $this->belongsTo(MeetingAttendee::class, 'operator_meeting_attendee_id');
     }
 
     public function participants()
