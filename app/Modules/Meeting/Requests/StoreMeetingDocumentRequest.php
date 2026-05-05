@@ -2,7 +2,6 @@
 
 namespace App\Modules\Meeting\Requests;
 
-use App\Modules\Meeting\Enums\MeetingDocumentStatusEnum;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreMeetingDocumentRequest extends FormRequest
@@ -23,7 +22,6 @@ class StoreMeetingDocumentRequest extends FormRequest
             'summary' => 'nullable|string',
             'file' => 'nullable|file|max:10240',
             'is_public' => 'required|boolean',
-            'status' => ['required', MeetingDocumentStatusEnum::rule()],
             'sort_order' => 'nullable|integer|min:0',
         ];
     }
@@ -59,7 +57,6 @@ class StoreMeetingDocumentRequest extends FormRequest
             'summary' => 'summary',
             'file' => 'Tệp tải lên',
             'is_public' => 'Trạng thái công khai',
-            'status' => 'Trạng thái',
             'sort_order' => 'Thứ tự sắp xếp',
         ];
     }
@@ -96,10 +93,6 @@ class StoreMeetingDocumentRequest extends FormRequest
             'is_public' => [
                 'description' => 'Công khai tài liệu hay không.',
                 'example' => true,
-            ],
-            'status' => [
-                'description' => 'Trạng thái tài liệu.',
-                'example' => 'draft',
             ],
             'sort_order' => [
                 'description' => 'Thứ tự hiển thị.',

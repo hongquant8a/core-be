@@ -15,7 +15,6 @@ class MeetingDocumentService
     public function publicIndex(array $filters, int $limit)
     {
         return MeetingDocument::with(['agenda', 'documentType', 'mediaFile'])
-            ->where('status', 'published')
             ->where('is_public', true)
             ->whereHas('meeting', function ($query) {
                 $query->where('is_public', true)
@@ -31,8 +30,7 @@ class MeetingDocumentService
     public function publicShow(MeetingDocument $meetingDocument): MeetingDocument
     {
         if (
-            $meetingDocument->status !== 'published'
-            || ! $meetingDocument->is_public
+            ! $meetingDocument->is_public
             || ! $meetingDocument->meeting
             || ! $meetingDocument->meeting->is_public
             || $meetingDocument->meeting->status !== 'published'
@@ -135,21 +133,6 @@ class MeetingDocumentService
             ->where('organization_id', $this->resolveCurrentOrganizationId())
             ->whereIn('id', $ids)
             ->delete();
-    }
-
-    public function bulkUpdateStatus(array $ids, string $status): void
-    {
-        MeetingDocument::query()
-            ->where('organization_id', $this->resolveCurrentOrganizationId())
-            ->whereIn('id', $ids)
-            ->update(['status' => $status]);
-    }
-
-    public function changeStatus(MeetingDocument $meetingDocument, string $status): MeetingDocument
-    {
-        $meetingDocument->update(['status' => $status]);
-
-        return $meetingDocument->load(['agenda', 'documentType', 'mediaFile', 'creator.media', 'editor.media']);
     }
 
     public function reorder(array $items): void

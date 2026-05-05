@@ -2,7 +2,6 @@
 
 namespace App\Modules\Meeting\Requests;
 
-use App\Modules\Meeting\Enums\MeetingDocumentStatusEnum;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateMeetingDocumentRequest extends FormRequest
@@ -23,7 +22,6 @@ class UpdateMeetingDocumentRequest extends FormRequest
             'file' => 'nullable|file|max:10240',
             'remove_file' => 'nullable|boolean',
             'is_public' => 'sometimes|boolean',
-            'status' => ['sometimes', MeetingDocumentStatusEnum::rule()],
             'sort_order' => 'nullable|integer|min:0',
         ];
     }
@@ -59,7 +57,6 @@ class UpdateMeetingDocumentRequest extends FormRequest
             'file' => 'Tệp tải lên',
             'remove_file' => 'Xóa tệp hiện tại',
             'is_public' => 'Trạng thái công khai',
-            'status' => 'Trạng thái',
             'sort_order' => 'Thứ tự sắp xếp',
         ];
     }
@@ -72,7 +69,6 @@ class UpdateMeetingDocumentRequest extends FormRequest
             'file' => ['description' => 'Tệp tài liệu thay thế (≤10MB).'],
             'remove_file' => ['description' => 'Xóa file hiện tại hay không.', 'example' => false],
             'is_public' => ['description' => 'Công khai tài liệu.', 'example' => false],
-            'status' => ['description' => 'Trạng thái tài liệu.', 'example' => 'published'],
         ];
     }
 }

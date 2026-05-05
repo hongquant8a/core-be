@@ -36,6 +36,13 @@ return new class extends Migration
             });
         }
 
+        // 3b) Bỏ cột status khỏi meeting_documents (FE chỉ dùng is_public, không cần workflow draft/published).
+        if (Schema::hasTable('meeting_documents') && Schema::hasColumn('meeting_documents', 'status')) {
+            Schema::table('meeting_documents', function (Blueprint $table) {
+                $table->dropColumn('status');
+            });
+        }
+
         // 4) Bỏ sort_order khỏi 4 bảng catalog.
         foreach (['meeting_types', 'meeting_locations', 'meeting_document_types', 'meeting_attendee_groups'] as $catalogTable) {
             if (Schema::hasTable($catalogTable) && Schema::hasColumn($catalogTable, 'sort_order')) {

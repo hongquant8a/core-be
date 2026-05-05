@@ -161,8 +161,7 @@ class PermissionSeeder extends Seeder
             'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
         ],
         'meeting-documents' => [
-            'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus',
+            'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
         ],
         'meeting-participants' => [
             'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',

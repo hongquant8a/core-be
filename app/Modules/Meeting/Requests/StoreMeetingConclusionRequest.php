@@ -2,7 +2,6 @@
 
 namespace App\Modules\Meeting\Requests;
 
-use App\Modules\Meeting\Enums\MeetingDocumentStatusEnum;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreMeetingConclusionRequest extends FormRequest
@@ -19,7 +18,7 @@ class StoreMeetingConclusionRequest extends FormRequest
             'title' => 'required|string|max:255',
             'content' => 'nullable|string',
             'file' => 'nullable|file|max:10240',
-            'status' => ['required', MeetingDocumentStatusEnum::rule()],
+            'status' => 'required|in:draft,published',
         ];
     }
 

@@ -280,7 +280,6 @@ class MeetingDataSeeder extends Seeder
                     'document_number' => $row['doc_no'],
                     'summary' => "Tóm tắt cho {$row['title']}.",
                     'is_public' => $row['is_public'],
-                    'status' => 'published',
                     'view_count' => rand(15, 80),
                     'sort_order' => $i + 1,
                 ]

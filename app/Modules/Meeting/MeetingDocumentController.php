@@ -6,8 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
 use App\Modules\Meeting\Models\MeetingDocument;
 use App\Modules\Meeting\Requests\BulkDestroyCatalogRequest;
-use App\Modules\Meeting\Requests\BulkUpdateStatusMeetingDocumentRequest;
-use App\Modules\Meeting\Requests\ChangeStatusMeetingDocumentRequest;
 use App\Modules\Meeting\Requests\ReorderMeetingDocumentRequest;
 use App\Modules\Meeting\Requests\StoreMeetingDocumentRequest;
 use App\Modules\Meeting\Requests\UpdateMeetingDocumentRequest;
@@ -19,7 +17,7 @@ use App\Modules\Meeting\Services\MeetingDocumentService;
  * @group Meeting - Tài liệu họp
  * @header X-Organization-Id ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1
  *
- * Quản lý tài liệu họp: danh sách, chi tiết, tạo, cập nhật, xóa, đổi trạng thái và sắp xếp.
+ * Quản lý tài liệu họp: danh sách, chi tiết, tạo, cập nhật, xóa và sắp xếp.
  */
 class MeetingDocumentController extends Controller
 {
@@ -32,7 +30,6 @@ class MeetingDocumentController extends Controller
      * @queryParam search string Từ khóa tìm kiếm theo tiêu đề tài liệu. Example: nghị quyết
      * @queryParam meeting_id integer Lọc theo cuộc họp. Example: 1
      * @queryParam meeting_document_type_id integer Lọc theo loại tài liệu. Example: 1
-     * @queryParam status string Lọc theo trạng thái tài liệu. Example: published
      * @queryParam sort_by string Sắp xếp theo trường. Example: sort_order
      * @queryParam sort_order string Thứ tự sắp xếp (asc/desc). Example: asc
      * @queryParam limit integer Số bản ghi mỗi trang. Example: 10
@@ -62,7 +59,6 @@ class MeetingDocumentController extends Controller
      * @queryParam search string Từ khóa tìm kiếm theo tiêu đề tài liệu. Example: nghị quyết
      * @queryParam meeting_id integer Lọc theo cuộc họp. Example: 1
      * @queryParam meeting_document_type_id integer Lọc theo loại tài liệu. Example: 1
-     * @queryParam status string Lọc theo trạng thái tài liệu. Example: draft
      * @queryParam sort_by string Sắp xếp theo trường. Example: sort_order
      * @queryParam sort_order string Thứ tự sắp xếp (asc/desc). Example: asc
      * @queryParam limit integer Số bản ghi mỗi trang. Example: 10
@@ -93,7 +89,6 @@ class MeetingDocumentController extends Controller
      * @bodyParam file file Tệp đính kèm (multipart/form-data, ≤10MB).
      * @bodyParam summary string Trích yếu tài liệu. Example: Tài liệu phục vụ thảo luận phiên sáng
      * @bodyParam is_public boolean required Công khai. Example: true
-     * @bodyParam status string required Trạng thái tài liệu. Example: draft
      */
     public function store(StoreMeetingDocumentRequest $request)
     {
@@ -111,7 +106,6 @@ class MeetingDocumentController extends Controller
      * @bodyParam file file Tệp tài liệu mới (thay thế file cũ).
      * @bodyParam remove_file boolean Xóa file hiện tại (không upload mới). Example: false
      * @bodyParam summary string Trích yếu tài liệu. Example: Bản cập nhật sau góp ý
-     * @bodyParam status string Trạng thái tài liệu. Example: published
      */
     public function update(UpdateMeetingDocumentRequest $request, MeetingDocument $meetingDocument)
     {
@@ -142,32 +136,6 @@ class MeetingDocumentController extends Controller
         $this->meetingDocumentService->bulkDestroy($request->ids);
 
         return $this->success(null, 'Xóa hàng loạt thành công!');
-    }
-
-    /**
-     * Cập nhật trạng thái hàng loạt tài liệu họp.
-     *
-     * @bodyParam ids integer[] required Danh sách ID tài liệu cần cập nhật. Example: [1,2,3]
-     * @bodyParam status string required Trạng thái mới của tài liệu. Example: archived
-     */
-    public function bulkUpdateStatus(BulkUpdateStatusMeetingDocumentRequest $request)
-    {
-        $this->meetingDocumentService->bulkUpdateStatus($request->ids, $request->status);
-
-        return $this->success(null, 'Cập nhật trạng thái hàng loạt thành công!');
-    }
-
-    /**
-     * Đổi trạng thái tài liệu họp.
-     *
-     * @urlParam meetingDocument integer required ID tài liệu họp. Example: 1
-     * @bodyParam status string required Trạng thái mới của tài liệu. Example: published
-     */
-    public function changeStatus(ChangeStatusMeetingDocumentRequest $request, MeetingDocument $meetingDocument)
-    {
-        $item = $this->meetingDocumentService->changeStatus($meetingDocument, $request->status);
-
-        return $this->successResource(new MeetingDocumentResource($item), 'Đổi trạng thái tài liệu họp thành công!');
     }
 
     /**

@@ -25,7 +25,6 @@ class MeetingDocumentResource extends JsonResource
             'file_url' => $this->mediaFile ? '/storage/'.$this->mediaFile->id.'/'.$this->mediaFile->file_name : null,
             'file_name' => $this->mediaFile?->file_name,
             'is_public' => $this->is_public,
-            'status' => $this->status,
             'view_count' => $this->view_count,
             'download_count' => $this->download_count,
             'sort_order' => $this->sort_order,

@@ -115,7 +115,7 @@ Datetime: `H:i:s d/m/Y` (vd `08:30:00 01/05/2026`). Time-only (giờ chương tr
     { "id": 1, "sort_order": 1, "start_time": "08:00:00", "end_time": "08:30:00", "content": "Khai mạc kỳ họp.", ... }
   ],
   "documents": [
-    { "id": 1, "title": "Tờ trình ngân sách", "media_id": 42, "file_url": "/storage/42/to-trinh.pdf", "file_name": "to-trinh.pdf", "is_public": true, "status": "published", ... }
+    { "id": 1, "title": "Tờ trình ngân sách", "media_id": 42, "file_url": "/storage/42/to-trinh.pdf", "file_name": "to-trinh.pdf", "is_public": true, ... }
   ],
   "vote_topics": [
     { "id": 1, "title": "Biểu quyết thông qua nghị quyết", "vote_type": "agree_disagree_abstain", "ballot_mode": "public_named", "status": "draft", "sort_order": 1, ... }
@@ -272,22 +272,22 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
 
 | Method | Path | Mô tả |
 |---|---|---|
-| GET | `/api/meeting-documents/public` | Danh sách tài liệu công khai (cuộc họp + tài liệu đều `is_public=true`, `status=published`). Query: `meeting_id`, `search`, `limit`. |
+| GET | `/api/meeting-documents/public` | Danh sách tài liệu công khai (`is_public=true` + meeting cũng `is_public=true` + `status=published`). Query: `meeting_id`, `search`, `limit`. |
 | GET | `/api/meeting-documents/public/{id}` | Chi tiết tài liệu công khai. Tự tăng `view_count` + log `meeting_views`. Chặn 404 nếu không công khai. |
 
 ### 3.2 Authenticated CRUD
 
 | Method | Path | Mô tả |
 |---|---|---|
-| GET | `/api/meeting-documents` | Danh sách phân trang. Query: `meeting_id`, `meeting_agenda_id`, `meeting_document_type_id`, `search` (title/document_number), `status`, `is_public`, `sort_by` (`id\|sort_order\|created_at\|updated_at`), `sort_order`, `limit`. |
+| GET | `/api/meeting-documents` | Danh sách phân trang. Query: `meeting_id`, `meeting_agenda_id`, `meeting_document_type_id`, `search` (title/document_number), `is_public`, `sort_by` (`id\|sort_order\|created_at\|updated_at`), `sort_order`, `limit`. |
 | GET | `/api/meeting-documents/{id}` | Chi tiết. |
 | POST | `/api/meeting-documents` | Tạo (1 tài liệu = 1 file). Body: **multipart/form-data** với `file` (xem [Document body](#document-body)). |
 | PUT \| PATCH | `/api/meeting-documents/{id}` | Cập nhật metadata + thay/xóa file. `file` upload mới (replace file cũ), `remove_file=true` xóa file hiện tại. |
 | DELETE | `/api/meeting-documents/{id}` | Xóa. |
 | POST | `/api/meeting-documents/bulk-delete` | Body `{ "ids": [...] }`. |
-| PATCH | `/api/meeting-documents/bulk-status` | Body `{ "ids": [...], "status": "draft\|published" }`. |
-| PATCH | `/api/meeting-documents/{id}/status` | Body `{ "status": "draft\|published" }`. |
 | PATCH | `/api/meeting-documents/reorder` | Body `{ "items": [{ "id": 1, "sort_order": 1 }, ...] }`. |
+
+> **Không có workflow status** — tài liệu chỉ dùng `is_public` để hiển thị/ẩn ở trang công khai (bên cạnh `is_public` + `status=published` của meeting cha).
 
 ### <a id="document-body"></a>3.3 Document body (multipart/form-data)
 
@@ -302,7 +302,6 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
 | `file` | file (≤10 MB) | — | Tệp đính kèm. Lưu vào collection `meeting-document-attachments` (Spatie Media). |
 | `remove_file` | boolean | — | **Chỉ trên `update`** — xóa file hiện có. |
 | `is_public` | boolean | ✅ (store) | Hiển thị ngoài trang công khai (kèm theo cờ public của meeting). |
-| `status` | enum | ✅ (store) | `draft` \| `published`. |
 | `sort_order` | integer (≥0) | — | Auto-tăng nếu không truyền (last + 1 trong meeting).
 
 > **Mỗi tài liệu = 1 file**. Cuộc họp có nhiều tài liệu → tạo nhiều record `meeting_documents`. Trên `update`, upload `file` mới sẽ tự xóa file cũ trước khi gắn file mới (BE handle).
@@ -323,7 +322,6 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
   "file_url": "/storage/42/to-trinh.pdf",
   "file_name": "to-trinh.pdf",
   "is_public": true,
-  "status": "published",
   "view_count": 56,
   "download_count": 12,
   "sort_order": 1,

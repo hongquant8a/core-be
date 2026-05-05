@@ -2,7 +2,6 @@
 
 namespace App\Modules\Meeting\Requests;
 
-use App\Modules\Meeting\Enums\MeetingDocumentStatusEnum;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateMeetingConclusionRequest extends FormRequest
@@ -19,7 +18,7 @@ class UpdateMeetingConclusionRequest extends FormRequest
             'content' => 'nullable|string',
             'file' => 'nullable|file|max:10240',
             'remove_file' => 'nullable|boolean',
-            'status' => ['sometimes', MeetingDocumentStatusEnum::rule()],
+            'status' => 'sometimes|in:draft,published',
         ];
     }
 

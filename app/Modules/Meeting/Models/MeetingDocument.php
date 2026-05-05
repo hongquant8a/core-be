@@ -23,7 +23,6 @@ class MeetingDocument extends Model implements HasMedia
         'summary',
         'media_id',
         'is_public',
-        'status',
         'view_count',
         'download_count',
         'sort_order',
@@ -92,7 +91,6 @@ class MeetingDocument extends Model implements HasMedia
                         ->orWhere('document_number', 'like', '%'.$search.'%');
                 });
             })
-            ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
             ->when(isset($filters['is_public']), fn ($q) => $q->where('is_public', (bool) $filters['is_public']))
             ->when($filters['sort_by'] ?? 'sort_order', function ($q, $sortBy) use ($filters) {
                 $allowed = ['id', 'sort_order', 'created_at', 'updated_at'];
