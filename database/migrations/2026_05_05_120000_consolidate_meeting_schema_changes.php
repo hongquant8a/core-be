@@ -87,39 +87,6 @@ return new class extends Migration
             }
         }
 
-        // 6d) meeting_invitations: cho phép chair/operator nhận giấy mời trực tiếp qua attendee_id
-        //     (không cần qua participants). meeting_participant_id → nullable, thêm meeting_attendee_id nullable.
-        if (Schema::hasTable('meeting_invitations')) {
-            // Drop FK cũ trên meeting_participant_id rồi MODIFY nullable, sau đó thêm lại FK.
-            // Tên FK mặc định Laravel: meeting_invitations_meeting_participant_id_foreign.
-            $fkName = 'meeting_invitations_meeting_participant_id_foreign';
-            if ($this->foreignKeyExists('meeting_invitations', $fkName)) {
-                Schema::table('meeting_invitations', function (Blueprint $table) {
-                    $table->dropForeign('meeting_invitations_meeting_participant_id_foreign');
-                });
-            }
-
-            DB::statement('ALTER TABLE `meeting_invitations` MODIFY `meeting_participant_id` BIGINT UNSIGNED NULL');
-
-            if (! $this->foreignKeyExists('meeting_invitations', 'meeting_invitations_meeting_participant_id_foreign')) {
-                Schema::table('meeting_invitations', function (Blueprint $table) {
-                    $table->foreign('meeting_participant_id')
-                        ->references('id')->on('meeting_participants')
-                        ->cascadeOnDelete();
-                });
-            }
-
-            if (! Schema::hasColumn('meeting_invitations', 'meeting_attendee_id')) {
-                Schema::table('meeting_invitations', function (Blueprint $table) {
-                    $table->foreignId('meeting_attendee_id')
-                        ->nullable()
-                        ->after('meeting_participant_id')
-                        ->constrained('meeting_attendees')
-                        ->cascadeOnDelete();
-                });
-            }
-        }
-
         // 7) meetings: thêm chairperson + operator FK trỏ tới meeting_attendees.
         if (Schema::hasTable('meetings') && Schema::hasTable('meeting_attendees')) {
             Schema::table('meetings', function (Blueprint $table) {
@@ -173,18 +140,6 @@ return new class extends Migration
         $row = DB::selectOne(
             'SELECT COUNT(1) AS cnt FROM information_schema.statistics WHERE table_schema = ? AND table_name = ? AND index_name = ?',
             [$database, $table, $indexName]
-        );
-
-        return ($row->cnt ?? 0) > 0;
-    }
-
-    private function foreignKeyExists(string $table, string $constraintName): bool
-    {
-        $database = DB::getDatabaseName();
-        $row = DB::selectOne(
-            'SELECT COUNT(1) AS cnt FROM information_schema.table_constraints
-             WHERE table_schema = ? AND table_name = ? AND constraint_name = ? AND constraint_type = "FOREIGN KEY"',
-            [$database, $table, $constraintName]
         );
 
         return ($row->cnt ?? 0) > 0;
