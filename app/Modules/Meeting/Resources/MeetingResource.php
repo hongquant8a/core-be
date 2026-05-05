@@ -2,11 +2,14 @@
 
 namespace App\Modules\Meeting\Resources;
 
+use App\Modules\Core\Resources\Concerns\FormatsUserSummary;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class MeetingResource extends JsonResource
 {
+    use FormatsUserSummary;
+
     public function toArray(Request $request): array
     {
         return [
@@ -40,8 +43,8 @@ class MeetingResource extends JsonResource
             'status' => $this->status,
             'view_count' => $this->view_count,
             'published_at' => $this->published_at?->format('H:i:s d/m/Y'),
-            'created_by' => $this->creator?->name ?? 'N/A',
-            'updated_by' => $this->editor?->name ?? 'N/A',
+            'created_by' => $this->whenLoaded('creator', fn () => $this->formatUserSummary($this->creator), null),
+            'updated_by' => $this->whenLoaded('editor', fn () => $this->formatUserSummary($this->editor), null),
             'created_at' => $this->created_at?->format('H:i:s d/m/Y'),
             'updated_at' => $this->updated_at?->format('H:i:s d/m/Y'),
 

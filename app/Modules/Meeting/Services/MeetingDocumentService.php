@@ -57,14 +57,14 @@ class MeetingDocumentService
 
     public function index(array $filters, int $limit)
     {
-        return MeetingDocument::with(['agenda', 'documentType', 'mediaFile', 'creator', 'editor'])
+        return MeetingDocument::with(['agenda', 'documentType', 'mediaFile', 'creator.media', 'editor.media'])
             ->filter($filters)
             ->paginate($limit);
     }
 
     public function show(MeetingDocument $meetingDocument): MeetingDocument
     {
-        return $meetingDocument->load(['agenda', 'documentType', 'mediaFile', 'creator', 'editor']);
+        return $meetingDocument->load(['agenda', 'documentType', 'mediaFile', 'creator.media', 'editor.media']);
     }
 
     public function store(array $validated, $file = null): MeetingDocument
@@ -85,7 +85,7 @@ class MeetingDocumentService
                     $document->update(['media_id' => $media->id]);
                 }
 
-                return $document->load(['agenda', 'documentType', 'mediaFile', 'creator', 'editor']);
+                return $document->load(['agenda', 'documentType', 'mediaFile', 'creator.media', 'editor.media']);
             });
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);
@@ -116,7 +116,7 @@ class MeetingDocumentService
                     $meetingDocument->update(['media_id' => $media->id]);
                 }
 
-                return $meetingDocument->load(['agenda', 'documentType', 'mediaFile', 'creator', 'editor']);
+                return $meetingDocument->load(['agenda', 'documentType', 'mediaFile', 'creator.media', 'editor.media']);
             });
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);
@@ -149,7 +149,7 @@ class MeetingDocumentService
     {
         $meetingDocument->update(['status' => $status]);
 
-        return $meetingDocument->load(['agenda', 'documentType', 'mediaFile', 'creator', 'editor']);
+        return $meetingDocument->load(['agenda', 'documentType', 'mediaFile', 'creator.media', 'editor.media']);
     }
 
     public function reorder(array $items): void

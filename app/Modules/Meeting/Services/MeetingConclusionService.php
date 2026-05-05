@@ -24,14 +24,14 @@ class MeetingConclusionService
 
     public function index(array $filters, int $limit)
     {
-        return MeetingConclusion::with(['creator', 'editor', 'mediaFile'])
+        return MeetingConclusion::with(['creator.media', 'editor.media', 'mediaFile'])
             ->filter($filters)
             ->paginate($limit);
     }
 
     public function show(MeetingConclusion $meetingConclusion): MeetingConclusion
     {
-        return $meetingConclusion->load(['creator', 'editor', 'mediaFile']);
+        return $meetingConclusion->load(['creator.media', 'editor.media', 'mediaFile']);
     }
 
     public function store(array $validated, $file = null): MeetingConclusion
@@ -50,7 +50,7 @@ class MeetingConclusionService
                     $model->update(['media_id' => $media->id]);
                 }
 
-                return $model->load(['creator', 'editor', 'mediaFile']);
+                return $model->load(['creator.media', 'editor.media', 'mediaFile']);
             });
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);
@@ -81,7 +81,7 @@ class MeetingConclusionService
                     $meetingConclusion->update(['media_id' => $media->id]);
                 }
 
-                return $meetingConclusion->load(['creator', 'editor', 'mediaFile']);
+                return $meetingConclusion->load(['creator.media', 'editor.media', 'mediaFile']);
             });
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);

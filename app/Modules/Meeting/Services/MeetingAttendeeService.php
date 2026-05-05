@@ -27,28 +27,28 @@ class MeetingAttendeeService
 
     public function index(array $filters, int $limit)
     {
-        return MeetingAttendee::with(['group', 'creator', 'editor'])
+        return MeetingAttendee::with(['group', 'creator.media', 'editor.media'])
             ->filter($filters)
             ->paginate($limit);
     }
 
     public function show(MeetingAttendee $meetingAttendee): MeetingAttendee
     {
-        return $meetingAttendee->load(['group', 'creator', 'editor']);
+        return $meetingAttendee->load(['group', 'creator.media', 'editor.media']);
     }
 
     public function store(array $validated): MeetingAttendee
     {
         $payload = [...$validated, 'organization_id' => $this->resolveCurrentOrganizationId()];
 
-        return MeetingAttendee::create($payload)->load(['group', 'creator', 'editor']);
+        return MeetingAttendee::create($payload)->load(['group', 'creator.media', 'editor.media']);
     }
 
     public function update(MeetingAttendee $meetingAttendee, array $validated): MeetingAttendee
     {
         $meetingAttendee->update($validated);
 
-        return $meetingAttendee->load(['group', 'creator', 'editor']);
+        return $meetingAttendee->load(['group', 'creator.media', 'editor.media']);
     }
 
     public function destroy(MeetingAttendee $meetingAttendee): void
@@ -76,7 +76,7 @@ class MeetingAttendeeService
     {
         $meetingAttendee->update(['status' => $status]);
 
-        return $meetingAttendee->load(['group', 'creator', 'editor']);
+        return $meetingAttendee->load(['group', 'creator.media', 'editor.media']);
     }
 
     /**

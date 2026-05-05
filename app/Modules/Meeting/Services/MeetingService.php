@@ -55,7 +55,7 @@ class MeetingService
 
     public function index(array $filters, int $limit)
     {
-        return Meeting::with(['meetingType', 'meetingLocation', 'creator', 'editor'])
+        return Meeting::with(['meetingType', 'meetingLocation', 'creator.media', 'editor.media'])
             ->filter($filters)
             ->paginate($limit);
     }
@@ -67,8 +67,8 @@ class MeetingService
             'meetingLocation',
             'chairperson',
             'operator',
-            'creator',
-            'editor',
+            'creator.media',
+            'editor.media',
             'participants.attendee.user',
             'agendas',
             'documents.documentType',
@@ -84,14 +84,14 @@ class MeetingService
             'organization_id' => $this->resolveCurrentOrganizationId(),
         ];
 
-        return Meeting::create($payload)->load(['meetingType', 'meetingLocation', 'chairperson', 'operator', 'creator', 'editor']);
+        return Meeting::create($payload)->load(['meetingType', 'meetingLocation', 'chairperson', 'operator', 'creator.media', 'editor.media']);
     }
 
     public function update(Meeting $meeting, array $validated): Meeting
     {
         $meeting->update($validated);
 
-        return $meeting->load(['meetingType', 'meetingLocation', 'chairperson', 'operator', 'creator', 'editor']);
+        return $meeting->load(['meetingType', 'meetingLocation', 'chairperson', 'operator', 'creator.media', 'editor.media']);
     }
 
     public function destroy(Meeting $meeting): void
@@ -139,7 +139,7 @@ class MeetingService
             Event::dispatch(new MeetingPublished($meeting->fresh()));
         }
 
-        return $meeting->load(['meetingType', 'meetingLocation', 'creator', 'editor']);
+        return $meeting->load(['meetingType', 'meetingLocation', 'creator.media', 'editor.media']);
     }
 
     /**

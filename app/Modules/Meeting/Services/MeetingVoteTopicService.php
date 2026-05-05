@@ -23,14 +23,14 @@ class MeetingVoteTopicService
 
     public function index(array $filters, int $limit)
     {
-        return MeetingVoteTopic::with(['creator', 'editor'])
+        return MeetingVoteTopic::with(['creator.media', 'editor.media'])
             ->filter($filters)
             ->paginate($limit);
     }
 
     public function show(MeetingVoteTopic $meetingVoteTopic): MeetingVoteTopic
     {
-        return $meetingVoteTopic->load(['creator', 'editor']);
+        return $meetingVoteTopic->load(['creator.media', 'editor.media']);
     }
 
     public function store(array $validated): MeetingVoteTopic
@@ -46,14 +46,14 @@ class MeetingVoteTopicService
             ...$validated,
             'organization_id' => $this->resolveCurrentOrganizationId(),
             'status' => $validated['status'] ?? MeetingVoteTopicStatusEnum::Draft->value,
-        ])->load(['creator', 'editor']);
+        ])->load(['creator.media', 'editor.media']);
     }
 
     public function update(MeetingVoteTopic $meetingVoteTopic, array $validated): MeetingVoteTopic
     {
         $meetingVoteTopic->update($validated);
 
-        return $meetingVoteTopic->load(['creator', 'editor']);
+        return $meetingVoteTopic->load(['creator.media', 'editor.media']);
     }
 
     public function destroy(MeetingVoteTopic $meetingVoteTopic): void
@@ -77,7 +77,7 @@ class MeetingVoteTopicService
             'closed_at' => null,
         ]);
 
-        return $meetingVoteTopic->load(['creator', 'editor']);
+        return $meetingVoteTopic->load(['creator.media', 'editor.media']);
     }
 
     public function close(MeetingVoteTopic $meetingVoteTopic): MeetingVoteTopic
@@ -87,7 +87,7 @@ class MeetingVoteTopicService
             'closed_at' => now(),
         ]);
 
-        return $meetingVoteTopic->load(['creator', 'editor']);
+        return $meetingVoteTopic->load(['creator.media', 'editor.media']);
     }
 
     public function reorder(array $items): void

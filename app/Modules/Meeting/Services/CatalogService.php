@@ -64,14 +64,14 @@ class CatalogService
         $model = app($modelClass);
 
         return $model->newQuery()
-            ->with(['creator', 'editor'])
+            ->with(['creator.media', 'editor.media'])
             ->filter($filters)
             ->paginate($limit);
     }
 
     public function show(Model $model): Model
     {
-        return $model->load(['creator', 'editor']);
+        return $model->load(['creator.media', 'editor.media']);
     }
 
     public function store(string $modelClass, array $validated): Model
@@ -83,14 +83,14 @@ class CatalogService
             'organization_id' => $this->resolveCurrentOrganizationId(),
         ];
 
-        return $model->newQuery()->create($payload)->load(['creator', 'editor']);
+        return $model->newQuery()->create($payload)->load(['creator.media', 'editor.media']);
     }
 
     public function update(Model $model, array $validated): Model
     {
         $model->update($validated);
 
-        return $model->load(['creator', 'editor']);
+        return $model->load(['creator.media', 'editor.media']);
     }
 
     public function destroy(Model $model): void
@@ -122,7 +122,7 @@ class CatalogService
     {
         $model->update(['status' => $status]);
 
-        return $model->load(['creator', 'editor']);
+        return $model->load(['creator.media', 'editor.media']);
     }
 
     public function export(string $modelClass, array $filters, string $fileName): BinaryFileResponse
