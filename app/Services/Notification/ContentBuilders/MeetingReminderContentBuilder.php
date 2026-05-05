@@ -26,6 +26,7 @@ class MeetingReminderContentBuilder implements ContentBuilder
         return match ($channelKey) {
             'sms' => $this->toSms($recipient, $notifiable),
             'mail' => $this->toMail($recipient, $notifiable),
+            'zalo' => $this->toZalo($recipient, $notifiable),
             'fcm' => $this->toFcm($recipient, $notifiable),
             default => null,
         };
@@ -110,6 +111,24 @@ class MeetingReminderContentBuilder implements ContentBuilder
             recipient: new Recipient(email: $recipient->email, name: $recipient->name),
             content: $html,
             subject: $subject,
+        );
+    }
+
+    private function toZalo(User $recipient, Meeting $meeting): ?NotificationPayload
+    {
+        if (! $recipient->phone) {
+            return null;
+        }
+
+        return new NotificationPayload(
+            channels: ['zalo'],
+            recipient: new Recipient(phone: $recipient->phone, name: $recipient->name),
+            content: '',
+            context: [
+                'customer_name' => $recipient->name,
+                'meeting_title' => $meeting->title,
+                'event' => "meeting_reminder_{$this->moment}",
+            ],
         );
     }
 
