@@ -103,7 +103,6 @@ return new class extends Migration
             $table->foreignId('organization_id')->constrained('organizations')->cascadeOnDelete();
             $table->foreignId('meeting_id')->constrained('meetings')->cascadeOnDelete();
             $table->foreignId('meeting_attendee_id')->constrained('meeting_attendees')->cascadeOnDelete();
-            $table->string('role')->default('delegate');
             $table->string('display_name');
             $table->string('position_name')->nullable();
             $table->string('department_name')->nullable();

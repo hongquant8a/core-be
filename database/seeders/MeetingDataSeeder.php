@@ -287,18 +287,16 @@ class MeetingDataSeeder extends Seeder
             );
         }
 
-        // Participants — toàn bộ 8 attendees nội bộ. Chair/operator được set qua FK trên meeting (không qua role enum).
+        // Participants — toàn bộ 8 attendees nội bộ. Chair/operator set qua FK trên meeting.
         $participants = [];
         foreach ($attendees as $idx => $attendee) {
             $attendee->loadMissing('user.profile');
-            $role = 'delegate';
             $responseStatus = $idx <= 5 ? 'accepted' : 'pending';
 
             $participants[] = MeetingParticipant::firstOrCreate(
                 ['meeting_id' => $meeting->id, 'meeting_attendee_id' => $attendee->id],
                 [
                     'organization_id' => $this->orgId,
-                    'role' => $role,
                     'display_name' => $attendee->user?->name,
                     'position_name' => $attendee->position_name,
                     'department_name' => $attendee->department_name,
@@ -431,7 +429,6 @@ class MeetingDataSeeder extends Seeder
                 ['meeting_id' => $meeting->id, 'meeting_attendee_id' => $attendee->id],
                 [
                     'organization_id' => $this->orgId,
-                    'role' => 'delegate',
                     'display_name' => $attendee->user?->name,
                     'position_name' => $attendee->position_name,
                     'department_name' => $attendee->department_name,
@@ -489,7 +486,6 @@ class MeetingDataSeeder extends Seeder
                 ['meeting_id' => $meeting->id, 'meeting_attendee_id' => $attendee->id],
                 [
                     'organization_id' => $this->orgId,
-                    'role' => 'delegate',
                     'display_name' => $attendee->user?->name,
                     'position_name' => $attendee->position_name,
                     'department_name' => $attendee->department_name,

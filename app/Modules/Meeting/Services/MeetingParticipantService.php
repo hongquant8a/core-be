@@ -3,7 +3,6 @@
 namespace App\Modules\Meeting\Services;
 
 use App\Modules\Meeting\Enums\MeetingParticipantResponseStatusEnum;
-use App\Modules\Meeting\Enums\MeetingParticipantRoleEnum;
 use App\Modules\Meeting\Models\MeetingAttendee;
 use App\Modules\Meeting\Models\MeetingParticipant;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -43,7 +42,6 @@ class MeetingParticipantService
             'organization_id' => $this->resolveCurrentOrganizationId(),
             'meeting_id' => $validated['meeting_id'],
             'meeting_attendee_id' => $attendee->id,
-            'role' => $validated['role'] ?? MeetingParticipantRoleEnum::Delegate->value,
             // Snapshot per spec: copy data lúc tạo participant — không thay đổi khi user đổi profile sau.
             'display_name' => $attendee->user?->name,
             'position_name' => $attendee->position_name,

@@ -14,7 +14,6 @@ class MeetingParticipantResource extends JsonResource
             'meeting_id' => $this->meeting_id,
             'meeting_attendee_id' => $this->meeting_attendee_id,
             'attendee_name' => $this->attendee?->name,
-            'role' => $this->role,
             'display_name' => $this->display_name,
             'position_name' => $this->position_name,
             'department_name' => $this->department_name,

@@ -3,7 +3,6 @@
 namespace App\Modules\Meeting\Requests;
 
 use App\Modules\Meeting\Enums\MeetingParticipantResponseStatusEnum;
-use App\Modules\Meeting\Enums\MeetingParticipantRoleEnum;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateMeetingParticipantRequest extends FormRequest
@@ -16,7 +15,6 @@ class UpdateMeetingParticipantRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'role' => ['sometimes', MeetingParticipantRoleEnum::rule()],
             'response_status' => ['sometimes', MeetingParticipantResponseStatusEnum::rule()],
             'absence_reason' => 'nullable|string',
             'responded_at' => 'nullable|date',
@@ -46,7 +44,6 @@ class UpdateMeetingParticipantRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'role' => 'role',
             'response_status' => 'Trạng thái phản hồi',
             'absence_reason' => 'absence reason',
             'responded_at' => 'responded at',
@@ -55,7 +52,6 @@ class UpdateMeetingParticipantRequest extends FormRequest
     public function bodyParameters(): array
     {
         return [
-            'role' => ['description' => 'Vai trò người tham dự.', 'example' => 'operator'],
             'response_status' => ['description' => 'Trạng thái phản hồi.', 'example' => 'accepted'],
             'absence_reason' => ['description' => 'Lý do vắng (nếu có).', 'example' => 'Bận công tác'],
             'responded_at' => ['description' => 'Thời điểm phản hồi.', 'example' => '2026-05-01 07:30:00'],

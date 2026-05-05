@@ -67,8 +67,8 @@ Datetime: `H:i:s d/m/Y` (vd `08:30:00 01/05/2026`). Time-only (giờ chương tr
 | `title` | string (≤255) | ✅ | Tiêu đề cuộc họp. |
 | `meeting_type_id` | integer | — | FK `meeting_types.id`. |
 | `meeting_location_id` | integer | — | FK `meeting_locations.id`. |
-| `chairperson_meeting_attendee_id` | integer | — | FK `meeting_attendees.id` — chủ trì. **BE auto-tạo participant nếu chưa có.** |
-| `operator_meeting_attendee_id` | integer | — | FK `meeting_attendees.id` — thư ký/điều hành. **BE auto-tạo participant nếu chưa có.** |
+| `chairperson_meeting_attendee_id` | integer | — | FK `meeting_attendees.id` — chủ trì. **Không tự tạo participant** (chair/operator riêng biệt với participants). |
+| `operator_meeting_attendee_id` | integer | — | FK `meeting_attendees.id` — thư ký/điều hành. |
 | `is_public` | boolean | ✅ | Có cho phép xem ở trang công khai không. |
 | `start_time` | datetime `Y-m-d H:i:s` | ✅ | Thời gian bắt đầu. |
 | `end_time` | datetime `Y-m-d H:i:s` | — | Phải `>= start_time`. |
@@ -76,7 +76,7 @@ Datetime: `H:i:s d/m/Y` (vd `08:30:00 01/05/2026`). Time-only (giờ chương tr
 | `status` | enum | ✅ | `draft` \| `published` \| `cancelled`. **Không có `in_progress`/`completed`** — FE tự derive từ `start_time`/`end_time` vs `now()`. |
 | `published_at` | datetime | — | Tự set khi publish. |
 
-> **Chủ trì + Thư ký** lưu trực tiếp trên `meetings` qua 2 FK (singular cardinality). FE chọn từ `/api/meeting-attendees/user-options` rồi gửi `chairperson_meeting_attendee_id` + `operator_meeting_attendee_id` lúc tạo/update meeting. BE tự động tạo `meeting_participants` row cho 2 attendee đó nếu chưa có (role=`delegate`) — đảm bảo họ có mặt trong danh sách điểm danh + nhận giấy mời khi publish.
+> **Chủ trì + Thư ký** lưu trực tiếp trên `meetings` qua 2 FK (singular cardinality). FE chọn từ `/api/meeting-attendees` rồi gửi `chairperson_meeting_attendee_id` + `operator_meeting_attendee_id` lúc tạo/update meeting. **Không tự tạo participant** — chair/operator độc lập với danh sách participants. Nếu muốn họ tham gia điểm danh/nhận giấy mời, FE thêm thủ công qua `POST /meeting-participants`.
 
 ### 1.4 Response (MeetingResource)
 
@@ -107,9 +107,9 @@ Datetime: `H:i:s d/m/Y` (vd `08:30:00 01/05/2026`). Time-only (giờ chương tr
   "created_at": "08:00:00 01/05/2026",
   "updated_at": "08:00:00 08/05/2026",
   "participants": [
-    { "id": 12, "role": "delegate", "display_name": "Nguyễn Văn Hùng", "email": "...", "phone": "...", "response_status": "accepted", ... },
-    { "id": 13, "role": "delegate", "display_name": "Trần Thị Mai", ... },
-    { "id": 14, "role": "guest", "display_name": "TS. Bình", ... }
+    { "id": 12, "meeting_attendee_id": 12, "display_name": "Nguyễn Văn Hùng", "email": "...", "phone": "...", "response_status": "accepted", ... },
+    { "id": 13, "meeting_attendee_id": 13, "display_name": "Trần Thị Mai", ... },
+    { "id": 14, "meeting_attendee_id": 14, "display_name": "Lê Hoàng Nam", ... }
   ],
   "agendas": [
     { "id": 1, "sort_order": 1, "start_time": "08:00:00", "end_time": "08:30:00", "content": "Khai mạc kỳ họp.", ... }
@@ -343,14 +343,12 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
 
 > **Chủ trì + Thư ký KHÔNG ở đây** — đã chuyển lên FK trên `meetings` (`chairperson_meeting_attendee_id`, `operator_meeting_attendee_id`) vì cardinality 1-1. Xem [Section 1.3](#meeting-body).
 >
-> Role enum của participant chỉ còn 2 giá trị:
-> - `delegate` (mặc định) — đại biểu thường
-> - `guest` — khách mời (không có quyền biểu quyết)
+> Participant **không có** field `role` — tất cả chỉ là "người tham gia". Để check chủ trì/thư ký, FE so sánh `meeting_attendee_id` với `meeting.chairperson_meeting_attendee_id` / `operator_meeting_attendee_id`.
 
 | Method | Path | Mô tả |
 |---|---|---|
-| GET | `/api/meeting-participants/stats` | `{ total, accepted, declined }`. Query: `meeting_id`, `response_status`, `role`, `search`. |
-| GET | `/api/meeting-participants` | Danh sách phân trang. Query: `meeting_id`, `response_status`, `role`, `search` (display_name), `sort_by` (`id\|display_name\|responded_at\|created_at`), `sort_order`, `limit`. |
+| GET | `/api/meeting-participants/stats` | `{ total, accepted, declined }`. Query: `meeting_id`, `response_status`, `search`. |
+| GET | `/api/meeting-participants` | Danh sách phân trang. Query: `meeting_id`, `response_status`, `search` (display_name), `sort_by` (`id\|display_name\|responded_at\|created_at`), `sort_order`, `limit`. |
 | GET | `/api/meeting-participants/{id}` | Chi tiết. |
 | POST | `/api/meeting-participants` | Tạo (mời thêm 1 đại biểu vào cuộc họp). Body: [Participant body](#participant-body). |
 | PUT \| PATCH | `/api/meeting-participants/{id}` | Cập nhật role/response_status/absence_reason (snapshot fields KHÔNG đổi). |
@@ -363,7 +361,6 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
 |---|---|---|---|
 | `meeting_id` | integer | ✅ | FK `meetings.id`. |
 | `meeting_attendee_id` | integer | ✅ | FK `meeting_attendees.id`. Snapshot `display_name/email/phone` được copy từ `attendee.user`. |
-| `role` | enum | — | `delegate` (mặc định) \| `guest`. (chair/operator → set qua FK trên meeting). |
 | `response_status` | enum | — | `pending` (mặc định) \| `accepted` \| `declined`. |
 | `absence_reason` | text | — | Lý do vắng (khi `declined`). |
 
@@ -371,7 +368,6 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
 {
   "meeting_id": 1,
   "meeting_attendee_id": 12,
-  "role": "delegate",
   "response_status": "pending"
 }
 ```
@@ -387,7 +383,6 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
   "meeting_id": 1,
   "meeting_attendee_id": 12,
   "attendee_name": "Nguyễn Văn A",
-  "role": "delegate",
   "display_name": "Nguyễn Văn A",
   "position_name": "Chủ tịch HĐND",
   "department_name": "HĐND TP",

@@ -3,7 +3,6 @@
 namespace App\Modules\Meeting\Requests;
 
 use App\Modules\Meeting\Enums\MeetingParticipantResponseStatusEnum;
-use App\Modules\Meeting\Enums\MeetingParticipantRoleEnum;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreMeetingParticipantRequest extends FormRequest
@@ -18,7 +17,6 @@ class StoreMeetingParticipantRequest extends FormRequest
         return [
             'meeting_id' => 'required|integer|exists:meetings,id',
             'meeting_attendee_id' => 'required|integer|exists:meeting_attendees,id',
-            'role' => ['nullable', MeetingParticipantRoleEnum::rule()],
             'response_status' => ['nullable', MeetingParticipantResponseStatusEnum::rule()],
             'absence_reason' => 'nullable|string',
         ];
@@ -49,7 +47,6 @@ class StoreMeetingParticipantRequest extends FormRequest
         return [
             'meeting_id' => 'ID cuộc họp',
             'meeting_attendee_id' => 'ID đại biểu',
-            'role' => 'role',
             'response_status' => 'Trạng thái phản hồi',
             'absence_reason' => 'absence reason',
         ];
@@ -64,10 +61,6 @@ class StoreMeetingParticipantRequest extends FormRequest
             'meeting_attendee_id' => [
                 'description' => 'ID đại biểu trong danh bạ meeting.',
                 'example' => 1,
-            ],
-            'role' => [
-                'description' => 'Vai trò tham dự.',
-                'example' => 'delegate',
             ],
             'response_status' => [
                 'description' => 'Trạng thái phản hồi tham dự.',
