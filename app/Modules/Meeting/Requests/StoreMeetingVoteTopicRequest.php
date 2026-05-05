@@ -67,7 +67,7 @@ class StoreMeetingVoteTopicRequest extends FormRequest
     {
         return [
             'meeting_id' => ['description' => 'ID cuộc họp.', 'example' => 1],
-            'meeting_agenda_id' => ['description' => 'ID chương trình họp liên quan.', 'example' => 2],
+            'meeting_agenda_id' => ['description' => 'ID chương trình họp liên quan (nullable).', 'example' => 2],
             'title' => ['description' => 'Tên chương trình biểu quyết.', 'example' => 'Thông qua kế hoạch A'],
             'vote_type' => ['description' => 'Loại biểu quyết.', 'example' => 'agree_disagree_abstain'],
             'ballot_mode' => ['description' => 'Chế độ biểu quyết.', 'example' => 'anonymous'],

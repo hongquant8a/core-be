@@ -20,11 +20,11 @@ class StoreMeetingRequest extends FormRequest
             'chairperson_meeting_attendee_id' => 'nullable|integer|exists:meeting_attendees,id',
             'operator_meeting_attendee_id' => 'nullable|integer|exists:meeting_attendees,id',
             'title' => 'required|string|max:255',
-            'is_public' => 'required|boolean',
+            'is_public' => 'nullable|boolean',
             'content' => 'nullable|string',
             'start_time' => 'required|date',
             'end_time' => 'nullable|date|after_or_equal:start_time',
-            'status' => ['required', MeetingStatusEnum::rule()],
+            'status' => ['nullable', MeetingStatusEnum::rule()],
             'published_at' => 'nullable|date',
         ];
     }
