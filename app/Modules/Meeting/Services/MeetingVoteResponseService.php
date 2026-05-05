@@ -45,6 +45,13 @@ class MeetingVoteResponseService
             ->where('organization_id', $organizationId)
             ->findOrFail($validated['meeting_vote_topic_id']);
 
+        // Spec line 165: chỉ vote khi topic đang opened (chưa mở/đã đóng đều cấm).
+        if ($topic->status !== 'opened') {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'meeting_vote_topic_id' => ['Chương trình biểu quyết chưa mở hoặc đã đóng — không thể bỏ phiếu.'],
+            ]);
+        }
+
         $participant = MeetingParticipant::query()
             ->where('organization_id', $organizationId)
             ->findOrFail($validated['meeting_participant_id']);
@@ -73,6 +80,15 @@ class MeetingVoteResponseService
 
     public function update(MeetingVoteResponse $meetingVoteResponse, array $validated): MeetingVoteResponse
     {
+        // Spec line 165: sau khi đóng biểu quyết thì không cho sửa phiếu.
+        // Reload để lấy status mới nhất, tránh stale relation cached.
+        $topic = MeetingVoteTopic::find($meetingVoteResponse->meeting_vote_topic_id);
+        if ($topic && $topic->status === 'closed') {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'meeting_vote_topic_id' => ['Chương trình biểu quyết đã đóng — không thể sửa phiếu.'],
+            ]);
+        }
+
         $meetingVoteResponse->update([
             'option' => $validated['option'],
             'voted_at' => now(),

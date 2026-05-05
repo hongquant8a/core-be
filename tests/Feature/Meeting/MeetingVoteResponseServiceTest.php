@@ -61,7 +61,7 @@ class MeetingVoteResponseServiceTest extends TestCase
         ]);
     }
 
-    private function makeTopic(Meeting $meeting): MeetingVoteTopic
+    private function makeTopic(Meeting $meeting, string $status = 'opened'): MeetingVoteTopic
     {
         return MeetingVoteTopic::create([
             'organization_id' => $this->org->id,
@@ -69,7 +69,7 @@ class MeetingVoteResponseServiceTest extends TestCase
             'title' => 'T',
             'vote_type' => 'agree_disagree',
             'ballot_mode' => 'open',
-            'status' => 'draft',
+            'status' => $status,
         ]);
     }
 
@@ -112,5 +112,54 @@ class MeetingVoteResponseServiceTest extends TestCase
             'meeting_participant_id' => $participantY->id,
             'option' => 'agree',
         ]);
+    }
+
+    public function test_store_rejects_when_topic_is_draft(): void
+    {
+        $meeting = $this->makeMeeting();
+        $participant = $this->makeParticipant($meeting);
+        $topic = $this->makeTopic($meeting, 'draft');
+
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+
+        $this->service->store([
+            'meeting_vote_topic_id' => $topic->id,
+            'meeting_participant_id' => $participant->id,
+            'option' => 'agree',
+        ]);
+    }
+
+    public function test_store_rejects_when_topic_is_closed(): void
+    {
+        $meeting = $this->makeMeeting();
+        $participant = $this->makeParticipant($meeting);
+        $topic = $this->makeTopic($meeting, 'closed');
+
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+
+        $this->service->store([
+            'meeting_vote_topic_id' => $topic->id,
+            'meeting_participant_id' => $participant->id,
+            'option' => 'agree',
+        ]);
+    }
+
+    public function test_update_rejects_when_topic_is_closed(): void
+    {
+        $meeting = $this->makeMeeting();
+        $participant = $this->makeParticipant($meeting);
+        $topic = $this->makeTopic($meeting, 'opened');
+
+        $response = $this->service->store([
+            'meeting_vote_topic_id' => $topic->id,
+            'meeting_participant_id' => $participant->id,
+            'option' => 'agree',
+        ]);
+
+        $topic->update(['status' => 'closed']);
+
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+
+        $this->service->update($response, ['option' => 'disagree']);
     }
 }
