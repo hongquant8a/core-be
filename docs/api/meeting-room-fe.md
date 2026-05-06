@@ -86,16 +86,24 @@ Response auth admin stats:
 ### 0.2 List + filter
 
 ```
-GET /api/meetings
+GET /api/meetings/public        (trang chung - guest + auth)
+GET /api/meetings               (admin scope - cần permission meetings.index)
 ```
 
-Query params:
+**`/api/meetings/public`** — endpoint chính cho trang index FE:
+- Guest: chỉ meeting `is_public=true + status=published`
+- Auth (gửi token): union với meeting user là chair/operator/participant
+- Header `Authorization` optional. Nếu có thì server expand scope tự động.
+
+**`/api/meetings`** — chỉ dùng cho trang admin tổng thể (thấy mọi meeting của org). Không dùng cho trang index chung.
+
+Query params (chung cho cả 2):
 | Param | Kiểu | Mô tả |
 |---|---|---|
 | `search` | string | Tìm theo title |
 | `meeting_type_id` | int | Filter loại |
-| `status` | enum | `draft\|published\|cancelled` |
-| `is_public` | bool | |
+| `status` | enum | `draft\|published\|cancelled` (admin scope only) |
+| `is_public` | bool | (admin scope only) |
 | `from_date` / `to_date` | date | Khoảng `created_at` |
 | `sort_by` | enum | `id\|title\|start_time\|created_at\|updated_at` |
 | `sort_order` | enum | `asc\|desc` |
@@ -151,8 +159,14 @@ Body: { "ids": [1, 2, 3] }
 Trước khi vào tab, FE gọi 1 lần để lấy meta + permission gate:
 
 ```
-GET /api/meetings/{id}
+GET /api/meetings/public/{id}     (trang chung - guest + auth)
+GET /api/meetings/{id}            (admin scope - cần permission meetings.show)
 ```
+
+> **Auth scoping behavior** (cả 2 endpoint):
+> - Guest hit `public/{id}`: chỉ truy cập được meeting `is_public=true + status=published` (404 nếu khác)
+> - Auth user hit `public/{id}`: truy cập được meeting công khai HOẶC meeting họ là chair/op/participant
+> - Documents preload tự động filter `is_public=true` cho user **không tham gia**; participant thấy hết
 
 Response (kèm nested):
 ```json
@@ -246,17 +260,18 @@ Response: `{ "success": true, "data": { ...participant updated } }`.
 
 ### 2.1 Danh sách tài liệu
 
-Đã có sẵn từ `GET /api/meetings/{id}` (preload `documents[]`).
+Đã có sẵn từ `GET /api/meetings/public/{id}` hoặc `/api/meetings/{id}` (preload `documents[]`).
 
-> **Document visibility**: BE tự động filter `is_public` theo participation:
+> **Document visibility (auto theo participation)** — BE filter `is_public` theo quan hệ user-meeting:
 > - Guest hoặc auth-không-tham-gia → chỉ thấy doc `is_public=true`
-> - Chủ trì / thư ký / đã được mời tham gia → thấy mọi doc
+> - Chủ trì / thư ký / đã được mời tham gia → thấy mọi doc (kể cả `is_public=false`)
 >
-> FE không cần gửi flag — BE detect từ `auth()->id()` so với chairperson/operator/participants của meeting.
+> FE **không** gửi flag — BE detect từ `auth()->id()` so với chairperson/operator/participants của meeting. Trang chung dùng chung 1 endpoint cho mọi role.
 
-Refresh riêng:
+Refresh riêng (khi cần search/sort/page độc lập):
 ```
-GET /api/meeting-documents?meeting_id={id}
+GET /api/meeting-documents/public?meeting_id={id}     (trang chung - guest + auth)
+GET /api/meeting-documents?meeting_id={id}            (auth scope, cùng filter participation)
 ```
 
 Query params: `meeting_agenda_id`, `meeting_document_type_id`, `search` (title/document_number), `is_public`, `sort_by` (`id|sort_order|created_at|updated_at`), `sort_order`, `limit`.
