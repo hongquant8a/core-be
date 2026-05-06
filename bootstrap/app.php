@@ -27,6 +27,12 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Mọi request /api/* → Laravel default render JSON cho mọi exception (kể cả
+        // AuthenticationException → 401 thay vì redirect login → RouteNotFoundException).
+        $exceptions->shouldRenderJsonWhen(function ($request) {
+            return $request->is('api/*') || $request->expectsJson();
+        });
+
         $exceptions->renderable(function (\Illuminate\Validation\ValidationException $e, $request) {
             if ($request->expectsJson() || $request->is('api/*')) {
                 return response()->json([
