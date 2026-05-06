@@ -40,7 +40,8 @@ Datetime: `H:i:s d/m/Y` (vd `08:30:00 01/05/2026`). Time-only (giờ chương tr
 
 | Method | Path | Mô tả |
 |---|---|---|
-| GET | `/api/meetings/public` | Danh sách cuộc họp công khai (`is_public=true` + `status=published`). Query: `search`, `meeting_type_id`, `from_date`, `to_date`, `sort_by`, `sort_order`, `limit`. |
+| GET | `/api/meetings/public` | "Visible" index — endpoint chung cho cả guest + auth user. Guest: chỉ meeting `is_public=true + status=published`. Auth (gửi token): union với meeting user là chủ trì/thư ký/đã được mời tham gia. Query: `search`, `meeting_type_id`, `from_date`, `to_date`, `sort_by`, `sort_order`, `limit`. |
+| GET | `/api/meetings/public/stats` | Stats công khai phái sinh từ start_time/end_time: `{total, upcoming, in_progress, finished}`. Cùng scope visibility với `public` index. |
 | GET | `/api/meetings/public/{id}` | Chi tiết cuộc họp công khai. Tự tăng `view_count` + ghi log vào `meeting_views`. Chặn 404 nếu không public/published. |
 
 ### 1.2 Authenticated CRUD
@@ -272,14 +273,16 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
 
 | Method | Path | Mô tả |
 |---|---|---|
-| GET | `/api/meeting-documents/public` | Danh sách tài liệu công khai (`is_public=true` + meeting cũng `is_public=true` + `status=published`). Query: `meeting_id`, `search`, `limit`. |
+| GET | `/api/meeting-documents/public` | "Visible" document index. Guest hoặc auth-không-tham-gia: doc `is_public=true` + meeting `is_public=true + status=published`. Auth participant của meeting (truyền `meeting_id`): thấy mọi doc. Query: `meeting_id`, `search`, `limit`. |
+| GET | `/api/meeting-documents/public/{id}/download` | Track + redirect 302 tới file. Citizen download không cần auth. Increment `download_count` + log `meeting_views`. |
 | GET | `/api/meeting-documents/public/{id}` | Chi tiết tài liệu công khai. Tự tăng `view_count` + log `meeting_views`. Chặn 404 nếu không công khai. |
 
 ### 3.2 Authenticated CRUD
 
 | Method | Path | Mô tả |
 |---|---|---|
-| GET | `/api/meeting-documents` | Danh sách phân trang. Query: `meeting_id`, `meeting_agenda_id`, `meeting_document_type_id`, `search` (title/document_number), `is_public`, `sort_by` (`id\|sort_order\|created_at\|updated_at`), `sort_order`, `limit`. |
+| GET | `/api/meeting-documents` | Danh sách phân trang. Auth scope theo participation: nếu user không phải chủ trì/thư ký/participant của meeting (truyền `meeting_id`) → tự động filter `is_public=true`. Query: `meeting_id`, `meeting_agenda_id`, `meeting_document_type_id`, `search` (title/document_number), `is_public`, `sort_by` (`id\|sort_order\|created_at\|updated_at`), `sort_order`, `limit`. |
+| GET | `/api/meeting-documents/{id}/download` | Track + redirect 302. Yêu cầu auth + permission `meeting-documents.show`. |
 | GET | `/api/meeting-documents/{id}` | Chi tiết. |
 | POST | `/api/meeting-documents` | Tạo (1 tài liệu = 1 file). Body: **multipart/form-data** với `file` (xem [Document body](#document-body)). |
 | PUT \| PATCH | `/api/meeting-documents/{id}` | Cập nhật metadata + thay/xóa file. `file` upload mới (replace file cũ), `remove_file=true` xóa file hiện tại. |

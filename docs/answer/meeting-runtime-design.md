@@ -43,6 +43,23 @@ Tài liệu chốt thiết kế cho **luồng vận hành cuộc họp tại run
 
 ---
 
+## 2.x. Document/Meeting visibility theo participation (đã ship 2026-05-06)
+
+**Quy tắc**: ai thấy gì khi xem meeting / docs.
+
+| User | Index meeting (`/api/meetings/public`) | Show meeting | Documents trong meeting |
+|---|---|---|---|
+| **Guest** (không token) | Chỉ public + published | Chỉ public + published, 404 nếu khác | Chỉ `is_public=true` |
+| **Auth không-tham-gia** | Public + meeting họ là chair/op/participant (union) | Tương tự — meeting riêng tư của người khác = 404 | Chỉ `is_public=true` |
+| **Auth là chair/op/participant** | Như trên | Truy cập được kể cả meeting `is_public=false` | **Tất cả doc** (kể cả `is_public=false`) |
+| **Admin scope** (`/api/meetings`) | Mọi meeting org (cần permission) | — | Vẫn theo participation: admin không tham gia → chỉ thấy doc public (chống leak) |
+
+Implementation: trait [`HasDocumentVisibility`](../../app/Modules/Meeting/Concerns/HasDocumentVisibility.php) có `shouldSeeAllDocs()` — apply ở 5 service methods (publicIndex / publicShow / show của Meeting + publicIndex / publicShow / index của Document).
+
+→ FE chỉ cần 1 endpoint `/api/meetings/public` cho trang index chung — auto behavior khác nhau theo token.
+
+---
+
 ## 3. Action endpoints mới
 
 Tổng cộng **~7 endpoint** + **1 middleware**. Áp dụng từ Sprint 1 trở đi.
