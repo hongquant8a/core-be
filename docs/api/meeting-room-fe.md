@@ -61,13 +61,24 @@ function getMyMeetingRole(meeting, currentUser) {
 
 **URL FE đề xuất**: `/`
 
+> ⚠️ **Trang index chung cho cả guest và auth user**. Dùng endpoint `/api/meetings/public` với token nếu có:
+> - Guest (không token) → thấy meeting `is_public=true + status=published`
+> - Auth user (có token) → thấy public meeting + meeting họ là chủ trì/thư ký/đã được mời tham gia
+> - Admin scope (mọi meeting org) → trang riêng dùng `/api/meetings` (yêu cầu `meetings.index` permission)
+
 ### 0.1 Stats cards (top of page)
 
 ```
-GET /api/meetings/stats?{filters}
+GET /api/meetings/public/stats?{filters}     (guest/auth - dùng cho trang chung)
+GET /api/meetings/stats?{filters}             (admin - mọi meeting org)
 ```
 
-Response:
+Response public stats:
+```json
+{ "success": true, "data": { "total": 27, "upcoming": 5, "in_progress": 1, "finished": 21 } }
+```
+
+Response auth admin stats:
 ```json
 { "success": true, "data": { "total": 27, "published": 18, "draft": 9 } }
 ```
@@ -236,6 +247,12 @@ Response: `{ "success": true, "data": { ...participant updated } }`.
 ### 2.1 Danh sách tài liệu
 
 Đã có sẵn từ `GET /api/meetings/{id}` (preload `documents[]`).
+
+> **Document visibility**: BE tự động filter `is_public` theo participation:
+> - Guest hoặc auth-không-tham-gia → chỉ thấy doc `is_public=true`
+> - Chủ trì / thư ký / đã được mời tham gia → thấy mọi doc
+>
+> FE không cần gửi flag — BE detect từ `auth()->id()` so với chairperson/operator/participants của meeting.
 
 Refresh riêng:
 ```

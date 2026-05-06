@@ -2,6 +2,7 @@
 
 namespace App\Modules\Meeting\Services;
 
+use App\Modules\Meeting\Concerns\HasDocumentVisibility;
 use App\Modules\Meeting\Enums\MeetingStatusEnum;
 use App\Modules\Meeting\Exports\MeetingExport;
 use App\Modules\Meeting\Models\Meeting;
@@ -16,35 +17,61 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class MeetingService
 {
+    use HasDocumentVisibility;
+
+    /**
+     * "Visible" index — endpoint dùng chung cho trang index FE:
+     *   - Guest: chỉ thấy meeting (is_public=true + status=published)
+     *   - Auth user: thấy meeting công khai + meeting họ là chủ trì / thư ký / participant
+     */
     public function publicIndex(array $filters, int $limit)
     {
-        $publicFilters = [
-            ...$filters,
-            'is_public' => true,
-            'status' => MeetingStatusEnum::Published->value,
-        ];
+        $userId = auth()->id();
 
-        return Meeting::with(['meetingType', 'meetingLocation'])
-            ->filter($publicFilters)
-            ->paginate($limit);
+        $query = Meeting::with(['meetingType', 'meetingLocation'])
+            ->filter($filters)
+            ->where(function ($outer) use ($userId) {
+                // Branch 1: cuộc họp công khai + đã ban hành.
+                $outer->where(function ($public) {
+                    $public->where('is_public', true)
+                        ->where('status', MeetingStatusEnum::Published->value);
+                });
+
+                // Branch 2 (auth): meeting user là chủ trì / thư ký / đã được mời tham gia.
+                if ($userId) {
+                    $outer->orWhereHas('chairperson', fn ($q) => $q->where('user_id', $userId))
+                        ->orWhereHas('operator', fn ($q) => $q->where('user_id', $userId))
+                        ->orWhereHas('participants.attendee', fn ($q) => $q->where('user_id', $userId));
+                }
+            });
+
+        return $query->paginate($limit);
     }
 
+    /**
+     * "Visible" show — endpoint dùng chung:
+     *   - Public + published meeting: ai cũng xem được
+     *   - Meeting riêng tư: chỉ chủ trì / thư ký / participant xem được
+     * Documents preload filter is_public=true cho user không phải participant; participant thấy hết.
+     */
     public function publicShow(Meeting $meeting): Meeting
     {
-        if (! $meeting->is_public || $meeting->status !== MeetingStatusEnum::Published->value) {
-            throw new ModelNotFoundException('Không tìm thấy cuộc họp công khai.');
+        $isParticipant = $this->shouldSeeAllDocs($meeting);
+        $isPublishedPublic = $meeting->is_public
+            && $meeting->status === MeetingStatusEnum::Published->value;
+
+        if (! $isParticipant && ! $isPublishedPublic) {
+            throw new ModelNotFoundException('Không tìm thấy cuộc họp.');
         }
 
         // view_count + meeting_views log → middleware count.meeting.view xử lý (dedupe per user/day).
-        // Preload nested cho citizen — chỉ document is_public=true; agenda/vote topic của public meeting
-        // mặc định cũng public (theo design AND của is_public).
         return $meeting->load([
             'meetingType',
             'meetingLocation',
             'chairperson',
             'operator',
             'agendas',
-            'documents' => fn ($q) => $q->where('is_public', true),
+            'documents' => fn ($q) => $isParticipant ? $q : $q->where('is_public', true),
             'documents.documentType',
             'documents.mediaFile',
             'voteTopics',
@@ -97,6 +124,8 @@ class MeetingService
 
     public function show(Meeting $meeting): Meeting
     {
+        $isParticipant = $this->shouldSeeAllDocs($meeting);
+
         return $meeting->load([
             'meetingType',
             'meetingLocation',
@@ -106,6 +135,7 @@ class MeetingService
             'editor.media',
             'participants.attendee.user',
             'agendas',
+            'documents' => fn ($q) => $isParticipant ? $q : $q->where('is_public', true),
             'documents.documentType',
             'documents.mediaFile',
             'voteTopics',

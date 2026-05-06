@@ -3,6 +3,8 @@
 namespace App\Modules\Meeting\Services;
 
 use App\Modules\Core\Services\MediaService;
+use App\Modules\Meeting\Concerns\HasDocumentVisibility;
+use App\Modules\Meeting\Models\Meeting;
 use App\Modules\Meeting\Models\MeetingDocument;
 use App\Modules\Meeting\Models\MeetingView;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -10,17 +12,29 @@ use Illuminate\Support\Facades\DB;
 
 class MeetingDocumentService
 {
+    use HasDocumentVisibility;
+
     public function __construct(private MediaService $mediaService) {}
 
+    /**
+     * "Visible" document index — meeting public hoặc user là participant.
+     *   - Guest hoặc auth không-participant: chỉ doc is_public=true của public meeting
+     *   - Auth participant của meeting cụ thể (filter meeting_id): thấy mọi doc
+     */
     public function publicIndex(array $filters, int $limit)
     {
+        $meetingId = $filters['meeting_id'] ?? null;
+        $meeting = $meetingId ? Meeting::find($meetingId) : null;
+        $isParticipant = $this->shouldSeeAllDocs($meeting);
+
         return MeetingDocument::with(['agenda', 'documentType', 'mediaFile'])
-            ->where('is_public', true)
-            ->whereHas('meeting', function ($query) {
-                $query->where('is_public', true)
-                    ->where('status', 'published');
-            })
-            ->when($filters['meeting_id'] ?? null, fn ($q, $meetingId) => $q->where('meeting_id', $meetingId))
+            ->when(! $isParticipant, fn ($q) => $q->where('is_public', true)
+                ->whereHas('meeting', function ($mq) {
+                    $mq->where('is_public', true)
+                        ->where('status', 'published');
+                }))
+            ->when($isParticipant && $meetingId, fn ($q) => $q->where('meeting_id', $meetingId))
+            ->when(! $isParticipant && $meetingId, fn ($q) => $q->where('meeting_id', $meetingId))
             ->when($filters['search'] ?? null, fn ($q, $search) => $q->where('title', 'like', '%'.$search.'%'))
             ->orderBy('sort_order')
             ->orderByDesc('created_at')
@@ -29,13 +43,19 @@ class MeetingDocumentService
 
     public function publicShow(MeetingDocument $meetingDocument): MeetingDocument
     {
-        if (
-            ! $meetingDocument->is_public
-            || ! $meetingDocument->meeting
-            || ! $meetingDocument->meeting->is_public
-            || $meetingDocument->meeting->status !== 'published'
-        ) {
-            throw new ModelNotFoundException('Không tìm thấy tài liệu công khai.');
+        $meeting = $meetingDocument->meeting;
+        $isParticipant = $this->shouldSeeAllDocs($meeting);
+
+        if (! $isParticipant) {
+            // Guest hoặc auth non-participant: doc + meeting đều phải public + published
+            if (
+                ! $meetingDocument->is_public
+                || ! $meeting
+                || ! $meeting->is_public
+                || $meeting->status !== 'published'
+            ) {
+                throw new ModelNotFoundException('Không tìm thấy tài liệu.');
+            }
         }
 
         return $meetingDocument->load(['agenda', 'documentType', 'mediaFile']);
@@ -75,10 +95,20 @@ class MeetingDocumentService
         ];
     }
 
+    /**
+     * Auth document index — admin/đại biểu tổ chức. Filter is_public theo participation:
+     *   - User là chủ trì / thư ký / participant của meeting (qua filter meeting_id) → thấy hết
+     *   - Khác → chỉ doc is_public=true (kể cả admin tổ chức không tham gia trực tiếp)
+     */
     public function index(array $filters, int $limit)
     {
+        $meetingId = $filters['meeting_id'] ?? null;
+        $meeting = $meetingId ? Meeting::find($meetingId) : null;
+        $isParticipant = $this->shouldSeeAllDocs($meeting);
+
         return MeetingDocument::with(['agenda', 'documentType', 'mediaFile', 'creator.media', 'editor.media'])
             ->filter($filters)
+            ->when(! $isParticipant, fn ($q) => $q->where('is_public', true))
             ->paginate($limit);
     }
 
