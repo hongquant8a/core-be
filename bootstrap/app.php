@@ -16,6 +16,13 @@ return Application::configure(basePath: dirname(__DIR__))
         \App\Console\Commands\CleanupObsoleteSeedsCommand::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
+        // Mặc định Laravel set Authenticate::redirectUsing → route('login'), không tồn tại
+        // trong app API-only → RouteNotFoundException 500. Override: api/* không redirect,
+        // để Laravel throw AuthenticationException → render thành JSON 401.
+        $middleware->redirectGuestsTo(function ($request) {
+            return $request->is('api/*') ? null : '/login';
+        });
+
         $middleware->alias([
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'set.permissions.team' => \App\Modules\Core\Middleware\SetPermissionsTeamId::class,
