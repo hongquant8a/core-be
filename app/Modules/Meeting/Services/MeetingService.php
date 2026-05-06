@@ -50,6 +50,32 @@ class MeetingService
         ];
     }
 
+    /**
+     * Stats cho trang công khai — phase derived từ start_time/end_time vs now (không cần auth).
+     * Scope: is_public=true + status=published.
+     */
+    public function publicStats(array $filters): array
+    {
+        $publicFilters = [
+            ...$filters,
+            'is_public' => true,
+            'status' => MeetingStatusEnum::Published->value,
+        ];
+
+        $base = Meeting::filter($publicFilters);
+        $now = now();
+
+        return [
+            'total' => (clone $base)->count(),
+            'upcoming' => (clone $base)->where('start_time', '>', $now)->count(),
+            'in_progress' => (clone $base)
+                ->where('start_time', '<=', $now)
+                ->where(fn ($q) => $q->whereNull('end_time')->orWhere('end_time', '>=', $now))
+                ->count(),
+            'finished' => (clone $base)->whereNotNull('end_time')->where('end_time', '<', $now)->count(),
+        ];
+    }
+
     public function index(array $filters, int $limit)
     {
         return Meeting::with(['meetingType', 'meetingLocation', 'creator.media', 'editor.media'])

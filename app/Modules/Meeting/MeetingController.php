@@ -57,6 +57,23 @@ class MeetingController extends Controller
     }
 
     /**
+     * Thống kê cuộc họp công khai (citizen-facing).
+     *
+     * Phase derived từ start_time/end_time vs now: total / upcoming / in_progress / finished.
+     * Scope: is_public=true + status=published.
+     *
+     * @unauthenticated
+     * @queryParam search string Từ khóa tìm kiếm theo tiêu đề. Example: họp giao ban
+     * @queryParam meeting_type_id integer Lọc theo loại cuộc họp. Example: 1
+     * @queryParam from_date date Lọc từ ngày tạo (Y-m-d). Example: 2026-05-01
+     * @queryParam to_date date Lọc đến ngày tạo (Y-m-d). Example: 2026-05-31
+     */
+    public function publicStats(FilterRequest $request)
+    {
+        return $this->success($this->meetingService->publicStats($request->all()));
+    }
+
+    /**
      * Thống kê cuộc họp.
      *
      * @queryParam search string Từ khóa tìm kiếm theo tiêu đề. Example: họp giao ban
