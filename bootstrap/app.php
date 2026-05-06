@@ -46,4 +46,15 @@ return Application::configure(basePath: dirname(__DIR__))
                 ], 403);
             }
         });
+        // API request thiếu/hỏng token → 401 JSON thay vì redirect tới route('login')
+        // (Laravel default thử redirect → RouteNotFoundException nếu app không có web login).
+        $exceptions->renderable(function (\Illuminate\Auth\AuthenticationException $e, $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage() ?: 'Bạn cần đăng nhập để truy cập tài nguyên này.',
+                    'code' => 'UNAUTHENTICATED',
+                ], 401);
+            }
+        });
     })->create();
