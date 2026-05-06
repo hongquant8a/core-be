@@ -572,11 +572,16 @@ Content-Type: application/json
 {
   "meeting_id": 1,
   "meeting_agenda_id": 2,        # optional — gán vào chương trình
-  "meeting_participant_id": 12,  # FE lấy từ meeting.participants[] tìm theo currentUser
   "type": "discussion",          # discussion | question
   "content": "Nội dung thảo luận / câu hỏi chất vấn"
 }
 ```
+
+> **Auto-derive participant**: BE tự lookup `meeting_participant_id` từ `auth()->id()` so với `meeting.participants[].attendee.user_id`. FE **không gửi** `meeting_participant_id` (để tránh đại biểu A đăng ký hộ B). Nếu user không phải đại biểu của meeting → 404.
+>
+> **Update/Destroy**: chỉ owner đại biểu sửa/xóa được đăng ký của chính mình. User khác cố sửa → 404.
+>
+> **Bulk delete**: không có endpoint này theo design.
 
 > Nếu agenda đó `allow_discussion_registration=false` → BE chặn validation. Tương tự `allow_question_registration` cho `type=question`.
 

@@ -15,10 +15,11 @@ class StoreMeetingDiscussionRegistrationRequest extends FormRequest
 
     public function rules(): array
     {
+        // meeting_participant_id auto-derive từ auth user trong service (không nhận từ FE
+        // để tránh user đăng ký hộ đại biểu khác).
         return [
             'meeting_id' => 'required|integer|exists:meetings,id',
             'meeting_agenda_id' => 'nullable|integer|exists:meeting_agendas,id',
-            'meeting_participant_id' => 'required|integer|exists:meeting_participants,id',
             'type' => ['required', MeetingDiscussionTypeEnum::rule()],
             'content' => 'required|string',
             'file' => 'nullable|file|max:10240',
@@ -52,7 +53,6 @@ class StoreMeetingDiscussionRegistrationRequest extends FormRequest
         return [
             'meeting_id' => 'ID cuộc họp',
             'meeting_agenda_id' => 'ID chương trình họp',
-            'meeting_participant_id' => 'ID người tham dự',
             'type' => 'type',
             'content' => 'Nội dung',
             'file' => 'Tệp tải lên',
@@ -65,7 +65,6 @@ class StoreMeetingDiscussionRegistrationRequest extends FormRequest
         return [
             'meeting_id' => ['description' => 'ID cuộc họp.', 'example' => 1],
             'meeting_agenda_id' => ['description' => 'ID chương trình họp.', 'example' => 2],
-            'meeting_participant_id' => ['description' => 'ID người tham dự đăng ký.', 'example' => 3],
             'type' => ['description' => 'Loại đăng ký.', 'example' => 'discussion'],
             'content' => ['description' => 'Nội dung đăng ký.', 'example' => 'Xin đăng ký phát biểu về nội dung 2'],
             'file' => ['description' => 'Tệp đính kèm nội dung đăng ký (nếu có).'],

@@ -5,7 +5,6 @@ namespace App\Modules\Meeting;
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
 use App\Modules\Meeting\Models\MeetingDiscussionRegistration;
-use App\Modules\Meeting\Requests\BulkDestroyCatalogRequest;
 use App\Modules\Meeting\Requests\ReorderMeetingDiscussionRegistrationRequest;
 use App\Modules\Meeting\Requests\StoreMeetingDiscussionRegistrationRequest;
 use App\Modules\Meeting\Requests\UpdateMeetingDiscussionRegistrationRequest;
@@ -17,6 +16,13 @@ use App\Modules\Meeting\Services\MeetingDiscussionRegistrationService;
  * @header X-Organization-Id ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1
  *
  * Quản lý đăng ký thảo luận/chất vấn trong cuộc họp.
+ *
+ * Ownership theo spec phòng họp không giấy:
+ *   - Đại biểu: store/update/destroy đăng ký của chính họ. Auth user không phải đại biểu
+ *     của meeting → 404 (không tìm thấy đăng ký).
+ *   - Chủ trì + Thư ký/Điều hành: PATCH /start (gọi đại biểu) + /complete (đánh dấu xong)
+ *     — sẽ thêm ở Sprint 1 với middleware meeting.role.
+ *   - index/show/stats: ai xem được meeting đều xem được.
  */
 class MeetingDiscussionRegistrationController extends Controller
 {
@@ -62,15 +68,16 @@ class MeetingDiscussionRegistrationController extends Controller
     }
 
     /**
-     * Tạo đăng ký thảo luận/chất vấn.
+     * Đại biểu đăng ký thảo luận/chất vấn — auto-derive participant từ auth user.
+     *
+     * BE tự tìm participant của user trong cuộc họp; user không phải đại biểu của
+     * meeting → 404. FE chỉ cần gửi meeting_id + type + content (+ file optional).
      *
      * @bodyParam meeting_id integer required ID cuộc họp. Example: 1
-     * @bodyParam meeting_participant_id integer required ID người tham dự. Example: 1
-     * @bodyParam discussion_type string required Loại đăng ký. Example: discussion
-     * @bodyParam topic string required Chủ đề đăng ký. Example: Giải pháp chuyển đổi số
-     * @bodyParam content string Nội dung đăng ký. Example: Đề xuất nhóm giải pháp trọng tâm
+     * @bodyParam meeting_agenda_id integer ID chương trình họp gắn đăng ký (optional). Example: 2
+     * @bodyParam type string required Loại đăng ký (discussion | question). Example: discussion
+     * @bodyParam content string required Nội dung đăng ký. Example: Đề xuất nhóm giải pháp trọng tâm
      * @bodyParam file file Tệp tài liệu kèm theo. Example: (binary)
-     * @bodyParam status string Trạng thái đăng ký. Example: pending
      * @bodyParam sort_order integer Thứ tự hiển thị. Example: 1
      */
     public function store(StoreMeetingDiscussionRegistrationRequest $request)
@@ -108,18 +115,6 @@ class MeetingDiscussionRegistrationController extends Controller
         $this->meetingDiscussionRegistrationService->destroy($meetingDiscussionRegistration);
 
         return $this->success(null, 'Xóa đăng ký thảo luận/chất vấn thành công!');
-    }
-
-    /**
-     * Xóa hàng loạt đăng ký thảo luận/chất vấn.
-     *
-     * @bodyParam ids integer[] required Danh sách ID đăng ký cần xóa. Example: [1,2,3]
-     */
-    public function bulkDestroy(BulkDestroyCatalogRequest $request)
-    {
-        $this->meetingDiscussionRegistrationService->bulkDestroy($request->ids);
-
-        return $this->success(null, 'Xóa hàng loạt thành công!');
     }
 
     /**
