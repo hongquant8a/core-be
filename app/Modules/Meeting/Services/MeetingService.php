@@ -110,6 +110,7 @@ class MeetingService
             'documents' => fn ($q) => $isParticipant ? $q : $q->where('is_public', true),
             'documents.documentType',
             'documents.mediaFile',
+            'participants.attendee',
             'voteTopics',
         ]);
     }
