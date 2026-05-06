@@ -14,21 +14,25 @@ use Throwable;
  * Đếm lượt xem chi tiết cuộc họp với dedupe per (user_id, day) hoặc (ip, day) cho khách.
  *
  * Apply trên route `GET /meetings/{meeting}` + `GET /meetings/public/{meeting}`. Chạy ở
- * `terminate()` sau khi response trả về thành công (2xx) để không count khi 404/403.
+ * `handle()` sau khi controller trả response (không dùng `terminate()` vì một số setup
+ * PHP-FPM không trigger reliably). Counter là metric phụ — fail không làm hỏng request chính.
  */
 class CountMeetingView
 {
     public function handle(Request $request, Closure $next): Response
     {
-        return $next($request);
-    }
+        $response = $next($request);
 
-    public function terminate(Request $request, Response $response): void
-    {
-        if ($response->getStatusCode() < 200 || $response->getStatusCode() >= 300) {
-            return;
+        // Chỉ count khi response 2xx (không count 404/403/422).
+        if ($response->isSuccessful()) {
+            $this->trackView($request);
         }
 
+        return $response;
+    }
+
+    private function trackView(Request $request): void
+    {
         $meeting = $request->route('meeting');
         if (! $meeting instanceof Meeting) {
             return;
@@ -62,7 +66,6 @@ class CountMeetingView
                 ]);
             });
         } catch (Throwable $e) {
-            // Counter là metric phụ — fail không làm hỏng request chính.
             report($e);
         }
     }
