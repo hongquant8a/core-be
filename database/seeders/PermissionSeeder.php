@@ -164,10 +164,10 @@ class PermissionSeeder extends Seeder
             'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
         ],
         'meeting-participants' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
+            'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy', 'respond',
         ],
         'meeting-attendances' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
+            'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy', 'checkin', 'markAbsent',
         ],
         'meeting-vote-topics' => [
             'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',

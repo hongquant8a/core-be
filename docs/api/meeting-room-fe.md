@@ -231,26 +231,62 @@ Response item:
 
 ### 1.2 THAO TÁC NHANH (đại biểu)
 
-| Action | Endpoint hiện có |
-|---|---|
-| **Điểm Danh** | 🚧 **Coming Soon** — `POST /api/meeting-attendances/checkin` (Sprint 1). Tạm bỏ button hoặc mock |
-| **Uỷ Quyền Tham Gia** | 🚧 **Defer** — chưa có nghiệp vụ rõ |
-| **Báo Vắng** | `PATCH /api/meeting-participants/{participant_id}` body `{"response_status": "declined", "absence_reason": "..."}` |
+4 action self-service. **Auto-derive participant từ auth user** — FE chỉ gửi `meeting_id` (hoặc `participant_id` cho `respond`).
 
-**Báo Vắng** — request:
+| Action | Endpoint | Khi |
+|---|---|---|
+| **Xác nhận tham gia** | `PATCH /api/meeting-participants/{id}/respond` body `{ "response_status": "accepted" }` | Trước họp (response_status=`pending`) |
+| **Từ chối tham gia** | `PATCH /api/meeting-participants/{id}/respond` body `{ "response_status": "declined", "absence_reason": "..." }` | Trước họp |
+| **Điểm Danh** | `POST /api/meeting-attendances/checkin` body `{ "meeting_id": X }` | Tại họp — status=`pending` chờ operator duyệt |
+| **Báo Vắng** | `POST /api/meeting-attendances/mark-absent` body `{ "meeting_id": X, "note": "..." }` | Tại họp — status=`absent` ngay |
+
+> ❌ **Uỷ Quyền Tham Gia** — không có endpoint, không trong scope hiện tại.
+
+#### Xác nhận / Từ chối tham gia
+
 ```http
-PATCH /api/meeting-participants/12
+PATCH /api/meeting-participants/12/respond
 Content-Type: application/json
 
-{
-  "response_status": "declined",
-  "absence_reason": "Có việc đột xuất"
-}
+{ "response_status": "accepted" }
 ```
 
-Response: `{ "success": true, "data": { ...participant updated } }`.
+```http
+PATCH /api/meeting-participants/12/respond
+Content-Type: application/json
 
-> FE cần biết `participant_id` của user hiện tại — load từ `meeting.participants[]` rồi find theo `attendee.user.id == currentUser.id`.
+{ "response_status": "declined", "absence_reason": "Có công tác đột xuất" }
+```
+
+> **Ownership**: chỉ owner đại biểu (auth user trùng `attendee.user_id`) mới gọi được. User khác → 404.
+> Set `responded_at = now()` tự động.
+>
+> FE biết `participant_id` của user hiện tại từ `meeting.participants[]` find theo `attendee.user.id == currentUser.id`.
+
+#### Điểm Danh
+
+```http
+POST /api/meeting-attendances/checkin
+Content-Type: application/json
+
+{ "meeting_id": 1 }
+```
+
+> BE auto-derive participant từ `auth()->id()`. User không phải đại biểu của meeting → 404.
+> Status mặc định = `pending` (chờ operator approve ở Tab 7 — Sprint 1).
+> Idempotent: F5 hoặc click lần 2 không tạo trùng — update row hiện tại.
+
+#### Báo Vắng
+
+```http
+POST /api/meeting-attendances/mark-absent
+Content-Type: application/json
+
+{ "meeting_id": 1, "note": "Bị ốm đột xuất" }
+```
+
+> Status set ngay = `absent`, không cần duyệt. Nếu đã có row checkin trước đó → update sang absent.
+> `note` optional.
 
 ---
 

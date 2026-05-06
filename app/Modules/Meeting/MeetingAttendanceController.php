@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
 use App\Modules\Meeting\Models\MeetingAttendance;
 use App\Modules\Meeting\Requests\BulkDestroyCatalogRequest;
+use App\Modules\Meeting\Requests\CheckinMeetingAttendanceRequest;
+use App\Modules\Meeting\Requests\MarkAbsentMeetingAttendanceRequest;
 use App\Modules\Meeting\Requests\StoreMeetingAttendanceRequest;
 use App\Modules\Meeting\Requests\UpdateMeetingAttendanceRequest;
 use App\Modules\Meeting\Resources\MeetingAttendanceCollection;
@@ -115,5 +117,39 @@ class MeetingAttendanceController extends Controller
         $this->meetingAttendanceService->bulkDestroy($request->ids);
 
         return $this->success(null, 'Xóa hàng loạt thành công!');
+    }
+
+    /**
+     * Đại biểu tự điểm danh — auto-derive participant từ auth user.
+     *
+     * Status=`pending` chờ operator duyệt (Tab 7 sẽ có approve/reject ở Sprint 1).
+     * Idempotent: F5/click lần 2 không tạo trùng — update row hiện có.
+     *
+     * @bodyParam meeting_id integer required ID cuộc họp. Example: 1
+     */
+    public function checkin(CheckinMeetingAttendanceRequest $request)
+    {
+        $item = $this->meetingAttendanceService->checkin((int) $request->validated('meeting_id'));
+
+        return $this->successResource(new MeetingAttendanceResource($item), 'Đã ghi nhận điểm danh, chờ duyệt.');
+    }
+
+    /**
+     * Đại biểu tự báo vắng — auto-derive participant từ auth user.
+     *
+     * Status=`absent` set ngay, không cần operator duyệt. Idempotent: nếu đã có row checkin,
+     * update sang absent + ghi note.
+     *
+     * @bodyParam meeting_id integer required ID cuộc họp. Example: 1
+     * @bodyParam note string Lý do vắng (optional). Example: Bị ốm đột xuất
+     */
+    public function markAbsent(MarkAbsentMeetingAttendanceRequest $request)
+    {
+        $item = $this->meetingAttendanceService->markAbsent(
+            (int) $request->validated('meeting_id'),
+            $request->validated('note'),
+        );
+
+        return $this->successResource(new MeetingAttendanceResource($item), 'Đã ghi nhận báo vắng.');
     }
 }

@@ -4,6 +4,8 @@ use App\Modules\Meeting\MeetingAttendanceController;
 use Illuminate\Support\Facades\Route;
 
 Route::delete('/bulk-delete', [MeetingAttendanceController::class, 'bulkDestroy'])->middleware('permission:meeting-attendances.bulkDestroy,web');
+Route::post('/checkin', [MeetingAttendanceController::class, 'checkin'])->middleware('permission:meeting-attendances.checkin,web');
+Route::post('/mark-absent', [MeetingAttendanceController::class, 'markAbsent'])->middleware('permission:meeting-attendances.markAbsent,web');
 Route::get('/stats', [MeetingAttendanceController::class, 'stats'])->middleware('permission:meeting-attendances.stats,web');
 Route::get('/', [MeetingAttendanceController::class, 'index'])->middleware('permission:meeting-attendances.index,web');
 Route::get('/{meetingAttendance}', [MeetingAttendanceController::class, 'show'])->middleware('permission:meeting-attendances.show,web');

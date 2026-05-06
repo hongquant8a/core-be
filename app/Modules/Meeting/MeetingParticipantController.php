@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
 use App\Modules\Meeting\Models\MeetingParticipant;
 use App\Modules\Meeting\Requests\BulkDestroyCatalogRequest;
+use App\Modules\Meeting\Requests\RespondMeetingParticipantRequest;
 use App\Modules\Meeting\Requests\StoreMeetingParticipantRequest;
 use App\Modules\Meeting\Requests\UpdateMeetingParticipantRequest;
 use App\Modules\Meeting\Resources\MeetingParticipantCollection;
@@ -114,5 +115,22 @@ class MeetingParticipantController extends Controller
         $this->meetingParticipantService->bulkDestroy($request->ids);
 
         return $this->success(null, 'Xóa hàng loạt thành công!');
+    }
+
+    /**
+     * Đại biểu tự xác nhận / từ chối tham gia (response invitation).
+     *
+     * Ownership check: chỉ owner đại biểu (auth user trùng attendee.user_id của participant).
+     * Set responded_at = now() tự động.
+     *
+     * @urlParam meetingParticipant integer required ID người tham dự. Example: 1
+     * @bodyParam response_status string required accepted | declined. Example: accepted
+     * @bodyParam absence_reason string Lý do (chỉ áp dụng khi declined). Example: Có công tác đột xuất
+     */
+    public function respond(RespondMeetingParticipantRequest $request, MeetingParticipant $meetingParticipant)
+    {
+        $item = $this->meetingParticipantService->respond($meetingParticipant, $request->validated());
+
+        return $this->successResource(new MeetingParticipantResource($item), 'Đã ghi nhận phản hồi tham dự.');
     }
 }

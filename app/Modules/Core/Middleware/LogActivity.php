@@ -134,6 +134,9 @@ class LogActivity
             'tree' => 'Xem cây',
             'delete-by-date' => 'Xóa theo khoảng thời gian',
             'clear' => 'Xóa toàn bộ',
+            'checkin' => 'Điểm danh',
+            'mark-absent' => 'Báo vắng',
+            'respond' => 'Phản hồi mời họp',
         ];
         if ($sub && isset($pathActions[$sub])) {
             return $pathActions[$sub].' '.$this->resourceLabel(str_replace('-', '_', $resource));

@@ -65,6 +65,33 @@ class MeetingParticipantService
         $meetingParticipant->delete();
     }
 
+    /**
+     * Đại biểu tự xác nhận / từ chối tham gia (response invitation).
+     * Ownership check: chỉ owner đại biểu (auth user là attendee.user_id của participant này).
+     */
+    public function respond(MeetingParticipant $meetingParticipant, array $validated): MeetingParticipant
+    {
+        $userId = auth()->id();
+        if (! $userId) {
+            throw new ModelNotFoundException('Cần đăng nhập để phản hồi mời họp.');
+        }
+
+        $meetingParticipant->loadMissing('attendee');
+        if ((int) ($meetingParticipant->attendee?->user_id ?? 0) !== (int) $userId) {
+            throw new ModelNotFoundException('Bạn không phải đại biểu này.');
+        }
+
+        $meetingParticipant->update([
+            'response_status' => $validated['response_status'],
+            'absence_reason' => $validated['response_status'] === MeetingParticipantResponseStatusEnum::Declined->value
+                ? ($validated['absence_reason'] ?? null)
+                : null,
+            'responded_at' => now(),
+        ]);
+
+        return $meetingParticipant->load(['attendee']);
+    }
+
     public function bulkDestroy(array $ids): void
     {
         MeetingParticipant::query()
