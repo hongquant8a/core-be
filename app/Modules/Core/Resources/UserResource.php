@@ -19,6 +19,7 @@ class UserResource extends JsonResource
             'name' => $this->name,
             'email' => $this->email,
             'phone' => $this->phone,
+            'zalo_user_id' => $this->zalo_user_id,
             'user_name' => $this->user_name,
             'status' => $this->status,
             'task_assignment_department_id' => $this->whenLoaded('taskAssignmentUser', fn () => $this->taskAssignmentUser?->task_assignment_department_id),

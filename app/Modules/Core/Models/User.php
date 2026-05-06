@@ -33,6 +33,7 @@ class User extends Authenticatable implements HasMedia
         'name',
         'email',
         'phone',  // không phải column thật — booted() route sang user_profiles.phone (BC)
+        'zalo_user_id',
         'user_name',
         'password',
         'status',
