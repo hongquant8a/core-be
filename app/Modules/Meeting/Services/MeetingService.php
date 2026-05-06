@@ -36,7 +36,19 @@ class MeetingService
         }
 
         // view_count + meeting_views log → middleware count.meeting.view xử lý (dedupe per user/day).
-        return $meeting->load(['meetingType', 'meetingLocation']);
+        // Preload nested cho citizen — chỉ document is_public=true; agenda/vote topic của public meeting
+        // mặc định cũng public (theo design AND của is_public).
+        return $meeting->load([
+            'meetingType',
+            'meetingLocation',
+            'chairperson',
+            'operator',
+            'agendas',
+            'documents' => fn ($q) => $q->where('is_public', true),
+            'documents.documentType',
+            'documents.mediaFile',
+            'voteTopics',
+        ]);
     }
 
     public function stats(array $filters): array
