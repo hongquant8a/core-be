@@ -13,9 +13,10 @@ class StoreMeetingPersonalNoteRequest extends FormRequest
 
     public function rules(): array
     {
+        // meeting_participant_id auto-derive từ auth user trong service (không nhận từ FE
+        // để tránh user tạo note hộ người khác).
         return [
             'meeting_id' => 'required|integer|exists:meetings,id',
-            'meeting_participant_id' => 'required|integer|exists:meeting_participants,id',
             'content' => 'required|string',
             'sort_order' => 'nullable|integer|min:0',
         ];
@@ -45,7 +46,6 @@ class StoreMeetingPersonalNoteRequest extends FormRequest
     {
         return [
             'meeting_id' => 'ID cuộc họp',
-            'meeting_participant_id' => 'ID người tham dự',
             'content' => 'Nội dung',
             'sort_order' => 'Thứ tự sắp xếp',
         ];
@@ -54,7 +54,6 @@ class StoreMeetingPersonalNoteRequest extends FormRequest
     {
         return [
             'meeting_id' => ['description' => 'ID cuộc họp.', 'example' => 1],
-            'meeting_participant_id' => ['description' => 'ID người tham dự (chủ sở hữu ghi chú).', 'example' => 3],
             'content' => ['description' => 'Nội dung ghi chú cá nhân.', 'example' => 'Ghi chú nội dung cần theo dõi'],
             'sort_order' => ['description' => 'Thứ tự ghi chú.', 'example' => 1],
         ];

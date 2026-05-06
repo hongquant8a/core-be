@@ -17,16 +17,18 @@ use App\Modules\Meeting\Services\MeetingPersonalNoteService;
  * @header X-Organization-Id ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1
  *
  * Quản lý ghi chú cá nhân của đại biểu trong cuộc họp.
+ *
+ * Ownership scope: tất cả endpoint chỉ trả/sửa note của auth user. User truy vấn note
+ * của người khác → 404. Service auto-filter qua participant.attendee.user_id.
  */
 class MeetingPersonalNoteController extends Controller
 {
     public function __construct(private MeetingPersonalNoteService $meetingPersonalNoteService) {}
 
     /**
-     * Danh sách ghi chú cá nhân.
+     * Danh sách ghi chú cá nhân của auth user (chỉ note của chính họ).
      *
      * @queryParam meeting_id integer Lọc theo cuộc họp. Example: 1
-     * @queryParam meeting_participant_id integer Lọc theo người tham dự. Example: 1
      * @queryParam sort_by string Sắp xếp theo trường. Example: sort_order
      * @queryParam sort_order string Thứ tự sắp xếp (asc/desc). Example: asc
      * @queryParam limit integer Số bản ghi mỗi trang. Example: 10
@@ -49,11 +51,12 @@ class MeetingPersonalNoteController extends Controller
     }
 
     /**
-     * Tạo ghi chú cá nhân.
+     * Tạo ghi chú cá nhân — auto-derive participant từ auth user.
+     *
+     * BE tự tìm participant của user trong cuộc họp; user không phải đại biểu của
+     * meeting này → 404. FE chỉ cần gửi meeting_id + content.
      *
      * @bodyParam meeting_id integer required ID cuộc họp. Example: 1
-     * @bodyParam meeting_participant_id integer required ID người tham dự. Example: 1
-     * @bodyParam title string required Tiêu đề ghi chú. Example: Ý kiến tại phiên thảo luận
      * @bodyParam content string required Nội dung ghi chú. Example: Đề xuất bổ sung chỉ tiêu đào tạo
      * @bodyParam sort_order integer Thứ tự hiển thị. Example: 1
      */

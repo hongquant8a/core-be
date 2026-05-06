@@ -320,7 +320,7 @@ Increment `download_count` + log row vào `meeting_views`.
 GET /api/meeting-personal-notes?meeting_id={id}
 ```
 
-Trả note thuộc về current user trong meeting này. Service đã scope theo `auth()->id()`.
+Trả note thuộc về current user trong meeting này. **Service auto-scope theo `auth()->id()`** — user không thể đọc/sửa/xóa note của người khác (404 nếu cố truy cập). Không cần FE gửi `meeting_participant_id` filter.
 
 ```json
 {
