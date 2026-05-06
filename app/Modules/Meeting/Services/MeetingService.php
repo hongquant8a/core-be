@@ -23,12 +23,32 @@ class MeetingService
      * "Visible" index — endpoint dùng chung cho trang index FE:
      *   - Guest: chỉ thấy meeting (is_public=true + status=published)
      *   - Auth user: thấy meeting công khai + meeting họ là chủ trì / thư ký / participant
+     *
+     * Preload: documents (filter is_public theo participation) + participants.attendee.
      */
     public function publicIndex(array $filters, int $limit)
     {
         $userId = auth()->id();
+        $myMeetingIds = $userId ? $this->visibleMeetingIdsForUser($userId) : [];
 
-        $query = Meeting::with(['meetingType', 'meetingLocation'])
+        $query = Meeting::with([
+                'meetingType',
+                'meetingLocation',
+                'chairperson',
+                'operator',
+                // Doc preload có filter: is_public=true HOẶC thuộc meeting user tham gia.
+                'documents' => function ($q) use ($myMeetingIds) {
+                    $q->where(function ($sub) use ($myMeetingIds) {
+                        $sub->where('is_public', true);
+                        if (! empty($myMeetingIds)) {
+                            $sub->orWhereIn('meeting_id', $myMeetingIds);
+                        }
+                    });
+                },
+                'documents.documentType',
+                'documents.mediaFile',
+                'participants.attendee',
+            ])
             ->filter($filters)
             ->where(function ($outer) use ($userId) {
                 // Branch 1: cuộc họp công khai + đã ban hành.
@@ -46,6 +66,22 @@ class MeetingService
             });
 
         return $query->paginate($limit);
+    }
+
+    /**
+     * IDs của meeting user là chủ trì / thư ký / participant — dùng để filter doc preload
+     * trong index list (nơi không thể check per-meeting trong eager closure).
+     */
+    private function visibleMeetingIdsForUser(int $userId): array
+    {
+        return Meeting::query()
+            ->where(function ($q) use ($userId) {
+                $q->whereHas('chairperson', fn ($a) => $a->where('user_id', $userId))
+                    ->orWhereHas('operator', fn ($a) => $a->where('user_id', $userId))
+                    ->orWhereHas('participants.attendee', fn ($a) => $a->where('user_id', $userId));
+            })
+            ->pluck('id')
+            ->all();
     }
 
     /**
