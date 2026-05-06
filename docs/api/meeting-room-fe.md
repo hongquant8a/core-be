@@ -258,7 +258,6 @@ Response item:
   "file_url": "/storage/42/to-trinh.pdf",
   "file_name": "to-trinh.pdf",
   "is_public": true,
-  "view_count": 56,
   "download_count": 12,
   "sort_order": 1,
   "created_by": { "id": 1, "name": "Admin", ... },
@@ -268,7 +267,20 @@ Response item:
 }
 ```
 
-> **Action xem/tải**: FE mở `file_url` trong tab mới (ví dụ `<a target="_blank" href={file_url}>`). Server static.
+**Action xem**: FE mở `file_url` trong tab mới (ví dụ `<a target="_blank" href={file_url}>`). BE không track view per-document.
+
+**Action tải xuống** (track download_count + log):
+```
+GET /api/meeting-documents/{id}/download           (auth)
+GET /api/meeting-documents/public/{id}/download    (public)
+```
+
+→ BE redirect 302 tới `file_url` + `Cache-Control: no-store` (đảm bảo mỗi click F5 đều hit BE để count). FE đổi nút "⬇ Tải":
+```html
+<a href={`/api/meeting-documents/${doc.id}/download`} download>Tải</a>
+```
+
+Increment `download_count` + log row vào `meeting_views`.
 
 ### 2.2 GHI CHÚ CÁ NHÂN
 

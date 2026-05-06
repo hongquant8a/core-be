@@ -85,7 +85,6 @@ return new class extends Migration
             $table->text('summary')->nullable();
             $table->foreignId('media_id')->nullable()->constrained('media')->nullOnDelete();
             $table->boolean('is_public')->default(false);
-            $table->unsignedInteger('view_count')->default(0);
             $table->unsignedInteger('download_count')->default(0);
             $table->unsignedInteger('sort_order')->default(0);
             $table->unsignedBigInteger('created_by')->nullable();

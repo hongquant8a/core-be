@@ -54,6 +54,42 @@ class MeetingDocumentController extends Controller
     }
 
     /**
+     * Tải tài liệu công khai — increment download_count + log + redirect 302 tới file.
+     *
+     * @unauthenticated
+     *
+     * @urlParam meetingDocument integer required ID tài liệu họp. Example: 1
+     */
+    public function publicDownload(MeetingDocument $meetingDocument)
+    {
+        // Validate public visibility (mirror publicShow check) trước khi track.
+        $this->meetingDocumentService->publicShow($meetingDocument);
+
+        return $this->respondDownload($meetingDocument);
+    }
+
+    /**
+     * Tải tài liệu (auth) — increment download_count + log + redirect 302 tới file.
+     * FE dùng URL này thay cho file_url để BE track lượt tải.
+     *
+     * @urlParam meetingDocument integer required ID tài liệu họp. Example: 1
+     */
+    public function download(MeetingDocument $meetingDocument)
+    {
+        return $this->respondDownload($meetingDocument);
+    }
+
+    private function respondDownload(MeetingDocument $meetingDocument)
+    {
+        $info = $this->meetingDocumentService->trackDownload($meetingDocument);
+
+        return redirect()->away($info['url'], 302, [
+            'Cache-Control' => 'no-store, no-cache, must-revalidate',
+            'Pragma' => 'no-cache',
+        ]);
+    }
+
+    /**
      * Danh sách tài liệu họp.
      *
      * @queryParam search string Từ khóa tìm kiếm theo tiêu đề tài liệu. Example: nghị quyết

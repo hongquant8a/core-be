@@ -23,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'ensure.route.org' => \App\Modules\Core\Middleware\EnsureRouteModelsBelongToOrganization::class,
             'sync.fcm.token' => \App\Modules\Core\Middleware\SyncFcmToken::class,
             'notification.module' => \App\Modules\Core\Middleware\SetNotificationModule::class,
+            'count.meeting.view' => \App\Modules\Meeting\Middleware\CountMeetingView::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -7,7 +7,6 @@ use App\Modules\Meeting\Exports\MeetingExport;
 use App\Modules\Meeting\Models\Meeting;
 use App\Modules\Meeting\Models\MeetingInvitation;
 use App\Modules\Meeting\Models\MeetingParticipant;
-use App\Modules\Meeting\Models\MeetingView;
 use App\Services\Notification\Events\MeetingPublished;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
@@ -36,10 +35,8 @@ class MeetingService
             throw new ModelNotFoundException('Không tìm thấy cuộc họp công khai.');
         }
 
-        $meeting->increment('view_count');
-        $this->logView($meeting->id, null);
-
-        return $meeting->fresh()->load(['meetingType', 'meetingLocation']);
+        // view_count + meeting_views log → middleware count.meeting.view xử lý (dedupe per user/day).
+        return $meeting->load(['meetingType', 'meetingLocation']);
     }
 
     public function stats(array $filters): array
@@ -212,19 +209,6 @@ class MeetingService
     public function export(array $filters, string $fileName = 'meetings.xlsx'): BinaryFileResponse
     {
         return Excel::download(new MeetingExport($filters), $fileName);
-    }
-
-    private function logView(int $meetingId, ?int $documentId): void
-    {
-        $request = request();
-        MeetingView::create([
-            'meeting_id' => $meetingId,
-            'meeting_document_id' => $documentId,
-            'user_id' => auth()->id(),
-            'ip_address' => $request?->ip(),
-            'user_agent' => $request?->userAgent(),
-            'viewed_at' => now(),
-        ]);
     }
 
     private function resolveCurrentOrganizationId(): int

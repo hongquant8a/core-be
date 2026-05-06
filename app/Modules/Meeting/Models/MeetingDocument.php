@@ -23,7 +23,6 @@ class MeetingDocument extends Model implements HasMedia
         'summary',
         'media_id',
         'is_public',
-        'view_count',
         'download_count',
         'sort_order',
         'created_by',
@@ -32,7 +31,6 @@ class MeetingDocument extends Model implements HasMedia
 
     protected $casts = [
         'is_public' => 'boolean',
-        'view_count' => 'integer',
         'download_count' => 'integer',
         'sort_order' => 'integer',
     ];

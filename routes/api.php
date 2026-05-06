@@ -29,9 +29,10 @@ Route::get('/meeting-locations/public-options', [\App\Modules\Meeting\MeetingLoc
 Route::get('/meeting-document-types/public', [\App\Modules\Meeting\MeetingDocumentTypeController::class, 'public'])->middleware('log.activity');
 Route::get('/meeting-document-types/public-options', [\App\Modules\Meeting\MeetingDocumentTypeController::class, 'publicOptions'])->middleware('log.activity');
 Route::get('/meetings/public', [\App\Modules\Meeting\MeetingController::class, 'public'])->middleware('log.activity');
-Route::get('/meetings/public/{meeting}', [\App\Modules\Meeting\MeetingController::class, 'publicShow'])->middleware('log.activity');
+Route::get('/meetings/public/{meeting}', [\App\Modules\Meeting\MeetingController::class, 'publicShow'])->middleware(['log.activity', 'count.meeting.view']);
 Route::get('/meeting-documents/public', [\App\Modules\Meeting\MeetingDocumentController::class, 'public'])->middleware('log.activity');
 Route::get('/meeting-documents/public/{meetingDocument}', [\App\Modules\Meeting\MeetingDocumentController::class, 'publicShow'])->middleware('log.activity');
+Route::get('/meeting-documents/public/{meetingDocument}/download', [\App\Modules\Meeting\MeetingDocumentController::class, 'publicDownload'])->middleware('log.activity');
 
 // Route yêu cầu đăng nhập (Bearer token) và đặt ngữ cảnh team cho Spatie Permission
 Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'log.activity'])->group(function () {

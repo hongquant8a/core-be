@@ -38,19 +38,41 @@ class MeetingDocumentService
             throw new ModelNotFoundException('Không tìm thấy tài liệu công khai.');
         }
 
-        $meetingDocument->increment('view_count');
+        return $meetingDocument->load(['agenda', 'documentType', 'mediaFile']);
+    }
+
+    /**
+     * Track + resolve download URL cho tài liệu (cả public và authenticated dùng chung logic).
+     *
+     * @return array{url: string, file_name: ?string}
+     */
+    public function trackDownload(MeetingDocument $meetingDocument): array
+    {
+        $meetingDocument->loadMissing('mediaFile');
+        if (! $meetingDocument->mediaFile) {
+            throw new ModelNotFoundException('Tài liệu không có tệp đính kèm.');
+        }
 
         $request = request();
-        MeetingView::create([
-            'meeting_id' => $meetingDocument->meeting_id,
-            'meeting_document_id' => $meetingDocument->id,
-            'user_id' => auth()->id(),
-            'ip_address' => $request?->ip(),
-            'user_agent' => $request?->userAgent(),
-            'viewed_at' => now(),
-        ]);
 
-        return $meetingDocument->fresh()->load(['agenda', 'documentType', 'mediaFile']);
+        DB::transaction(function () use ($meetingDocument, $request) {
+            $meetingDocument->increment('download_count');
+            MeetingView::create([
+                'meeting_id' => $meetingDocument->meeting_id,
+                'meeting_document_id' => $meetingDocument->id,
+                'user_id' => auth()->id(),
+                'ip_address' => $request?->ip(),
+                'user_agent' => $request?->userAgent(),
+                'viewed_at' => now(),
+            ]);
+        });
+
+        $media = $meetingDocument->mediaFile;
+
+        return [
+            'url' => '/storage/'.$media->id.'/'.$media->file_name,
+            'file_name' => $media->file_name,
+        ];
     }
 
     public function index(array $filters, int $limit)
