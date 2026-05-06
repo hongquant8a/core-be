@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
 /**
- * Đếm lượt xem chi tiết cuộc họp với dedupe per (user_id, day) hoặc (ip, day) cho khách.
+ * Đếm lượt xem chi tiết cuộc họp — không dedupe, mỗi request 2xx +1.
  *
  * Apply trên route `GET /meetings/{meeting}` + `GET /meetings/public/{meeting}`. Chạy ở
  * `handle()` sau khi controller trả response (không dùng `terminate()` vì một số setup
@@ -38,29 +38,14 @@ class CountMeetingView
             return;
         }
 
-        $userId = auth()->id();
-        $ip = $request->ip();
-
         try {
-            $alreadyViewed = MeetingView::query()
-                ->where('meeting_id', $meeting->id)
-                ->whereNull('meeting_document_id')
-                ->whereDate('viewed_at', today())
-                ->when($userId, fn ($q) => $q->where('user_id', $userId))
-                ->when(! $userId, fn ($q) => $q->whereNull('user_id')->where('ip_address', $ip))
-                ->exists();
-
-            if ($alreadyViewed) {
-                return;
-            }
-
-            DB::transaction(function () use ($meeting, $userId, $ip, $request) {
+            DB::transaction(function () use ($meeting, $request) {
                 $meeting->increment('view_count');
                 MeetingView::create([
                     'meeting_id' => $meeting->id,
                     'meeting_document_id' => null,
-                    'user_id' => $userId,
-                    'ip_address' => $ip,
+                    'user_id' => auth()->id(),
+                    'ip_address' => $request->ip(),
                     'user_agent' => $request->userAgent(),
                     'viewed_at' => now(),
                 ]);
