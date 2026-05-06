@@ -110,7 +110,7 @@ class Meeting extends Model
             ->when($filters['from_date'] ?? null, fn ($q, $date) => $q->whereDate('created_at', '>=', $date))
             ->when($filters['to_date'] ?? null, fn ($q, $date) => $q->whereDate('created_at', '<=', $date))
             ->when($filters['sort_by'] ?? 'created_at', function ($q, $sortBy) use ($filters) {
-                $allowed = ['id', 'title', 'start_time', 'created_at', 'updated_at'];
+                $allowed = ['id', 'title', 'start_time', 'status', 'created_at', 'updated_at'];
                 $column = in_array($sortBy, $allowed, true) ? $sortBy : 'created_at';
                 $q->orderBy($column, $filters['sort_order'] ?? 'desc');
             });

@@ -15,6 +15,7 @@ class UpdateMeetingAttendeeRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'user_id' => 'prohibited',
             'meeting_attendee_group_id' => 'nullable|integer|exists:meeting_attendee_groups,id',
             'position_name' => 'nullable|string|max:255',
             'department_name' => 'nullable|string|max:255',
@@ -31,12 +32,14 @@ class UpdateMeetingAttendeeRequest extends FormRequest
             'max' => ':attribute không được vượt quá :max ký tự.',
             'in' => ':attribute không hợp lệ.',
             'exists' => ':attribute không tồn tại trong hệ thống.',
+            'user_id.prohibited' => 'Không được đổi người dùng của đại biểu — tạo mới attendee thay vì cập nhật.',
         ];
     }
 
     public function attributes(): array
     {
         return [
+            'user_id' => 'Người dùng',
             'meeting_attendee_group_id' => 'Nhóm đại biểu',
             'position_name' => 'Chức vụ',
             'department_name' => 'Đơn vị',
