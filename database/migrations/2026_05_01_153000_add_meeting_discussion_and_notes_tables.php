@@ -18,7 +18,6 @@ return new class extends Migration
             $table->text('content');
             $table->foreignId('media_id')->nullable()->constrained('media')->nullOnDelete();
             $table->string('status')->default('registered');
-            $table->dateTime('called_at')->nullable();
             $table->dateTime('completed_at')->nullable();
             $table->unsignedInteger('sort_order')->default(0);
             $table->timestamps();

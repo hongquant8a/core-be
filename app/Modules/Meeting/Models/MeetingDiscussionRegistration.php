@@ -21,13 +21,11 @@ class MeetingDiscussionRegistration extends Model implements HasMedia
         'content',
         'media_id',
         'status',
-        'called_at',
         'completed_at',
         'sort_order',
     ];
 
     protected $casts = [
-        'called_at' => 'datetime',
         'completed_at' => 'datetime',
     ];
 

@@ -21,7 +21,6 @@ class MeetingDiscussionRegistrationResource extends JsonResource
             'file_url' => $this->mediaFile ? '/storage/'.$this->mediaFile->id.'/'.$this->mediaFile->file_name : null,
             'file_name' => $this->mediaFile?->file_name,
             'status' => $this->status,
-            'called_at' => $this->called_at?->format('H:i:s d/m/Y'),
             'completed_at' => $this->completed_at?->format('H:i:s d/m/Y'),
             'sort_order' => $this->sort_order,
             'created_at' => $this->created_at?->format('H:i:s d/m/Y'),

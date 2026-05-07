@@ -137,6 +137,7 @@ class LogActivity
             'checkin' => 'Điểm danh',
             'mark-absent' => 'Báo vắng',
             'respond' => 'Phản hồi mời họp',
+            'complete' => 'Đánh dấu hoàn thành',
         ];
         if ($sub && isset($pathActions[$sub])) {
             return $pathActions[$sub].' '.$this->resourceLabel(str_replace('-', '_', $resource));

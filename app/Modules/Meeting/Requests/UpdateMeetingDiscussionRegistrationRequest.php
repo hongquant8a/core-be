@@ -22,7 +22,6 @@ class UpdateMeetingDiscussionRegistrationRequest extends FormRequest
             'attachment' => 'nullable|file|max:10240',
             'remove_attachment' => 'nullable|boolean',
             'status' => ['sometimes', MeetingDiscussionStatusEnum::rule()],
-            'called_at' => 'nullable|date',
             'completed_at' => 'nullable|date',
             'sort_order' => 'nullable|integer|min:0',
         ];
@@ -57,8 +56,7 @@ class UpdateMeetingDiscussionRegistrationRequest extends FormRequest
             'attachment' => 'Tệp đính kèm',
             'remove_attachment' => 'Xóa tệp đính kèm',
             'status' => 'Trạng thái',
-            'called_at' => 'called at',
-            'completed_at' => 'completed at',
+            'completed_at' => 'Thời điểm hoàn thành',
             'sort_order' => 'Thứ tự sắp xếp',
         ];
     }
@@ -69,8 +67,7 @@ class UpdateMeetingDiscussionRegistrationRequest extends FormRequest
             'content' => ['description' => 'Nội dung đăng ký.', 'example' => 'Xin chất vấn nội dung tài liệu'],
             'attachment' => ['description' => 'Tệp đính kèm mới (sẽ thay tệp cũ qua MediaService).'],
             'remove_attachment' => ['description' => 'Xóa tệp đính kèm hiện tại hay không.', 'example' => false],
-            'status' => ['description' => 'Trạng thái đăng ký.', 'example' => 'called'],
-            'called_at' => ['description' => 'Thời điểm được gọi.', 'example' => '2026-05-01 09:15:00'],
+            'status' => ['description' => 'Trạng thái đăng ký (registered | completed).', 'example' => 'completed'],
             'completed_at' => ['description' => 'Thời điểm hoàn tất.', 'example' => '2026-05-01 09:25:00'],
             'sort_order' => ['description' => 'Thứ tự gọi.', 'example' => 2],
         ];

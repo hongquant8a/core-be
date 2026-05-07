@@ -101,8 +101,8 @@ class MeetingPermissionSeeder extends Seeder
             $names[] = "meeting-vote-responses.{$action}";
         }
 
-        // Đăng ký thảo luận/chất vấn (không có bulkDestroy theo design)
-        foreach (['stats', 'index', 'show', 'store', 'update', 'destroy'] as $action) {
+        // Đăng ký thảo luận/chất vấn (không có bulkDestroy theo design + complete cho operator)
+        foreach (['stats', 'index', 'show', 'store', 'update', 'destroy', 'complete'] as $action) {
             $names[] = "meeting-discussion-registrations.{$action}";
         }
 

@@ -119,25 +119,11 @@ class MeetingDiscussionRegistrationController extends Controller
     }
 
     /**
-     * Chủ trì gọi đại biểu phát biểu — chuyển trạng thái registered -> called.
-     *
-     * Spec section 7.3: chủ trì có quyền gọi đại biểu thảo luận/chất vấn.
-     * Set called_at = now() tự động. Đăng ký không ở trạng thái registered → 422.
-     *
-     * @urlParam meetingDiscussionRegistration integer required ID đăng ký. Example: 1
-     */
-    public function start(MeetingDiscussionRegistration $meetingDiscussionRegistration)
-    {
-        $item = $this->meetingDiscussionRegistrationService->start($meetingDiscussionRegistration);
-
-        return $this->successResource(new MeetingDiscussionRegistrationResource($item), 'Đã gọi đại biểu phát biểu.');
-    }
-
-    /**
-     * Điều hành đánh dấu hoàn thành lượt phát biểu — chuyển trạng thái called -> completed.
+     * Operator đánh dấu hoàn thành lượt phát biểu — chuyển trạng thái registered -> completed.
      *
      * Spec section 7.3: điều hành đánh dấu "Đã thảo luận" hoặc "Đã chất vấn".
-     * Set completed_at = now() tự động. Đăng ký chưa called → 422.
+     * State machine binary: chỉ có Registered + Completed. Set completed_at = now().
+     * Đăng ký đã completed → 422.
      *
      * @urlParam meetingDiscussionRegistration integer required ID đăng ký. Example: 1
      */

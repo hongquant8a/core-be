@@ -583,7 +583,7 @@ POST /api/meeting-discussion-registrations
 Content-Type: multipart/form-data
 
 meeting_id=1
-meeting_agenda_id=2          # optional - gắn vào chương trình
+meeting_agenda_id=2          # required - đăng ký luôn gắn với 1 chương trình cụ thể
 type=discussion              # discussion | question
 content=Nội dung thảo luận / câu hỏi chất vấn
 attachment=@slide.pdf        # optional, ≤10MB, đi qua MediaService
@@ -606,11 +606,12 @@ Response trả `media_id` + `file_url` nếu có tệp đính kèm:
 
 > **Auto-derive participant**: BE tự lookup `meeting_participant_id` từ `auth()->id()` so với `meeting.participants[].attendee.user_id`. FE **không gửi** `meeting_participant_id` (để tránh đại biểu A đăng ký hộ B). Nếu user không phải đại biểu của meeting → 404.
 >
-> **Agenda flag check** (spec line 276): nếu gửi `meeting_agenda_id`, BE validate cờ trên agenda:
+> **Agenda required + flag check** (spec line 99-100, 276):
+> - `meeting_agenda_id` **bắt buộc** — đăng ký luôn gắn với 1 chương trình cụ thể.
 > - `type=discussion` → agenda phải có `allow_discussion_registration=true`
 > - `type=question` → agenda phải có `allow_question_registration=true`
 > - Vi phạm → 422 "Chương trình họp này không cho phép đăng ký thảo luận/chất vấn."
-> - Nếu **không gửi `meeting_agenda_id`** → đăng ký gắn với cuộc họp chung, không check cờ.
+> - Agenda không thuộc meeting → 404.
 >
 > **Update**: dùng `PATCH /api/meeting-discussion-registrations/{id}` (multipart cũng được nếu thay file). Owner-only; user khác → 404.
 > **Destroy**: owner-only.
@@ -627,23 +628,23 @@ Screenshot Tab 5 hiển thị `"Gửi tới: Phạm Văn Long"` cho chất vấn
 
 ### 5.3 Action điều khiển (operator)
 
-**Action điều hành** (chair/operator):
+**Action điều hành** (operator):
 
 ```
-PATCH /api/meeting-discussion-registrations/{id}/start
 PATCH /api/meeting-discussion-registrations/{id}/complete
 ```
 
+State machine **nhị phân**: chỉ 2 status `registered` (chưa phát biểu) + `completed` (đã phát biểu).
+
 | Action | Endpoint | Status transition | Spec |
 |---|---|---|---|
-| Chair gọi đại biểu phát biểu | `PATCH /{id}/start` | `registered → called` + `called_at = now()` | Section 7.3: "Chủ trì có thể gọi đại biểu thảo luận/chất vấn" |
-| Operator đánh dấu xong | `PATCH /{id}/complete` | `called → completed` + `completed_at = now()` | Section 7.3: "Người điều hành đánh dấu 'Đã thảo luận'" |
+| Operator đánh dấu xong | `PATCH /{id}/complete` | `registered → completed` + `completed_at = now()` | Section 7.3: "Người điều hành đánh dấu 'Đã thảo luận' / 'Đã chất vấn'" |
 
-**Validation**:
-- `start` chỉ chạy khi đăng ký đang `registered`. Khác → 422.
-- `complete` chỉ chạy khi đăng ký đang `called`. Khác → 422.
+**Validation**: `complete` chỉ chạy khi đăng ký đang `registered`. Đã `completed` → 422.
 
-**Permission**: hiện dùng Spatie `meeting-discussion-registrations.start` + `.complete`. Sprint 1 sẽ wrap thêm middleware `meeting.role:chair|operator` để scope per-meeting (tránh chair/op của meeting khác gọi nhầm).
+**Đại biểu rút đăng ký TRƯỚC khi được đánh dấu**: dùng `DELETE /{id}` (xoá row hẳn).
+
+**Permission**: hiện dùng Spatie `meeting-discussion-registrations.complete`. Sprint 1 sẽ wrap thêm middleware `meeting.role:operator` để scope per-meeting.
 
 ---
 
@@ -709,8 +710,7 @@ GET /api/meeting-discussion-registrations?meeting_id={id}&status=completed
 | DUYỆT ĐIỂM DANH > approve | `PATCH /api/meeting-attendances/{id}/approve` | 🚧 Sprint 1 |
 | DUYỆT ĐIỂM DANH > reject | `PATCH /api/meeting-attendances/{id}/reject` | 🚧 Sprint 1 |
 | QUẢN LÝ ĐIỂM DANH (stats) | `GET /api/meeting-attendances/stats?meeting_id=X` | ✅ (extended Sprint 1) |
-| QUẢN LÝ THẢO LUẬN > start | `PATCH /api/meeting-discussion-registrations/{id}/start` | ✅ |
-| QUẢN LÝ THẢO LUẬN > complete | `PATCH /api/meeting-discussion-registrations/{id}/complete` | ✅ |
+| QUẢN LÝ THẢO LUẬN > complete | `PATCH /api/meeting-discussion-registrations/{id}/complete` (registered → completed) | ✅ |
 | QUẢN LÝ CHẤT VẤN | (giống thảo luận, type=question) | ✅ |
 | QUẢN LÝ BIỂU QUYẾT > open | `PATCH /api/meeting-vote-topics/{id}/open` | ✅ |
 | QUẢN LÝ BIỂU QUYẾT > close | `PATCH /api/meeting-vote-topics/{id}/close` | ✅ |

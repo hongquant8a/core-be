@@ -176,7 +176,7 @@ class PermissionSeeder extends Seeder
             'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
         ],
         'meeting-discussion-registrations' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy',
+            'stats', 'index', 'show', 'store', 'update', 'destroy', 'complete',
         ],
         'meeting-personal-notes' => [
             'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
@@ -289,6 +289,7 @@ class PermissionSeeder extends Seeder
         'removeUser' => 'Xóa người dùng',
         'confirm' => 'Xác nhận',
         'test' => 'Kiểm thử',
+        'complete' => 'Đánh dấu hoàn thành',
     ];
 
     /** Tạo đầy đủ permission từ danh sách PERMISSIONS (kèm description, sort_order, parent_id). */

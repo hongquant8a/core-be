@@ -19,7 +19,7 @@ class StoreMeetingDiscussionRegistrationRequest extends FormRequest
         // để tránh user đăng ký hộ đại biểu khác).
         return [
             'meeting_id' => 'required|integer|exists:meetings,id',
-            'meeting_agenda_id' => 'nullable|integer|exists:meeting_agendas,id',
+            'meeting_agenda_id' => 'required|integer|exists:meeting_agendas,id',
             'type' => ['required', MeetingDiscussionTypeEnum::rule()],
             'content' => 'required|string',
             'attachment' => 'nullable|file|max:10240',
@@ -64,7 +64,7 @@ class StoreMeetingDiscussionRegistrationRequest extends FormRequest
     {
         return [
             'meeting_id' => ['description' => 'ID cuộc họp.', 'example' => 1],
-            'meeting_agenda_id' => ['description' => 'ID chương trình họp.', 'example' => 2],
+            'meeting_agenda_id' => ['description' => 'ID chương trình họp (required) — đăng ký luôn gắn với 1 chương trình cụ thể.', 'example' => 2],
             'type' => ['description' => 'Loại đăng ký.', 'example' => 'discussion'],
             'content' => ['description' => 'Nội dung đăng ký.', 'example' => 'Xin đăng ký phát biểu về nội dung 2'],
             'attachment' => ['description' => 'Tệp đính kèm (slide, văn bản tham chiếu, ...) — đi qua MediaService, ≤10MB.'],
