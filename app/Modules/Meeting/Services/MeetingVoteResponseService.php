@@ -95,7 +95,8 @@ class MeetingVoteResponseService
             ->findOrFail($validated['meeting_vote_topic_id']);
 
         // Spec line 165: chỉ vote khi topic đang opened.
-        if ($topic->status !== 'opened') {
+        // Phase derive từ opened_at + closed_at (status field đã bỏ).
+        if ($topic->opened_at === null || $topic->closed_at !== null) {
             throw ValidationException::withMessages([
                 'meeting_vote_topic_id' => ['Chương trình biểu quyết chưa mở hoặc đã đóng — không thể bỏ phiếu.'],
             ]);
@@ -157,9 +158,9 @@ class MeetingVoteResponseService
         $this->ensureOwned($meetingVoteResponse);
 
         // Spec line 165: sau khi đóng biểu quyết thì không cho sửa phiếu.
-        // Reload topic để lấy status mới nhất, tránh stale relation cached.
+        // Reload topic + derive phase từ closed_at (status field đã bỏ).
         $topic = MeetingVoteTopic::find($meetingVoteResponse->meeting_vote_topic_id);
-        if ($topic && $topic->status === 'closed') {
+        if ($topic && $topic->closed_at !== null) {
             throw ValidationException::withMessages([
                 'meeting_vote_topic_id' => ['Chương trình biểu quyết đã đóng — không thể sửa phiếu.'],
             ]);

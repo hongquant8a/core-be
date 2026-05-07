@@ -129,7 +129,7 @@ Datetime: `H:i:s d/m/Y` (vd `08:30:00 01/05/2026`). Time-only (giờ chương tr
     { "id": 1, "title": "Tờ trình ngân sách", "media_id": 42, "file_url": "/storage/42/to-trinh.pdf", "file_name": "to-trinh.pdf", "is_public": true, ... }
   ],
   "vote_topics": [
-    { "id": 1, "title": "Biểu quyết thông qua nghị quyết", "vote_type": "agree_disagree_abstain", "ballot_mode": "public_named", "status": "draft", "sort_order": 1, ... }
+    { "id": 1, "title": "Biểu quyết thông qua nghị quyết", "vote_type": "agree_disagree_abstain", "ballot_mode": "public_named", "opened_at": null, "closed_at": null, "sort_order": 1, ... }
   ]
 }
 ```
@@ -425,10 +425,10 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
 | Method | Path | Mô tả |
 |---|---|---|
 | GET | `/api/meeting-vote-topics/stats` | `{ total, draft, opened, closed }`. Query: `meeting_id`. |
-| GET | `/api/meeting-vote-topics` | Danh sách phân trang. Query: `meeting_id`, `status`, `search`, `sort_by` (`id\|sort_order\|created_at\|updated_at`), `sort_order`, `limit`. |
+| GET | `/api/meeting-vote-topics` | Danh sách phân trang. Query: `meeting_id`, `status` (BE derive từ opened_at/closed_at — accepted: `draft`, `opened`, `closed`), `search`, `sort_by` (`id\|sort_order\|created_at\|updated_at`), `sort_order`, `limit`. |
 | GET | `/api/meeting-vote-topics/{id}` | Chi tiết. |
 | POST | `/api/meeting-vote-topics` | Tạo (thường ở giai đoạn soạn meeting). Body: [Vote topic body](#vote-topic-body). |
-| PUT \| PATCH | `/api/meeting-vote-topics/{id}` | Cập nhật (chỉ khi `status=draft`). |
+| PUT \| PATCH | `/api/meeting-vote-topics/{id}` | Cập nhật (FE tự gate UI theo phase derived). |
 | DELETE | `/api/meeting-vote-topics/{id}` | Xóa. |
 | POST | `/api/meeting-vote-topics/bulk-delete` | Body `{ "ids": [...] }`. |
 | PATCH | `/api/meeting-vote-topics/reorder` | Body `{ "items": [{ "id": 1, "sort_order": 1 }, ...] }`. |
@@ -449,7 +449,7 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
 | `show_result_on_projector` | boolean | — | Hiển thị tổng hợp trên màn chiếu. |
 | `show_result_on_personal_device` | boolean | — | Hiển thị tổng hợp trên thiết bị cá nhân của đại biểu. |
 | `sort_order` | integer (≥0) | — | Thứ tự hiển thị. |
-| `status` | enum | — | `draft` (mặc định) \| `opened` \| `closed`. Nên để BE tự đổi qua `/open` `/close`. |
+| ~~`status`~~ | — | — | **Đã bỏ field 2026-05-07**. FE derive phase từ `opened_at` + `closed_at`: opened_at NULL → `draft`; opened_at NOT NULL + closed_at NULL → `opened`; closed_at NOT NULL → `closed`. Lifecycle qua endpoint `/open` + `/close` (không gửi `status` body nữa). |
 
 ```json
 {
@@ -479,7 +479,6 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
   "show_result_on_projector": true,
   "show_result_on_personal_device": true,
   "sort_order": 1,
-  "status": "opened",
   "opened_at": "10:15:00 15/05/2026",
   "closed_at": null,
   "created_at": "08:00:00 08/05/2026",
@@ -523,14 +522,18 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
 [Soạn meeting]              [Trong họp]                    [Sau khi đóng]
     │                            │                                │
     ▼                            ▼                                ▼
-status=draft  ──open()──▶  status=opened  ──close()──▶  status=closed
+phase=draft     ──open()──▶  phase=opened     ──close()──▶  phase=closed
+(opened_at NULL)            (opened_at NOT NULL,         (closed_at NOT NULL)
+                             closed_at NULL)
                                 │
                                 ▼
                         Đại biểu vote (POST /vote-responses)
-                        - Phải status=opened
+                        - Phải phase=opened (opened_at NOT NULL + closed_at NULL)
                         - 1 phiếu / participant / topic
                         - Validate option ∈ vote_type
 ```
+
+> Field `status` trong DB **đã bỏ** (2026-05-07). FE derive phase từ `opened_at` + `closed_at`. Filter `?status=draft|opened|closed` BE vẫn nhận và tự convert sang query derived. Xem [docs/changelogs/2026-05-07-meeting-vote-topic-status-removed-fe.md](../changelogs/2026-05-07-meeting-vote-topic-status-removed-fe.md).
 
 **Rules quan trọng (BE đã enforce 2026-05-07):**
 1. Vote chỉ accept khi `topic.status = 'opened'`.

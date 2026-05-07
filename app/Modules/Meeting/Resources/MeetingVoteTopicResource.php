@@ -24,7 +24,10 @@ class MeetingVoteTopicResource extends JsonResource
             'show_result_on_projector' => $this->show_result_on_projector,
             'show_result_on_personal_device' => $this->show_result_on_personal_device,
             'sort_order' => $this->sort_order,
-            'status' => $this->status,
+            // status đã bỏ — FE derive từ opened_at + closed_at:
+            //   draft  = opened_at NULL
+            //   opened = opened_at NOT NULL + closed_at NULL
+            //   closed = closed_at NOT NULL
             'opened_at' => $this->opened_at?->format('H:i:s d/m/Y'),
             'closed_at' => $this->closed_at?->format('H:i:s d/m/Y'),
             'created_by' => $this->whenLoaded('creator', fn () => $this->formatUserSummary($this->creator), null),

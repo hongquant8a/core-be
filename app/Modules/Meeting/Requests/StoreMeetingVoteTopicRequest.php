@@ -3,7 +3,6 @@
 namespace App\Modules\Meeting\Requests;
 
 use App\Modules\Meeting\Enums\MeetingBallotModeEnum;
-use App\Modules\Meeting\Enums\MeetingVoteTopicStatusEnum;
 use App\Modules\Meeting\Enums\MeetingVoteTypeEnum;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -27,7 +26,6 @@ class StoreMeetingVoteTopicRequest extends FormRequest
             'show_result_on_projector' => 'nullable|boolean',
             'show_result_on_personal_device' => 'nullable|boolean',
             'sort_order' => 'nullable|integer|min:0',
-            'status' => ['nullable', MeetingVoteTopicStatusEnum::rule()],
         ];
     }
 
@@ -64,7 +62,6 @@ class StoreMeetingVoteTopicRequest extends FormRequest
             'show_result_on_projector' => 'show result on projector',
             'show_result_on_personal_device' => 'show result on personal device',
             'sort_order' => 'Thứ tự sắp xếp',
-            'status' => 'Trạng thái',
         ];
     }
     public function bodyParameters(): array
@@ -80,7 +77,6 @@ class StoreMeetingVoteTopicRequest extends FormRequest
             'show_result_on_projector' => ['description' => 'Hiển thị kết quả trên màn chiếu.', 'example' => true],
             'show_result_on_personal_device' => ['description' => 'Hiển thị kết quả trên thiết bị cá nhân.', 'example' => false],
             'sort_order' => ['description' => 'Thứ tự hiển thị.', 'example' => 1],
-            'status' => ['description' => 'Trạng thái chủ đề biểu quyết.', 'example' => 'draft'],
         ];
     }
 }

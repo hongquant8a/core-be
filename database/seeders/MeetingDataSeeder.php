@@ -355,7 +355,7 @@ class MeetingDataSeeder extends Seeder
                     'show_result_on_projector' => true,
                     'show_result_on_personal_device' => true,
                     'sort_order' => $i + 1,
-                    'status' => 'closed',
+                    // Phase derive từ opened_at + closed_at — set cả 2 để đại diện vote đã đóng.
                     'opened_at' => $start->copy()->addHours(6),
                     'closed_at' => $start->copy()->addHours(6)->addMinutes(15),
                 ]

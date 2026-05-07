@@ -22,7 +22,6 @@ class MeetingVoteTopic extends Model
         'show_result_on_projector',
         'show_result_on_personal_device',
         'sort_order',
-        'status',
         'opened_at',
         'closed_at',
         'created_by',
@@ -64,7 +63,18 @@ class MeetingVoteTopic extends Model
 
         $query->when($organizationId, fn ($q, $organizationId) => $q->where('organization_id', (int) $organizationId))
             ->when($filters['meeting_id'] ?? null, fn ($q, $meetingId) => $q->where('meeting_id', $meetingId))
-            ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
+            // Status đã bỏ field — derive từ opened_at + closed_at:
+            //  draft  = opened_at IS NULL
+            //  opened = opened_at IS NOT NULL AND closed_at IS NULL
+            //  closed = closed_at IS NOT NULL
+            ->when($filters['status'] ?? null, function ($q, $status) {
+                match ($status) {
+                    'draft' => $q->whereNull('opened_at'),
+                    'opened' => $q->whereNotNull('opened_at')->whereNull('closed_at'),
+                    'closed' => $q->whereNotNull('closed_at'),
+                    default => null,
+                };
+            })
             ->when($filters['search'] ?? null, fn ($q, $search) => $q->where('title', 'like', '%'.$search.'%'))
             ->when($filters['sort_by'] ?? 'sort_order', function ($q, $sortBy) use ($filters) {
                 $allowed = ['id', 'sort_order', 'created_at', 'updated_at'];

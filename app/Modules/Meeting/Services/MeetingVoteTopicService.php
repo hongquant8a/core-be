@@ -2,7 +2,6 @@
 
 namespace App\Modules\Meeting\Services;
 
-use App\Modules\Meeting\Enums\MeetingVoteTopicStatusEnum;
 use App\Modules\Meeting\Models\MeetingVoteTopic;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
@@ -13,11 +12,12 @@ class MeetingVoteTopicService
     {
         $base = MeetingVoteTopic::filter($filters);
 
+        // Phase derive từ opened_at + closed_at (status field đã bỏ).
         return [
             'total' => (clone $base)->count(),
-            'draft' => (clone $base)->where('status', 'draft')->count(),
-            'opened' => (clone $base)->where('status', 'opened')->count(),
-            'closed' => (clone $base)->where('status', 'closed')->count(),
+            'draft' => (clone $base)->whereNull('opened_at')->count(),
+            'opened' => (clone $base)->whereNotNull('opened_at')->whereNull('closed_at')->count(),
+            'closed' => (clone $base)->whereNotNull('closed_at')->count(),
         ];
     }
 
@@ -45,7 +45,6 @@ class MeetingVoteTopicService
         return MeetingVoteTopic::create([
             ...$validated,
             'organization_id' => $this->resolveCurrentOrganizationId(),
-            'status' => $validated['status'] ?? MeetingVoteTopicStatusEnum::Draft->value,
         ])->load(['creator.media', 'editor.media']);
     }
 
@@ -72,7 +71,6 @@ class MeetingVoteTopicService
     public function open(MeetingVoteTopic $meetingVoteTopic, array $payload = []): MeetingVoteTopic
     {
         $update = [
-            'status' => MeetingVoteTopicStatusEnum::Opened->value,
             'opened_at' => now(),
             'closed_at' => null,
         ];
@@ -93,7 +91,6 @@ class MeetingVoteTopicService
     public function close(MeetingVoteTopic $meetingVoteTopic): MeetingVoteTopic
     {
         $meetingVoteTopic->update([
-            'status' => MeetingVoteTopicStatusEnum::Closed->value,
             'closed_at' => now(),
         ]);
 

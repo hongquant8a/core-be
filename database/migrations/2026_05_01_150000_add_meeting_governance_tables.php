@@ -36,7 +36,7 @@ return new class extends Migration
             $table->boolean('show_result_on_projector')->default(false);
             $table->boolean('show_result_on_personal_device')->default(false);
             $table->unsignedInteger('sort_order')->default(0);
-            $table->string('status')->default('draft');
+            // status field đã bỏ — phase derive từ opened_at + closed_at (drop migration 2026_05_07_230000).
             $table->dateTime('opened_at')->nullable();
             $table->dateTime('closed_at')->nullable();
             $table->unsignedBigInteger('created_by')->nullable();
