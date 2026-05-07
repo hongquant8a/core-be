@@ -2,7 +2,7 @@
 
 Doc reference cho FE implement **trang danh sách meeting + 8 tab trong chi tiết meeting**. Endpoint trong doc này **đã sẵn sàng trên BE**, FE có thể bắt đầu ngay.
 
-> Sprint 1 đã ship (2026-05-07): Tab 1 self-actions (respond/checkin/mark-absent), Tab 7 THAO TÁC NHANH (start/pause/end + lock/unlock-attendance) + DUYỆT ĐIỂM DANH (approve/reject). Tất cả 8 tab đã đủ endpoint thực tế.
+> Sprint 1 đã ship (2026-05-07): Tab 1 self-actions (respond/checkin/mark-absent), Tab 7 THAO TÁC NHANH (lock/unlock-attendance + end-early) + DUYỆT ĐIỂM DANH (approve/reject) + highlight pointers. FE phase derive theo `start_time`/`end_time` vs `now()` (không có runtime state field riêng).
 >
 > Tham khảo thiết kế tổng thể: [docs/answer/meeting-runtime-design.md](../answer/meeting-runtime-design.md).
 > Tham khảo API spec đầy đủ: [docs/api/meeting-runtime.md](./meeting-runtime.md) (organize theo resource).
@@ -747,10 +747,9 @@ GET /api/meeting-vote-responses/stats?meeting_vote_topic_id={topic_id}
 
 | UI Section | Endpoint | Status |
 |---|---|---|
-| THAO TÁC NHANH > Bắt Đầu / Tiếp Tục | `PATCH /api/meetings/{id}/start` (reuse cho cả lần đầu start lẫn resume sau pause) | ✅ |
-| THAO TÁC NHANH > Tạm Dừng | `PATCH /api/meetings/{id}/pause` | ✅ |
-| THAO TÁC NHANH > Kết Thúc Cuộc Họp | `PATCH /api/meetings/{id}/end` | ✅ |
+| THAO TÁC NHANH > Kết Thúc Cuộc Họp | `PATCH /api/meetings/{id}/end-early` (set `end_time = now()`, FE phase tự chuyển sang `finished`) | ✅ |
 | THAO TÁC NHANH > Khoá Danh Sách Điểm Danh | `PATCH /api/meetings/{id}/lock-attendance` + `unlock-attendance` | ✅ |
+| THAO TÁC NHANH > Bắt Đầu / Tạm Dừng | — | ❌ Bỏ (FE phase derive từ `start_time`/`end_time` vs `now()`, không cần điều khiển runtime) |
 | THAO TÁC NHANH > Uỷ Quyền Điều Hành | — | ❌ Bỏ scope (giữ FK `operator_meeting_attendee_id` cố định trên meeting) |
 | THAO TÁC NHANH > Quản Trị Điều Hành | (link điều hướng, không phải API) | ✅ — FE link |
 | THAO TÁC NHANH > Xuất Báo Cáo Nhanh | — | ❌ Bỏ scope (chưa có spec rõ) |
@@ -765,20 +764,26 @@ GET /api/meeting-vote-responses/stats?meeting_vote_topic_id={topic_id}
 | HIGHLIGHT phát biểu/chất vấn lên màn chiếu | `PATCH /api/meetings/{id}/highlight-discussion` | ✅ |
 | QUẢN LÝ CHƯƠNG TRÌNH HỌP | (chỉ display + click highlight) | ✅ |
 
-### 7.1 Runtime state phase derive ở FE
+### 7.1 Phase derive ở FE (đã đơn giản hoá)
+
+BE **không** giữ runtime state field riêng. FE phase chạy theo `start_time` + `end_time` vs `now()`:
 
 ```js
-function getRuntimePhase(meeting) {
-  if (meeting.runtime_ended_at)   return 'ended'      // disable mọi nút runtime
-  if (meeting.runtime_paused_at)  return 'paused'     // hiện nút "Tiếp tục" + "Kết thúc"
-  if (meeting.runtime_started_at) return 'running'    // hiện nút "Tạm dừng" + "Kết thúc"
-  return 'not_started'                                // hiện nút "Bắt đầu"
+function getMeetingPhase(meeting) {
+  if (meeting.status === 'cancelled') return 'cancelled'
+  if (meeting.status === 'draft')     return 'draft'
+  const now = new Date()
+  const start = parseDateTime(meeting.start_time)
+  const end = meeting.end_time ? parseDateTime(meeting.end_time) : null
+  if (now < start)        return 'upcoming'
+  if (end && now > end)   return 'finished'
+  return 'in_progress'
 }
 ```
 
-- "Tiếp tục sau pause" reuse endpoint **`PATCH /start`** — BE tự clear `runtime_paused_at` nếu đang pause.
-- Thời lượng phiên họp + countdown biểu quyết **đếm ở FE** (không cần endpoint timer riêng).
-- Sau `lock-attendance` BE sẽ trả 422 khi đại biểu gọi `checkin`/`mark-absent` — FE bắt error message để hiển thị.
+- Operator bấm **"Kết thúc cuộc họp"** trước `end_time` dự kiến → BE set `end_time = now()` → FE phase ngay sau đó derive `finished`.
+- Sau `lock-attendance` BE trả 422 khi đại biểu gọi `checkin`/`mark-absent` — FE bắt error message để hiển thị.
+- Countdown biểu quyết đếm ở FE (theo `duration_minutes` của vote topic).
 
 ### 7.2 Highlight chương trình + phát biểu lên màn chiếu
 

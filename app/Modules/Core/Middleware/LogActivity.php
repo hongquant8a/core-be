@@ -142,9 +142,7 @@ class LogActivity
             'reject' => 'Từ chối',
             'lock-attendance' => 'Khoá điểm danh',
             'unlock-attendance' => 'Mở khoá điểm danh',
-            'start' => 'Bắt đầu',
-            'pause' => 'Tạm dừng',
-            'end' => 'Kết thúc',
+            'end-early' => 'Kết thúc sớm',
             'highlight-agenda' => 'Chiếu chương trình',
             'highlight-discussion' => 'Chiếu phát biểu',
         ];

@@ -59,9 +59,7 @@ Datetime: `H:i:s d/m/Y` (vd `08:30:00 01/05/2026`). Time-only (giờ chương tr
 | PATCH | `/api/meetings/{id}/status` | **Quan trọng**: khi `draft → published`, BE tự động (1) tạo `meeting_invitations` cho tất cả participants, (2) dispatch event `MeetingPublished` (gửi FCM/email), (3) set `published_at = now()` lần đầu publish (republish không ghi đè). |
 | PATCH | `/api/meetings/{id}/lock-attendance` | Operator khoá danh sách điểm danh — đại biểu không thể tự `checkin`/`mark-absent` nữa (service trả 422). Set `attendance_locked=true`. |
 | PATCH | `/api/meetings/{id}/unlock-attendance` | Operator mở khoá điểm danh. Set `attendance_locked=false`. |
-| PATCH | `/api/meetings/{id}/start` | Bắt đầu phiên họp **HOẶC** tiếp tục sau pause (reuse endpoint). Lần đầu: set `runtime_started_at = now()`. Khi đang pause: clear `runtime_paused_at`. Cuộc họp đã `runtime_ended_at` → 422. |
-| PATCH | `/api/meetings/{id}/pause` | Tạm dừng phiên họp. Set `runtime_paused_at = now()`. Yêu cầu đã `runtime_started_at` và chưa `runtime_ended_at`, không đang pause sẵn. |
-| PATCH | `/api/meetings/{id}/end` | Kết thúc phiên họp thủ công. Set `runtime_ended_at = now()` + clear `runtime_paused_at`. Idempotency: đã end → 422. |
+| PATCH | `/api/meetings/{id}/end-early` | Kết thúc cuộc họp sớm — set `end_time = now()`. FE phase tự derive thành `finished` (không có runtime state field riêng). Đã quá `end_time` dự kiến → 422. |
 | PATCH | `/api/meetings/{id}/highlight-agenda` | Highlight chương trình lên màn chiếu (Tab 8). Body `{ "agenda_id": int|null }`. Null = bỏ highlight. Validate agenda thuộc đúng meeting. |
 | PATCH | `/api/meetings/{id}/highlight-discussion` | Highlight đăng ký phát biểu/chất vấn lên màn chiếu. Body `{ "discussion_registration_id": int|null }`. Null = bỏ highlight. Validate registration thuộc đúng meeting. |
 | GET | `/api/meetings/export` | Tải Excel `meetings.xlsx`. Query giống `index`. Cột: `STT, Tiêu đề, Loại, Địa điểm, Công khai, Bắt đầu, Kết thúc, Trạng thái, Lượt xem, Phát hành, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID`. |
@@ -111,9 +109,6 @@ Datetime: `H:i:s d/m/Y` (vd `08:30:00 01/05/2026`). Time-only (giờ chương tr
   "view_count": 145,
   "published_at": "08:00:00 08/05/2026",
   "attendance_locked": false,
-  "runtime_started_at": null,
-  "runtime_paused_at": null,
-  "runtime_ended_at": null,
   "current_meeting_agenda_id": null,
   "current_meeting_discussion_registration_id": null,
   "current_agenda": null,
@@ -147,22 +142,9 @@ Datetime: `H:i:s d/m/Y` (vd `08:30:00 01/05/2026`). Time-only (giờ chương tr
 > - Set `published_at = now()` **chỉ lần đầu** publish (`published_at` đang null). Republish sau đó giữ nguyên giá trị cũ.
 > - Re-publish (đã từng publish trước đó) **không** tạo invitation trùng.
 
-> **Runtime state operator (Tab 7 Điều hành)** — tách biệt với `status` lifecycle:
-> - `attendance_locked`: bool — thư ký/operator có thể khoá để chốt danh sách điểm danh.
-> - `runtime_started_at`: timestamp khi operator bấm **Bắt đầu** lần đầu (set 1 lần, không reset).
-> - `runtime_paused_at`: timestamp khi operator bấm **Tạm dừng**. `null` nghĩa là đang chạy hoặc đã end.
-> - `runtime_ended_at`: timestamp khi operator bấm **Kết thúc** thủ công. Set 1 lần và idempotent.
->
-> Phase điều hành derived ở FE:
-> ```js
-> function getRuntimePhase(meeting) {
->   if (meeting.runtime_ended_at)   return 'ended'
->   if (meeting.runtime_paused_at)  return 'paused'
->   if (meeting.runtime_started_at) return 'running'
->   return 'not_started'
-> }
-> ```
-> Reuse endpoint: bấm **Bắt đầu** sau khi đã pause sẽ resume (clear `runtime_paused_at`) — không cần endpoint `resume` riêng. Thời lượng tích luỹ phiên họp tính ở FE từ `runtime_started_at` + state `paused`.
+> **Runtime state Tab 7 Điều hành** — đơn giản hoá (2026-05-07): KHÔNG có column runtime state riêng. FE phase vẫn derive từ `start_time` + `end_time` vs `now()` như hiển thị tổng quát:
+> - `attendance_locked`: thư ký/operator có thể khoá để chốt danh sách điểm danh.
+> - `end-early`: nút **"Kết thúc cuộc họp"** trên Tab 7 gọi `PATCH /meetings/{id}/end-early` để set `end_time = now()` khi muốn kết thúc trước giờ dự kiến. FE phase tự chuyển sang `finished`. Không có nút Bắt đầu / Tạm dừng — operator không cần điều khiển runtime, FE phase chạy theo lịch.
 
 > **Highlight pointers cho Tab 8 màn chiếu** — operator click chương trình hoặc đăng ký phát biểu, BE lưu 2 FK trên meeting, FE màn chiếu polling `GET /api/meetings/{id}` mỗi 3-5s đọc `current_agenda` / `current_discussion_registration` (đã preload) để render khối tương ứng. Cả 2 độc lập — có thể highlight đồng thời 1 chương trình + 1 phát biểu trong chương trình đó. Truyền body với key `null` để bỏ highlight.
 

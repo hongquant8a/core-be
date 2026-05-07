@@ -17,10 +17,8 @@ Route::patch('/{meeting}/status', [MeetingController::class, 'changeStatus'])->m
 // THAO TÁC NHANH (Tab 7 Điều hành) — operator khoá / mở khoá danh sách điểm danh.
 Route::patch('/{meeting}/lock-attendance', [MeetingController::class, 'lockAttendance'])->middleware('permission:meetings.lockAttendance,web');
 Route::patch('/{meeting}/unlock-attendance', [MeetingController::class, 'unlockAttendance'])->middleware('permission:meetings.unlockAttendance,web');
-// Runtime state operator điều khiển — start cũng dùng cho resume sau pause.
-Route::patch('/{meeting}/start', [MeetingController::class, 'start'])->middleware('permission:meetings.start,web');
-Route::patch('/{meeting}/pause', [MeetingController::class, 'pause'])->middleware('permission:meetings.pause,web');
-Route::patch('/{meeting}/end', [MeetingController::class, 'end'])->middleware('permission:meetings.end,web');
+// Kết thúc cuộc họp sớm — set end_time = now() (FE phase derive theo start_time/end_time).
+Route::patch('/{meeting}/end-early', [MeetingController::class, 'endEarly'])->middleware('permission:meetings.endEarly,web');
 // Highlight pointers cho Tab 8 màn chiếu — operator chỉ định chương trình + đăng ký đang chiếu.
 Route::patch('/{meeting}/highlight-agenda', [MeetingController::class, 'highlightAgenda'])->middleware('permission:meetings.highlightAgenda,web');
 Route::patch('/{meeting}/highlight-discussion', [MeetingController::class, 'highlightDiscussion'])->middleware('permission:meetings.highlightDiscussion,web');
