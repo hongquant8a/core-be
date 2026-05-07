@@ -9,9 +9,11 @@ Channel Zalo chuyển từ ZNS (template-based, gửi theo phone) sang **Zalo OA
 
 ## 1. Form Settings — nhóm `zalo`
 
-**Bỏ 6 input cũ:** `zalo_server`, `zalo_username`, `zalo_password`, `zalo_sender`, `zalo_template_id`, `zalo_extra_params`.
+**Tất cả 11 setting key đều tồn tại** trong group `zalo`. UI cần phân làm 2 nhóm rõ ràng (label đã có prefix `[Legacy ZNS]` để FE phân biệt):
 
-**Render lại 4 input string + 1 toggle:**
+### Nhóm A — Zalo OA (đang active, render đầy đủ)
+
+5 input — **đây là channel hiện đang chạy**:
 
 | Key | Input type | Label | Placeholder gợi ý | Bắt buộc? |
 |---|---|---|---|---|
@@ -21,12 +23,33 @@ Channel Zalo chuyển từ ZNS (template-based, gửi theo phone) sang **Zalo OA
 | `zalo_access_token` | textarea (1 dòng cũng ok, nhưng chuỗi rất dài ~250 ký tự) | Access Token | `b_sS6fafj...` | **Bắt buộc** để gửi tin |
 | `zalo_refresh_token` | textarea | Refresh Token | `cxwl1Zuem...` | Optional |
 
-### Logic FE
+### Logic FE (nhóm A)
 
 - `zalo_enabled = false` → channel tắt, các input còn lại có thể để trống.
 - `zalo_enabled = true` + chỉ điền `zalo_access_token` → gửi tin được trong 1 giờ (đến khi token expire).
 - `zalo_enabled = true` + điền đủ 4 → BE auto-refresh khi token expire, chạy 24/7.
 - Nếu chỉ access_token mà thiếu 3 cái kia → cảnh báo nhỏ (tooltip/icon `!`): *"Token sẽ hết hạn sau 1 giờ. Điền App ID + Secret Key + Refresh Token để BE tự xoay."*
+
+### Nhóm B — Legacy ZNS (dormant, render thu gọn / collapse)
+
+6 setting key có label prefix `[Legacy ZNS]` — **không phải channel đang dùng**, nhưng BE giữ làm fallback nếu sau này cần switch về ZNS (gửi qua phone, template-based).
+
+| Key | Label | Sort order |
+|---|---|---|
+| `zalo_server` | [Legacy ZNS] Máy chủ Zalo | 11 |
+| `zalo_username` | [Legacy ZNS] Tên đăng nhập | 12 |
+| `zalo_password` | [Legacy ZNS] Mật khẩu | 13 |
+| `zalo_sender` | [Legacy ZNS] Người gửi (OA sender ID) | 14 |
+| `zalo_template_id` | [Legacy ZNS] Mẫu tin nhắn ID | 15 |
+| `zalo_extra_params` | [Legacy ZNS] Tham số bổ sung | 16 |
+
+FE render gợi ý cho nhóm B:
+- Dùng `<details>` collapse với title **"Cấu hình ZNS legacy (không sử dụng — chỉ điền khi BE switch về ZaloZnsChannel)"**
+- Hoặc tab/section riêng "Legacy" tách biệt khỏi nhóm A
+- Mặc định **collapsed** để admin không nhầm lẫn
+- Vẫn cho điền + save để BE-side có sẵn config khi cần swap (admin dev/devops sẽ trigger swap)
+
+⚠ **Đừng** auto-fill placeholder hay tooltip "Bắt buộc" cho 6 key này — chúng optional 100%, dormant.
 
 ### Cách lấy 4 giá trị
 

@@ -48,6 +48,9 @@ class NotificationServiceProvider extends ServiceProvider
                 channels: [
                     'sms' => new SmsChannel($smsClient, $settings),
                     'mail' => new MailChannel($settings),
+                    // Channel zalo đang dùng OA Message API v2.0 (free-form text qua user_id).
+                    // Swap về ZNS legacy: thay ZaloChannel → ZaloZnsChannel + đảm bảo settings ZNS đã điền
+                    // (zalo_server/username/password/sender/template_id) — xem ZaloZnsChannel docblock.
                     'zalo' => new ZaloChannel($settings),
                     'fcm' => new FcmChannel($settings),
                 ],

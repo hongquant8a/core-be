@@ -50,3 +50,17 @@ Khi notice 1 trong các signal:
 - Log nhiều `Refresh token failed: ...` trong 1 ngày
 - Admin báo gửi tin fail im lặng
 - Production traffic > vài request/giây cho channel zalo
+
+## Fallback: ZNS legacy channel (dormant)
+
+`app/Services/Notification/Channels/ZaloZnsChannel.php` giữ logic ZNS cũ (gửi qua phone, template-based). **Không register** trong [NotificationServiceProvider.php](../../app/Providers/NotificationServiceProvider.php) — chỉ dùng nếu cần swap ngược.
+
+Khi muốn swap về ZNS:
+1. NotificationServiceProvider: `'zalo' => new ZaloChannel($settings)` → `'zalo' => new ZaloZnsChannel($settings)`
+2. Điền 6 setting key ZNS: `zalo_server`, `zalo_username`, `zalo_password`, `zalo_sender`, `zalo_template_id`, `zalo_extra_params` — đã có sẵn trong DB (migration `2026_05_06_000200_restore_zalo_zns_settings.php` + SettingSeeder).
+3. ContentBuilders không cần đổi — ZNS đọc `phone` từ Recipient, OA đọc `zaloId` từ Recipient. Hiện ContentBuilders set `phone:` cho channel zalo, nên swap về ZNS sẽ work ngay; ngược lại, OA cần ContentBuilders set `zaloId:` (chưa làm — pending integration).
+
+Lý do giữ ZNS dormant:
+- OA tier hiện tại (UBND phường) có thể bị Zalo hạn chế tin nhắn
+- ZNS đã proven, gửi tin theo phone không cần user follow OA
+- Phòng case OA Zalo deprecate v2.0 endpoint
