@@ -9,8 +9,16 @@ return Application::configure(basePath: dirname(__DIR__))
         web: __DIR__.'/../routes/web.php',
         api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
-        channels: __DIR__.'/../routes/channels.php',
         health: '/up',
+    )
+    // Broadcasting auth route phải dùng Sanctum (project là API-first, FE gửi Bearer
+    // token trong header). Default Laravel auto-register /broadcasting/auth với
+    // middleware 'web' (session+CSRF) — không phù hợp Sanctum SPA. Override prefix
+    // 'api' + middleware ['api', 'auth:sanctum'] để FE Echo authEndpoint trỏ tới
+    // /api/broadcasting/auth.
+    ->withBroadcasting(
+        __DIR__.'/../routes/channels.php',
+        ['prefix' => 'api', 'middleware' => ['api', 'auth:sanctum']]
     )
     ->withCommands([
         \App\Services\Notification\Console\ProcessRemindersCommand::class,

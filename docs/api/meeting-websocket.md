@@ -65,15 +65,18 @@ export const echo = new Echo({
   wssPort: import.meta.env.VITE_REVERB_PORT,
   forceTLS: import.meta.env.VITE_REVERB_SCHEME === 'https',
   enabledTransports: ['ws', 'wss'],
-  authEndpoint: '/api/broadcasting/auth',           // Laravel default; có thể override nếu prefix khác
+  authEndpoint: '/api/broadcasting/auth',           // BE prefix 'api' + middleware ['api', 'auth:sanctum']
   auth: {
     headers: {
       Authorization: `Bearer ${getToken()}`,
-      'X-Organization-Id': getOrgId(),
+      Accept: 'application/json',
+      'X-Organization-Id': getOrgId(),              // optional, consistent với REST khác
     },
   },
 })
 ```
+
+> **Auth flow**: FE Echo gọi `POST /api/broadcasting/auth` với body `{ socket_id, channel_name }`. Middleware `auth:sanctum` xác thực Bearer token → callback `meeting.{meetingId}` trong [routes/channels.php](../../routes/channels.php) check user có là chair/op/participant của meeting → return `true` (200 + auth signature) hoặc `false` (403).
 
 ### 2.3 Biến môi trường FE
 
@@ -90,9 +93,10 @@ VITE_REVERB_SCHEME=http
 
 ### 2.4 Auth endpoint cho private channel
 
-FE Echo gọi `POST /api/broadcasting/auth` với header `Authorization`. BE chạy callback trong `routes/channels.php` để xác thực — return `200` nếu user là chair/op/participant của meeting hoặc Spatie role privileged, ngược lại `403`.
-
-Endpoint `/api/broadcasting/auth` Laravel auto-tạo khi `Broadcast::routes()` được gọi (đã wire qua `bootstrap/app.php` channels file).
+- Route: `POST /api/broadcasting/auth` (prefix `api`).
+- Middleware: `api` + `auth:sanctum` — FE phải gửi `Authorization: Bearer {token}`. **Không** dùng cookie/CSRF/web session.
+- Register: trong [bootstrap/app.php](../../bootstrap/app.php) qua `->withBroadcasting('routes/channels.php', ['prefix' => 'api', 'middleware' => ['api', 'auth:sanctum']])`.
+- Callback: [routes/channels.php](../../routes/channels.php) — xác thực user là chair / operator / participant của meeting (FK match qua `meeting_attendees.user_id` + `meeting_participants`). Spatie role check **không** áp dụng (xem comment trong file để biết lý do).
 
 ---
 
