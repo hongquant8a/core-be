@@ -150,11 +150,13 @@ class MeetingPermissionSeeder extends Seeder
 
             // Tham gia / từ chối / điểm danh / báo vắng
             'meeting-participants.show',
+            'meeting-participants.stats',
             'meeting-participants.respond',
             'meeting-attendances.checkin',
             'meeting-attendances.markAbsent',
             'meeting-attendances.show',
             'meeting-attendances.index',
+            'meeting-attendances.stats',
 
             // Biểu quyết
             'meeting-vote-topics.index',
