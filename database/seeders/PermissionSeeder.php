@@ -175,9 +175,6 @@ class PermissionSeeder extends Seeder
         'meeting-vote-responses' => [
             'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
         ],
-        'meeting-conclusions' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
-        ],
         'meeting-discussion-registrations' => [
             'stats', 'index', 'show', 'store', 'update', 'destroy',
         ],
@@ -256,7 +253,6 @@ class PermissionSeeder extends Seeder
         'meeting-attendances' => 'Điểm danh họp',
         'meeting-vote-topics' => 'Chương trình biểu quyết',
         'meeting-vote-responses' => 'Phiếu biểu quyết',
-        'meeting-conclusions' => 'Kết luận họp',
         'meeting-discussion-registrations' => 'Đăng ký thảo luận/chất vấn',
         'meeting-personal-notes' => 'Ghi chú cá nhân họp',
         'meeting-personal-note-attachments' => 'File ghi chú cá nhân',

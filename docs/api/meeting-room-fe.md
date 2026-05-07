@@ -517,55 +517,22 @@ GET /api/meeting-vote-responses?meeting_vote_topic_id={topic_id}
 
 ---
 
-## Tab 4 — Kết luận
+## Tab 4 — Kết luận (đã merge vào Tab 2 Tài liệu)
 
-**URL**: `/meetings/{id}#conclusions`
+**Removed**: Module `meeting_conclusions` đã bỏ. Workflow mới:
 
-### 4.1 TÀI LIỆU KẾT LUẬN + BÁO CÁO KẾT LUẬN
+1. **Sau cuộc họp**, thư ký vào dashboard CRUD meeting (admin compose page)
+2. Mở section tài liệu → upload thêm record `meeting_documents`
+3. Chọn loại tài liệu = **`Tài liệu kết luận cuộc họp`** (trong catalog `meeting_document_types`)
+4. Citizen / đại biểu xem tài liệu kết luận tại **Tab 2 Tài liệu** runtime — auto hiện vì cùng table
+
+→ **Tab 4 trên runtime UI có thể bỏ hoặc thay bằng filter view của Tab 2** (filter `meeting_document_type_id` = ID của catalog "Tài liệu kết luận cuộc họp"):
 
 ```
-GET /api/meeting-conclusions?meeting_id={id}
+GET /api/meeting-documents?meeting_id={id}&meeting_document_type_id={conclusionTypeId}
 ```
 
-Query params: `meeting_agenda_id`, `type`, `status`, `search`, `sort_by`, `sort_order`, `limit`.
-
-Response item:
-```json
-{
-  "id": 1,
-  "meeting_id": 1,
-  "meeting_agenda_id": 4,
-  "type": "minutes",       // hoặc "report" — distinguish 2 sections trong screenshot
-  "title": "Dự thảo biên bản kết luận cuộc họp tháng 02/2026",
-  "document_number": "BB-KL-02/2026",
-  "content": "...",
-  "media_id": 42,
-  "file_url": "/storage/42/bien-ban.pdf",
-  "file_name": "bien-ban.pdf",
-  "status": "draft",
-  "created_at": "...",
-  "updated_at": "..."
-}
-```
-
-> FE chia 2 sections theo `type`:
-> - `type=minutes` → "TÀI LIỆU KẾT LUẬN" (biên bản, tờ trình)
-> - `type=report` → "BÁO CÁO KẾT LUẬN"
-> Nếu BE chưa có field `type`, kiểm tra Model `MeetingConclusion` rồi báo lại.
-
-### 4.2 NHẬP KẾT LUẬN & FILE
-
-```http
-POST /api/meeting-conclusions
-Content-Type: multipart/form-data
-
-meeting_id=1
-meeting_agenda_id=4              # "Gắn với chương trình (Agenda)"
-title=Kết luận phiên sáng
-content=Nội dung kết luận chi tiết...
-file=@conclusion.pdf
-status=draft                     # default
-```
+FE phân loại bằng badge `meeting_document_type.name` thay vì cần field riêng.
 
 ---
 
@@ -768,9 +735,9 @@ Nếu polling 4 endpoint quá tốn → đề xuất Sprint 2 thêm `GET /api/me
 | Tab | Endpoint poll | Interval |
 |---|---|---|
 | 1. Chương trình | `GET /api/meetings/{id}` (chỉ khi cần phát hiện agenda chuyển) | 5s |
-| 2. Tài liệu | static, không poll | — |
+| 2. Tài liệu (kèm tài liệu kết luận sau họp) | static, không poll | — |
 | 3. Biểu quyết | `GET /api/meeting-vote-topics?meeting_id=X` + stats nếu có topic opened | 3s khi opened, else 10s |
-| 4. Kết luận | static | — |
+| ~~4. Kết luận~~ | merged vào Tab 2 (filter `meeting_document_type_id`) | — |
 | 5. Thảo luận | `GET /api/meeting-discussion-registrations?meeting_id=X` | 5s |
 | 6. Chủ trì | `GET /api/meeting-discussion-registrations/stats` + `attendances/stats` | 5s |
 | 7. Điều hành | tất cả endpoint Tab 5/6 + Sprint 1 endpoints | 3s |

@@ -136,9 +136,6 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
     Route::prefix('meeting-vote-responses')->middleware('ensure.route.org')->group(function () {
         require base_path('app/Modules/Meeting/Routes/meeting_vote_response.php');
     });
-    Route::prefix('meeting-conclusions')->middleware('ensure.route.org')->group(function () {
-        require base_path('app/Modules/Meeting/Routes/meeting_conclusion.php');
-    });
     Route::prefix('meeting-discussion-registrations')->middleware('ensure.route.org')->group(function () {
         require base_path('app/Modules/Meeting/Routes/meeting_discussion_registration.php');
     });

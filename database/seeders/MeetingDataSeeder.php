@@ -7,7 +7,6 @@ use App\Modules\Meeting\Models\Meeting;
 use App\Modules\Meeting\Models\MeetingAgenda;
 use App\Modules\Meeting\Models\MeetingAttendee;
 use App\Modules\Meeting\Models\MeetingAttendeeGroup;
-use App\Modules\Meeting\Models\MeetingConclusion;
 use App\Modules\Meeting\Models\MeetingDocument;
 use App\Modules\Meeting\Models\MeetingDocumentType;
 use App\Modules\Meeting\Models\MeetingLocation;
@@ -138,6 +137,7 @@ class MeetingDataSeeder extends Seeder
             ['name' => 'Báo cáo', 'description' => 'Báo cáo công tác.'],
             ['name' => 'Dự thảo nghị quyết', 'description' => 'Dự thảo nghị quyết chờ biểu quyết.'],
             ['name' => 'Tài liệu tham khảo', 'description' => 'Tài liệu tham khảo bổ trợ.'],
+            ['name' => 'Tài liệu kết luận cuộc họp', 'description' => 'Văn bản kết luận thư ký upload sau họp.'],
         ];
 
         $out = [];
@@ -346,15 +346,22 @@ class MeetingDataSeeder extends Seeder
             }
         }
 
-        // Kết luận
-        MeetingConclusion::firstOrCreate(
-            ['title' => 'Kết luận kỳ họp HĐND thường kỳ tháng 5/2026', 'meeting_id' => $meeting->id],
-            [
-                'organization_id' => $this->orgId,
-                'content' => 'Kỳ họp đã thông qua nghị quyết phân bổ ngân sách bổ sung 2026 với tỷ lệ tán thành cao. Yêu cầu UBND TP triển khai theo kế hoạch.',
-                'status' => 'published',
-            ]
-        );
+        // Kết luận: thư ký upload qua meeting_documents với loại "Tài liệu kết luận cuộc họp" (post-meeting upload).
+        $conclusionDocType = $docTypes['Tài liệu kết luận cuộc họp'] ?? null;
+        if ($conclusionDocType) {
+            MeetingDocument::firstOrCreate(
+                ['title' => 'Kết luận kỳ họp HĐND thường kỳ tháng 5/2026', 'meeting_id' => $meeting->id],
+                [
+                    'organization_id' => $this->orgId,
+                    'meeting_agenda_id' => $agendas[3]->id ?? null,
+                    'meeting_document_type_id' => $conclusionDocType->id,
+                    'document_number' => '04/KL-UBND',
+                    'summary' => 'Kỳ họp đã thông qua nghị quyết phân bổ ngân sách bổ sung 2026 với tỷ lệ tán thành cao. Yêu cầu UBND TP triển khai theo kế hoạch.',
+                    'is_public' => true,
+                    'sort_order' => 4,
+                ]
+            );
+        }
     }
 
     /**

@@ -61,27 +61,10 @@ return new class extends Migration
             $table->index(['organization_id', 'meeting_vote_topic_id'], 'meeting_vote_resp_org_topic_idx');
         });
 
-        Schema::create('meeting_conclusions', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('organization_id')->constrained('organizations')->cascadeOnDelete();
-            $table->foreignId('meeting_id')->constrained('meetings')->cascadeOnDelete();
-            $table->string('title');
-            $table->longText('content')->nullable();
-            $table->foreignId('media_id')->nullable()->constrained('media')->nullOnDelete();
-            $table->string('status')->default('draft');
-            $table->unsignedBigInteger('created_by')->nullable();
-            $table->unsignedBigInteger('updated_by')->nullable();
-            $table->timestamps();
-
-            $table->index(['organization_id', 'meeting_id', 'status']);
-            $table->foreign('created_by')->references('id')->on('users')->nullOnDelete();
-            $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
-        });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('meeting_conclusions');
         Schema::dropIfExists('meeting_vote_responses');
         Schema::dropIfExists('meeting_vote_topics');
         Schema::dropIfExists('meeting_attendances');

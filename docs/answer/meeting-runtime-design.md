@@ -143,7 +143,7 @@ Schema::table('meetings', function (Blueprint $table) {
 | **1. Chương trình** | `GET /meetings/{id}` (kèm `current_user_role`) + `GET /meeting-agendas?meeting_id=X` + `POST /meeting-attendances/checkin` (đại biểu) + `PATCH /meeting-participants/{id}` (báo vắng) | poll 5s |
 | **2. Tài liệu** | `GET /meeting-documents?meeting_id=X` + `meeting-personal-notes.*` | static |
 | **3. Biểu quyết** | `GET /meeting-vote-topics?meeting_id=X` + `POST /meeting-vote-responses` + `GET /meeting-vote-responses/stats?meeting_vote_topic_id=X` | poll 3s khi có topic `opened` |
-| **4. Kết luận** | `meeting-conclusions.*` | static |
+| ~~**4. Kết luận**~~ | bỏ — merge vào Tab 2 Tài liệu (filter `meeting_document_type_id` = "Tài liệu kết luận cuộc họp") | static |
 | **5. Thảo luận & Chất vấn** | `GET /meeting-discussion-registrations?meeting_id=X` + `POST` (đại biểu đăng ký, type=discussion\|question) | poll 5s |
 | **6. Chủ trì** | `GET /meeting-discussion-registrations/stats?meeting_id=X` + filter theo status | poll 5s |
 | **7. Điều hành** | Tất cả endpoint của Tab 6 + 7 mới ở §3.3/3.4 + `PATCH /meeting-vote-topics/{id}/open\|close` (đã có) | poll 3s |

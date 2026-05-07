@@ -101,11 +101,6 @@ class MeetingPermissionSeeder extends Seeder
             $names[] = "meeting-vote-responses.{$action}";
         }
 
-        // Kết luận
-        foreach (['stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy'] as $action) {
-            $names[] = "meeting-conclusions.{$action}";
-        }
-
         // Đăng ký thảo luận/chất vấn (không có bulkDestroy theo design)
         foreach (['stats', 'index', 'show', 'store', 'update', 'destroy'] as $action) {
             $names[] = "meeting-discussion-registrations.{$action}";
@@ -178,10 +173,6 @@ class MeetingPermissionSeeder extends Seeder
             'meeting-discussion-registrations.update',
             'meeting-discussion-registrations.destroy',
             'meeting-discussion-registrations.stats',
-
-            // Kết luận (đại biểu xem)
-            'meeting-conclusions.index',
-            'meeting-conclusions.show',
 
             // Ghi chú cá nhân (service auto-scope theo user)
             'meeting-personal-notes.index',
