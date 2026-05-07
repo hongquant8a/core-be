@@ -34,8 +34,15 @@ class UpdateUserRequest extends FormRequest
             'avatar' => 'nullable|image|mimes:jpg,jpeg,png,svg,webp|max:5120',
             'assignments' => 'sometimes|array',
             'assignments.*.role_id' => 'required|integer|distinct|exists:roles,id',
-            'assignments.*.organization_ids' => 'required|array|min:1',
-            'assignments.*.organization_ids.*' => 'integer|distinct|exists:organizations,id',
+            'assignments.*.organization_ids' => [
+                'required', 'array', 'min:1',
+                function ($attribute, $value, $fail) {
+                    if (is_array($value) && count($value) !== count(array_unique($value))) {
+                        $fail('Tổ chức bị trùng trong cùng một vai trò.');
+                    }
+                },
+            ],
+            'assignments.*.organization_ids.*' => 'integer|exists:organizations,id',
 
             // Profile fields — BE tự route sang user_profiles trong cùng transaction
             'gender' => 'sometimes|nullable|in:male,female,other',
@@ -78,7 +85,6 @@ class UpdateUserRequest extends FormRequest
             'assignments.*.organization_ids.array' => 'Danh sách tổ chức phải là mảng.',
             'assignments.*.organization_ids.min' => 'Mỗi vai trò phải có ít nhất một tổ chức.',
             'assignments.*.organization_ids.*.integer' => 'ID tổ chức phải là số nguyên.',
-            'assignments.*.organization_ids.*.distinct' => 'Tổ chức bị trùng trong cùng một vai trò.',
             'assignments.*.organization_ids.*.exists' => 'Tổ chức không tồn tại.',
             'gender.in' => 'Giới tính chỉ được là male, female hoặc other.',
             'birth_date.before' => 'Ngày sinh phải trước ngày hiện tại.',
