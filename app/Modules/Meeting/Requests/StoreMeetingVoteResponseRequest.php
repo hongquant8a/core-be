@@ -14,9 +14,10 @@ class StoreMeetingVoteResponseRequest extends FormRequest
 
     public function rules(): array
     {
+        // meeting_participant_id auto-derive từ auth user trong service (qua topic.meeting_id).
+        // Không nhận từ FE để tránh đại biểu A bỏ phiếu hộ B.
         return [
             'meeting_vote_topic_id' => 'required|integer|exists:meeting_vote_topics,id',
-            'meeting_participant_id' => 'required|integer|exists:meeting_participants,id',
             'option' => ['required', MeetingVoteOptionEnum::rule()],
         ];
     }
@@ -45,7 +46,6 @@ class StoreMeetingVoteResponseRequest extends FormRequest
     {
         return [
             'meeting_vote_topic_id' => 'ID chủ đề biểu quyết',
-            'meeting_participant_id' => 'ID người tham dự',
             'option' => 'option',
         ];
     }
@@ -53,7 +53,6 @@ class StoreMeetingVoteResponseRequest extends FormRequest
     {
         return [
             'meeting_vote_topic_id' => ['description' => 'ID chương trình biểu quyết.', 'example' => 1],
-            'meeting_participant_id' => ['description' => 'ID người tham dự bỏ phiếu.', 'example' => 5],
             'option' => ['description' => 'Lựa chọn biểu quyết.', 'example' => 'agree'],
         ];
     }

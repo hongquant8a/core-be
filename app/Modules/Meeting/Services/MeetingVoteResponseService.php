@@ -3,10 +3,21 @@
 namespace App\Modules\Meeting\Services;
 
 use App\Modules\Meeting\Models\MeetingParticipant;
-use App\Modules\Meeting\Models\MeetingVoteTopic;
 use App\Modules\Meeting\Models\MeetingVoteResponse;
+use App\Modules\Meeting\Models\MeetingVoteTopic;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Validation\ValidationException;
 
+/**
+ * Phiếu biểu quyết — đại biểu vote, sửa phiếu, xem aggregate.
+ *
+ *  - store: đại biểu tự bỏ phiếu cho chính mình. Auto-derive participant từ auth user qua
+ *    topic.meeting_id (FE không gửi meeting_participant_id để tránh vote hộ).
+ *  - update: chỉ owner đại biểu sửa được phiếu của mình + topic chưa closed.
+ *  - destroy / bulkDestroy: admin action — defer (Sprint 1 sẽ enforce qua middleware meeting.role).
+ *  - stats: aggregate, ai cũng xem được.
+ *  - index: detail responses — anonymous logic FE handle theo topic.ballot_mode.
+ */
 class MeetingVoteResponseService
 {
     public function stats(array $filters): array
@@ -40,24 +51,27 @@ class MeetingVoteResponseService
     public function store(array $validated): MeetingVoteResponse
     {
         $organizationId = $this->resolveCurrentOrganizationId();
+        $userId = $this->resolveCurrentUserId();
 
         $topic = MeetingVoteTopic::query()
             ->where('organization_id', $organizationId)
             ->findOrFail($validated['meeting_vote_topic_id']);
 
-        // Spec line 165: chỉ vote khi topic đang opened (chưa mở/đã đóng đều cấm).
+        // Spec line 165: chỉ vote khi topic đang opened.
         if ($topic->status !== 'opened') {
-            throw \Illuminate\Validation\ValidationException::withMessages([
+            throw ValidationException::withMessages([
                 'meeting_vote_topic_id' => ['Chương trình biểu quyết chưa mở hoặc đã đóng — không thể bỏ phiếu.'],
             ]);
         }
 
+        // Auto-derive participant từ auth user — tìm participant của user trong meeting của topic.
         $participant = MeetingParticipant::query()
-            ->where('organization_id', $organizationId)
-            ->findOrFail($validated['meeting_participant_id']);
+            ->where('meeting_id', $topic->meeting_id)
+            ->whereHas('attendee', fn ($q) => $q->where('user_id', $userId))
+            ->first();
 
-        if ((int) $topic->meeting_id !== (int) $participant->meeting_id) {
-            throw new ModelNotFoundException('Người tham dự không thuộc cuộc họp của chương trình biểu quyết.');
+        if (! $participant) {
+            throw new ModelNotFoundException('Bạn không phải đại biểu của cuộc họp này.');
         }
 
         return MeetingVoteResponse::updateOrCreate(
@@ -80,11 +94,13 @@ class MeetingVoteResponseService
 
     public function update(MeetingVoteResponse $meetingVoteResponse, array $validated): MeetingVoteResponse
     {
+        $this->ensureOwned($meetingVoteResponse);
+
         // Spec line 165: sau khi đóng biểu quyết thì không cho sửa phiếu.
-        // Reload để lấy status mới nhất, tránh stale relation cached.
+        // Reload topic để lấy status mới nhất, tránh stale relation cached.
         $topic = MeetingVoteTopic::find($meetingVoteResponse->meeting_vote_topic_id);
         if ($topic && $topic->status === 'closed') {
-            throw \Illuminate\Validation\ValidationException::withMessages([
+            throw ValidationException::withMessages([
                 'meeting_vote_topic_id' => ['Chương trình biểu quyết đã đóng — không thể sửa phiếu.'],
             ]);
         }
@@ -110,6 +126,19 @@ class MeetingVoteResponseService
             ->delete();
     }
 
+    /**
+     * Throw 404 nếu phiếu không thuộc auth user (tránh leak ID-existence).
+     */
+    private function ensureOwned(MeetingVoteResponse $response): void
+    {
+        $userId = $this->resolveCurrentUserId();
+        $response->loadMissing('participant.attendee');
+
+        if ((int) ($response->participant?->attendee?->user_id ?? 0) !== (int) $userId) {
+            throw new ModelNotFoundException('Không tìm thấy phiếu.');
+        }
+    }
+
     private function resolveCurrentOrganizationId(): int
     {
         $organizationId = function_exists('getPermissionsTeamId') ? getPermissionsTeamId() : null;
@@ -119,5 +148,15 @@ class MeetingVoteResponseService
         }
 
         return (int) $organizationId;
+    }
+
+    private function resolveCurrentUserId(): int
+    {
+        $userId = auth()->id();
+        if (! $userId) {
+            throw new ModelNotFoundException('Cần đăng nhập để bỏ phiếu.');
+        }
+
+        return (int) $userId;
     }
 }

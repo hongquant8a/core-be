@@ -16,6 +16,14 @@ use App\Modules\Meeting\Services\MeetingVoteResponseService;
  * @header X-Organization-Id ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1
  *
  * Quản lý phiếu biểu quyết của đại biểu theo từng chương trình biểu quyết.
+ *
+ * Ownership theo spec section 7.4:
+ *   - store: đại biểu tự bỏ phiếu (auto-derive participant từ auth user qua topic.meeting_id).
+ *     Spec line 165: chỉ vote khi topic.status='opened'.
+ *   - update: chỉ owner đại biểu sửa phiếu của mình + topic chưa closed.
+ *   - destroy / bulkDestroy: defer admin (Sprint 1 sẽ enforce qua middleware meeting.role).
+ *   - stats: aggregate, ai cũng xem được.
+ *   - index: anonymous logic FE handle theo topic.ballot_mode.
  */
 class MeetingVoteResponseController extends Controller
 {
@@ -50,12 +58,14 @@ class MeetingVoteResponseController extends Controller
     }
 
     /**
-     * Tạo hoặc cập nhật phiếu biểu quyết của đại biểu.
+     * Đại biểu bỏ phiếu — auto-derive participant từ auth user.
+     *
+     * BE tự tìm participant của user trong meeting của topic. User không phải đại biểu của
+     * meeting → 404. FE chỉ gửi `meeting_vote_topic_id + option`. Topic phải `opened`.
+     * Idempotent: vote lần 2 sẽ update phiếu cũ (cùng option).
      *
      * @bodyParam meeting_vote_topic_id integer required ID chương trình biểu quyết. Example: 1
-     * @bodyParam meeting_participant_id integer required ID người tham dự. Example: 1
-     * @bodyParam selected_option string required Lựa chọn biểu quyết. Example: approve
-     * @bodyParam note string Ghi chú biểu quyết. Example: Đồng thuận theo tổ
+     * @bodyParam option string required Lựa chọn biểu quyết (agree | disagree | approve | reject | abstain). Example: agree
      */
     public function store(StoreMeetingVoteResponseRequest $request)
     {
@@ -75,11 +85,13 @@ class MeetingVoteResponseController extends Controller
     }
 
     /**
-     * Cập nhật phiếu biểu quyết.
+     * Cập nhật phiếu biểu quyết — owner đại biểu only.
+     *
+     * Topic.status='closed' → ValidationException (không sửa được sau khi đóng).
+     * User khác cố sửa phiếu → 404.
      *
      * @urlParam meetingVoteResponse integer required ID phiếu biểu quyết. Example: 1
-     * @bodyParam selected_option string required Lựa chọn biểu quyết. Example: reject
-     * @bodyParam note string Ghi chú biểu quyết. Example: Đề nghị xem xét lại chỉ tiêu
+     * @bodyParam option string required Lựa chọn biểu quyết mới. Example: abstain
      */
     public function update(UpdateMeetingVoteResponseRequest $request, MeetingVoteResponse $meetingVoteResponse)
     {

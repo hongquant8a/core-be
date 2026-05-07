@@ -489,15 +489,21 @@ Content-Type: application/json
 
 {
   "meeting_vote_topic_id": 1,
-  "meeting_participant_id": 12,
   "option": "agree"
 }
 ```
 
+> **Auto-derive participant**: BE tự lookup participant của user trong meeting của topic. FE **không gửi** `meeting_participant_id` (tránh đại biểu A vote hộ B). User không phải đại biểu của meeting → 404.
+>
 > `option` ∈ `{ agree | disagree | approve | reject | abstain }` — phải khớp với `topic.vote_type`.
-> Re-submit (sửa phiếu): cùng endpoint POST sẽ update phiếu cũ (BE handle unique constraint). Hoặc dùng `PATCH /api/meeting-vote-responses/{id}`.
+>
+> **Idempotent**: vote lần 2 → update phiếu cũ (cùng row qua unique constraint).
+>
+> **Sửa phiếu**: dùng `PATCH /api/meeting-vote-responses/{id}` — owner-only (404 nếu user khác). Topic.status='closed' → 422 "không thể sửa phiếu".
 
-**BE chặn**: nếu `topic.status !== 'opened'` → `422 ValidationException` với message "Phiên biểu quyết đang đóng".
+**BE chặn**:
+- Topic chưa mở hoặc đã đóng → 422 "Chương trình biểu quyết chưa mở hoặc đã đóng — không thể bỏ phiếu."
+- User không phải đại biểu meeting → 404 "Bạn không phải đại biểu của cuộc họp này."
 
 ### 3.4 Liệt kê phiếu (cho admin/operator)
 
