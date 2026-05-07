@@ -83,6 +83,8 @@ class MeetingAttendanceService
             'checked_in_by' => auth()->id(),
         ]);
 
+        broadcast(new \App\Modules\Meeting\Events\MeetingAttendanceApproved($attendance))->toOthers();
+
         return $attendance->load('participant');
     }
 
@@ -102,6 +104,8 @@ class MeetingAttendanceService
             'checked_in_by' => auth()->id(),
         ]);
 
+        broadcast(new \App\Modules\Meeting\Events\MeetingAttendanceRejected($attendance))->toOthers();
+
         return $attendance->load('participant');
     }
 
@@ -114,7 +118,7 @@ class MeetingAttendanceService
         $this->ensureAttendanceNotLocked($meetingId);
         $participant = $this->resolveOwnedParticipant($meetingId);
 
-        return MeetingAttendance::updateOrCreate(
+        $attendance = MeetingAttendance::updateOrCreate(
             [
                 'meeting_id' => $meetingId,
                 'meeting_participant_id' => $participant->id,
@@ -128,6 +132,10 @@ class MeetingAttendanceService
                 'note' => null,
             ]
         )->load('participant');
+
+        broadcast(new \App\Modules\Meeting\Events\MeetingAttendanceCheckedIn($attendance))->toOthers();
+
+        return $attendance;
     }
 
     /**
@@ -139,7 +147,7 @@ class MeetingAttendanceService
         $this->ensureAttendanceNotLocked($meetingId);
         $participant = $this->resolveOwnedParticipant($meetingId);
 
-        return MeetingAttendance::updateOrCreate(
+        $attendance = MeetingAttendance::updateOrCreate(
             [
                 'meeting_id' => $meetingId,
                 'meeting_participant_id' => $participant->id,
@@ -153,6 +161,11 @@ class MeetingAttendanceService
                 'note' => $note,
             ]
         )->load('participant');
+
+        // markAbsent cũng phát event checked-in để Tab điều hành cập nhật list (status=absent → loại khỏi pending list).
+        broadcast(new \App\Modules\Meeting\Events\MeetingAttendanceCheckedIn($attendance))->toOthers();
+
+        return $attendance;
     }
 
     /**

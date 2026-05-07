@@ -97,8 +97,7 @@ class MeetingDiscussionRegistrationService
 
         $storedFiles = [];
         try {
-            return DB::transaction(function () use ($validated, $file, $participant, $meetingId, $type, $agendaId, &$storedFiles) {
-
+            $model = DB::transaction(function () use ($validated, $file, $participant, $meetingId, $type, $agendaId, &$storedFiles) {
                 $payload = [
                     'organization_id' => $this->resolveCurrentOrganizationId(),
                     'meeting_id' => $meetingId,
@@ -110,20 +109,25 @@ class MeetingDiscussionRegistrationService
                     'status' => $validated['status'] ?? MeetingDiscussionStatusEnum::Registered->value,
                 ];
 
-                $model = MeetingDiscussionRegistration::create($payload);
+                $created = MeetingDiscussionRegistration::create($payload);
 
                 if ($file) {
-                    $media = $this->mediaService->uploadOne($model, $file, 'meeting-discussion-attachments', ['disk' => 'public']);
+                    $media = $this->mediaService->uploadOne($created, $file, 'meeting-discussion-attachments', ['disk' => 'public']);
                     $storedFiles[] = ['disk' => $media->disk, 'path' => $media->getPathRelativeToRoot()];
-                    $model->update(['media_id' => $media->id]);
+                    $created->update(['media_id' => $media->id]);
                 }
 
-                return $model->load(['participant', 'agenda', 'mediaFile']);
+                return $created->load(['participant', 'agenda', 'mediaFile']);
             });
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);
             throw $exception;
         }
+
+        // Broadcast sau transaction để đảm bảo data đã commit.
+        broadcast(new \App\Modules\Meeting\Events\MeetingDiscussionRegistrationCreated($model))->toOthers();
+
+        return $model;
     }
 
     public function update(MeetingDiscussionRegistration $model, array $validated, $file = null): MeetingDiscussionRegistration
@@ -181,6 +185,8 @@ class MeetingDiscussionRegistrationService
             'status' => MeetingDiscussionStatusEnum::Completed->value,
             'completed_at' => now(),
         ]);
+
+        broadcast(new \App\Modules\Meeting\Events\MeetingDiscussionRegistrationCompleted($model))->toOthers();
 
         return $model->load(['participant', 'agenda', 'mediaFile']);
     }

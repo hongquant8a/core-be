@@ -329,6 +329,8 @@ class MeetingService
 
         $meeting->update(['end_time' => now()]);
 
+        broadcast(new \App\Modules\Meeting\Events\MeetingEndedEarly($meeting))->toOthers();
+
         return $meeting->load(['meetingType', 'meetingLocation', 'chairperson', 'operator']);
     }
 
@@ -369,6 +371,8 @@ class MeetingService
 
         $meeting->update(['current_meeting_agenda_id' => $agendaId]);
 
+        broadcast(new \App\Modules\Meeting\Events\MeetingAgendaHighlighted($meeting))->toOthers();
+
         return $meeting->load([
             'meetingType', 'meetingLocation', 'chairperson', 'operator',
             'currentAgenda', 'currentDiscussionRegistration',
@@ -394,6 +398,8 @@ class MeetingService
         }
 
         $meeting->update(['current_meeting_discussion_registration_id' => $discussionRegistrationId]);
+
+        broadcast(new \App\Modules\Meeting\Events\MeetingDiscussionHighlighted($meeting))->toOthers();
 
         return $meeting->load([
             'meetingType', 'meetingLocation', 'chairperson', 'operator',

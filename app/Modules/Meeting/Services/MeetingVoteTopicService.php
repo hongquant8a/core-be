@@ -85,6 +85,8 @@ class MeetingVoteTopicService
 
         $meetingVoteTopic->update($update);
 
+        broadcast(new \App\Modules\Meeting\Events\MeetingVoteTopicOpened($meetingVoteTopic))->toOthers();
+
         return $meetingVoteTopic->load(['creator.media', 'editor.media']);
     }
 
@@ -94,6 +96,8 @@ class MeetingVoteTopicService
             'status' => MeetingVoteTopicStatusEnum::Closed->value,
             'closed_at' => now(),
         ]);
+
+        broadcast(new \App\Modules\Meeting\Events\MeetingVoteTopicClosed($meetingVoteTopic))->toOthers();
 
         return $meetingVoteTopic->load(['creator.media', 'editor.media']);
     }

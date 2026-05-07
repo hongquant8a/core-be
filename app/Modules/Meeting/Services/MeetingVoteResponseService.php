@@ -111,7 +111,7 @@ class MeetingVoteResponseService
             throw new ModelNotFoundException('Bạn không phải đại biểu của cuộc họp này.');
         }
 
-        return MeetingVoteResponse::updateOrCreate(
+        $response = MeetingVoteResponse::updateOrCreate(
             [
                 'meeting_vote_topic_id' => $topic->id,
                 'meeting_participant_id' => $participant->id,
@@ -122,6 +122,10 @@ class MeetingVoteResponseService
                 'voted_at' => now(),
             ]
         )->load(['topic', 'participant']);
+
+        broadcast(new \App\Modules\Meeting\Events\MeetingVoteResponseAdded($response))->toOthers();
+
+        return $response;
     }
 
     public function show(MeetingVoteResponse $meetingVoteResponse): MeetingVoteResponse
