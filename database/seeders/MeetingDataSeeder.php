@@ -175,28 +175,54 @@ class MeetingDataSeeder extends Seeder
      * @param  array<string, MeetingAttendeeGroup>  $groups
      * @return array<int, MeetingAttendee>
      */
+    /**
+     * Xoá participants trùng với chair/op của meeting — đảm bảo quy ước
+     * "1 user 1 vai trò trong meeting" sau khi re-seed (dữ liệu cũ có thể đã add chair/op vào participants).
+     *
+     * @param  array<int, MeetingAttendee>  $attendees
+     */
+    private function cleanupChairOpParticipants(Meeting $meeting, array $attendees): void
+    {
+        $chairAttendeeId = $attendees[0]->id ?? null;
+        $opAttendeeId = $attendees[1]->id ?? null;
+        $idsToRemove = array_filter([$chairAttendeeId, $opAttendeeId]);
+        if (empty($idsToRemove)) {
+            return;
+        }
+
+        MeetingParticipant::query()
+            ->where('meeting_id', $meeting->id)
+            ->whereIn('meeting_attendee_id', $idsToRemove)
+            ->delete();
+    }
+
     private function seedAttendees(array $groups): array
     {
         // Mỗi đại biểu link với 1 user nội bộ (1-1 unique trong org).
+        // Spatie role gán theo vai trò nghiệp vụ:
+        //  - idx=0 (Hùng) — chủ trì cố định cho cả 3 meeting → role "Đại biểu họp" (chủ trì cũng cần vote).
+        //  - idx=1 (Mai)  — thư ký cố định cho cả 3 meeting → role "Thư ký họp" (privileged: duyệt điểm danh, mở/đóng vote, ...).
+        //  - idx=2..7     — participant thường → role "Đại biểu họp".
+        // Quy ước "1 user 1 vai trò xuyên suốt": chủ trì/thư ký không kiêm participant ở bất kỳ meeting nào (xem skip ở seedMeeting*).
         $rows = [
-            ['user_email' => 'nvhung@snvdn.gov.vn', 'position_name' => 'Chủ tịch HĐND', 'department_name' => 'HĐND TP', 'group' => 'Thường trực HĐND'],
-            ['user_email' => 'ttmai@snvdn.gov.vn', 'position_name' => 'Phó Chủ tịch HĐND', 'department_name' => 'HĐND TP', 'group' => 'Thường trực HĐND'],
-            ['user_email' => 'lhnam@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở Kế hoạch & Đầu tư', 'group' => 'Đại biểu HĐND khóa X'],
-            ['user_email' => 'pthong@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở Tài chính', 'group' => 'Đại biểu HĐND khóa X'],
-            ['user_email' => 'vdthang@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'UBND quận Hải Châu', 'group' => 'Đại biểu HĐND khóa X'],
-            ['user_email' => 'htlan@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở Y tế', 'group' => 'Đại biểu HĐND khóa X'],
-            ['user_email' => 'dmtuan@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở Giáo dục', 'group' => 'Đại biểu HĐND khóa X'],
-            ['user_email' => 'btngoc@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở LĐ-TB-XH', 'group' => 'Đại biểu HĐND khóa X'],
+            ['user_email' => 'nvhung@snvdn.gov.vn', 'position_name' => 'Chủ tịch HĐND', 'department_name' => 'HĐND TP', 'group' => 'Thường trực HĐND', 'spatie_role' => 'Đại biểu họp'],
+            ['user_email' => 'ttmai@snvdn.gov.vn', 'position_name' => 'Phó Chủ tịch HĐND', 'department_name' => 'HĐND TP', 'group' => 'Thường trực HĐND', 'spatie_role' => 'Thư ký họp'],
+            ['user_email' => 'lhnam@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở Kế hoạch & Đầu tư', 'group' => 'Đại biểu HĐND khóa X', 'spatie_role' => 'Đại biểu họp'],
+            ['user_email' => 'pthong@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở Tài chính', 'group' => 'Đại biểu HĐND khóa X', 'spatie_role' => 'Đại biểu họp'],
+            ['user_email' => 'vdthang@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'UBND quận Hải Châu', 'group' => 'Đại biểu HĐND khóa X', 'spatie_role' => 'Đại biểu họp'],
+            ['user_email' => 'htlan@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở Y tế', 'group' => 'Đại biểu HĐND khóa X', 'spatie_role' => 'Đại biểu họp'],
+            ['user_email' => 'dmtuan@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở Giáo dục', 'group' => 'Đại biểu HĐND khóa X', 'spatie_role' => 'Đại biểu họp'],
+            ['user_email' => 'btngoc@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở LĐ-TB-XH', 'group' => 'Đại biểu HĐND khóa X', 'spatie_role' => 'Đại biểu họp'],
         ];
 
         $out = [];
         foreach ($rows as $row) {
-            $userId = User::where('email', $row['user_email'])->value('id');
-            if (! $userId) {
+            $user = User::where('email', $row['user_email'])->first();
+            if (! $user) {
                 continue;
             }
             $attendee = MeetingAttendee::firstOrCreate(
-                ['organization_id' => $this->orgId, 'user_id' => $userId],
+                ['organization_id' => $this->orgId, 'user_id' => $user->id],
                 [
                     'meeting_attendee_group_id' => $groups[$row['group']]->id,
                     'position_name' => $row['position_name'],
@@ -204,6 +230,8 @@ class MeetingDataSeeder extends Seeder
                     'status' => 'active',
                 ]
             );
+            // Sync Spatie role — guard 'web' theo MeetingPermissionSeeder.
+            $user->syncRoles([$row['spatie_role']]);
             $out[] = $attendee;
         }
 
@@ -224,7 +252,7 @@ class MeetingDataSeeder extends Seeder
 
         // attendees[0] = Nguyễn Văn Hùng → chủ trì
         // attendees[1] = Trần Thị Mai → thư ký
-        $meeting = Meeting::firstOrCreate(
+        $meeting = Meeting::updateOrCreate(
             ['title' => 'Kỳ họp HĐND thường kỳ tháng 5/2026', 'organization_id' => $this->orgId],
             [
                 'meeting_type_id' => $types['HĐND thường kỳ']->id,
@@ -240,6 +268,9 @@ class MeetingDataSeeder extends Seeder
                 'published_at' => $start->copy()->subDays(7),
             ]
         );
+
+        // Clean up: xoá participants trùng chair/op (data từ seed cũ).
+        $this->cleanupChairOpParticipants($meeting, $attendees);
 
         // 4 chương trình họp
         $agendaRows = [
@@ -285,11 +316,13 @@ class MeetingDataSeeder extends Seeder
             );
         }
 
-        // Participants — toàn bộ 8 attendees nội bộ. Chair/operator set qua FK trên meeting.
+        // Participants — chỉ attendees[2..7]. attendees[0] (chair) + [1] (operator) đã set qua
+        // FK trên meeting, KHÔNG kiêm participant theo quy ước "1 user 1 vai trò".
         $participants = [];
-        foreach ($attendees as $idx => $attendee) {
+        foreach (array_slice($attendees, 2) as $idx => $attendee) {
             $attendee->loadMissing('user.profile');
-            $responseStatus = $idx <= 5 ? 'accepted' : 'pending';
+            // Index trong subset (0..5) — 4 đầu accepted, 2 cuối pending để có data đa dạng.
+            $responseStatus = $idx <= 3 ? 'accepted' : 'pending';
 
             $participants[] = MeetingParticipant::firstOrCreate(
                 ['meeting_id' => $meeting->id, 'meeting_attendee_id' => $attendee->id],
@@ -376,11 +409,13 @@ class MeetingDataSeeder extends Seeder
     {
         $start = Carbon::parse('2026-05-04 14:00:00');
 
-        $meeting = Meeting::firstOrCreate(
+        $meeting = Meeting::updateOrCreate(
             ['title' => 'Họp giao ban tuần 19/2026', 'organization_id' => $this->orgId],
             [
                 'meeting_type_id' => $types['Họp giao ban']->id,
                 'meeting_location_id' => $locations['Phòng họp tầng 5 - Sở Nội vụ']->id,
+                'chairperson_meeting_attendee_id' => $attendees[0]->id ?? null,
+                'operator_meeting_attendee_id' => $attendees[1]->id ?? null,
                 'is_public' => false,
                 'content' => 'Tổng kết công việc tuần trước, triển khai nhiệm vụ tuần này.',
                 'start_time' => $start,
@@ -390,6 +425,8 @@ class MeetingDataSeeder extends Seeder
                 'published_at' => $start->copy()->subDay(),
             ]
         );
+
+        $this->cleanupChairOpParticipants($meeting, $attendees);
 
         $agendas = [];
         $agendaRows = [
@@ -457,11 +494,13 @@ class MeetingDataSeeder extends Seeder
     {
         $start = Carbon::parse('2026-05-25 08:30:00');
 
-        $meeting = Meeting::firstOrCreate(
+        $meeting = Meeting::updateOrCreate(
             ['title' => 'Họp chuyên đề chuyển đổi số ngành y tế (DRAFT)', 'organization_id' => $this->orgId],
             [
                 'meeting_type_id' => $types['Họp chuyên đề']->id,
                 'meeting_location_id' => $locations['Họp trực tuyến (Zoom)']->id,
+                'chairperson_meeting_attendee_id' => $attendees[0]->id ?? null,
+                'operator_meeting_attendee_id' => $attendees[1]->id ?? null,
                 'is_public' => false,
                 'content' => 'Đánh giá tiến độ chuyển đổi số ngành y tế thành phố — bản thảo.',
                 'start_time' => $start,
@@ -470,6 +509,8 @@ class MeetingDataSeeder extends Seeder
                 'view_count' => 0,
             ]
         );
+
+        $this->cleanupChairOpParticipants($meeting, $attendees);
 
         MeetingAgenda::firstOrCreate(
             ['meeting_id' => $meeting->id, 'sort_order' => 1],
