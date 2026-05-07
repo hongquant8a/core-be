@@ -57,6 +57,11 @@ Datetime: `H:i:s d/m/Y` (vd `08:30:00 01/05/2026`). Time-only (giờ chương tr
 | POST | `/api/meetings/bulk-delete` | Body `{ "ids": [1,2,3] }`. |
 | PATCH | `/api/meetings/bulk-status` | Body `{ "ids": [...], "status": "draft\|published\|cancelled" }`. |
 | PATCH | `/api/meetings/{id}/status` | **Quan trọng**: khi `draft → published`, BE tự động (1) tạo `meeting_invitations` cho tất cả participants, (2) dispatch event `MeetingPublished` (gửi FCM/email), (3) set `published_at = now()` lần đầu publish (republish không ghi đè). |
+| PATCH | `/api/meetings/{id}/lock-attendance` | Operator khoá danh sách điểm danh — đại biểu không thể tự `checkin`/`mark-absent` nữa (service trả 422). Set `attendance_locked=true`. |
+| PATCH | `/api/meetings/{id}/unlock-attendance` | Operator mở khoá điểm danh. Set `attendance_locked=false`. |
+| PATCH | `/api/meetings/{id}/start` | Bắt đầu phiên họp **HOẶC** tiếp tục sau pause (reuse endpoint). Lần đầu: set `runtime_started_at = now()`. Khi đang pause: clear `runtime_paused_at`. Cuộc họp đã `runtime_ended_at` → 422. |
+| PATCH | `/api/meetings/{id}/pause` | Tạm dừng phiên họp. Set `runtime_paused_at = now()`. Yêu cầu đã `runtime_started_at` và chưa `runtime_ended_at`, không đang pause sẵn. |
+| PATCH | `/api/meetings/{id}/end` | Kết thúc phiên họp thủ công. Set `runtime_ended_at = now()` + clear `runtime_paused_at`. Idempotency: đã end → 422. |
 | GET | `/api/meetings/export` | Tải Excel `meetings.xlsx`. Query giống `index`. Cột: `STT, Tiêu đề, Loại, Địa điểm, Công khai, Bắt đầu, Kết thúc, Trạng thái, Lượt xem, Phát hành, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID`. |
 
 > Meetings **không hỗ trợ import** — bao gồm relationships phức tạp (agendas/documents/participants), tạo qua UI thay vì bulk-import.
@@ -103,6 +108,10 @@ Datetime: `H:i:s d/m/Y` (vd `08:30:00 01/05/2026`). Time-only (giờ chương tr
   "status": "published",
   "view_count": 145,
   "published_at": "08:00:00 08/05/2026",
+  "attendance_locked": false,
+  "runtime_started_at": null,
+  "runtime_paused_at": null,
+  "runtime_ended_at": null,
   "created_by": "Admin",
   "updated_by": "Admin",
   "created_at": "08:00:00 01/05/2026",
@@ -131,6 +140,23 @@ Datetime: `H:i:s d/m/Y` (vd `08:30:00 01/05/2026`). Time-only (giờ chương tr
 > - Dispatch event `MeetingPublished` → listener đọc `notification_event_configs` (module `meeting`) để gửi FCM/email/SMS. Nếu admin chưa enable event → không gửi.
 > - Set `published_at = now()` **chỉ lần đầu** publish (`published_at` đang null). Republish sau đó giữ nguyên giá trị cũ.
 > - Re-publish (đã từng publish trước đó) **không** tạo invitation trùng.
+
+> **Runtime state operator (Tab 7 Điều hành)** — tách biệt với `status` lifecycle:
+> - `attendance_locked`: bool — thư ký/operator có thể khoá để chốt danh sách điểm danh.
+> - `runtime_started_at`: timestamp khi operator bấm **Bắt đầu** lần đầu (set 1 lần, không reset).
+> - `runtime_paused_at`: timestamp khi operator bấm **Tạm dừng**. `null` nghĩa là đang chạy hoặc đã end.
+> - `runtime_ended_at`: timestamp khi operator bấm **Kết thúc** thủ công. Set 1 lần và idempotent.
+>
+> Phase điều hành derived ở FE:
+> ```js
+> function getRuntimePhase(meeting) {
+>   if (meeting.runtime_ended_at)   return 'ended'
+>   if (meeting.runtime_paused_at)  return 'paused'
+>   if (meeting.runtime_started_at) return 'running'
+>   return 'not_started'
+> }
+> ```
+> Reuse endpoint: bấm **Bắt đầu** sau khi đã pause sẽ resume (clear `runtime_paused_at`) — không cần endpoint `resume` riêng. Thời lượng tích luỹ phiên họp tính ở FE từ `runtime_started_at` + state `paused`.
 
 > **Phase derived ở FE** (BE chỉ giữ 3 status: `draft / published / cancelled`):
 > ```js

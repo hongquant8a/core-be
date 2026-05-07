@@ -312,6 +312,73 @@ class MeetingService
     }
 
     /**
+     * Operator bắt đầu phiên họp HOẶC tiếp tục sau pause.
+     * Lần đầu: set runtime_started_at = now(). Sau pause: clear runtime_paused_at.
+     */
+    public function start(Meeting $meeting): Meeting
+    {
+        if ($meeting->runtime_ended_at) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'runtime_ended_at' => ['Cuộc họp đã kết thúc — không thể bắt đầu lại.'],
+            ]);
+        }
+
+        $payload = [];
+        if ($meeting->runtime_started_at === null) {
+            $payload['runtime_started_at'] = now();
+        }
+        if ($meeting->runtime_paused_at !== null) {
+            $payload['runtime_paused_at'] = null; // resume
+        }
+
+        if (! empty($payload)) {
+            $meeting->update($payload);
+        }
+
+        return $meeting->load(['meetingType', 'meetingLocation', 'chairperson', 'operator']);
+    }
+
+    /**
+     * Operator tạm dừng phiên họp.
+     */
+    public function pause(Meeting $meeting): Meeting
+    {
+        if ($meeting->runtime_started_at === null || $meeting->runtime_ended_at !== null) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'runtime_paused_at' => ['Cuộc họp chưa bắt đầu hoặc đã kết thúc — không thể tạm dừng.'],
+            ]);
+        }
+        if ($meeting->runtime_paused_at !== null) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'runtime_paused_at' => ['Cuộc họp đang tạm dừng.'],
+            ]);
+        }
+
+        $meeting->update(['runtime_paused_at' => now()]);
+
+        return $meeting->load(['meetingType', 'meetingLocation', 'chairperson', 'operator']);
+    }
+
+    /**
+     * Operator kết thúc phiên họp thủ công.
+     */
+    public function end(Meeting $meeting): Meeting
+    {
+        if ($meeting->runtime_ended_at !== null) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'runtime_ended_at' => ['Cuộc họp đã kết thúc.'],
+            ]);
+        }
+
+        $meeting->update([
+            'runtime_ended_at' => now(),
+            'runtime_paused_at' => null, // clear pause khi end
+        ]);
+
+        return $meeting->load(['meetingType', 'meetingLocation', 'chairperson', 'operator']);
+    }
+
+    /**
      * Operator khoá danh sách điểm danh — đại biểu không thể tự checkin/báo vắng nữa.
      */
     public function lockAttendance(Meeting $meeting): Meeting

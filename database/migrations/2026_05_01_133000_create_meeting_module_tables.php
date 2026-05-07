@@ -69,6 +69,9 @@ return new class extends Migration
             $table->unsignedInteger('view_count')->default(0);
             $table->dateTime('published_at')->nullable();
             $table->boolean('attendance_locked')->default(false);
+            $table->dateTime('runtime_started_at')->nullable();
+            $table->dateTime('runtime_paused_at')->nullable();
+            $table->dateTime('runtime_ended_at')->nullable();
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();

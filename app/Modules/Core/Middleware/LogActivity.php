@@ -142,6 +142,9 @@ class LogActivity
             'reject' => 'Từ chối',
             'lock-attendance' => 'Khoá điểm danh',
             'unlock-attendance' => 'Mở khoá điểm danh',
+            'start' => 'Bắt đầu',
+            'pause' => 'Tạm dừng',
+            'end' => 'Kết thúc',
         ];
         if ($sub && isset($pathActions[$sub])) {
             return $pathActions[$sub].' '.$this->resourceLabel(str_replace('-', '_', $resource));

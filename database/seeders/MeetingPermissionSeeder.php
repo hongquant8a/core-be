@@ -74,7 +74,7 @@ class MeetingPermissionSeeder extends Seeder
         }
 
         // Meetings (full CRUD + status workflow + export + runtime actions)
-        foreach (['stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'lockAttendance', 'unlockAttendance'] as $action) {
+        foreach (['stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'lockAttendance', 'unlockAttendance', 'start', 'pause', 'end'] as $action) {
             $names[] = "meetings.{$action}";
         }
 

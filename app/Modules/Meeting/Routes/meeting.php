@@ -17,3 +17,7 @@ Route::patch('/{meeting}/status', [MeetingController::class, 'changeStatus'])->m
 // THAO TÁC NHANH (Tab 7 Điều hành) — operator khoá / mở khoá danh sách điểm danh.
 Route::patch('/{meeting}/lock-attendance', [MeetingController::class, 'lockAttendance'])->middleware('permission:meetings.lockAttendance,web');
 Route::patch('/{meeting}/unlock-attendance', [MeetingController::class, 'unlockAttendance'])->middleware('permission:meetings.unlockAttendance,web');
+// Runtime state operator điều khiển — start cũng dùng cho resume sau pause.
+Route::patch('/{meeting}/start', [MeetingController::class, 'start'])->middleware('permission:meetings.start,web');
+Route::patch('/{meeting}/pause', [MeetingController::class, 'pause'])->middleware('permission:meetings.pause,web');
+Route::patch('/{meeting}/end', [MeetingController::class, 'end'])->middleware('permission:meetings.end,web');

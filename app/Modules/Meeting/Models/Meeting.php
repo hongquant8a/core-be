@@ -25,6 +25,9 @@ class Meeting extends Model
         'view_count',
         'published_at',
         'attendance_locked',
+        'runtime_started_at',
+        'runtime_paused_at',
+        'runtime_ended_at',
         'created_by',
         'updated_by',
     ];
@@ -39,6 +42,9 @@ class Meeting extends Model
         'published_at' => 'datetime',
         'view_count' => 'integer',
         'attendance_locked' => 'boolean',
+        'runtime_started_at' => 'datetime',
+        'runtime_paused_at' => 'datetime',
+        'runtime_ended_at' => 'datetime',
     ];
 
     protected static function booted()

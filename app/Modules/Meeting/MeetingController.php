@@ -206,6 +206,45 @@ class MeetingController extends Controller
     }
 
     /**
+     * Bắt đầu phiên họp HOẶC tiếp tục sau khi tạm dừng (reuse endpoint).
+     *
+     * Lần đầu: set runtime_started_at = now(). Resume: clear runtime_paused_at.
+     * Cuộc họp đã ended → 422.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     */
+    public function start(Meeting $meeting)
+    {
+        $item = $this->meetingService->start($meeting);
+
+        return $this->successResource(new MeetingResource($item), 'Đã bắt đầu phiên họp.');
+    }
+
+    /**
+     * Tạm dừng phiên họp.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     */
+    public function pause(Meeting $meeting)
+    {
+        $item = $this->meetingService->pause($meeting);
+
+        return $this->successResource(new MeetingResource($item), 'Đã tạm dừng phiên họp.');
+    }
+
+    /**
+     * Kết thúc phiên họp thủ công.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     */
+    public function end(Meeting $meeting)
+    {
+        $item = $this->meetingService->end($meeting);
+
+        return $this->successResource(new MeetingResource($item), 'Đã kết thúc phiên họp.');
+    }
+
+    /**
      * Khoá danh sách điểm danh — đại biểu không thể checkin/báo vắng nữa.
      *
      * @urlParam meeting integer required ID cuộc họp. Example: 1

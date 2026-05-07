@@ -2,7 +2,7 @@
 
 Doc reference cho FE implement **trang danh sách meeting + 8 tab trong chi tiết meeting**. Endpoint trong doc này **đã sẵn sàng trên BE**, FE có thể bắt đầu ngay.
 
-> Endpoint runtime mới (Sprint 1: pause/checkin/approve attendance/start discussion/...) sẽ bổ sung sau — đánh dấu **🚧 Coming Soon** trong doc này. FE tạm bỏ Tab 7 (Điều hành) hoặc mock UI; các tab khác đủ API để chạy thật.
+> Sprint 1 đã ship (2026-05-07): Tab 1 self-actions (respond/checkin/mark-absent), Tab 7 THAO TÁC NHANH (start/pause/end + lock/unlock-attendance) + DUYỆT ĐIỂM DANH (approve/reject). Tất cả 8 tab đã đủ endpoint thực tế.
 >
 > Tham khảo thiết kế tổng thể: [docs/answer/meeting-runtime-design.md](../answer/meeting-runtime-design.md).
 > Tham khảo API spec đầy đủ: [docs/api/meeting-runtime.md](./meeting-runtime.md) (organize theo resource).
@@ -741,36 +741,42 @@ GET /api/meeting-vote-responses/stats?meeting_vote_topic_id={topic_id}
 
 ## Tab 7 — Điều hành (Operator)
 
-🚧 **Phần lớn endpoint điều khiển còn đang phát triển — Sprint 1**.
+✅ **THAO TÁC NHANH + DUYỆT ĐIỂM DANH đã có endpoint thực tế** (Sprint 1 ship trong commits ngày 2026-05-07).
 
 **URL**: `/meetings/{id}#operator`
 
 | UI Section | Endpoint | Status |
 |---|---|---|
-| THAO TÁC NHANH > Tạm Dừng | — | 🚧 Defer (xem design doc) |
-| THAO TÁC NHANH > Uỷ Quyền Điều Hành | `PATCH /api/meetings/{id}/delegate-operator` | 🚧 Sprint 1 |
-| THAO TÁC NHANH > Kết Thúc Cuộc Họp | — | 🚧 Defer |
-| THAO TÁC NHANH > Khoá Danh Sách Điểm Danh | `PATCH /api/meetings/{id}/lock-attendance` + `unlock-attendance` | 🚧 Sprint 1 (kèm migration) |
-| THAO TÁC NHANH > Quản Trị Điều Hành | — | 🚧 Defer |
-| THAO TÁC NHANH > Xuất Báo Cáo Nhanh | — | 🚧 Defer |
-| DUYỆT ĐIỂM DANH > approve | `PATCH /api/meeting-attendances/{id}/approve` | 🚧 Sprint 1 |
-| DUYỆT ĐIỂM DANH > reject | `PATCH /api/meeting-attendances/{id}/reject` | 🚧 Sprint 1 |
-| QUẢN LÝ ĐIỂM DANH (stats) | `GET /api/meeting-attendances/stats?meeting_id=X` | ✅ (extended Sprint 1) |
+| THAO TÁC NHANH > Bắt Đầu / Tiếp Tục | `PATCH /api/meetings/{id}/start` (reuse cho cả lần đầu start lẫn resume sau pause) | ✅ |
+| THAO TÁC NHANH > Tạm Dừng | `PATCH /api/meetings/{id}/pause` | ✅ |
+| THAO TÁC NHANH > Kết Thúc Cuộc Họp | `PATCH /api/meetings/{id}/end` | ✅ |
+| THAO TÁC NHANH > Khoá Danh Sách Điểm Danh | `PATCH /api/meetings/{id}/lock-attendance` + `unlock-attendance` | ✅ |
+| THAO TÁC NHANH > Uỷ Quyền Điều Hành | — | ❌ Bỏ scope (giữ FK `operator_meeting_attendee_id` cố định trên meeting) |
+| THAO TÁC NHANH > Quản Trị Điều Hành | (link điều hướng, không phải API) | ✅ — FE link |
+| THAO TÁC NHANH > Xuất Báo Cáo Nhanh | — | ❌ Bỏ scope (chưa có spec rõ) |
+| DUYỆT ĐIỂM DANH > approve | `PATCH /api/meeting-attendances/{id}/approve` | ✅ |
+| DUYỆT ĐIỂM DANH > reject | `PATCH /api/meeting-attendances/{id}/reject` | ✅ |
+| QUẢN LÝ ĐIỂM DANH (stats) | `GET /api/meeting-attendances/stats?meeting_id=X` | ✅ |
 | QUẢN LÝ THẢO LUẬN > complete | `PATCH /api/meeting-discussion-registrations/{id}/complete` (registered → completed) | ✅ |
 | QUẢN LÝ CHẤT VẤN | (giống thảo luận, type=question) | ✅ |
 | QUẢN LÝ BIỂU QUYẾT > open | `PATCH /api/meeting-vote-topics/{id}/open` | ✅ |
 | QUẢN LÝ BIỂU QUYẾT > close | `PATCH /api/meeting-vote-topics/{id}/close` | ✅ |
 | QUẢN LÝ CHƯƠNG TRÌNH HỌP | (chỉ display, agenda chạy theo time) | ✅ — FE compute |
 
-**Đề xuất FE trong khi chờ Sprint 1**: build UI Tab 7 với mock data + button disabled, hoặc skip Tab 7 hoàn toàn cho phase hiện tại. Khi Sprint 1 ship → swap mock thành endpoint thật.
+### 7.1 Runtime state phase derive ở FE
 
-### 7.x Endpoint sẵn sàng dùng được ngay
+```js
+function getRuntimePhase(meeting) {
+  if (meeting.runtime_ended_at)   return 'ended'      // disable mọi nút runtime
+  if (meeting.runtime_paused_at)  return 'paused'     // hiện nút "Tiếp tục" + "Kết thúc"
+  if (meeting.runtime_started_at) return 'running'    // hiện nút "Tạm dừng" + "Kết thúc"
+  return 'not_started'                                // hiện nút "Bắt đầu"
+}
+```
 
-- ✅ `PATCH /api/meeting-vote-topics/{id}/open` — Mở phiên biểu quyết
-- ✅ `PATCH /api/meeting-vote-topics/{id}/close` — Đóng phiên
-- ✅ `GET /api/meeting-discussion-registrations/stats?meeting_id={id}`
-- ✅ `GET /api/meeting-attendances/stats?meeting_id={id}` (basic stats, mở rộng Sprint 1)
-- ✅ `PATCH /api/meeting-discussion-registrations/{id}` (update generic) — set field tay nếu cần fallback
+- "Tiếp tục sau pause" reuse endpoint **`PATCH /start`** — BE tự clear `runtime_paused_at` nếu đang pause.
+- Thời lượng phiên họp + countdown biểu quyết **đếm ở FE** (không cần endpoint timer riêng).
+- Sau `lock-attendance` BE sẽ trả 422 khi đại biểu gọi `checkin`/`mark-absent` — FE bắt error message để hiển thị.
 
 ---
 
