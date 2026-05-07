@@ -701,12 +701,14 @@ Response (đã breakdown theo type):
 }
 ```
 
-→ FE map vào card:
-- `Lượt thảo luận = data.discussion.completed` (đã thảo luận xong)
-- `Lượt chất vấn = data.question.completed`
+→ FE map vào card (theo spec 4.3 — "Danh sách **đăng ký**"):
+- `Lượt thảo luận = data.discussion.total` (tổng đăng ký type=discussion, gồm cả chưa và đã phát biểu)
+- `Lượt chất vấn = data.question.total`
 - `Tổng đăng ký = data.total`
-- Button "Danh sách đăng ký thảo luận (3)" → badge = `data.discussion.registered`
-- Button "Danh sách đăng ký chất vấn (3)" → badge = `data.question.registered`
+- Button "Danh sách đăng ký thảo luận (1)" → badge = `data.discussion.registered` (số đang chờ)
+- Button "Danh sách đăng ký chất vấn (1)" → badge = `data.question.registered`
+
+> Nếu FE muốn hiển thị "đã/tổng" trong card (vd `0/1`), dùng combo `discussion.completed / discussion.total`.
 
 ### 6.3 DANH SÁCH ĐĂNG KÝ THẢO LUẬN / ĐÃ THẢO LUẬN
 
