@@ -71,18 +71,18 @@ class MeetingDiscussionRegistrationController extends Controller
      * Đại biểu đăng ký thảo luận/chất vấn — auto-derive participant từ auth user.
      *
      * BE tự tìm participant của user trong cuộc họp; user không phải đại biểu của
-     * meeting → 404. FE chỉ cần gửi meeting_id + type + content (+ file optional).
+     * meeting → 404. FE chỉ cần gửi meeting_id + type + content (+ attachment optional).
      *
      * @bodyParam meeting_id integer required ID cuộc họp. Example: 1
      * @bodyParam meeting_agenda_id integer ID chương trình họp gắn đăng ký (optional). Example: 2
      * @bodyParam type string required Loại đăng ký (discussion | question). Example: discussion
      * @bodyParam content string required Nội dung đăng ký. Example: Đề xuất nhóm giải pháp trọng tâm
-     * @bodyParam file file Tệp tài liệu kèm theo. Example: (binary)
+     * @bodyParam attachment file Tệp đính kèm (slide / văn bản tham chiếu) — qua MediaService, ≤10MB. Example: (binary)
      * @bodyParam sort_order integer Thứ tự hiển thị. Example: 1
      */
     public function store(StoreMeetingDiscussionRegistrationRequest $request)
     {
-        $item = $this->meetingDiscussionRegistrationService->store($request->validated(), $request->file('file'));
+        $item = $this->meetingDiscussionRegistrationService->store($request->validated(), $request->file('attachment'));
 
         return $this->successResource(new MeetingDiscussionRegistrationResource($item), 'Đăng ký thảo luận/chất vấn thành công!', 201);
     }
@@ -94,13 +94,14 @@ class MeetingDiscussionRegistrationController extends Controller
      * @bodyParam discussion_type string Loại đăng ký. Example: question
      * @bodyParam topic string Chủ đề đăng ký. Example: Chất vấn tiến độ dự án
      * @bodyParam content string Nội dung đăng ký. Example: Làm rõ nguyên nhân chậm tiến độ
-     * @bodyParam file file Tệp tài liệu kèm theo. Example: (binary)
+     * @bodyParam attachment file Tệp đính kèm mới (thay tệp cũ). Example: (binary)
+     * @bodyParam remove_attachment boolean Xóa tệp đính kèm hiện tại. Example: false
      * @bodyParam status string Trạng thái đăng ký. Example: approved
      * @bodyParam sort_order integer Thứ tự hiển thị. Example: 2
      */
     public function update(UpdateMeetingDiscussionRegistrationRequest $request, MeetingDiscussionRegistration $meetingDiscussionRegistration)
     {
-        $item = $this->meetingDiscussionRegistrationService->update($meetingDiscussionRegistration, $request->validated(), $request->file('file'));
+        $item = $this->meetingDiscussionRegistrationService->update($meetingDiscussionRegistration, $request->validated(), $request->file('attachment'));
 
         return $this->successResource(new MeetingDiscussionRegistrationResource($item), 'Cập nhật đăng ký thảo luận/chất vấn thành công!');
     }
@@ -115,6 +116,36 @@ class MeetingDiscussionRegistrationController extends Controller
         $this->meetingDiscussionRegistrationService->destroy($meetingDiscussionRegistration);
 
         return $this->success(null, 'Xóa đăng ký thảo luận/chất vấn thành công!');
+    }
+
+    /**
+     * Chủ trì gọi đại biểu phát biểu — chuyển trạng thái registered -> called.
+     *
+     * Spec section 7.3: chủ trì có quyền gọi đại biểu thảo luận/chất vấn.
+     * Set called_at = now() tự động. Đăng ký không ở trạng thái registered → 422.
+     *
+     * @urlParam meetingDiscussionRegistration integer required ID đăng ký. Example: 1
+     */
+    public function start(MeetingDiscussionRegistration $meetingDiscussionRegistration)
+    {
+        $item = $this->meetingDiscussionRegistrationService->start($meetingDiscussionRegistration);
+
+        return $this->successResource(new MeetingDiscussionRegistrationResource($item), 'Đã gọi đại biểu phát biểu.');
+    }
+
+    /**
+     * Điều hành đánh dấu hoàn thành lượt phát biểu — chuyển trạng thái called -> completed.
+     *
+     * Spec section 7.3: điều hành đánh dấu "Đã thảo luận" hoặc "Đã chất vấn".
+     * Set completed_at = now() tự động. Đăng ký chưa called → 422.
+     *
+     * @urlParam meetingDiscussionRegistration integer required ID đăng ký. Example: 1
+     */
+    public function complete(MeetingDiscussionRegistration $meetingDiscussionRegistration)
+    {
+        $item = $this->meetingDiscussionRegistrationService->complete($meetingDiscussionRegistration);
+
+        return $this->successResource(new MeetingDiscussionRegistrationResource($item), 'Đã đánh dấu hoàn thành lượt phát biểu.');
     }
 
     /**

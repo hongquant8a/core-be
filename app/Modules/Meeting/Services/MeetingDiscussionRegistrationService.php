@@ -4,11 +4,14 @@ namespace App\Modules\Meeting\Services;
 
 use App\Modules\Core\Services\MediaService;
 use App\Modules\Meeting\Enums\MeetingDiscussionStatusEnum;
+use App\Modules\Meeting\Enums\MeetingDiscussionTypeEnum;
+use App\Modules\Meeting\Models\MeetingAgenda;
 use App\Modules\Meeting\Models\MeetingDiscussionRegistration;
 use App\Modules\Meeting\Models\MeetingParticipant;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Đăng ký thảo luận / chất vấn — quy tắc theo spec phòng họp không giấy:
@@ -49,6 +52,8 @@ class MeetingDiscussionRegistrationService
     {
         $userId = $this->resolveCurrentUserId();
         $meetingId = (int) $validated['meeting_id'];
+        $type = $validated['type'];
+        $agendaId = $validated['meeting_agenda_id'] ?? null;
 
         // Auto-derive meeting_participant_id từ auth user — tránh đại biểu A đăng ký hộ B.
         $participant = MeetingParticipant::query()
@@ -60,11 +65,31 @@ class MeetingDiscussionRegistrationService
             throw new ModelNotFoundException('Bạn không phải đại biểu của cuộc họp này.');
         }
 
+        // Spec line 276: BE kiểm tra cờ cho phép theo agenda.
+        // Type=discussion → agenda.allow_discussion_registration phải true.
+        // Type=question → agenda.allow_question_registration phải true.
+        // Nếu không gắn agenda (agendaId=null) thì không check (đăng ký chung cuộc họp).
+        if ($agendaId !== null) {
+            $agenda = MeetingAgenda::query()
+                ->where('meeting_id', $meetingId)
+                ->find($agendaId);
+            if (! $agenda) {
+                throw new ModelNotFoundException('Chương trình họp không thuộc cuộc họp này.');
+            }
+            $flag = $type === MeetingDiscussionTypeEnum::Discussion->value
+                ? 'allow_discussion_registration'
+                : 'allow_question_registration';
+            if (! $agenda->{$flag}) {
+                $label = $type === MeetingDiscussionTypeEnum::Discussion->value ? 'thảo luận' : 'chất vấn';
+                throw ValidationException::withMessages([
+                    'meeting_agenda_id' => ["Chương trình họp này không cho phép đăng ký {$label}."],
+                ]);
+            }
+        }
+
         $storedFiles = [];
         try {
-            return DB::transaction(function () use ($validated, $file, $participant, $meetingId, &$storedFiles) {
-                $type = $validated['type'];
-                $agendaId = $validated['meeting_agenda_id'] ?? null;
+            return DB::transaction(function () use ($validated, $file, $participant, $meetingId, $type, $agendaId, &$storedFiles) {
 
                 $payload = [
                     'organization_id' => $this->resolveCurrentOrganizationId(),
@@ -100,8 +125,8 @@ class MeetingDiscussionRegistrationService
         $storedFiles = [];
         try {
             return DB::transaction(function () use ($model, $validated, $file, &$storedFiles) {
-                $removeFile = (bool) ($validated['remove_file'] ?? false);
-                unset($validated['remove_file']);
+                $removeFile = (bool) ($validated['remove_attachment'] ?? false);
+                unset($validated['remove_attachment']);
                 $model->update($validated);
 
                 if ($removeFile && $model->media_id) {
@@ -130,6 +155,46 @@ class MeetingDiscussionRegistrationService
     {
         $this->ensureOwned($model);
         $model->delete();
+    }
+
+    /**
+     * Chủ trì gọi đại biểu phát biểu — registered -> called.
+     * Spec section 7.3: "Chủ trì có thể gọi đại biểu thảo luận/chất vấn."
+     */
+    public function start(MeetingDiscussionRegistration $model): MeetingDiscussionRegistration
+    {
+        if ($model->status !== MeetingDiscussionStatusEnum::Registered->value) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'status' => ['Đăng ký không ở trạng thái chờ — không thể gọi phát biểu.'],
+            ]);
+        }
+
+        $model->update([
+            'status' => MeetingDiscussionStatusEnum::Called->value,
+            'called_at' => now(),
+        ]);
+
+        return $model->load(['participant', 'agenda', 'mediaFile']);
+    }
+
+    /**
+     * Điều hành đánh dấu hoàn thành lượt phát biểu — called -> completed.
+     * Spec section 7.3: "Người điều hành đánh dấu 'Đã thảo luận' hoặc 'Đã chất vấn'."
+     */
+    public function complete(MeetingDiscussionRegistration $model): MeetingDiscussionRegistration
+    {
+        if ($model->status !== MeetingDiscussionStatusEnum::Called->value) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'status' => ['Đăng ký chưa được gọi — không thể đánh dấu hoàn thành.'],
+            ]);
+        }
+
+        $model->update([
+            'status' => MeetingDiscussionStatusEnum::Completed->value,
+            'completed_at' => now(),
+        ]);
+
+        return $model->load(['participant', 'agenda', 'mediaFile']);
     }
 
     public function reorder(array $items): void

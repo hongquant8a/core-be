@@ -22,7 +22,7 @@ class StoreMeetingDiscussionRegistrationRequest extends FormRequest
             'meeting_agenda_id' => 'nullable|integer|exists:meeting_agendas,id',
             'type' => ['required', MeetingDiscussionTypeEnum::rule()],
             'content' => 'required|string',
-            'file' => 'nullable|file|max:10240',
+            'attachment' => 'nullable|file|max:10240',
             'status' => ['nullable', MeetingDiscussionStatusEnum::rule()],
             'sort_order' => 'nullable|integer|min:0',
         ];
@@ -55,7 +55,7 @@ class StoreMeetingDiscussionRegistrationRequest extends FormRequest
             'meeting_agenda_id' => 'ID chương trình họp',
             'type' => 'type',
             'content' => 'Nội dung',
-            'file' => 'Tệp tải lên',
+            'attachment' => 'Tệp đính kèm',
             'status' => 'Trạng thái',
             'sort_order' => 'Thứ tự sắp xếp',
         ];
@@ -67,7 +67,7 @@ class StoreMeetingDiscussionRegistrationRequest extends FormRequest
             'meeting_agenda_id' => ['description' => 'ID chương trình họp.', 'example' => 2],
             'type' => ['description' => 'Loại đăng ký.', 'example' => 'discussion'],
             'content' => ['description' => 'Nội dung đăng ký.', 'example' => 'Xin đăng ký phát biểu về nội dung 2'],
-            'file' => ['description' => 'Tệp đính kèm nội dung đăng ký (nếu có).'],
+            'attachment' => ['description' => 'Tệp đính kèm (slide, văn bản tham chiếu, ...) — đi qua MediaService, ≤10MB.'],
             'status' => ['description' => 'Trạng thái đăng ký.', 'example' => 'registered'],
             'sort_order' => ['description' => 'Thứ tự gọi.', 'example' => 1],
         ];
