@@ -13,8 +13,18 @@ class MeetingAttendanceService
     public function stats(array $filters): array
     {
         $base = MeetingAttendance::filter($filters);
+        $meetingId = $filters['meeting_id'] ?? null;
+
+        // total_invited = số đại biểu được mời (count meeting_participants).
+        // Spec section 6.1: "Tỷ lệ có mặt 42/50" → 42 = present, 50 = participants total.
+        $totalInvited = $meetingId
+            ? MeetingParticipant::where('meeting_id', $meetingId)
+                ->where('organization_id', $this->resolveCurrentOrganizationId())
+                ->count()
+            : 0;
 
         return [
+            'total_invited' => $totalInvited,
             'total' => (clone $base)->count(),
             'present' => (clone $base)->where('status', 'present')->count(),
             'absent' => (clone $base)->where('status', 'absent')->count(),

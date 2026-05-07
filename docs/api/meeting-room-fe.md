@@ -664,11 +664,22 @@ Response:
 ```json
 {
   "success": true,
-  "data": { "total": 50, "present": 42, "absent": 3, "pending": 5 }
+  "data": {
+    "total_invited": 50,   // tổng đại biểu được mời (count meeting_participants)
+    "total": 8,            // tổng attendance records (số người đã có thao tác checkin/báo vắng)
+    "present": 6,          // status='present'
+    "absent": 1,           // status='absent'
+    "pending": 1           // status='pending' (đã checkin chờ duyệt)
+  }
 }
 ```
 
-→ FE compute `present / total * 100` để ra "42 / 50 (84%)".
+→ FE compute "Tỷ lệ có mặt": `present / total_invited * 100` (vd `6 / 50 = 12%`).
+
+> **Phân biệt `total` vs `total_invited`**:
+> - `total_invited` = đại biểu được mời (luôn lớn nhất, = `meeting.participants` count)
+> - `total` = đã có attendance row (≤ total_invited; gồm pending + present + absent)
+> - Đại biểu chưa thao tác checkin/báo vắng → không có attendance row, không tính vào `total` nhưng vẫn trong `total_invited`
 
 ### 6.2 Lượt thảo luận / chất vấn (phân theo type)
 
