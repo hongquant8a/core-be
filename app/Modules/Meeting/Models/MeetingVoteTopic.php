@@ -47,6 +47,41 @@ class MeetingVoteTopic extends Model
         return $this->belongsTo(Meeting::class, 'meeting_id');
     }
 
+    /**
+     * Phase derive: opened_at NULL → draft; closed_at NOT NULL → closed;
+     * opened_at + duration_minutes < now → closed (timeout); else opened.
+     */
+    public function derivePhase(): string
+    {
+        if ($this->closed_at !== null) {
+            return 'closed';
+        }
+        if ($this->opened_at === null) {
+            return 'draft';
+        }
+        if ($this->duration_minutes !== null) {
+            $expiresAt = $this->opened_at->copy()->addMinutes((int) $this->duration_minutes);
+            if ($expiresAt->lte(now())) {
+                return 'closed';
+            }
+        }
+
+        return 'opened';
+    }
+
+    /**
+     * Thời điểm hết giờ phiên biểu quyết — opened_at + duration_minutes. Null nếu chưa
+     * mở hoặc không set duration.
+     */
+    public function expiresAt(): ?\Illuminate\Support\Carbon
+    {
+        if ($this->opened_at === null || $this->duration_minutes === null) {
+            return null;
+        }
+
+        return $this->opened_at->copy()->addMinutes((int) $this->duration_minutes);
+    }
+
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
@@ -63,15 +98,28 @@ class MeetingVoteTopic extends Model
 
         $query->when($organizationId, fn ($q, $organizationId) => $q->where('organization_id', (int) $organizationId))
             ->when($filters['meeting_id'] ?? null, fn ($q, $meetingId) => $q->where('meeting_id', $meetingId))
-            // Status đã bỏ field — derive từ opened_at + closed_at:
+            // Status đã bỏ field — derive từ opened_at + closed_at + duration_minutes (timeout):
             //  draft  = opened_at IS NULL
-            //  opened = opened_at IS NOT NULL AND closed_at IS NULL
-            //  closed = closed_at IS NOT NULL
+            //  opened = opened_at IS NOT NULL AND closed_at IS NULL AND chưa hết duration
+            //  closed = closed_at IS NOT NULL HOẶC đã hết duration (auto-expired)
             ->when($filters['status'] ?? null, function ($q, $status) {
+                $now = now();
                 match ($status) {
                     'draft' => $q->whereNull('opened_at'),
-                    'opened' => $q->whereNotNull('opened_at')->whereNull('closed_at'),
-                    'closed' => $q->whereNotNull('closed_at'),
+                    'opened' => $q->whereNotNull('opened_at')
+                        ->whereNull('closed_at')
+                        ->where(function ($sub) use ($now) {
+                            $sub->whereNull('duration_minutes')
+                                ->orWhereRaw('DATE_ADD(opened_at, INTERVAL duration_minutes MINUTE) > ?', [$now]);
+                        }),
+                    'closed' => $q->where(function ($sub) use ($now) {
+                        $sub->whereNotNull('closed_at')
+                            ->orWhere(function ($exp) use ($now) {
+                                $exp->whereNotNull('opened_at')
+                                    ->whereNotNull('duration_minutes')
+                                    ->whereRaw('DATE_ADD(opened_at, INTERVAL duration_minutes MINUTE) <= ?', [$now]);
+                            });
+                    }),
                     default => null,
                 };
             })

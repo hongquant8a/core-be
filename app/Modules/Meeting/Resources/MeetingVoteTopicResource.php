@@ -24,12 +24,15 @@ class MeetingVoteTopicResource extends JsonResource
             'show_result_on_projector' => $this->show_result_on_projector,
             'show_result_on_personal_device' => $this->show_result_on_personal_device,
             'sort_order' => $this->sort_order,
-            // status đã bỏ — FE derive từ opened_at + closed_at:
+            // status đã bỏ — BE compute `phase` derived (kèm timeout) thay cho FE.
             //   draft  = opened_at NULL
-            //   opened = opened_at NOT NULL + closed_at NULL
-            //   closed = closed_at NOT NULL
+            //   opened = opened_at NOT NULL + closed_at NULL + chưa hết duration_minutes
+            //   closed = closed_at NOT NULL HOẶC opened_at + duration_minutes <= now (auto-expired)
+            'phase' => $this->derivePhase(),
             'opened_at' => $this->opened_at?->format('H:i:s d/m/Y'),
             'closed_at' => $this->closed_at?->format('H:i:s d/m/Y'),
+            // ISO 8601 cho FE countdown (anchored to absolute time, không drift theo clock skew).
+            'expires_at_iso' => $this->expiresAt()?->toIso8601String(),
             'created_by' => $this->whenLoaded('creator', fn () => $this->formatUserSummary($this->creator), null),
             'updated_by' => $this->whenLoaded('editor', fn () => $this->formatUserSummary($this->editor), null),
             'created_at' => $this->created_at?->format('H:i:s d/m/Y'),

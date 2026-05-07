@@ -12,12 +12,15 @@ class MeetingVoteTopicService
     {
         $base = MeetingVoteTopic::filter($filters);
 
-        // Phase derive từ opened_at + closed_at (status field đã bỏ).
+        // Phase derive từ opened_at + closed_at + duration_minutes (timeout).
+        // Reuse filter scope phase logic — đếm số lượng theo từng phase.
+        $ids = (clone $base)->pluck('id')->all();
+
         return [
-            'total' => (clone $base)->count(),
-            'draft' => (clone $base)->whereNull('opened_at')->count(),
-            'opened' => (clone $base)->whereNotNull('opened_at')->whereNull('closed_at')->count(),
-            'closed' => (clone $base)->whereNotNull('closed_at')->count(),
+            'total' => count($ids),
+            'draft' => MeetingVoteTopic::query()->whereIn('id', $ids)->filter(['status' => 'draft'])->count(),
+            'opened' => MeetingVoteTopic::query()->whereIn('id', $ids)->filter(['status' => 'opened'])->count(),
+            'closed' => MeetingVoteTopic::query()->whereIn('id', $ids)->filter(['status' => 'closed'])->count(),
         ];
     }
 

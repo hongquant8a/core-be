@@ -106,9 +106,9 @@ VITE_REVERB_SCHEME=http
 
 | # | Event name | Trigger | Payload |
 |---|---|---|---|
-| 1 | `vote-topic.opened` | Operator bấm `/open` vote topic | `id, meeting_id, meeting_agenda_id, title, description, duration_minutes, vote_type, ballot_mode, show_result_on_projector, show_result_on_personal_device, opened_at` |
+| 1 | `vote-topic.opened` | Operator bấm `/open` vote topic | `id, meeting_id, meeting_agenda_id, title, description, duration_minutes, vote_type, ballot_mode, show_result_on_projector, show_result_on_personal_device, phase='opened', opened_at, expires_at_iso` |
 | 2 | `vote-response.added` | Đại biểu bỏ phiếu | `meeting_vote_topic_id, option, voted_at` (anonymized — không có participant info) |
-| 3 | `vote-topic.closed` | Operator bấm `/close` | `id, meeting_id, show_result_on_projector, show_result_on_personal_device, closed_at` |
+| 3 | `vote-topic.closed` | Operator bấm `/close` | `id, meeting_id, show_result_on_projector, show_result_on_personal_device, phase='closed', closed_at` |
 | 4 | `meeting.agenda-highlighted` | Operator highlight chương trình | `meeting_id, current_meeting_agenda_id` (null = bỏ highlight) |
 | 5 | `meeting.discussion-highlighted` | Operator highlight phát biểu | `meeting_id, current_meeting_discussion_registration_id` |
 | 6 | `discussion-registration.created` | Đại biểu đăng ký phát biểu/chất vấn | `id, meeting_id, meeting_agenda_id, meeting_participant_id, participant_name, type, content, media_id, status, sort_order` |
@@ -160,8 +160,9 @@ channel
 ```js
 channel
   .listen('.vote-topic.opened', (e) => {
-    // Bật popup full-screen với e.description + e.duration_minutes (FE đếm ngược)
-    // ballot_mode quyết định UI ẩn danh hay không
+    // Bật popup full-screen. Countdown từ e.expires_at_iso (anchored absolute time):
+    //   const remainingMs = new Date(e.expires_at_iso).getTime() - Date.now()
+    // ballot_mode quyết định UI ẩn danh hay không.
     showVotePopup(e)
   })
   .listen('.vote-topic.closed', (e) => {

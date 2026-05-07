@@ -1,23 +1,25 @@
 # Changelog FE — Bỏ field `status` khỏi `meeting_vote_topics`
 
 **Ngày**: 2026-05-07
-**Tác động**: FE phải đổi cách derive trạng thái biểu quyết. Filter param `?status=` BE vẫn nhận như cũ.
+**Tác động**: FE phải đọc field `phase` mới (BE derive sẵn) thay cho `status`. Filter param `?status=` BE vẫn nhận như cũ.
 
 ## Lý do
 
-Trước đây `meeting_vote_topics.status` lưu enum `draft | opened | closed`, đồng thời với `opened_at` + `closed_at` — dư thừa thông tin, dễ lệch state khi update không đồng bộ. Refactor: **bỏ hẳn field `status`**, derive từ 2 timestamp:
+Trước đây `meeting_vote_topics.status` lưu enum `draft | opened | closed`, đồng thời với `opened_at` + `closed_at` — dư thừa, dễ lệch state. Refactor: **bỏ hẳn field `status`**, derive từ 2 timestamp + `duration_minutes`:
 
-| Phase | Điều kiện |
+| Phase | Điều kiện (BE compute) |
 |---|---|
 | `draft` | `opened_at` IS NULL |
-| `opened` | `opened_at` IS NOT NULL **AND** `closed_at` IS NULL |
-| `closed` | `closed_at` IS NOT NULL |
+| `opened` | `opened_at` IS NOT NULL **AND** `closed_at` IS NULL **AND** (`duration_minutes` NULL **HOẶC** `opened_at + duration_minutes > now()`) |
+| `closed` | `closed_at` IS NOT NULL **HOẶC** `opened_at + duration_minutes <= now()` (auto-expired by timeout) |
 
-`duration_minutes` vẫn giữ — chỉ dùng cho FE đếm ngược UI popup. **BE không auto-close khi hết duration** — operator phải bấm `/close` manual.
+→ **Timeout cũng coi là closed**: nếu operator quên bấm `/close` mà đã quá `duration_minutes` → BE coi như đã đóng, **chặn vote/sửa phiếu**.
+
+> **Vẫn không có auto-close DB-side**: BE không update `closed_at` khi timeout — chỉ dùng phép so sánh runtime để derive. Operator vẫn nên bấm `/close` để có timestamp chính thức.
 
 ## Breaking changes
 
-### 1. Response không còn field `status`
+### 1. Response: bỏ `status`, thêm `phase` + `expires_at_iso`
 
 **Trước**:
 ```json
@@ -37,21 +39,24 @@ Trước đây `meeting_vote_topics.status` lưu enum `draft | opened | closed`,
 {
   "id": 1,
   "title": "...",
+  "phase": "opened",
   "opened_at": "10:15:00 23/02/2026",
   "closed_at": null,
   "duration_minutes": 5,
+  "expires_at_iso": "2026-02-23T10:20:00+07:00",
   ...
 }
 ```
 
-→ **FE phải tự derive**:
+→ **FE đọc `topic.phase` trực tiếp**, không tự derive nữa. BE đã enforce timeout.
+
+→ **Countdown dùng `expires_at_iso`** (ISO 8601, anchored absolute time, không drift theo clock skew):
 ```js
-function getVoteTopicPhase(topic) {
-  if (topic.closed_at) return 'closed'
-  if (topic.opened_at) return 'opened'
-  return 'draft'
-}
+const expireMs = new Date(topic.expires_at_iso).getTime()
+const remainingSec = Math.max(0, Math.floor((expireMs - Date.now()) / 1000))
 ```
+
+> Field `expires_at_iso` = `null` nếu chưa mở hoặc không set `duration_minutes` (vô hạn cho đến khi operator bấm `/close`).
 
 ### 2. Body Store/Update không còn nhận `status`
 
@@ -92,30 +97,60 @@ GET /api/meeting-vote-topics/stats?meeting_id=X
 
 BE compute từ opened_at/closed_at. FE không cần đổi.
 
-### Logic chặn vote/sửa phiếu
+### Logic chặn vote/sửa phiếu (đã enforce thêm timeout)
 
-- Vote chỉ chấp nhận khi topic `opened` (opened_at NOT NULL + closed_at NULL).
-- Sửa phiếu chỉ chấp nhận khi topic chưa `closed` (closed_at NULL).
+- Vote chỉ chấp nhận khi `topic.phase === 'opened'` (opened_at NOT NULL + closed_at NULL + chưa hết duration_minutes).
+- Sửa phiếu chỉ chấp nhận khi `topic.phase !== 'closed'`.
+- **Timeout cũng block**: nếu đại biểu submit vote sau khi `now > opened_at + duration_minutes` → BE trả 422 "Chương trình biểu quyết chưa mở hoặc đã đóng".
 - Error message trả về unchanged.
+
+→ FE nên disable nút "Bỏ phiếu" khi countdown hết giờ (dùng `expires_at_iso`), nhưng không cần thiết vì BE block. Nếu user submit muộn → catch 422 và hiển thị error message.
 
 ## WebSocket events
 
-`vote-topic.opened` + `vote-topic.closed` payload **không còn `status`** (cùng lý do):
+`vote-topic.opened` payload thêm `phase` + `expires_at_iso`, bỏ `status`:
 
 ```js
 // Trước
-{ id, status: 'opened', opened_at, ... }
+{ id, status: 'opened', opened_at, duration_minutes, ... }
 
 // Sau
-{ id, opened_at, ... }   // FE derive phase từ opened_at + closed_at
+{
+  id,
+  meeting_id,
+  title,
+  description,
+  duration_minutes,
+  vote_type,
+  ballot_mode,
+  show_result_on_projector,
+  show_result_on_personal_device,
+  phase: 'opened',                              // BE derive
+  opened_at: '2026-02-23T10:15:00+07:00',       // ISO 8601
+  expires_at_iso: '2026-02-23T10:20:00+07:00',  // dùng cho countdown FE
+}
+```
+
+`vote-topic.closed` payload:
+```js
+{
+  id,
+  meeting_id,
+  show_result_on_projector,
+  show_result_on_personal_device,
+  phase: 'closed',
+  closed_at: '2026-02-23T10:25:00+07:00',
+}
 ```
 
 ## Việc FE cần làm
 
-1. **Tìm và thay**: mọi nơi đọc `topic.status` → đổi sang derived function (snippet ở trên).
-2. **Bỏ status khỏi form**: form tạo/sửa vote topic không còn field "Trạng thái" — UI tự ẩn vì BE không nhận.
-3. **Filter giữ nguyên**: query `?status=opened` không sửa.
-4. **WS handler**: nếu code có check `event.status` → đổi sang check `event.opened_at` / `event.closed_at`.
+1. **Tìm và thay**: mọi nơi đọc `topic.status` → đổi sang `topic.phase` (BE derive sẵn, đã include timeout).
+2. **Countdown UI**: dùng `topic.expires_at_iso` (ISO 8601) làm anchor — `new Date(expires_at_iso).getTime() - Date.now()`.
+3. **Bỏ status khỏi form**: form tạo/sửa vote topic không còn field "Trạng thái" — UI tự ẩn vì BE không nhận.
+4. **Filter giữ nguyên**: query `?status=opened|closed|draft` không sửa, BE tự convert.
+5. **WS handler**: thay `event.status` → `event.phase`.
+6. **Vote submit**: nếu countdown hết giờ thì FE đóng popup; nếu user kịp submit muộn (network race) → BE trả 422, FE hiển thị error.
 
 ## Migration BE đã chạy
 

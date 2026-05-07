@@ -44,7 +44,9 @@ class MeetingVoteTopicOpened implements ShouldBroadcast
             'ballot_mode' => $this->topic->ballot_mode,
             'show_result_on_projector' => (bool) $this->topic->show_result_on_projector,
             'show_result_on_personal_device' => (bool) $this->topic->show_result_on_personal_device,
+            'phase' => $this->topic->derivePhase(),
             'opened_at' => $this->topic->opened_at?->toIso8601String(),
+            'expires_at_iso' => $this->topic->expiresAt()?->toIso8601String(),
         ];
     }
 }

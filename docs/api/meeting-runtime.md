@@ -449,7 +449,7 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
 | `show_result_on_projector` | boolean | — | Hiển thị tổng hợp trên màn chiếu. |
 | `show_result_on_personal_device` | boolean | — | Hiển thị tổng hợp trên thiết bị cá nhân của đại biểu. |
 | `sort_order` | integer (≥0) | — | Thứ tự hiển thị. |
-| ~~`status`~~ | — | — | **Đã bỏ field 2026-05-07**. FE derive phase từ `opened_at` + `closed_at`: opened_at NULL → `draft`; opened_at NOT NULL + closed_at NULL → `opened`; closed_at NOT NULL → `closed`. Lifecycle qua endpoint `/open` + `/close` (không gửi `status` body nữa). |
+| ~~`status`~~ | — | — | **Đã bỏ field 2026-05-07**. Resource trả thêm `phase` (BE compute) + `expires_at_iso` (ISO 8601 cho countdown). Phase logic: opened_at NULL → `draft`; opened_at NOT NULL + closed_at NULL + chưa hết `duration_minutes` → `opened`; closed_at NOT NULL HOẶC `opened_at + duration_minutes <= now` (timeout) → `closed`. Lifecycle qua endpoint `/open` + `/close`. |
 
 ```json
 {
@@ -479,8 +479,10 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
   "show_result_on_projector": true,
   "show_result_on_personal_device": true,
   "sort_order": 1,
+  "phase": "opened",
   "opened_at": "10:15:00 15/05/2026",
   "closed_at": null,
+  "expires_at_iso": "2026-05-15T10:20:00+07:00",
   "created_at": "08:00:00 08/05/2026",
   "updated_at": "10:15:00 15/05/2026"
 }
@@ -522,18 +524,19 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
 [Soạn meeting]              [Trong họp]                    [Sau khi đóng]
     │                            │                                │
     ▼                            ▼                                ▼
-phase=draft     ──open()──▶  phase=opened     ──close()──▶  phase=closed
-(opened_at NULL)            (opened_at NOT NULL,         (closed_at NOT NULL)
-                             closed_at NULL)
+phase=draft  ──open()──▶  phase=opened  ──close() / timeout──▶  phase=closed
+(opened_at NULL)        (opened_at NOT NULL,                  (closed_at NOT NULL
+                         closed_at NULL,                       HOẶC opened_at +
+                         chưa hết duration)                    duration <= now)
                                 │
                                 ▼
                         Đại biểu vote (POST /vote-responses)
-                        - Phải phase=opened (opened_at NOT NULL + closed_at NULL)
+                        - Phải phase=opened (BE derive — block timeout)
                         - 1 phiếu / participant / topic
                         - Validate option ∈ vote_type
 ```
 
-> Field `status` trong DB **đã bỏ** (2026-05-07). FE derive phase từ `opened_at` + `closed_at`. Filter `?status=draft|opened|closed` BE vẫn nhận và tự convert sang query derived. Xem [docs/changelogs/2026-05-07-meeting-vote-topic-status-removed-fe.md](../changelogs/2026-05-07-meeting-vote-topic-status-removed-fe.md).
+> Field `status` trong DB **đã bỏ** (2026-05-07). Resource trả `phase` (BE compute, kèm timeout) + `expires_at_iso` cho countdown FE. Filter `?status=draft|opened|closed` BE tự convert sang query derived (có check timeout). Xem [docs/changelogs/2026-05-07-meeting-vote-topic-status-removed-fe.md](../changelogs/2026-05-07-meeting-vote-topic-status-removed-fe.md).
 
 **Rules quan trọng (BE đã enforce 2026-05-07):**
 1. Vote chỉ accept khi `topic.status = 'opened'`.

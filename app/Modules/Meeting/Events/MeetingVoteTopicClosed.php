@@ -36,6 +36,7 @@ class MeetingVoteTopicClosed implements ShouldBroadcast
             'meeting_id' => $this->topic->meeting_id,
             'show_result_on_projector' => (bool) $this->topic->show_result_on_projector,
             'show_result_on_personal_device' => (bool) $this->topic->show_result_on_personal_device,
+            'phase' => 'closed',
             'closed_at' => $this->topic->closed_at?->toIso8601String(),
         ];
     }
