@@ -206,6 +206,30 @@ class MeetingController extends Controller
     }
 
     /**
+     * Khoá danh sách điểm danh — đại biểu không thể checkin/báo vắng nữa.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     */
+    public function lockAttendance(Meeting $meeting)
+    {
+        $item = $this->meetingService->lockAttendance($meeting);
+
+        return $this->successResource(new MeetingResource($item), 'Đã khoá danh sách điểm danh.');
+    }
+
+    /**
+     * Mở khoá danh sách điểm danh.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     */
+    public function unlockAttendance(Meeting $meeting)
+    {
+        $item = $this->meetingService->unlockAttendance($meeting);
+
+        return $this->successResource(new MeetingResource($item), 'Đã mở khoá danh sách điểm danh.');
+    }
+
+    /**
      * Xuất Excel cuộc họp.
      *
      * Xuất ra các trường: STT, Tiêu đề, Loại cuộc họp, Địa điểm, Công khai, Thời gian bắt đầu, Thời gian kết thúc, Trạng thái, Lượt xem, Thời gian phát hành, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID.

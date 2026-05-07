@@ -120,6 +120,30 @@ class MeetingAttendanceController extends Controller
     }
 
     /**
+     * Operator duyệt điểm danh — pending → present.
+     *
+     * @urlParam meetingAttendance integer required ID điểm danh. Example: 1
+     */
+    public function approve(MeetingAttendance $meetingAttendance)
+    {
+        $item = $this->meetingAttendanceService->approve($meetingAttendance);
+
+        return $this->successResource(new MeetingAttendanceResource($item), 'Đã duyệt điểm danh.');
+    }
+
+    /**
+     * Operator từ chối điểm danh — pending → absent.
+     *
+     * @urlParam meetingAttendance integer required ID điểm danh. Example: 1
+     */
+    public function reject(MeetingAttendance $meetingAttendance)
+    {
+        $item = $this->meetingAttendanceService->reject($meetingAttendance);
+
+        return $this->successResource(new MeetingAttendanceResource($item), 'Đã từ chối điểm danh.');
+    }
+
+    /**
      * Đại biểu tự điểm danh — auto-derive participant từ auth user.
      *
      * Status=`pending` chờ operator duyệt (Tab 7 sẽ có approve/reject ở Sprint 1).

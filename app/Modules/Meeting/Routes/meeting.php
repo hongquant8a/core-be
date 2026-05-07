@@ -14,3 +14,6 @@ Route::put('/{meeting}', [MeetingController::class, 'update'])->middleware('perm
 Route::patch('/{meeting}', [MeetingController::class, 'update'])->middleware('permission:meetings.update,web');
 Route::delete('/{meeting}', [MeetingController::class, 'destroy'])->middleware('permission:meetings.destroy,web');
 Route::patch('/{meeting}/status', [MeetingController::class, 'changeStatus'])->middleware('permission:meetings.changeStatus,web');
+// THAO TÁC NHANH (Tab 7 Điều hành) — operator khoá / mở khoá danh sách điểm danh.
+Route::patch('/{meeting}/lock-attendance', [MeetingController::class, 'lockAttendance'])->middleware('permission:meetings.lockAttendance,web');
+Route::patch('/{meeting}/unlock-attendance', [MeetingController::class, 'unlockAttendance'])->middleware('permission:meetings.unlockAttendance,web');

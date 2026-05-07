@@ -43,6 +43,7 @@ class MeetingResource extends JsonResource
             'status' => $this->status,
             'view_count' => $this->view_count,
             'published_at' => $this->published_at?->format('H:i:s d/m/Y'),
+            'attendance_locked' => (bool) $this->attendance_locked,
             'created_by' => $this->whenLoaded('creator', fn () => $this->formatUserSummary($this->creator), null),
             'updated_by' => $this->whenLoaded('editor', fn () => $this->formatUserSummary($this->editor), null),
             'created_at' => $this->created_at?->format('H:i:s d/m/Y'),

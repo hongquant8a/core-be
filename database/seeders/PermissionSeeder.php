@@ -133,6 +133,7 @@ class PermissionSeeder extends Seeder
         'meetings' => [
             'stats', 'index', 'show', 'store', 'update', 'destroy',
             'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
+            'lockAttendance', 'unlockAttendance',
         ],
         // Meeting - Loại cuộc họp
         'meeting-types' => [
@@ -167,7 +168,8 @@ class PermissionSeeder extends Seeder
             'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy', 'respond',
         ],
         'meeting-attendances' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy', 'checkin', 'markAbsent',
+            'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
+            'checkin', 'markAbsent', 'approve', 'reject',
         ],
         'meeting-vote-topics' => [
             'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
@@ -290,6 +292,10 @@ class PermissionSeeder extends Seeder
         'confirm' => 'Xác nhận',
         'test' => 'Kiểm thử',
         'complete' => 'Đánh dấu hoàn thành',
+        'approve' => 'Duyệt',
+        'reject' => 'Từ chối',
+        'lockAttendance' => 'Khoá điểm danh',
+        'unlockAttendance' => 'Mở khoá điểm danh',
     ];
 
     /** Tạo đầy đủ permission từ danh sách PERMISSIONS (kèm description, sort_order, parent_id). */

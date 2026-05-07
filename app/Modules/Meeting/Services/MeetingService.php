@@ -311,6 +311,26 @@ class MeetingService
         }
     }
 
+    /**
+     * Operator khoá danh sách điểm danh — đại biểu không thể tự checkin/báo vắng nữa.
+     */
+    public function lockAttendance(Meeting $meeting): Meeting
+    {
+        $meeting->update(['attendance_locked' => true]);
+
+        return $meeting->load(['meetingType', 'meetingLocation', 'chairperson', 'operator']);
+    }
+
+    /**
+     * Operator mở khoá điểm danh.
+     */
+    public function unlockAttendance(Meeting $meeting): Meeting
+    {
+        $meeting->update(['attendance_locked' => false]);
+
+        return $meeting->load(['meetingType', 'meetingLocation', 'chairperson', 'operator']);
+    }
+
     public function export(array $filters, string $fileName = 'meetings.xlsx'): BinaryFileResponse
     {
         return Excel::download(new MeetingExport($filters), $fileName);

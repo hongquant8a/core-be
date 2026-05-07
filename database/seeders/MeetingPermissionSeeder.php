@@ -73,8 +73,8 @@ class MeetingPermissionSeeder extends Seeder
             }
         }
 
-        // Meetings (full CRUD + status workflow + export)
-        foreach (['stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export'] as $action) {
+        // Meetings (full CRUD + status workflow + export + runtime actions)
+        foreach (['stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'lockAttendance', 'unlockAttendance'] as $action) {
             $names[] = "meetings.{$action}";
         }
 
@@ -90,8 +90,8 @@ class MeetingPermissionSeeder extends Seeder
             $names[] = "meeting-participants.{$action}";
         }
 
-        // Attendances (full + checkin/markAbsent — operator có thể tự thao tác nếu họ cũng là đại biểu)
-        foreach (['stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy', 'checkin', 'markAbsent'] as $action) {
+        // Attendances (full + checkin/markAbsent self + approve/reject operator)
+        foreach (['stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy', 'checkin', 'markAbsent', 'approve', 'reject'] as $action) {
             $names[] = "meeting-attendances.{$action}";
         }
 

@@ -68,6 +68,7 @@ return new class extends Migration
             $table->string('status')->default('draft');
             $table->unsignedInteger('view_count')->default(0);
             $table->dateTime('published_at')->nullable();
+            $table->boolean('attendance_locked')->default(false);
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();

@@ -66,11 +66,52 @@ class MeetingAttendanceService
     }
 
     /**
+     * Operator duyệt điểm danh đại biểu — pending → present.
+     * Set checked_in_by = current user (operator), giữ checked_in_at do đại biểu set lúc checkin.
+     */
+    public function approve(MeetingAttendance $attendance): MeetingAttendance
+    {
+        if ($attendance->status !== MeetingAttendanceStatusEnum::Pending->value) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'status' => ['Điểm danh không ở trạng thái chờ duyệt — không thể approve.'],
+            ]);
+        }
+
+        $attendance->update([
+            'status' => MeetingAttendanceStatusEnum::Present->value,
+            'checked_in_at' => $attendance->checked_in_at ?? now(),
+            'checked_in_by' => auth()->id(),
+        ]);
+
+        return $attendance->load('participant');
+    }
+
+    /**
+     * Operator từ chối điểm danh — pending → absent.
+     */
+    public function reject(MeetingAttendance $attendance): MeetingAttendance
+    {
+        if ($attendance->status !== MeetingAttendanceStatusEnum::Pending->value) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'status' => ['Điểm danh không ở trạng thái chờ duyệt — không thể reject.'],
+            ]);
+        }
+
+        $attendance->update([
+            'status' => MeetingAttendanceStatusEnum::Absent->value,
+            'checked_in_by' => auth()->id(),
+        ]);
+
+        return $attendance->load('participant');
+    }
+
+    /**
      * Đại biểu tự điểm danh — status=pending chờ operator duyệt.
      * Idempotent qua unique (meeting_id, meeting_participant_id) — F5/click lần 2 không tạo trùng.
      */
     public function checkin(int $meetingId): MeetingAttendance
     {
+        $this->ensureAttendanceNotLocked($meetingId);
         $participant = $this->resolveOwnedParticipant($meetingId);
 
         return MeetingAttendance::updateOrCreate(
@@ -95,6 +136,7 @@ class MeetingAttendanceService
      */
     public function markAbsent(int $meetingId, ?string $note = null): MeetingAttendance
     {
+        $this->ensureAttendanceNotLocked($meetingId);
         $participant = $this->resolveOwnedParticipant($meetingId);
 
         return MeetingAttendance::updateOrCreate(
@@ -111,6 +153,22 @@ class MeetingAttendanceService
                 'note' => $note,
             ]
         )->load('participant');
+    }
+
+    /**
+     * Chặn self-action (checkin/markAbsent) khi meeting đã khoá điểm danh.
+     */
+    private function ensureAttendanceNotLocked(int $meetingId): void
+    {
+        $locked = \App\Modules\Meeting\Models\Meeting::query()
+            ->whereKey($meetingId)
+            ->value('attendance_locked');
+
+        if ($locked) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'meeting_id' => ['Cuộc họp đã khoá danh sách điểm danh — không thể thao tác.'],
+            ]);
+        }
     }
 
     /**

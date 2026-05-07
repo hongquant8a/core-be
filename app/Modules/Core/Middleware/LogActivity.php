@@ -138,6 +138,10 @@ class LogActivity
             'mark-absent' => 'Báo vắng',
             'respond' => 'Phản hồi mời họp',
             'complete' => 'Đánh dấu hoàn thành',
+            'approve' => 'Duyệt',
+            'reject' => 'Từ chối',
+            'lock-attendance' => 'Khoá điểm danh',
+            'unlock-attendance' => 'Mở khoá điểm danh',
         ];
         if ($sub && isset($pathActions[$sub])) {
             return $pathActions[$sub].' '.$this->resourceLabel(str_replace('-', '_', $resource));
