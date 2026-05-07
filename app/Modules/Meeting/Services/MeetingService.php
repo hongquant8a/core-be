@@ -112,6 +112,8 @@ class MeetingService
             'documents.mediaFile',
             'participants.attendee',
             'voteTopics',
+            'currentAgenda',
+            'currentDiscussionRegistration',
         ]);
     }
 
@@ -176,6 +178,8 @@ class MeetingService
             'documents.documentType',
             'documents.mediaFile',
             'voteTopics',
+            'currentAgenda',
+            'currentDiscussionRegistration',
         ]);
     }
 
@@ -396,6 +400,55 @@ class MeetingService
         $meeting->update(['attendance_locked' => false]);
 
         return $meeting->load(['meetingType', 'meetingLocation', 'chairperson', 'operator']);
+    }
+
+    /**
+     * Operator highlight 1 chương trình lên màn chiếu (Tab 8). Truyền null để bỏ highlight.
+     * Validate agenda_id phải thuộc đúng meeting (chặn cross-meeting).
+     */
+    public function highlightAgenda(Meeting $meeting, ?int $agendaId): Meeting
+    {
+        if ($agendaId !== null) {
+            $exists = $meeting->agendas()->whereKey($agendaId)->exists();
+            if (! $exists) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'agenda_id' => ['Chương trình không thuộc cuộc họp này.'],
+                ]);
+            }
+        }
+
+        $meeting->update(['current_meeting_agenda_id' => $agendaId]);
+
+        return $meeting->load([
+            'meetingType', 'meetingLocation', 'chairperson', 'operator',
+            'currentAgenda', 'currentDiscussionRegistration',
+        ]);
+    }
+
+    /**
+     * Operator highlight 1 đăng ký phát biểu/chất vấn lên màn chiếu. Truyền null để bỏ highlight.
+     * Validate registration phải thuộc đúng meeting.
+     */
+    public function highlightDiscussion(Meeting $meeting, ?int $discussionRegistrationId): Meeting
+    {
+        if ($discussionRegistrationId !== null) {
+            $exists = \App\Modules\Meeting\Models\MeetingDiscussionRegistration::query()
+                ->where('id', $discussionRegistrationId)
+                ->where('meeting_id', $meeting->id)
+                ->exists();
+            if (! $exists) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'discussion_registration_id' => ['Đăng ký phát biểu không thuộc cuộc họp này.'],
+                ]);
+            }
+        }
+
+        $meeting->update(['current_meeting_discussion_registration_id' => $discussionRegistrationId]);
+
+        return $meeting->load([
+            'meetingType', 'meetingLocation', 'chairperson', 'operator',
+            'currentAgenda', 'currentDiscussionRegistration',
+        ]);
     }
 
     public function export(array $filters, string $fileName = 'meetings.xlsx'): BinaryFileResponse

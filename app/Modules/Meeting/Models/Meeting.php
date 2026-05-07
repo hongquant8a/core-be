@@ -28,6 +28,8 @@ class Meeting extends Model
         'runtime_started_at',
         'runtime_paused_at',
         'runtime_ended_at',
+        'current_meeting_agenda_id',
+        'current_meeting_discussion_registration_id',
         'created_by',
         'updated_by',
     ];
@@ -45,6 +47,8 @@ class Meeting extends Model
         'runtime_started_at' => 'datetime',
         'runtime_paused_at' => 'datetime',
         'runtime_ended_at' => 'datetime',
+        'current_meeting_agenda_id' => 'integer',
+        'current_meeting_discussion_registration_id' => 'integer',
     ];
 
     protected static function booted()
@@ -104,6 +108,16 @@ class Meeting extends Model
     public function voteTopics()
     {
         return $this->hasMany(MeetingVoteTopic::class, 'meeting_id')->orderBy('sort_order');
+    }
+
+    public function currentAgenda()
+    {
+        return $this->belongsTo(MeetingAgenda::class, 'current_meeting_agenda_id');
+    }
+
+    public function currentDiscussionRegistration()
+    {
+        return $this->belongsTo(MeetingDiscussionRegistration::class, 'current_meeting_discussion_registration_id');
     }
 
     public function scopeFilter($query, array $filters)

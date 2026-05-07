@@ -62,6 +62,8 @@ Datetime: `H:i:s d/m/Y` (vd `08:30:00 01/05/2026`). Time-only (giờ chương tr
 | PATCH | `/api/meetings/{id}/start` | Bắt đầu phiên họp **HOẶC** tiếp tục sau pause (reuse endpoint). Lần đầu: set `runtime_started_at = now()`. Khi đang pause: clear `runtime_paused_at`. Cuộc họp đã `runtime_ended_at` → 422. |
 | PATCH | `/api/meetings/{id}/pause` | Tạm dừng phiên họp. Set `runtime_paused_at = now()`. Yêu cầu đã `runtime_started_at` và chưa `runtime_ended_at`, không đang pause sẵn. |
 | PATCH | `/api/meetings/{id}/end` | Kết thúc phiên họp thủ công. Set `runtime_ended_at = now()` + clear `runtime_paused_at`. Idempotency: đã end → 422. |
+| PATCH | `/api/meetings/{id}/highlight-agenda` | Highlight chương trình lên màn chiếu (Tab 8). Body `{ "agenda_id": int|null }`. Null = bỏ highlight. Validate agenda thuộc đúng meeting. |
+| PATCH | `/api/meetings/{id}/highlight-discussion` | Highlight đăng ký phát biểu/chất vấn lên màn chiếu. Body `{ "discussion_registration_id": int|null }`. Null = bỏ highlight. Validate registration thuộc đúng meeting. |
 | GET | `/api/meetings/export` | Tải Excel `meetings.xlsx`. Query giống `index`. Cột: `STT, Tiêu đề, Loại, Địa điểm, Công khai, Bắt đầu, Kết thúc, Trạng thái, Lượt xem, Phát hành, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID`. |
 
 > Meetings **không hỗ trợ import** — bao gồm relationships phức tạp (agendas/documents/participants), tạo qua UI thay vì bulk-import.
@@ -112,6 +114,10 @@ Datetime: `H:i:s d/m/Y` (vd `08:30:00 01/05/2026`). Time-only (giờ chương tr
   "runtime_started_at": null,
   "runtime_paused_at": null,
   "runtime_ended_at": null,
+  "current_meeting_agenda_id": null,
+  "current_meeting_discussion_registration_id": null,
+  "current_agenda": null,
+  "current_discussion_registration": null,
   "created_by": "Admin",
   "updated_by": "Admin",
   "created_at": "08:00:00 01/05/2026",
@@ -157,6 +163,8 @@ Datetime: `H:i:s d/m/Y` (vd `08:30:00 01/05/2026`). Time-only (giờ chương tr
 > }
 > ```
 > Reuse endpoint: bấm **Bắt đầu** sau khi đã pause sẽ resume (clear `runtime_paused_at`) — không cần endpoint `resume` riêng. Thời lượng tích luỹ phiên họp tính ở FE từ `runtime_started_at` + state `paused`.
+
+> **Highlight pointers cho Tab 8 màn chiếu** — operator click chương trình hoặc đăng ký phát biểu, BE lưu 2 FK trên meeting, FE màn chiếu polling `GET /api/meetings/{id}` mỗi 3-5s đọc `current_agenda` / `current_discussion_registration` (đã preload) để render khối tương ứng. Cả 2 độc lập — có thể highlight đồng thời 1 chương trình + 1 phát biểu trong chương trình đó. Truyền body với key `null` để bỏ highlight.
 
 > **Phase derived ở FE** (BE chỉ giữ 3 status: `draft / published / cancelled`):
 > ```js
@@ -442,7 +450,7 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
 | DELETE | `/api/meeting-vote-topics/{id}` | Xóa. |
 | POST | `/api/meeting-vote-topics/bulk-delete` | Body `{ "ids": [...] }`. |
 | PATCH | `/api/meeting-vote-topics/reorder` | Body `{ "items": [{ "id": 1, "sort_order": 1 }, ...] }`. |
-| **PATCH** | `/api/meeting-vote-topics/{id}/open` | **Mở phiếu** — set `status=opened`, `opened_at=now()`, đại biểu mới vote được. Permission `meeting-vote-topics.update`. |
+| **PATCH** | `/api/meeting-vote-topics/{id}/open` | **Mở phiếu** — set `status=opened`, `opened_at=now()`, đại biểu mới vote được. Body optional `{ "description": string|null, "duration_minutes": int|null }` — operator nhập nội dung diễn giải + thời lượng để hiển thị popup biểu quyết, BE chỉ lưu (FE đếm ngược, **không** auto-close khi hết giờ — operator vẫn phải bấm `/close`). Permission `meeting-vote-topics.update`. |
 | **PATCH** | `/api/meeting-vote-topics/{id}/close` | **Đóng phiếu** — set `status=closed`, `closed_at=now()`, không cho vote thêm. |
 
 ### <a id="vote-topic-body"></a>5.2 Vote topic body
@@ -452,6 +460,8 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
 | `meeting_id` | integer | ✅ | FK `meetings.id`. |
 | `meeting_agenda_id` | integer | — | FK `meeting_agendas.id` — gắn vào chương trình họp cụ thể. |
 | `title` | string (≤255) | ✅ | Tên chương trình biểu quyết. |
+| `description` | text | — | Nội dung diễn giải hiển thị trên popup biểu quyết của đại biểu + màn chiếu. Có thể đặt sẵn lúc tạo hoặc nhập tại `/open`. |
+| `duration_minutes` | int (1..600) | — | Thời lượng phiên biểu quyết (phút). FE tự đếm ngược. |
 | `vote_type` | enum | ✅ | `agree_disagree_abstain` (Đồng ý/Không đồng ý/Không ý kiến) \| `approve_reject_abstain` (Tán thành/Không tán thành/Không ý kiến). |
 | `ballot_mode` | enum | ✅ | `anonymous` (ẩn danh) \| `public_named` (công khai danh tính). |
 | `show_result_on_projector` | boolean | — | Hiển thị tổng hợp trên màn chiếu. |
@@ -480,6 +490,8 @@ Tài liệu đính kèm vào cuộc họp (có thể gắn với 1 chương trì
   "meeting_id": 1,
   "meeting_agenda_id": 4,
   "title": "Biểu quyết thông qua nghị quyết phân bổ ngân sách 2026",
+  "description": "Biểu quyết thông qua nghị quyết phân bổ ngân sách năm 2026 cho các đơn vị trực thuộc.",
+  "duration_minutes": 5,
   "vote_type": "agree_disagree_abstain",
   "ballot_mode": "public_named",
   "show_result_on_projector": true,

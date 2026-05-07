@@ -759,9 +759,11 @@ GET /api/meeting-vote-responses/stats?meeting_vote_topic_id={topic_id}
 | QUẢN LÝ ĐIỂM DANH (stats) | `GET /api/meeting-attendances/stats?meeting_id=X` | ✅ |
 | QUẢN LÝ THẢO LUẬN > complete | `PATCH /api/meeting-discussion-registrations/{id}/complete` (registered → completed) | ✅ |
 | QUẢN LÝ CHẤT VẤN | (giống thảo luận, type=question) | ✅ |
-| QUẢN LÝ BIỂU QUYẾT > open | `PATCH /api/meeting-vote-topics/{id}/open` | ✅ |
+| QUẢN LÝ BIỂU QUYẾT > open | `PATCH /api/meeting-vote-topics/{id}/open` (body optional `description` + `duration_minutes`) | ✅ |
 | QUẢN LÝ BIỂU QUYẾT > close | `PATCH /api/meeting-vote-topics/{id}/close` | ✅ |
-| QUẢN LÝ CHƯƠNG TRÌNH HỌP | (chỉ display, agenda chạy theo time) | ✅ — FE compute |
+| HIGHLIGHT chương trình lên màn chiếu | `PATCH /api/meetings/{id}/highlight-agenda` | ✅ |
+| HIGHLIGHT phát biểu/chất vấn lên màn chiếu | `PATCH /api/meetings/{id}/highlight-discussion` | ✅ |
+| QUẢN LÝ CHƯƠNG TRÌNH HỌP | (chỉ display + click highlight) | ✅ |
 
 ### 7.1 Runtime state phase derive ở FE
 
@@ -778,6 +780,26 @@ function getRuntimePhase(meeting) {
 - Thời lượng phiên họp + countdown biểu quyết **đếm ở FE** (không cần endpoint timer riêng).
 - Sau `lock-attendance` BE sẽ trả 422 khi đại biểu gọi `checkin`/`mark-absent` — FE bắt error message để hiển thị.
 
+### 7.2 Highlight chương trình + phát biểu lên màn chiếu
+
+| Action | Endpoint | Body |
+|---|---|---|
+| Click chương trình → highlight lên màn chiếu | `PATCH /api/meetings/{id}/highlight-agenda` | `{ "agenda_id": int|null }` |
+| Click đăng ký phát biểu → highlight lên màn chiếu | `PATCH /api/meetings/{id}/highlight-discussion` | `{ "discussion_registration_id": int|null }` |
+
+- Hai pointer này **độc lập** — operator có thể highlight đồng thời 1 chương trình + 1 phát biểu trong chương trình đó.
+- Truyền key với value `null` để bỏ highlight (ví dụ kết thúc chương trình → set `agenda_id=null`).
+- BE preload `current_agenda` + `current_discussion_registration` trong response của `GET /meetings/{id}` (Tab 8 polling), FE dùng trực tiếp 2 object này.
+
+### 7.3 Mở biểu quyết + popup realtime
+
+| Action | Endpoint | Body |
+|---|---|---|
+| Operator bấm "Bắt đầu" trên 1 vote topic | `PATCH /api/meeting-vote-topics/{id}/open` | `{ "description": string|null, "duration_minutes": int|null }` |
+| Operator bấm "Đóng" | `PATCH /api/meeting-vote-topics/{id}/close` | — |
+
+**Popup biểu quyết bên đại biểu**: FE app đại biểu polling `GET /api/meeting-vote-topics?meeting_id={id}&status=opened` mỗi 3-5s. Khi detect topic mới có `status=opened` → tự bật popup, dùng `description` + `duration_minutes` cho UI countdown. BE **không** auto-close khi hết giờ — operator vẫn phải bấm `/close`.
+
 ---
 
 ## Tab 8 — Màn chiếu (Projector)
@@ -788,32 +810,31 @@ function getRuntimePhase(meeting) {
 
 Không có composite endpoint — FE compose từ:
 
-1. `GET /api/meetings/{id}` (lấy title + agenda hiện tại derived từ time)
-2. `GET /api/meeting-vote-topics?meeting_id={id}&status=opened` (topic đang mở)
-3. `GET /api/meeting-vote-responses/stats?meeting_vote_topic_id={topic_id}` (kết quả live nếu `show_result_on_projector=true`)
-4. `GET /api/meeting-discussion-registrations?meeting_id={id}&status=called` (người đang phát biểu)
+1. `GET /api/meetings/{id}` (preload `current_agenda` + `current_discussion_registration` — operator highlight) + meeting title.
+2. `GET /api/meeting-vote-topics?meeting_id={id}&status=opened` (topic đang mở).
+3. `GET /api/meeting-vote-responses/stats?meeting_vote_topic_id={topic_id}` (kết quả live nếu `show_result_on_projector=true`).
 
 → Polling **3s** ở Tab 8 để update slide.
 
 ### 8.2 Logic hiển thị slide hiện tại
 
 ```js
-// Pseudocode
-function getCurrentProjectorSlide(meeting, agendas, voteTopics, discussions) {
-  const now = new Date()
-  
-  // Priority 1: Có biểu quyết đang mở → show vote slide
+// Pseudocode — ưu tiên highlight do operator chọn (tab 7), không phụ thuộc time-derive nữa.
+function getCurrentProjectorSlide(meeting, voteTopics, voteStats) {
+  // Priority 1: Có biểu quyết đang mở → show vote slide (popup full-screen)
   const openVote = voteTopics.find(t => t.status === 'opened')
-  if (openVote) return { type: 'vote', topic: openVote }
-  
-  // Priority 2: Có người đang phát biểu → show speaker slide
-  const speaker = discussions.find(d => d.status === 'called')
-  if (speaker) return { type: 'speaker', registration: speaker }
-  
-  // Priority 3: Agenda đang chạy theo time
-  const currentAgenda = agendas.find(a => parseTime(a.start_time) <= now && now <= parseTime(a.end_time))
-  if (currentAgenda) return { type: 'agenda', agenda: currentAgenda }
-  
+  if (openVote) return { type: 'vote', topic: openVote, stats: voteStats }
+
+  // Priority 2: Operator đang highlight 1 phát biểu → show speaker slide
+  if (meeting.current_discussion_registration) {
+    return { type: 'speaker', registration: meeting.current_discussion_registration }
+  }
+
+  // Priority 3: Operator đang highlight 1 chương trình → show agenda slide
+  if (meeting.current_agenda) {
+    return { type: 'agenda', agenda: meeting.current_agenda }
+  }
+
   // Default: meeting title slide
   return { type: 'idle', meeting }
 }
@@ -821,7 +842,7 @@ function getCurrentProjectorSlide(meeting, agendas, voteTopics, discussions) {
 
 ### 8.3 🚧 Composite endpoint (optional Sprint 2)
 
-Nếu polling 4 endpoint quá tốn → đề xuất Sprint 2 thêm `GET /api/meetings/{id}/projector-state` trả 1 lần đủ data cho Tab 8.
+Nếu polling 3 endpoint quá tốn → đề xuất Sprint 2 thêm `GET /api/meetings/{id}/projector-state` trả 1 lần đủ data cho Tab 8.
 
 ---
 

@@ -135,6 +135,7 @@ class PermissionSeeder extends Seeder
             'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
             'lockAttendance', 'unlockAttendance',
             'start', 'pause', 'end',
+            'highlightAgenda', 'highlightDiscussion',
         ],
         // Meeting - Loại cuộc họp
         'meeting-types' => [
@@ -300,6 +301,8 @@ class PermissionSeeder extends Seeder
         'start' => 'Bắt đầu',
         'pause' => 'Tạm dừng',
         'end' => 'Kết thúc',
+        'highlightAgenda' => 'Chiếu chương trình',
+        'highlightDiscussion' => 'Chiếu phát biểu',
     ];
 
     /** Tạo đầy đủ permission từ danh sách PERMISSIONS (kèm description, sort_order, parent_id). */

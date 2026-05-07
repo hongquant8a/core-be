@@ -69,13 +69,21 @@ class MeetingVoteTopicService
             ->delete();
     }
 
-    public function open(MeetingVoteTopic $meetingVoteTopic): MeetingVoteTopic
+    public function open(MeetingVoteTopic $meetingVoteTopic, array $payload = []): MeetingVoteTopic
     {
-        $meetingVoteTopic->update([
+        $update = [
             'status' => MeetingVoteTopicStatusEnum::Opened->value,
             'opened_at' => now(),
             'closed_at' => null,
-        ]);
+        ];
+        if (array_key_exists('description', $payload) && $payload['description'] !== null) {
+            $update['description'] = $payload['description'];
+        }
+        if (array_key_exists('duration_minutes', $payload) && $payload['duration_minutes'] !== null) {
+            $update['duration_minutes'] = (int) $payload['duration_minutes'];
+        }
+
+        $meetingVoteTopic->update($update);
 
         return $meetingVoteTopic->load(['creator.media', 'editor.media']);
     }

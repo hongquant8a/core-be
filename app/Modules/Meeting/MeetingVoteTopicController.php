@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
 use App\Modules\Meeting\Models\MeetingVoteTopic;
 use App\Modules\Meeting\Requests\BulkDestroyCatalogRequest;
+use App\Modules\Meeting\Requests\OpenMeetingVoteTopicRequest;
 use App\Modules\Meeting\Requests\ReorderMeetingVoteTopicRequest;
 use App\Modules\Meeting\Requests\StoreMeetingVoteTopicRequest;
 use App\Modules\Meeting\Requests\UpdateMeetingVoteTopicRequest;
@@ -124,11 +125,14 @@ class MeetingVoteTopicController extends Controller
     /**
      * Mở biểu quyết.
      *
+     * Operator có thể truyền kèm nội dung diễn giải + thời lượng để hiển thị popup biểu quyết
+     * cho đại biểu (cả 2 trường optional — null = giữ nguyên giá trị cũ).
+     *
      * @urlParam meetingVoteTopic integer required ID chương trình biểu quyết. Example: 1
      */
-    public function open(MeetingVoteTopic $meetingVoteTopic)
+    public function open(OpenMeetingVoteTopicRequest $request, MeetingVoteTopic $meetingVoteTopic)
     {
-        $item = $this->meetingVoteTopicService->open($meetingVoteTopic);
+        $item = $this->meetingVoteTopicService->open($meetingVoteTopic, $request->validated());
 
         return $this->successResource(new MeetingVoteTopicResource($item), 'Mở biểu quyết thành công!');
     }

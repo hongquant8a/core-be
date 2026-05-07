@@ -17,6 +17,8 @@ class MeetingVoteTopicResource extends JsonResource
             'meeting_id' => $this->meeting_id,
             'meeting_agenda_id' => $this->meeting_agenda_id,
             'title' => $this->title,
+            'description' => $this->description,
+            'duration_minutes' => $this->duration_minutes,
             'vote_type' => $this->vote_type,
             'ballot_mode' => $this->ballot_mode,
             'show_result_on_projector' => $this->show_result_on_projector,

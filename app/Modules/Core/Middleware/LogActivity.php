@@ -145,6 +145,8 @@ class LogActivity
             'start' => 'Bắt đầu',
             'pause' => 'Tạm dừng',
             'end' => 'Kết thúc',
+            'highlight-agenda' => 'Chiếu chương trình',
+            'highlight-discussion' => 'Chiếu phát biểu',
         ];
         if ($sub && isset($pathActions[$sub])) {
             return $pathActions[$sub].' '.$this->resourceLabel(str_replace('-', '_', $resource));

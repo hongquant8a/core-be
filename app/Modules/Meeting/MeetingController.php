@@ -8,6 +8,8 @@ use App\Modules\Meeting\Models\Meeting;
 use App\Modules\Meeting\Requests\BulkDestroyMeetingRequest;
 use App\Modules\Meeting\Requests\BulkUpdateStatusMeetingRequest;
 use App\Modules\Meeting\Requests\ChangeStatusMeetingRequest;
+use App\Modules\Meeting\Requests\HighlightAgendaMeetingRequest;
+use App\Modules\Meeting\Requests\HighlightDiscussionMeetingRequest;
 use App\Modules\Meeting\Requests\StoreMeetingRequest;
 use App\Modules\Meeting\Requests\UpdateMeetingRequest;
 use App\Modules\Meeting\Resources\MeetingCollection;
@@ -266,6 +268,30 @@ class MeetingController extends Controller
         $item = $this->meetingService->unlockAttendance($meeting);
 
         return $this->successResource(new MeetingResource($item), 'Đã mở khoá danh sách điểm danh.');
+    }
+
+    /**
+     * Highlight 1 chương trình lên màn chiếu (Tab 8). Truyền agenda_id=null để bỏ highlight.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     */
+    public function highlightAgenda(HighlightAgendaMeetingRequest $request, Meeting $meeting)
+    {
+        $item = $this->meetingService->highlightAgenda($meeting, $request->input('agenda_id'));
+
+        return $this->successResource(new MeetingResource($item), 'Đã cập nhật chương trình đang chiếu.');
+    }
+
+    /**
+     * Highlight 1 đăng ký phát biểu/chất vấn lên màn chiếu. Truyền discussion_registration_id=null để bỏ highlight.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     */
+    public function highlightDiscussion(HighlightDiscussionMeetingRequest $request, Meeting $meeting)
+    {
+        $item = $this->meetingService->highlightDiscussion($meeting, $request->input('discussion_registration_id'));
+
+        return $this->successResource(new MeetingResource($item), 'Đã cập nhật phát biểu đang chiếu.');
     }
 
     /**

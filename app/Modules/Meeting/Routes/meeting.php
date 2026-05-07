@@ -21,3 +21,6 @@ Route::patch('/{meeting}/unlock-attendance', [MeetingController::class, 'unlockA
 Route::patch('/{meeting}/start', [MeetingController::class, 'start'])->middleware('permission:meetings.start,web');
 Route::patch('/{meeting}/pause', [MeetingController::class, 'pause'])->middleware('permission:meetings.pause,web');
 Route::patch('/{meeting}/end', [MeetingController::class, 'end'])->middleware('permission:meetings.end,web');
+// Highlight pointers cho Tab 8 màn chiếu — operator chỉ định chương trình + đăng ký đang chiếu.
+Route::patch('/{meeting}/highlight-agenda', [MeetingController::class, 'highlightAgenda'])->middleware('permission:meetings.highlightAgenda,web');
+Route::patch('/{meeting}/highlight-discussion', [MeetingController::class, 'highlightDiscussion'])->middleware('permission:meetings.highlightDiscussion,web');

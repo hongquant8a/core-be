@@ -72,6 +72,11 @@ return new class extends Migration
             $table->dateTime('runtime_started_at')->nullable();
             $table->dateTime('runtime_paused_at')->nullable();
             $table->dateTime('runtime_ended_at')->nullable();
+            // Highlight pointers cho Tab 8 màn chiếu (current_meeting_agenda_id +
+            // current_meeting_discussion_registration_id) được add bởi migration
+            // 2026_05_07_200000_add_highlight_pointers_to_meetings — phải tách ra do
+            // 2 target table (meeting_agendas, meeting_discussion_registrations) tạo ở
+            // các migration sau (140000, 153000), không thể đặt FK trong file này.
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();

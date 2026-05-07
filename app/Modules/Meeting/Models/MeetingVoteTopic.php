@@ -15,6 +15,8 @@ class MeetingVoteTopic extends Model
         'meeting_id',
         'meeting_agenda_id',
         'title',
+        'description',
+        'duration_minutes',
         'vote_type',
         'ballot_mode',
         'show_result_on_projector',
@@ -28,6 +30,7 @@ class MeetingVoteTopic extends Model
     ];
 
     protected $casts = [
+        'duration_minutes' => 'integer',
         'show_result_on_projector' => 'boolean',
         'show_result_on_personal_device' => 'boolean',
         'opened_at' => 'datetime',
