@@ -511,9 +511,19 @@ Content-Type: application/json
 GET /api/meeting-vote-responses?meeting_vote_topic_id={topic_id}
 ```
 
-> Tuỳ `topic.ballot_mode`:
-> - `anonymous` → FE phải ẩn `participant_name` trong UI
-> - `public_named` → chỉ admin/chair/operator xem detail per-person; vai trò khác chỉ xem aggregate (Section 3.2)
+**BE đã enforce ballot_mode + role (2026-05-07)** — FE không cần ẩn thủ công:
+
+| Mode | Caller | Hành vi BE |
+|---|---|---|
+| `anonymous` | bất kỳ ai | **403** — không có list detail. Dùng `/stats` để xem tổng hợp |
+| `public_named` | chair / operator của meeting hoặc Spatie role `Super Admin`/`Admin`/`Thư ký họp` | full data với `meeting_participant_id` + `participant_name` |
+| `public_named` | đại biểu thường / vai trò khác | **403** — chỉ aggregate được phép qua `/stats` |
+
+**Stats endpoint (`GET /api/meeting-vote-responses/stats?meeting_vote_topic_id=X`)**:
+- Privileged (chair/op/secretary/admin) → luôn xem được.
+- Đại biểu thường → 403 nếu `topic.show_result_on_personal_device=false`. Cho phép nếu true (bất kể anonymous hay public_named — aggregate không lộ danh tính).
+
+→ FE hiển thị panel kết quả thì dựa vào response status: 200 = render aggregate, 403 = ẩn panel hoặc show "Phiên này không hiển thị kết quả".
 
 ---
 

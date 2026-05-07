@@ -532,12 +532,16 @@ status=draft  ──open()──▶  status=opened  ──close()──▶  stat
                         - Validate option ∈ vote_type
 ```
 
-**Rules quan trọng:**
-1. Vote chỉ accept khi `topic.status = 'opened'`
-2. Sau `closed`, FE phải block UI sửa phiếu
-3. `anonymous` → FE/BE ẩn danh tính trong list responses
-4. `public_named` → chỉ admin/chủ trì xem detail per-person; vai trò khác chỉ xem aggregate
-5. Aggregate hiển thị theo `show_result_on_*` flags
+**Rules quan trọng (BE đã enforce 2026-05-07):**
+1. Vote chỉ accept khi `topic.status = 'opened'`.
+2. Sau `closed`, BE chặn `update` phiếu (422); FE block UI tương ứng.
+3. **Anonymous mode** → BE trả 403 cho `GET /meeting-vote-responses` (index) + `GET /meeting-vote-responses/{id}` (show) bất kể caller là ai. Spec line 166: "không hiển thị danh tính người bỏ phiếu trong mọi màn hình nghiệp vụ thông thường". Caller chỉ dùng được `/stats`.
+4. **Public_named mode** → `GET /meeting-vote-responses?meeting_vote_topic_id=X` (index) + show chỉ trả khi caller là **privileged** (chair/operator của meeting, hoặc Spatie role `Super Admin` / `Admin` / `Thư ký họp`). Đại biểu thường → 403.
+5. **Stats** (`GET /meeting-vote-responses/stats?meeting_vote_topic_id=X`):
+   - Privileged → luôn xem được (mọi mode + flag).
+   - Đại biểu thường / non-privileged → BE chỉ trả khi `topic.show_result_on_personal_device = true`. Else 403.
+6. Tab 8 màn chiếu: hiện tại chạy under auth (operator/chair) → quyền privileged → /stats luôn OK. Chưa có public projector endpoint riêng (defer khi cần guest projector).
+7. `index` không filter theo `meeting_vote_topic_id`: chỉ Super Admin / Admin org-wide đọc được (audit). Khác → 403 + thông báo cần truyền topic id.
 
 ### 5.7 FE flow điều hành phiên họp
 

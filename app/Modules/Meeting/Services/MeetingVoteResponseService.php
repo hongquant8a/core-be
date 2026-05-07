@@ -2,9 +2,11 @@
 
 namespace App\Modules\Meeting\Services;
 
+use App\Modules\Meeting\Concerns\HasMeetingRole;
 use App\Modules\Meeting\Models\MeetingParticipant;
 use App\Modules\Meeting\Models\MeetingVoteResponse;
 use App\Modules\Meeting\Models\MeetingVoteTopic;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
 
@@ -14,18 +16,36 @@ use Illuminate\Validation\ValidationException;
  *  - store: đại biểu tự bỏ phiếu cho chính mình. Auto-derive participant từ auth user qua
  *    topic.meeting_id (FE không gửi meeting_participant_id để tránh vote hộ).
  *  - update: chỉ owner đại biểu sửa được phiếu của mình + topic chưa closed.
- *  - destroy / bulkDestroy: admin action — defer (Sprint 1 sẽ enforce qua middleware meeting.role).
- *  - stats: aggregate, ai cũng xem được.
- *  - index: detail responses — anonymous logic FE handle theo topic.ballot_mode.
+ *  - destroy / bulkDestroy: admin action — defer.
+ *  - stats: aggregate. Chỉ trả khi privileged (chair/op/secretary/admin) HOẶC topic.show_result_on_personal_device=true.
+ *  - index/show: chi tiết per-person. Chỉ privileged được xem khi topic.ballot_mode=public_named.
+ *    Anonymous mode → 403 cho mọi vai trò (spec line 166: ẩn danh tính trong mọi màn hình nghiệp vụ).
  */
 class MeetingVoteResponseService
 {
+    use HasMeetingRole;
+
     public function stats(array $filters): array
     {
         $organizationId = $this->resolveCurrentOrganizationId();
+        $topicId = $filters['meeting_vote_topic_id'] ?? null;
+
+        // Nếu có lọc theo topic → enforce visibility theo flag show_result_on_personal_device.
+        if ($topicId) {
+            $topic = MeetingVoteTopic::query()
+                ->where('organization_id', $organizationId)
+                ->with('meeting')
+                ->findOrFail($topicId);
+
+            $isPrivileged = $this->isPrivilegedForMeeting($topic->meeting);
+            if (! $isPrivileged && ! $topic->show_result_on_personal_device) {
+                throw new AuthorizationException('Phiên biểu quyết này không cho phép xem kết quả tổng hợp ngoài quản lý/chủ trì.');
+            }
+        }
+
         $base = MeetingVoteResponse::query()
             ->where('organization_id', $organizationId)
-            ->when($filters['meeting_vote_topic_id'] ?? null, fn ($q, $topicId) => $q->where('meeting_vote_topic_id', $topicId));
+            ->when($topicId, fn ($q, $tid) => $q->where('meeting_vote_topic_id', $tid));
 
         return [
             'total' => (clone $base)->count(),
@@ -40,10 +60,27 @@ class MeetingVoteResponseService
     public function index(array $filters, int $limit)
     {
         $organizationId = $this->resolveCurrentOrganizationId();
+        $topicId = $filters['meeting_vote_topic_id'] ?? null;
+
+        // index per-person chỉ trả khi public_named + privileged. Anonymous → 403 luôn.
+        if ($topicId) {
+            $topic = MeetingVoteTopic::query()
+                ->where('organization_id', $organizationId)
+                ->with('meeting')
+                ->findOrFail($topicId);
+
+            $this->ensureCanReadResponseDetail($topic);
+        } else {
+            // Không có filter topic → chỉ admin org-wide đọc chéo phiếu, đại biểu/chair của 1 cuộc họp riêng không có usecase.
+            $user = auth()->user();
+            if (! ($user && method_exists($user, 'hasAnyRole') && $user->hasAnyRole(['Super Admin', 'Admin']))) {
+                throw new AuthorizationException('Cần truyền meeting_vote_topic_id để xem phiếu chi tiết.');
+            }
+        }
 
         return MeetingVoteResponse::with(['topic', 'participant'])
             ->where('organization_id', $organizationId)
-            ->when($filters['meeting_vote_topic_id'] ?? null, fn ($q, $topicId) => $q->where('meeting_vote_topic_id', $topicId))
+            ->when($topicId, fn ($q, $tid) => $q->where('meeting_vote_topic_id', $tid))
             ->orderByDesc('voted_at')
             ->paginate($limit);
     }
@@ -89,7 +126,26 @@ class MeetingVoteResponseService
 
     public function show(MeetingVoteResponse $meetingVoteResponse): MeetingVoteResponse
     {
-        return $meetingVoteResponse->load(['topic', 'participant']);
+        $meetingVoteResponse->loadMissing(['topic.meeting', 'participant']);
+        $this->ensureCanReadResponseDetail($meetingVoteResponse->topic);
+
+        return $meetingVoteResponse;
+    }
+
+    /**
+     * Enforce: chỉ trả chi tiết phiếu khi topic.ballot_mode=public_named + caller là privileged
+     * (chair/op/secretary/admin của meeting). Anonymous → 403 luôn.
+     */
+    private function ensureCanReadResponseDetail(MeetingVoteTopic $topic): void
+    {
+        if ($topic->ballot_mode === 'anonymous') {
+            throw new AuthorizationException('Phiên ẩn danh không có danh sách phiếu chi tiết — dùng endpoint /stats để xem tổng hợp.');
+        }
+
+        $topic->loadMissing('meeting');
+        if (! $this->isPrivilegedForMeeting($topic->meeting)) {
+            throw new AuthorizationException('Chỉ chủ trì / thư ký họp / quản trị mới xem được chi tiết phiếu biểu quyết.');
+        }
     }
 
     public function update(MeetingVoteResponse $meetingVoteResponse, array $validated): MeetingVoteResponse

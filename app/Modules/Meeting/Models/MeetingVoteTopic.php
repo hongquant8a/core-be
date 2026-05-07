@@ -43,6 +43,11 @@ class MeetingVoteTopic extends Model
         static::updating(fn (MeetingVoteTopic $model) => $model->updated_by = auth()->id());
     }
 
+    public function meeting()
+    {
+        return $this->belongsTo(Meeting::class, 'meeting_id');
+    }
+
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
