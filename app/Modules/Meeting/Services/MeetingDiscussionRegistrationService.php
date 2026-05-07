@@ -29,10 +29,22 @@ class MeetingDiscussionRegistrationService
     {
         $base = MeetingDiscussionRegistration::filter($filters);
 
+        $countByType = function (string $type) use ($base) {
+            $scoped = (clone $base)->where('type', $type);
+
+            return [
+                'total' => (clone $scoped)->count(),
+                'registered' => (clone $scoped)->where('status', MeetingDiscussionStatusEnum::Registered->value)->count(),
+                'completed' => (clone $scoped)->where('status', MeetingDiscussionStatusEnum::Completed->value)->count(),
+            ];
+        };
+
         return [
             'total' => (clone $base)->count(),
             'registered' => (clone $base)->where('status', MeetingDiscussionStatusEnum::Registered->value)->count(),
             'completed' => (clone $base)->where('status', MeetingDiscussionStatusEnum::Completed->value)->count(),
+            'discussion' => $countByType(MeetingDiscussionTypeEnum::Discussion->value),
+            'question' => $countByType(MeetingDiscussionTypeEnum::Question->value),
         ];
     }
 

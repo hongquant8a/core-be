@@ -652,44 +652,77 @@ State machine **nhị phân**: chỉ 2 status `registered` (chưa phát biểu) 
 
 **URL**: `/meetings/{id}#chair`
 
-### 6.1 TỔNG QUAN HIỆN TẠI
+Read-only dashboard tổng hợp theo spec section 4.3. FE compose từ 2 endpoint stats hiện có — không cần BE work mới.
+
+### 6.1 TỔNG QUAN HIỆN TẠI — Tỷ lệ có mặt
 
 ```
 GET /api/meeting-attendances/stats?meeting_id={id}
 ```
 
-Response (hiện tại):
+Response:
 ```json
-{ "success": true, "data": { "total": 50, "active": 42, "inactive": 8 } }
+{
+  "success": true,
+  "data": { "total": 50, "present": 42, "absent": 3, "pending": 5 }
+}
 ```
 
-> ⚠️ Stats hiện chỉ trả `total/active/inactive`. Sprint 1 sẽ mở rộng: `present / absent / late / pending / guest` để khớp screenshot ("Có mặt 42/50 84%"). FE hiện tại tạm hiển thị `active/total`.
+→ FE compute `present / total * 100` để ra "42 / 50 (84%)".
 
-### 6.2 Lượt thảo luận / chất vấn
+### 6.2 Lượt thảo luận / chất vấn (phân theo type)
 
 ```
 GET /api/meeting-discussion-registrations/stats?meeting_id={id}
 ```
 
-Response:
+Response (đã breakdown theo type):
 ```json
-{ "success": true, "data": { "total": 6, "registered": 3, "called": 1, "completed": 2 } }
+{
+  "success": true,
+  "data": {
+    "total": 6,
+    "registered": 3,
+    "completed": 3,
+    "discussion": { "total": 3, "registered": 1, "completed": 2 },
+    "question": { "total": 3, "registered": 2, "completed": 1 }
+  }
+}
 ```
 
-> Card "Lượt thảo luận = 2", "Lượt chất vấn = 2" trong screenshot — hiện stats không phân theo `type`. **🚧 Sprint 1 sẽ phân theo type** (`{ discussion: { ... }, question: { ... } }`). FE tạm hiển thị tổng.
+→ FE map vào card:
+- `Lượt thảo luận = data.discussion.completed` (đã thảo luận xong)
+- `Lượt chất vấn = data.question.completed`
+- `Tổng đăng ký = data.total`
+- Button "Danh sách đăng ký thảo luận (3)" → badge = `data.discussion.registered`
+- Button "Danh sách đăng ký chất vấn (3)" → badge = `data.question.registered`
 
 ### 6.3 DANH SÁCH ĐĂNG KÝ THẢO LUẬN / ĐÃ THẢO LUẬN
 
-Sử dụng filter `status` trên Tab 5 endpoint:
+Filter trên endpoint Tab 5:
 
 ```
-# Đang đăng ký + đang phát biểu
-GET /api/meeting-discussion-registrations?meeting_id={id}&status=registered
-GET /api/meeting-discussion-registrations?meeting_id={id}&status=called
+# Đang chờ phát biểu
+GET /api/meeting-discussion-registrations?meeting_id={id}&type=discussion&status=registered
 
-# Đã hoàn thành
-GET /api/meeting-discussion-registrations?meeting_id={id}&status=completed
+# Đã thảo luận xong
+GET /api/meeting-discussion-registrations?meeting_id={id}&type=discussion&status=completed
+
+# Tương tự cho chất vấn — đổi type=question
 ```
+
+→ FE render 2 list section:
+- "DANH SÁCH ĐĂNG KÝ THẢO LUẬN" — filter `status=registered` (chưa thảo luận / đang chờ)
+- "DANH SÁCH ĐÃ THẢO LUẬN" — filter `status=completed`
+
+### 6.4 Tỷ lệ biểu quyết từng chương trình (theo spec 4.3)
+
+FE loop qua `meeting.vote_topics[]` (preload từ show meeting), với mỗi topic call:
+```
+GET /api/meeting-vote-responses/stats?meeting_vote_topic_id={topic_id}
+```
+
+→ Hiển thị bar chart aggregate. Polling 5s khi tab visible.
 
 ---
 
