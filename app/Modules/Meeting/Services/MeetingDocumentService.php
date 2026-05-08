@@ -96,19 +96,14 @@ class MeetingDocumentService
     }
 
     /**
-     * Auth document index — admin/đại biểu tổ chức. Filter is_public theo participation:
-     *   - User là chủ trì / thư ký / participant của meeting (qua filter meeting_id) → thấy hết
-     *   - Khác → chỉ doc is_public=true (kể cả admin tổ chức không tham gia trực tiếp)
+     * Auth document index — caller có permission meeting-documents.index. Trả full
+     * docs (kể cả is_public=false) vì đây là endpoint CRUD admin. Filter is_public
+     * chỉ áp dụng cho publicIndex (citizen/non-participant).
      */
     public function index(array $filters, int $limit)
     {
-        $meetingId = $filters['meeting_id'] ?? null;
-        $meeting = $meetingId ? Meeting::find($meetingId) : null;
-        $isParticipant = $this->shouldSeeAllDocs($meeting);
-
         return MeetingDocument::with(['agenda', 'documentType', 'mediaFile', 'creator.media', 'editor.media'])
             ->filter($filters)
-            ->when(! $isParticipant, fn ($q) => $q->where('is_public', true))
             ->paginate($limit);
     }
 

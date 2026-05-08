@@ -172,8 +172,8 @@ class MeetingService
 
     public function show(Meeting $meeting): Meeting
     {
-        $isParticipant = $this->shouldSeeAllDocs($meeting);
-
+        // Auth show endpoint (CRUD) — caller có permission meetings.show, không filter
+        // is_public. Filter is_public chỉ áp dụng cho publicShow/publicIndex.
         return $meeting->load([
             'meetingType',
             'meetingLocation',
@@ -183,7 +183,7 @@ class MeetingService
             'editor.media',
             'participants.attendee.user',
             'agendas',
-            'documents' => fn ($q) => $isParticipant ? $q : $q->where('is_public', true),
+            'documents',
             'documents.documentType',
             'documents.mediaFile',
             'voteTopics',
