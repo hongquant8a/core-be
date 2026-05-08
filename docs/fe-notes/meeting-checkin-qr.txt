@@ -1,8 +1,23 @@
 ================================================================================
-FE NOTE — Điểm danh qua QR
+FE NOTE — Điểm danh cuộc họp (3 method: button / qr / manual)
 ================================================================================
 
-BE đã ship endpoint điểm danh QR (commit 2026-05-08). FE implement luồng dưới đây.
+BE đã ship 3 endpoint điểm danh tương ứng 3 use case. FE phân biệt UI theo role
++ context.
+
+| Method | Endpoint                                          | Caller          | Status mặc định       |
+|--------|---------------------------------------------------|-----------------|-----------------------|
+| button | POST /api/meeting-attendances/checkin             | Đại biểu (self) | pending (chờ duyệt)   |
+| qr     | POST /api/meeting-attendances/checkin-by-token    | Đại biểu (self) | pending (chờ duyệt)   |
+| manual | POST /api/meeting-attendances/manual-checkin      | Thư ký/operator | present hoặc absent   |
+
+Phân biệt:
+- button: đại biểu mở app, vào Tab 1 cuộc họp đó, bấm nút "Điểm danh".
+- qr: đại biểu scan QR (in giấy / projector) → mở URL FE → FE auto submit.
+- manual: thư ký Tab 7 click row đại biểu trong list → confirm có mặt hoặc vắng.
+
+Tất cả 3 broadcast WS event `attendance.checked-in` trên channel `meeting.{id}`
+→ Tab 7 operator thấy realtime list cập nhật.
 
 
 --------------------------------------------------------------------------------
@@ -161,17 +176,104 @@ Response success (201):
 
 
 --------------------------------------------------------------------------------
-7. TÓM TẮT VIỆC FE
+7. THƯ KÝ ĐIỂM DANH HỘ (manual)
 --------------------------------------------------------------------------------
 
+Use case: đại biểu không dùng app (offline), thư ký/operator submit hộ trên
+Tab 7 Điều hành. UI gợi ý:
+
+- Tab 7 có panel "DANH SÁCH ĐẠI BIỂU" hiển thị tất cả participants của meeting.
+- Mỗi row có:
+    - badge status hiện tại (chưa điểm danh / pending / present / absent)
+    - 2 button "Có mặt" + "Vắng mặt" (chỉ visible cho row chưa có status final)
+- Click button → modal confirm + optional note → submit BE.
+
+Endpoint:
+
+  POST /api/meeting-attendances/manual-checkin
+  Headers:
+    Authorization: Bearer {token}
+    X-Organization-Id: {organization_id}
+  Body:
+    {
+      "meeting_id": 1,
+      "meeting_participant_id": 12,
+      "status": "present",          // hoặc "absent"
+      "note": "Đã xác nhận qua điện thoại"  // optional
+    }
+
+  Permission: meeting-attendances.store (chỉ chair/op/secretary/admin có).
+
+  BE behavior:
+    - Validate participant thuộc đúng meeting (chặn cross-meeting).
+    - Status chỉ chấp nhận "present" hoặc "absent" (không phải "pending").
+    - Idempotent: F5/click lại với cùng status → update row hiện tại.
+    - checkin_method = 'manual' (phân biệt báo cáo).
+    - checked_in_by = auth user (thư ký), KHÔNG phải participant user.
+    - Broadcast WS attendance.checked-in.
+
+  Response (201):
+    {
+      "success": true,
+      "message": "Đã điểm danh hộ đại biểu.",
+      "data": {
+        "id": 12,
+        "meeting_id": 1,
+        "meeting_participant_id": 12,
+        "status": "present",
+        "checkin_method": "manual",
+        "checked_in_at": "10:15:00 15/05/2026",
+        ...
+      }
+    }
+
+UX gợi ý:
+- Sau khi submit thành công → row trong list đổi badge → status mới.
+- Toast thông báo: "Đã điểm danh: {participant_name} - Có mặt".
+- Nếu meeting đang `attendance_locked=true` → BE 422 "Danh sách điểm danh đã đóng",
+  FE disable buttons + show banner cho operator.
+
+Code mẫu:
+```js
+async function manualCheckin(participant, status) {
+  const note = status === 'absent' ? await promptNote() : null
+  try {
+    await api.post('/meeting-attendances/manual-checkin', {
+      meeting_id: meeting.id,
+      meeting_participant_id: participant.id,
+      status,
+      note,
+    })
+    toast.success(`Đã điểm danh: ${participant.name} — ${status}`)
+  } catch (e) {
+    toast.error(e.response?.data?.message ?? 'Lỗi điểm danh hộ')
+  }
+}
+```
+
+
+--------------------------------------------------------------------------------
+8. TÓM TẮT VIỆC FE
+--------------------------------------------------------------------------------
+
+QR (đại biểu scan):
 1. [ ] Tạo route FE `/checkin/:token` (hoặc query-string).
 2. [ ] CheckinPage component: check auth → redirect login hoặc gọi API.
 3. [ ] Login page: respect `?redirect=` để quay lại sau login.
 4. [ ] Tab 7 (operator) thêm modal "Hiện QR điểm danh" — gen QR từ
        `${origin}/checkin/${meeting.checkin_token}`.
 5. [ ] Toast/UI feedback theo response status (201/404/422).
-6. [ ] (Optional) Listen WS `attendance.checked-in` trên Tab 7 để list pending
-       refresh ngay khi đại biểu scan thành công.
+
+Manual (thư ký hộ):
+6. [ ] Tab 7 panel "DANH SÁCH ĐẠI BIỂU" hiển thị participants với badge status.
+7. [ ] Mỗi row có 2 button "Có mặt" / "Vắng mặt" → modal confirm + note → POST manual-checkin.
+8. [ ] Disable buttons khi `meeting.attendance_locked=true` + show banner.
+
+Realtime (mọi method):
+9. [ ] Listen WS `attendance.checked-in` trên Tab 7 — append/update list realtime
+       khi 1 trong 3 method submit (button/qr/manual đều bắn cùng event).
+10. [ ] Listen WS `attendance.approved` / `attendance.rejected` để list "đang chờ
+        duyệt" (status=pending) cập nhật khi operator duyệt.
 
 
 ================================================================================
