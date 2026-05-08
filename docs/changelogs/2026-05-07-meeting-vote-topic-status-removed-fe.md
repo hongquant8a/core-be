@@ -106,16 +106,23 @@ BE compute từ opened_at/closed_at. FE không cần đổi.
 
 → FE nên disable nút "Bỏ phiếu" khi countdown hết giờ (dùng `expires_at_iso`), nhưng không cần thiết vì BE block. Nếu user submit muộn → catch 422 và hiển thị error message.
 
-### Phân biệt popup vote vs panel kết quả
+### Cấu trúc popup/slide vote (gộp 2 section trong cùng modal)
 
-Trên Tab 3 đại biểu có 2 thứ tách biệt khi nhận `vote-topic.opened`:
+Trên Tab 3 (đại biểu) và Tab 8 (màn chiếu), khi nhận `vote-topic.opened` mở **1 popup/slide gộp 2 section**:
 
-| UI element | Có hiện không? | Phụ thuộc flag |
+**Tab 3 (đại biểu)** — popup vote:
+| Section | Có hiện không? | Flag |
 |---|---|---|
-| **Popup input bỏ phiếu** | LUÔN bật | Không (đại biểu cần vote) |
-| **Panel kết quả tổng hợp** (count live + final stats) | Tùy flag | `show_result_on_personal_device` |
+| Input bỏ phiếu | LUÔN bật | Không (đại biểu cần vote) |
+| Kết quả tổng hợp (count live + final stats) | Tùy flag, hiện trong cùng popup | `show_result_on_personal_device` |
 
-Tương tự Tab 8 màn chiếu: panel kết quả tổng hợp phụ thuộc `show_result_on_projector`. Cả 2 flag là setup tĩnh từ lúc tạo vote topic, không toggle giữa chừng.
+**Tab 8 (màn chiếu)** — slide vote:
+| Section | Có hiện không? | Flag |
+|---|---|---|
+| Thông báo biểu quyết (title + countdown) | LUÔN bật | Không (mọi người cần biết đang vote gì) |
+| Kết quả tổng hợp | Tùy flag, hiện trong cùng slide | `show_result_on_projector` |
+
+→ 2 flag chỉ control **section kết quả tổng hợp** (gộp trong cùng popup/slide), không control section input vote / section thông báo. Cả 2 là setup tĩnh từ lúc tạo vote topic, không toggle giữa chừng.
 
 ### Đóng modal popup — 2 case
 
