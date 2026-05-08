@@ -184,7 +184,9 @@ class MeetingAttendanceService
             [
                 'organization_id' => $this->resolveCurrentOrganizationId(),
                 'status' => MeetingAttendanceStatusEnum::Absent->value,
-                'checkin_method' => MeetingCheckinMethodEnum::Manual->value,
+                // Self-action của đại biểu trên app → method=button (giống checkin).
+                // 'manual' dành riêng cho thư ký điểm danh hộ qua manualCheckin().
+                'checkin_method' => MeetingCheckinMethodEnum::Button->value,
                 'checked_in_at' => now(),
                 'checked_in_by' => auth()->id(),
                 'note' => $note,
@@ -192,6 +194,57 @@ class MeetingAttendanceService
         )->load('participant');
 
         // markAbsent cũng phát event checked-in để Tab điều hành cập nhật list (status=absent → loại khỏi pending list).
+        broadcast(new \App\Modules\Meeting\Events\MeetingAttendanceCheckedIn($attendance))->toOthers();
+
+        return $attendance;
+    }
+
+    /**
+     * Thư ký/operator điểm danh hộ đại biểu (offline scenario: đại biểu không dùng app).
+     * Khác với checkin() (đại biểu tự bấm) + checkinByToken() (đại biểu scan QR):
+     *   - Caller là thư ký, KHÔNG phải owner của participant.
+     *   - Status có thể set là Present (xác nhận có mặt) hoặc Absent (báo vắng hộ).
+     *   - checkin_method=manual để báo cáo phân biệt nguồn.
+     *   - checked_in_by = auth user (thư ký), không phải participant user.
+     *
+     * Permission middleware (`meeting-attendances.store`) đã enforce role privileged
+     * (chair/op/secretary/admin).
+     */
+    public function manualCheckin(int $meetingId, int $participantId, string $status, ?string $note = null): MeetingAttendance
+    {
+        $this->ensureAttendanceNotLocked($meetingId);
+
+        // Validate participant thuộc meeting (chặn cross-meeting bypass).
+        $participant = \App\Modules\Meeting\Models\MeetingParticipant::query()
+            ->where('id', $participantId)
+            ->where('meeting_id', $meetingId)
+            ->first();
+        if (! $participant) {
+            throw new ModelNotFoundException('Đại biểu không thuộc cuộc họp này.');
+        }
+
+        if (! in_array($status, [MeetingAttendanceStatusEnum::Present->value, MeetingAttendanceStatusEnum::Absent->value], true)) {
+            throw new \Illuminate\Validation\ValidationException(validator([], []), response()->json([
+                'success' => false,
+                'message' => 'Trạng thái không hợp lệ — chỉ chấp nhận present/absent.',
+            ], 422));
+        }
+
+        $attendance = MeetingAttendance::updateOrCreate(
+            [
+                'meeting_id' => $meetingId,
+                'meeting_participant_id' => $participantId,
+            ],
+            [
+                'organization_id' => $this->resolveCurrentOrganizationId(),
+                'status' => $status,
+                'checkin_method' => MeetingCheckinMethodEnum::Manual->value,
+                'checked_in_at' => now(),
+                'checked_in_by' => auth()->id(),
+                'note' => $note,
+            ]
+        )->load('participant');
+
         broadcast(new \App\Modules\Meeting\Events\MeetingAttendanceCheckedIn($attendance))->toOthers();
 
         return $attendance;

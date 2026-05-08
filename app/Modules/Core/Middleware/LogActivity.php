@@ -139,6 +139,7 @@ class LogActivity
             'clear' => 'Xóa toàn bộ',
             'checkin' => 'Điểm danh',
             'checkin-by-token' => 'Điểm danh QR',
+            'manual-checkin' => 'Điểm danh hộ',
             'mark-absent' => 'Báo vắng',
             'respond' => 'Phản hồi mời họp',
             'complete' => 'Đánh dấu hoàn thành',

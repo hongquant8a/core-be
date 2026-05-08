@@ -174,6 +174,29 @@ class MeetingAttendanceController extends Controller
     }
 
     /**
+     * Thư ký/operator điểm danh hộ đại biểu (offline scenario: đại biểu không dùng app).
+     *
+     * Status có thể là `present` (xác nhận có mặt) hoặc `absent` (báo vắng hộ).
+     * Permission `meeting-attendances.store` enforce role privileged (chair/op/secretary).
+     *
+     * @bodyParam meeting_id integer required ID cuộc họp. Example: 1
+     * @bodyParam meeting_participant_id integer required ID đại biểu được điểm danh hộ. Example: 12
+     * @bodyParam status string required Trạng thái: present | absent. Example: present
+     * @bodyParam note string Ghi chú lý do (optional). Example: Bị ốm đột xuất
+     */
+    public function manualCheckin(\App\Modules\Meeting\Requests\ManualCheckinRequest $request)
+    {
+        $item = $this->meetingAttendanceService->manualCheckin(
+            (int) $request->validated('meeting_id'),
+            (int) $request->validated('meeting_participant_id'),
+            $request->validated('status'),
+            $request->validated('note'),
+        );
+
+        return $this->successResource(new MeetingAttendanceResource($item), 'Đã điểm danh hộ đại biểu.');
+    }
+
+    /**
      * Đại biểu tự báo vắng — auto-derive participant từ auth user.
      *
      * Status=`absent` set ngay, không cần operator duyệt. Idempotent: nếu đã có row checkin,
