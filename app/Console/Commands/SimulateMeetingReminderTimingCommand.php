@@ -19,14 +19,21 @@ use Illuminate\Support\Facades\DB;
 /**
  * Simulate meeting reminder timing — clone từ SimulateReminderTimingCommand cho TaskAssignment.
  *
- * Flow:
- *  1. Replace 3 reminder schedules (before/on/after) bằng intervals ngắn (phút).
- *  2. Tạo meeting test với start_time = now + N phút.
- *  3. MeetingObserver auto schedule 3 MeetingReminder pending.
- *  4. Theo dõi cron `notifications:process-reminders` fire dần — log timeline thực vs expected.
- *  5. Cleanup data test.
+ * Flow mặc định (preserve production data — backup + restore):
+ *  1. Snapshot 3 reminder schedules production hiện có.
+ *  2. Replace bằng intervals ngắn (phút) cho timing test nhanh.
+ *  3. Tạo meeting test với start_time = now + N phút.
+ *  4. MeetingObserver auto schedule 3 MeetingReminder pending.
+ *  5. Theo dõi cron `notifications:process-reminders` fire dần — log timeline thực vs expected.
+ *  6. ALWAYS restore snapshot schedules từ bước 1 (try/finally).
+ *  7. Cleanup data test (trừ khi --no-cleanup).
  *
- * Yêu cầu: scheduler đã đăng ký (bootstrap/console.php) hoặc chạy `schedule:work` song song.
+ * Mode --keep-schedules:
+ *  - SKIP bước 1+2+6 — dùng schedules production y nguyên. Phù hợp verify config thực tế work.
+ *  - Cần wait đủ dài để reminder fire theo offset prod (vd 30 phút trước → wait > 30 phút).
+ *
+ * Yêu cầu: scheduler đã đăng ký (routes/console.php) — chạy `schedule:work` song song
+ * hoặc supervisor `danatec-schedule` trên server.
  */
 class SimulateMeetingReminderTimingCommand extends Command
 {
@@ -42,7 +49,8 @@ class SimulateMeetingReminderTimingCommand extends Command
         {--no-cleanup : Giữ data}
         {--start-at= : start_time tuyệt đối Y-m-d H:i:s, override --start-min}
         {--check-tz : In ra block timezone debug ở đầu run}
-        {--empty-channels : Override schedule channels = [] (test cancel branch)}';
+        {--empty-channels : Override schedule channels = [] (test cancel branch)}
+        {--keep-schedules : KHÔNG override schedules — test với config production y nguyên. Dùng khi muốn verify config thực tế work, không quan tâm timing nhanh.}';
 
     protected $description = 'Test meeting reminder timing: schedule ngắn (phút), theo dõi cron fire theo thời gian thật';
 
@@ -88,8 +96,17 @@ class SimulateMeetingReminderTimingCommand extends Command
         $participant = $this->resolveUser($this->option('participant-email'), 'participant');
         auth()->login($organizer);
 
-        $this->info('Step 1: Replace meeting reminder schedules với short intervals...');
-        $this->setupShortSchedules($channels, $beforeMin, $afterMin, $organization->id);
+        $keepSchedules = (bool) $this->option('keep-schedules');
+        $scheduleSnapshot = null;
+
+        if ($keepSchedules) {
+            $this->info('Step 1: --keep-schedules → SKIP override, dùng config production y nguyên.');
+            $this->dumpExistingSchedules($organization->id);
+        } else {
+            $this->info('Step 1: Backup + replace meeting reminder schedules với short intervals...');
+            $scheduleSnapshot = $this->snapshotSchedules($organization->id);
+            $this->setupShortSchedules($channels, $beforeMin, $afterMin, $organization->id);
+        }
         $this->newLine();
 
         $createdIds = ['meeting' => null, 'attendee' => null, 'participant' => null];
@@ -221,9 +238,18 @@ class SimulateMeetingReminderTimingCommand extends Command
                 $this->line("  #{$n->id} {$n->event_key} user=#{$n->user_id} [{$delv}]");
             }
         } finally {
+            // ALWAYS restore schedule snapshot trước khi cleanup data, kể cả khi user truyền --no-cleanup
+            // (data test có thể giữ lại nhưng schedule production phải về nguyên trạng).
+            if ($scheduleSnapshot !== null) {
+                $this->newLine();
+                $this->info('Restore schedules production từ snapshot...');
+                $this->restoreSchedules($scheduleSnapshot);
+                $this->line('  Done.');
+            }
+
             if (! $noCleanup) {
                 $this->newLine();
-                $this->info('Cleanup...');
+                $this->info('Cleanup test data...');
                 if ($createdIds['meeting']) {
                     Notification::where('notifiable_type', Meeting::class)
                         ->where('notifiable_id', $createdIds['meeting'])
@@ -239,7 +265,7 @@ class SimulateMeetingReminderTimingCommand extends Command
                 }
                 $this->line('  Done.');
             } else {
-                $this->line('Skip cleanup (--no-cleanup).');
+                $this->line('Skip cleanup data (--no-cleanup). Schedule snapshot vẫn được restore.');
             }
         }
 
@@ -286,6 +312,112 @@ class SimulateMeetingReminderTimingCommand extends Command
         }
 
         return $u;
+    }
+
+    /**
+     * Snapshot tất cả schedule của 3 reminder event config (Meeting module) trước khi override.
+     * Cấu trúc: [config_id => [{schedule data}, ...], ...].
+     *
+     * @return array<int, array<int, array<string, mixed>>>
+     */
+    private function snapshotSchedules(int $organizationId): array
+    {
+        $moduleKey = NotificationModuleEnum::Meeting->value;
+        $eventKeys = [
+            NotificationEventEnum::MeetingReminderBefore->value,
+            NotificationEventEnum::MeetingReminderOn->value,
+            NotificationEventEnum::MeetingReminderAfter->value,
+        ];
+
+        $snapshot = [];
+        $configs = NotificationEventConfig::with('schedules')
+            ->where('module_key', $moduleKey)
+            ->where('organization_id', $organizationId)
+            ->whereIn('event_key', $eventKeys)
+            ->get();
+
+        foreach ($configs as $config) {
+            $snapshot[$config->id] = [
+                'enabled' => $config->enabled,
+                'schedules' => $config->schedules->map(fn ($s) => [
+                    'moment' => $s->moment,
+                    'offset_minutes' => $s->offset_minutes,
+                    'channels' => $s->channels,
+                    'label' => $s->label,
+                    'sort_order' => $s->sort_order,
+                ])->all(),
+            ];
+        }
+
+        $totalSchedules = collect($snapshot)->sum(fn ($cfg) => count($cfg['schedules']));
+        $this->line("  Backup: {$totalSchedules} schedules từ ".count($snapshot).' config(s).');
+
+        return $snapshot;
+    }
+
+    /**
+     * Restore schedules từ snapshot — wipe current rồi recreate đúng nguyên trạng.
+     */
+    private function restoreSchedules(array $snapshot): void
+    {
+        foreach ($snapshot as $configId => $data) {
+            $config = NotificationEventConfig::find($configId);
+            if (! $config) {
+                continue;
+            }
+            $config->update(['enabled' => $data['enabled']]);
+            $config->schedules()->delete();
+            foreach ($data['schedules'] as $sch) {
+                NotificationSchedule::create([
+                    'notification_event_config_id' => $configId,
+                    'moment' => $sch['moment'],
+                    'offset_minutes' => $sch['offset_minutes'],
+                    'channels' => $sch['channels'],
+                    'label' => $sch['label'],
+                    'sort_order' => $sch['sort_order'],
+                ]);
+            }
+        }
+        $totalSchedules = collect($snapshot)->sum(fn ($cfg) => count($cfg['schedules']));
+        $this->line("  Restored {$totalSchedules} schedules.");
+    }
+
+    /**
+     * In ra schedule production hiện có để user biết test sẽ chạy với offset gì.
+     */
+    private function dumpExistingSchedules(int $organizationId): void
+    {
+        $moduleKey = NotificationModuleEnum::Meeting->value;
+        $configs = NotificationEventConfig::with('schedules')
+            ->where('module_key', $moduleKey)
+            ->where('organization_id', $organizationId)
+            ->whereIn('event_key', [
+                NotificationEventEnum::MeetingReminderBefore->value,
+                NotificationEventEnum::MeetingReminderOn->value,
+                NotificationEventEnum::MeetingReminderAfter->value,
+            ])
+            ->get();
+
+        if ($configs->isEmpty()) {
+            $this->warn('  KHÔNG có config nào — test sẽ không tạo reminder. Set schedule qua admin trước.');
+
+            return;
+        }
+
+        $rows = [];
+        foreach ($configs as $config) {
+            foreach ($config->schedules as $s) {
+                $rows[] = [
+                    $config->event_key,
+                    $config->enabled ? 'Y' : 'N',
+                    $s->moment,
+                    $s->offset_minutes ?? '—',
+                    implode(',', $s->channels ?? []) ?: '[]',
+                    $s->label,
+                ];
+            }
+        }
+        $this->table(['Event', 'Enabled', 'Moment', 'Offset (min)', 'Channels', 'Label'], $rows);
     }
 
     private function setupShortSchedules(array $channels, int $beforeMin, int $afterMin, int $organizationId): void
