@@ -120,6 +120,31 @@ VITE_REVERB_SCHEME=http
 
 > **Convention tên event**: dot-notation `resource.action`. Khi listen ở Echo phải prefix với `.` để Laravel gọi đúng event raw name (không namespace App\\Events\\...).
 
+### ⚠️ Đóng popup biểu quyết — 2 case
+
+| Case | Trigger | Có WS event? | FE handle |
+|---|---|---|---|
+| **A. Manual close** | Operator bấm `PATCH /meeting-vote-topics/{id}/close` | ✅ `vote-topic.closed` | Listen event → đóng popup |
+| **B. Timeout** | `now > opened_at + duration_minutes` | ❌ Không có event | FE `setTimeout(closeVotePopup, expires_at_iso - now)` ngay khi mở popup |
+
+**Lý do không có event timeout**: BE derive `phase='closed'` runtime khi có request, không có background worker bắn event. Khi đại biểu submit vote sau timeout → BE trả 422 (đã chặn). FE phải đóng popup local trước khi user kịp submit muộn.
+
+**Pattern đề xuất** cho mọi popup vote:
+```js
+function showVotePopup(topic) {
+  openModal(topic)
+
+  // 1. Auto-close khi timeout (case B)
+  if (topic.expires_at_iso) {
+    const ms = new Date(topic.expires_at_iso).getTime() - Date.now()
+    const timer = setTimeout(() => closeModal(topic.id, 'timeout'), Math.max(0, ms))
+    onModalClose(() => clearTimeout(timer))
+  }
+
+  // 2. Auto-close khi nhận event manual close (case A) — handled ở Echo listener riêng
+}
+```
+
 ### Anonymized payload cho `vote-response.added`
 
 Theo spec line 166 + Commit A — broadcast trên channel chung không leak danh tính. Phía FE:
@@ -160,16 +185,21 @@ channel
 ```js
 channel
   .listen('.vote-topic.opened', (e) => {
-    // Bật popup full-screen. Countdown từ e.expires_at_iso (anchored absolute time):
-    //   const remainingMs = new Date(e.expires_at_iso).getTime() - Date.now()
-    // ballot_mode quyết định UI ẩn danh hay không.
+    // Bật popup full-screen với e.description, e.ballot_mode (ẩn danh hay không), e.duration_minutes.
     showVotePopup(e)
+
+    // Countdown anchored absolute time (không drift theo clock skew).
+    // QUAN TRỌNG: hết giờ → FE TỰ ĐÓNG popup vì BE KHÔNG bắn event timeout.
+    if (e.expires_at_iso) {
+      const remainingMs = new Date(e.expires_at_iso).getTime() - Date.now()
+      setTimeout(() => closeVotePopup(e.id, 'timeout'), Math.max(0, remainingMs))
+    }
   })
   .listen('.vote-topic.closed', (e) => {
-    closeVotePopup(e.id)
+    // Operator bấm /close → BE broadcast event này → đóng popup.
+    closeVotePopup(e.id, 'manual_close')
     if (e.show_result_on_personal_device) {
-      // Fetch GET /meeting-vote-responses/stats để show kết quả
-      fetchStats(e.id)
+      fetchStats(e.id)  // GET /meeting-vote-responses/stats để show kết quả
     }
   })
   .listen('.vote-response.added', (e) => {

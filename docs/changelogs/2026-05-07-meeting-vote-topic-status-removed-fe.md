@@ -106,6 +106,29 @@ BE compute từ opened_at/closed_at. FE không cần đổi.
 
 → FE nên disable nút "Bỏ phiếu" khi countdown hết giờ (dùng `expires_at_iso`), nhưng không cần thiết vì BE block. Nếu user submit muộn → catch 422 và hiển thị error message.
 
+### Đóng modal popup — 2 case
+
+Cả 2 đều phải đóng popup biểu quyết tại FE:
+
+1. **Manual close** (operator bấm `/close`): nhận WS event `vote-topic.closed` → đóng modal + fetch stats nếu `show_result_on_personal_device`.
+2. **Timeout** (`now > opened_at + duration_minutes`): **KHÔNG có WS event** vì BE không track timeout proactively. FE phải `setTimeout` local từ lúc mở popup, anchored vào `expires_at_iso`.
+
+```js
+function openVoteModal(topic) {
+  modal.show(topic)
+
+  // Auto-close khi timeout
+  if (topic.expires_at_iso) {
+    const ms = new Date(topic.expires_at_iso).getTime() - Date.now()
+    const timer = setTimeout(() => modal.close('timeout'), Math.max(0, ms))
+    modal.onClose(() => clearTimeout(timer))
+  }
+}
+
+// Listen WS event
+channel.listen('.vote-topic.closed', (e) => modal.close('manual_close'))
+```
+
 ## WebSocket events
 
 `vote-topic.opened` payload thêm `phase` + `expires_at_iso`, bỏ `status`:
