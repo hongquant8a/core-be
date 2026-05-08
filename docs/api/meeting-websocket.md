@@ -147,10 +147,32 @@ function showVotePopup(topic) {
 
 ### Anonymized payload cho `vote-response.added`
 
-Theo spec line 166 + Commit A — broadcast trên channel chung không leak danh tính. Phía FE:
+Theo spec line 166-167 — channel chung không leak danh tính bất kể `ballot_mode`:
 
-- **Đại biểu / projector**: dùng event để **tăng counter +1** trên UI (option đã có trong payload).
-- **Chair/operator** muốn list per-person → fetch REST `GET /meeting-vote-responses?meeting_vote_topic_id=X` (BE đã enforce role gate).
+| Mode | REST detail (`/meeting-vote-responses`) | WS event payload |
+|---|---|---|
+| `anonymous` | 403 cho mọi role | Anonymized (chỉ option/voted_at) |
+| `public_named` + privileged (chair/op/secretary/admin) | Full data với `participant_id` + `participant_name` | Anonymized (cùng channel, không tách role) |
+| `public_named` + non-privileged | 403 | Anonymized |
+
+**Trade-off**: 1 channel chung cho tất cả → an toàn (không leak qua WS) nhưng chair/op muốn list per-person realtime phải **fetch REST sau khi nhận event**:
+
+```js
+// Tab 7 chair/op — list per-person realtime cho public_named
+channel.listen('.vote-response.added', async (e) => {
+  // 1. Increment counter local cho UI live count
+  if (e.previous_option) store.decrementVoteCount(e.meeting_vote_topic_id, e.previous_option)
+  store.incrementVoteCount(e.meeting_vote_topic_id, e.option)
+
+  // 2. Refetch list per-person (nếu ballot_mode=public_named + cần list detail)
+  if (currentTopic.ballot_mode === 'public_named') {
+    const responses = await api.get(`/meeting-vote-responses?meeting_vote_topic_id=${e.meeting_vote_topic_id}`)
+    store.setResponses(responses.data.items)
+  }
+})
+```
+
+Nếu phase sau cần realtime detail cho privileged (tránh refetch REST mỗi event) → defer Phase 2: tách channel `meeting.{id}.privileged` (xem section 8).
 
 ---
 
