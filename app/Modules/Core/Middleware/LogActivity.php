@@ -135,6 +135,7 @@ class LogActivity
             'delete-by-date' => 'Xóa theo khoảng thời gian',
             'clear' => 'Xóa toàn bộ',
             'checkin' => 'Điểm danh',
+            'checkin-by-token' => 'Điểm danh QR',
             'mark-absent' => 'Báo vắng',
             'respond' => 'Phản hồi mời họp',
             'complete' => 'Đánh dấu hoàn thành',

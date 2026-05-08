@@ -45,6 +45,7 @@ class MeetingResource extends JsonResource
             'documents_count' => $this->when(isset($this->documents_count), (int) $this->documents_count),
             'published_at' => $this->published_at?->format('H:i:s d/m/Y'),
             'attendance_locked' => (bool) $this->attendance_locked,
+            'checkin_token' => $this->checkin_token,
             'current_meeting_agenda_id' => $this->current_meeting_agenda_id,
             'current_meeting_discussion_registration_id' => $this->current_meeting_discussion_registration_id,
             'current_agenda' => $this->whenLoaded('currentAgenda', fn () => $this->currentAgenda ? new MeetingAgendaResource($this->currentAgenda) : null, null),

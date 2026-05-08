@@ -29,6 +29,7 @@ class Meeting extends Model
         'current_meeting_discussion_registration_id',
         'created_by',
         'updated_by',
+        'checkin_token',
     ];
 
     protected $casts = [
@@ -50,6 +51,10 @@ class Meeting extends Model
         static::creating(function (Meeting $meeting) {
             $meeting->created_by = auth()->id();
             $meeting->updated_by = auth()->id();
+            // Auto-generate checkin_token UUID nếu chưa set — dùng cho QR điểm danh.
+            if (empty($meeting->checkin_token)) {
+                $meeting->checkin_token = (string) \Illuminate\Support\Str::uuid();
+            }
         });
         static::updating(fn (Meeting $meeting) => $meeting->updated_by = auth()->id());
     }

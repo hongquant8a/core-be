@@ -69,6 +69,11 @@ return new class extends Migration
             $table->unsignedInteger('view_count')->default(0);
             $table->dateTime('published_at')->nullable();
             $table->boolean('attendance_locked')->default(false);
+            // checkin_token: UUID unique để FE gen QR cho điểm danh. Auto-generate
+            // ở model `creating` event (xem Meeting::booted). Nullable trong consolidated
+            // migration để fresh install không break, nhưng add migration 2026_05_08_100000
+            // sẽ enforce NOT NULL sau khi backfill.
+            $table->uuid('checkin_token')->nullable()->unique();
             // Highlight pointers cho Tab 8 màn chiếu (current_meeting_agenda_id +
             // current_meeting_discussion_registration_id) được add bởi migration
             // 2026_05_07_200000_add_highlight_pointers_to_meetings — phải tách ra do

@@ -159,6 +159,21 @@ class MeetingAttendanceController extends Controller
     }
 
     /**
+     * Điểm danh qua QR token (đại biểu scan QR → FE call endpoint này).
+     *
+     * BE auto-resolve meeting từ token + check participant từ auth user. Token sai → 404.
+     * Meeting chưa publish → 422. Logic checkin giống endpoint button thường.
+     *
+     * @bodyParam token string required UUID checkin của meeting. Example: 550e8400-e29b-41d4-a716-446655440000
+     */
+    public function checkinByToken(\App\Modules\Meeting\Requests\CheckinByTokenRequest $request)
+    {
+        $item = $this->meetingAttendanceService->checkinByToken($request->validated('token'));
+
+        return $this->successResource(new MeetingAttendanceResource($item), 'Đã ghi nhận điểm danh qua QR, chờ duyệt.');
+    }
+
+    /**
      * Đại biểu tự báo vắng — auto-derive participant từ auth user.
      *
      * Status=`absent` set ngay, không cần operator duyệt. Idempotent: nếu đã có row checkin,

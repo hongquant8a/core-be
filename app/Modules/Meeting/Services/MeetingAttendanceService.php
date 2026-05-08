@@ -113,7 +113,7 @@ class MeetingAttendanceService
      * Đại biểu tự điểm danh — status=pending chờ operator duyệt.
      * Idempotent qua unique (meeting_id, meeting_participant_id) — F5/click lần 2 không tạo trùng.
      */
-    public function checkin(int $meetingId): MeetingAttendance
+    public function checkin(int $meetingId, string $checkinMethod = MeetingCheckinMethodEnum::Button->value): MeetingAttendance
     {
         $this->ensureAttendanceNotLocked($meetingId);
         $participant = $this->resolveOwnedParticipant($meetingId);
@@ -126,7 +126,7 @@ class MeetingAttendanceService
             [
                 'organization_id' => $this->resolveCurrentOrganizationId(),
                 'status' => MeetingAttendanceStatusEnum::Pending->value,
-                'checkin_method' => MeetingCheckinMethodEnum::Button->value,
+                'checkin_method' => $checkinMethod,
                 'checked_in_at' => now(),
                 'checked_in_by' => auth()->id(),
                 'note' => null,
@@ -136,6 +136,35 @@ class MeetingAttendanceService
         broadcast(new \App\Modules\Meeting\Events\MeetingAttendanceCheckedIn($attendance))->toOthers();
 
         return $attendance;
+    }
+
+    /**
+     * Đại biểu điểm danh qua QR token. FE gen QR encode UUID `meeting.checkin_token`,
+     * scan → FE call endpoint này. BE auto-resolve meeting + set permissions team theo
+     * org của meeting đó (caller có thể chưa setPermissionsTeamId chính xác trên route).
+     */
+    public function checkinByToken(string $token): MeetingAttendance
+    {
+        $meeting = \App\Modules\Meeting\Models\Meeting::query()
+            ->where('checkin_token', $token)
+            ->first();
+
+        if (! $meeting) {
+            throw new ModelNotFoundException('QR điểm danh không hợp lệ.');
+        }
+        if ($meeting->status !== 'published') {
+            throw new \Illuminate\Validation\ValidationException(validator([], []), response()->json([
+                'success' => false,
+                'message' => 'Cuộc họp chưa ban hành — không thể điểm danh.',
+            ], 422));
+        }
+
+        // Set permissions team theo meeting's organization (override header context).
+        if (function_exists('setPermissionsTeamId')) {
+            setPermissionsTeamId((int) $meeting->organization_id);
+        }
+
+        return $this->checkin((int) $meeting->id, MeetingCheckinMethodEnum::Qr->value);
     }
 
     /**

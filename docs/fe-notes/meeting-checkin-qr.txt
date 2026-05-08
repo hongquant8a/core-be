@@ -1,0 +1,179 @@
+================================================================================
+FE NOTE — Điểm danh qua QR
+================================================================================
+
+BE đã ship endpoint điểm danh QR (commit 2026-05-08). FE implement luồng dưới đây.
+
+
+--------------------------------------------------------------------------------
+1. KIẾN TRÚC
+--------------------------------------------------------------------------------
+
+Mỗi cuộc họp có sẵn 1 UUID `checkin_token` (BE auto-generate khi tạo meeting).
+Operator/chair gen QR encode 1 URL FE. Đại biểu scan QR → trình duyệt mở URL FE
+→ FE đọc token + auth → call BE submit điểm danh.
+
+Flow:
+  [QR scan] → mở URL FE → FE check auth
+                          ├── chưa login → redirect /login?redirect=/checkin/{token}
+                          │                  → sau login quay lại
+                          └── đã login → POST /api/meeting-attendances/checkin-by-token
+                                          → success: hiện toast "Điểm danh thành công, chờ duyệt"
+                                          → fail: hiện error message từ BE
+
+
+--------------------------------------------------------------------------------
+2. URL FORMAT QR
+--------------------------------------------------------------------------------
+
+QR encode URL FE (không phải URL BE), ví dụ:
+
+  https://danatec-core.theworkpc.com/checkin/{checkin_token}
+
+  hoặc query-string:
+  https://danatec-core.theworkpc.com/checkin?token={checkin_token}
+
+FE setup route `/checkin/:token` (hoặc query) — landing page xử lý logic auth + call API.
+
+
+--------------------------------------------------------------------------------
+3. GET checkin_token
+--------------------------------------------------------------------------------
+
+`MeetingResource` đã trả `checkin_token` trong mọi endpoint show/index meeting:
+
+  {
+    "id": 1,
+    "title": "Kỳ họp HĐND thường kỳ tháng 5/2026",
+    "checkin_token": "65f4ca49-8172-4c16-b81c-dd3904f425dc",
+    ...
+  }
+
+UI gen QR:
+  - Tab 7 Điều hành / màn quản trị meeting có 1 button "Hiện QR điểm danh".
+  - Click → modal full-screen show QR (dùng lib qrcode.js / vue-qrcode).
+  - QR data: `${window.location.origin}/checkin/${meeting.checkin_token}`
+  - Operator chiếu QR lên màn chiếu hoặc in giấy.
+
+
+--------------------------------------------------------------------------------
+4. FE ROUTE /checkin/:token
+--------------------------------------------------------------------------------
+
+```js
+// router setup
+{ path: '/checkin/:token', component: CheckinPage }
+
+// CheckinPage
+async function onMounted() {
+  const token = route.params.token
+
+  if (!authStore.isLoggedIn) {
+    // Lưu intent + redirect tới login
+    return router.replace({
+      path: '/login',
+      query: { redirect: `/checkin/${token}` }
+    })
+  }
+
+  try {
+    const r = await api.post('/meeting-attendances/checkin-by-token', { token })
+    toast.success(r.data.message)  // "Đã ghi nhận điểm danh qua QR, chờ duyệt."
+    router.replace(`/meetings/${r.data.data.meeting_id}`)
+  } catch (e) {
+    if (e.response?.status === 404) {
+      toast.error('QR không hợp lệ hoặc đã hết hạn.')
+    } else if (e.response?.status === 422) {
+      toast.error(e.response.data.message)  // "Cuộc họp chưa ban hành" / "Bạn không phải đại biểu"
+    } else {
+      toast.error('Lỗi điểm danh.')
+    }
+  }
+}
+```
+
+Login page redirect:
+```js
+async function login(credentials) {
+  await authStore.login(credentials)
+  const target = route.query.redirect || '/'
+  router.replace(target)
+}
+```
+
+
+--------------------------------------------------------------------------------
+5. BE ENDPOINT
+--------------------------------------------------------------------------------
+
+POST /api/meeting-attendances/checkin-by-token
+Headers:
+  Authorization: Bearer {token}
+  X-Organization-Id: optional (BE tự set theo meeting)
+Body:
+  { "token": "65f4ca49-8172-4c16-b81c-dd3904f425dc" }
+
+Permission: meeting-attendances.checkin (cùng quyền với button thường).
+
+BE behavior:
+  1. Lookup meeting bằng token. Sai → 404 "QR điểm danh không hợp lệ".
+  2. Meeting status != 'published' → 422 "Cuộc họp chưa ban hành".
+  3. Meeting đang attendance_locked=true → 422 "Đã khoá điểm danh".
+  4. User không phải participant của meeting → 404 "Bạn không phải đại biểu".
+  5. Idempotent qua unique (meeting_id, participant_id) — F5/scan lại không tạo trùng.
+  6. checkin_method = 'qr' (phân biệt với 'button' trong báo cáo).
+  7. Status mặc định = 'pending' chờ operator duyệt (Tab 7 DUYỆT ĐIỂM DANH).
+  8. Broadcast WS event `attendance.checked-in` trên channel `meeting.{id}` →
+     operator/chair Tab 7 thấy realtime list "đang chờ duyệt" cập nhật.
+
+Response success (201):
+  {
+    "success": true,
+    "message": "Đã ghi nhận điểm danh qua QR, chờ duyệt.",
+    "data": {
+      "id": 12,
+      "meeting_id": 1,
+      "meeting_participant_id": 5,
+      "status": "pending",
+      "checkin_method": "qr",
+      "checked_in_at": "08:30:00 15/05/2026",
+      ...
+    }
+  }
+
+
+--------------------------------------------------------------------------------
+6. UX EDGE CASES
+--------------------------------------------------------------------------------
+
+- **User scan QR khác meeting họ tham gia**: BE 404 "Bạn không phải đại biểu" → FE
+  hiển thị error rõ ràng, gợi ý liên hệ thư ký.
+
+- **F5/scan lại sau khi đã điểm danh**: BE return 201 với row hiện có (idempotent).
+  FE chỉ cần show "Đã điểm danh trước đó" hoặc redirect trang meeting.
+
+- **Operator đã khoá điểm danh**: BE 422 "Danh sách điểm danh đã đóng".
+
+- **Meeting bị huỷ giữa chừng**: BE 422 "Cuộc họp chưa ban hành".
+
+- **Token bị rò rỉ ra ngoài**: không có rủi ro vì BE vẫn check auth + participant —
+  chỉ user là đại biểu của meeting đó mới điểm danh được.
+
+
+--------------------------------------------------------------------------------
+7. TÓM TẮT VIỆC FE
+--------------------------------------------------------------------------------
+
+1. [ ] Tạo route FE `/checkin/:token` (hoặc query-string).
+2. [ ] CheckinPage component: check auth → redirect login hoặc gọi API.
+3. [ ] Login page: respect `?redirect=` để quay lại sau login.
+4. [ ] Tab 7 (operator) thêm modal "Hiện QR điểm danh" — gen QR từ
+       `${origin}/checkin/${meeting.checkin_token}`.
+5. [ ] Toast/UI feedback theo response status (201/404/422).
+6. [ ] (Optional) Listen WS `attendance.checked-in` trên Tab 7 để list pending
+       refresh ngay khi đại biểu scan thành công.
+
+
+================================================================================
+END
+================================================================================

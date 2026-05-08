@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::delete('/bulk-delete', [MeetingAttendanceController::class, 'bulkDestroy'])->middleware('permission:meeting-attendances.bulkDestroy,web');
 Route::post('/checkin', [MeetingAttendanceController::class, 'checkin'])->middleware('permission:meeting-attendances.checkin,web');
+// Điểm danh qua QR — auth required, dùng chung permission `checkin` với endpoint button.
+Route::post('/checkin-by-token', [MeetingAttendanceController::class, 'checkinByToken'])->middleware('permission:meeting-attendances.checkin,web');
 Route::post('/mark-absent', [MeetingAttendanceController::class, 'markAbsent'])->middleware('permission:meeting-attendances.markAbsent,web');
 // Operator action duyệt/từ chối điểm danh đại biểu (Tab 7 DUYỆT ĐIỂM DANH).
 Route::patch('/{meetingAttendance}/approve', [MeetingAttendanceController::class, 'approve'])->middleware('permission:meeting-attendances.approve,web');
