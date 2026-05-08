@@ -73,10 +73,14 @@ class MeetingPublishedContentBuilder implements ContentBuilder
         if (! $recipient->email) {
             return null;
         }
-        $start = $meeting->start_time?->format('d/m/Y H:i') ?? '';
-        $html = "<p>Kính gửi {$recipient->name},</p>"
-            ."<p>Bạn được mời tham dự cuộc họp: <strong>{$meeting->title}</strong>.</p>"
-            ."<p>Thời gian bắt đầu: {$start}.</p>";
+
+        // Preload relations cho blade template tránh N+1 trong vòng dispatch.
+        $meeting->loadMissing(['meetingLocation', 'meetingType']);
+
+        $html = view('notifications.meeting_published.email', [
+            'recipient' => $recipient,
+            'meeting' => $meeting,
+        ])->render();
 
         return new NotificationPayload(
             channels: ['mail'],
