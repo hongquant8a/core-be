@@ -5,7 +5,7 @@ namespace App\Modules\Meeting\Events;
 use App\Modules\Meeting\Models\Meeting;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
@@ -13,7 +13,7 @@ use Illuminate\Queue\SerializesModels;
  * Operator highlight 1 chương trình lên màn chiếu. Tab 8 + Tab 7 đồng bộ slide.
  * Payload chỉ truyền agenda_id (null = bỏ highlight) — FE đã có agenda data trong store.
  */
-class MeetingAgendaHighlighted implements ShouldBroadcast
+class MeetingAgendaHighlighted implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 

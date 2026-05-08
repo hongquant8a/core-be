@@ -5,7 +5,7 @@ namespace App\Modules\Meeting\Events;
 use App\Modules\Meeting\Models\MeetingDiscussionRegistration;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
@@ -13,7 +13,7 @@ use Illuminate\Queue\SerializesModels;
  * Đại biểu vừa đăng ký phát biểu / chất vấn. Chair + operator nghe để cập nhật
  * danh sách đăng ký realtime, không phải poll endpoint stats nữa.
  */
-class MeetingDiscussionRegistrationCreated implements ShouldBroadcast
+class MeetingDiscussionRegistrationCreated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 

@@ -5,7 +5,7 @@ namespace App\Modules\Meeting\Events;
 use App\Modules\Meeting\Models\MeetingVoteTopic;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
@@ -15,7 +15,7 @@ use Illuminate\Queue\SerializesModels;
  * Payload đầy đủ topic info (description, duration_minutes, ballot_mode, vote_type)
  * vì cần ngay cho UI popup. Stats riêng phải fetch REST nếu muốn.
  */
-class MeetingVoteTopicOpened implements ShouldBroadcast
+class MeetingVoteTopicOpened implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 

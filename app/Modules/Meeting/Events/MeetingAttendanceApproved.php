@@ -5,14 +5,14 @@ namespace App\Modules\Meeting\Events;
 use App\Modules\Meeting\Models\MeetingAttendance;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
 /**
  * Operator approve điểm danh (pending → present). FE Tab 6 + Tab 7 update.
  */
-class MeetingAttendanceApproved implements ShouldBroadcast
+class MeetingAttendanceApproved implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 

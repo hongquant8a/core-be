@@ -5,14 +5,14 @@ namespace App\Modules\Meeting\Events;
 use App\Modules\Meeting\Models\MeetingAttendance;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
 /**
  * Operator reject điểm danh (pending → absent).
  */
-class MeetingAttendanceRejected implements ShouldBroadcast
+class MeetingAttendanceRejected implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 

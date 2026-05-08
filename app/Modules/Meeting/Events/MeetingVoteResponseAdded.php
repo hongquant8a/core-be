@@ -5,7 +5,7 @@ namespace App\Modules\Meeting\Events;
 use App\Modules\Meeting\Models\MeetingVoteResponse;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
@@ -23,7 +23,7 @@ use Illuminate\Queue\SerializesModels;
  * Để nhất quán với spec line 166 + commit A REST gate: payload luôn anonymized
  * (không truyền participant info qua channel chung). Caller cần detail → fetch REST.
  */
-class MeetingVoteResponseAdded implements ShouldBroadcast
+class MeetingVoteResponseAdded implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 

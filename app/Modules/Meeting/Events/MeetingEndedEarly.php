@@ -5,7 +5,7 @@ namespace App\Modules\Meeting\Events;
 use App\Modules\Meeting\Models\Meeting;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
@@ -13,7 +13,7 @@ use Illuminate\Queue\SerializesModels;
  * Operator bấm "Kết thúc cuộc họp" — set end_time = now(). FE phase derive thành
  * `finished` ngay, không cần đợi đến giờ end_time dự kiến.
  */
-class MeetingEndedEarly implements ShouldBroadcast
+class MeetingEndedEarly implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 

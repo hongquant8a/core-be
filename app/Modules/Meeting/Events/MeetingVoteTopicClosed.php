@@ -5,7 +5,7 @@ namespace App\Modules\Meeting\Events;
 use App\Modules\Meeting\Models\MeetingVoteTopic;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
@@ -13,7 +13,7 @@ use Illuminate\Queue\SerializesModels;
  * Operator đóng phiên biểu quyết. FE đại biểu nhận → đóng popup, hiển thị
  * kết quả nếu show_result_on_personal_device. Tab 8 màn chiếu chuyển slide.
  */
-class MeetingVoteTopicClosed implements ShouldBroadcast
+class MeetingVoteTopicClosed implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
