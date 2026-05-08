@@ -89,7 +89,10 @@ class LogActivity
     protected function buildDescription(Request $request): string
     {
         $routeName = $request->route()?->getName();
-        if ($routeName) {
+        // Skip Laravel auto-generated route names (`generated::xxxx`) — đây là tên random
+        // Laravel mutate vào route object khi cần serialize cho URL generation / route caching.
+        // Dùng path-based description thay vì leak chuỗi random vào nhật ký.
+        if ($routeName && ! str_starts_with($routeName, 'generated::')) {
             return $this->descriptionFromRouteName($routeName, $request);
         }
 
