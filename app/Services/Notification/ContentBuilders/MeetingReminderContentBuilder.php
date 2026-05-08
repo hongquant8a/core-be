@@ -95,16 +95,21 @@ class MeetingReminderContentBuilder implements ContentBuilder
         if (! $recipient->email) {
             return null;
         }
-        $start = $meeting->start_time?->format('d/m/Y H:i') ?? '';
+
+        // Preload relations cho blade template tránh N+1 khi render trong vòng dispatch.
+        $meeting->loadMissing(['meetingLocation', 'meetingType']);
+
+        $html = view("notifications.meeting_reminder_{$this->moment}.email", [
+            'recipient' => $recipient,
+            'meeting' => $meeting,
+        ])->render();
+
         $subject = match ($this->moment) {
             'before' => "Nhắc cuộc họp sắp diễn ra: {$meeting->title}",
             'on' => "Cuộc họp đã đến giờ: {$meeting->title}",
             'after' => "Cuộc họp đã kết thúc: {$meeting->title}",
             default => "Nhắc cuộc họp: {$meeting->title}",
         };
-        $html = "<p>Kính gửi {$recipient->name},</p>"
-            ."<p>{$this->shortBody($recipient, $meeting)}</p>"
-            ."<p>Thời gian: {$start}</p>";
 
         return new NotificationPayload(
             channels: ['mail'],
