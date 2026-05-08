@@ -186,24 +186,25 @@ channel
 channel
   .listen('.vote-topic.opened', (e) => {
     // Bật popup full-screen với e.description, e.ballot_mode (ẩn danh hay không), e.duration_minutes.
-    showVotePopup(e)
+    // show_result_on_personal_device quyết định hiện count live trong popup hay không
+    // (flag setup tĩnh từ lúc tạo, không toggle giữa chừng).
+    showVotePopup(e, { showLiveCount: e.show_result_on_personal_device })
 
-    // Countdown anchored absolute time (không drift theo clock skew).
-    // QUAN TRỌNG: hết giờ → FE TỰ ĐÓNG popup vì BE KHÔNG bắn event timeout.
+    // Countdown anchored absolute time. Hết giờ → FE TỰ ĐÓNG popup (BE không bắn timeout event).
     if (e.expires_at_iso) {
       const remainingMs = new Date(e.expires_at_iso).getTime() - Date.now()
       setTimeout(() => closeVotePopup(e.id, 'timeout'), Math.max(0, remainingMs))
     }
   })
   .listen('.vote-topic.closed', (e) => {
-    // Operator bấm /close → BE broadcast event này → đóng popup.
+    // Operator bấm /close → đóng popup, hiển thị kết quả cuối nếu được phép xem.
     closeVotePopup(e.id, 'manual_close')
     if (e.show_result_on_personal_device) {
-      fetchStats(e.id)  // GET /meeting-vote-responses/stats để show kết quả
+      fetchStats(e.id)  // GET /meeting-vote-responses/stats để show kết quả final
     }
   })
   .listen('.vote-response.added', (e) => {
-    // Tăng counter local cho UI live count (nếu show_result_on_personal_device)
+    // +1 counter local. UI hiện count panel hay không phụ thuộc trạng thái đã set lúc opened.
     store.incrementVoteCount(e.meeting_vote_topic_id, e.option)
   })
 ```
@@ -270,19 +271,44 @@ channel
     store.setCurrentDiscussion(e.current_meeting_discussion_registration_id)
   })
   .listen('.vote-topic.opened', (e) => {
-    if (e.show_result_on_projector) showVoteSlide(e)
+    // 2 flag là setup tĩnh từ lúc tạo topic (không toggle giữa chừng).
+    // Tab 8 chỉ show panel kết quả nếu show_result_on_projector=true.
+    if (!e.show_result_on_projector) return
+
+    showVoteSlide(e)  // panel count + countdown UI
+
+    // Auto-ẩn khi hết duration (case timeout — không có WS event riêng cho timeout).
+    if (e.expires_at_iso) {
+      const ms = new Date(e.expires_at_iso).getTime() - Date.now()
+      setTimeout(() => closeVoteSlide(e.id, 'timeout'), Math.max(0, ms))
+    }
   })
   .listen('.vote-topic.closed', (e) => {
-    closeVoteSlide(e.id)
-    if (e.show_result_on_projector) showVoteResultSlide(e.id)
+    // Operator bấm /close manual — ẩn panel ngay (regardless show_result_on_projector,
+    // vì lúc closed kết quả đã chốt → không còn lý do show panel running count).
+    closeVoteSlide(e.id, 'manual_close')
   })
   .listen('.vote-response.added', (e) => {
-    store.incrementVoteCount(e.meeting_vote_topic_id, e.option)  // count chạy live trên projector
+    // Mỗi phiếu bỏ → +1 counter realtime (chỉ cập nhật state local; UI Tab 8 đã quyết
+    // định show/hide từ khi vote-topic.opened — sự kiện này không bật panel mới).
+    store.incrementVoteCount(e.meeting_vote_topic_id, e.option)
   })
   .listen('.meeting.ended-early', () => {
     showFinishedSlide()
   })
 ```
+
+**Tóm tắt logic Tab 8 cho biểu quyết**:
+
+| Trigger | Action panel kết quả |
+|---|---|
+| `vote-topic.opened` + `show_result_on_projector=true` | **Hiện** panel + bắt đầu countdown |
+| `vote-topic.opened` + `show_result_on_projector=false` | Không hiện gì (operator setup ẩn) |
+| `vote-response.added` | +1 counter local (panel đang hiện hay không là trạng thái cũ, không thay đổi) |
+| Hết `expires_at_iso` (timeout) | **Ẩn** panel (FE setTimeout tự bắn) |
+| `vote-topic.closed` | **Ẩn** panel (operator bấm /close) |
+
+> **Lưu ý**: 2 flag `show_result_on_projector` + `show_result_on_personal_device` là setup tĩnh từ lúc tạo vote topic, **không toggle giữa chừng**. Operator muốn ẩn/hiện realtime → phải chuẩn bị flag đúng từ đầu.
 
 ### 4.8 Mọi tab — End meeting
 
