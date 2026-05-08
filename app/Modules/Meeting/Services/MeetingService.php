@@ -49,6 +49,15 @@ class MeetingService
                 'documents.mediaFile',
                 'participants.attendee',
             ])
+            // documents_count: số tài liệu visible cho caller — dùng cho sidebar UI count.
+            ->withCount(['documents as documents_count' => function ($q) use ($myMeetingIds) {
+                $q->where(function ($sub) use ($myMeetingIds) {
+                    $sub->where('is_public', true);
+                    if (! empty($myMeetingIds)) {
+                        $sub->orWhereIn('meeting_id', $myMeetingIds);
+                    }
+                });
+            }])
             ->filter($filters)
             ->where(function ($outer) use ($userId) {
                 // Branch 1: cuộc họp công khai + đã ban hành.

@@ -42,6 +42,7 @@ class MeetingResource extends JsonResource
             'end_time' => $this->end_time?->format('H:i:s d/m/Y'),
             'status' => $this->status,
             'view_count' => $this->view_count,
+            'documents_count' => $this->when(isset($this->documents_count), (int) $this->documents_count),
             'published_at' => $this->published_at?->format('H:i:s d/m/Y'),
             'attendance_locked' => (bool) $this->attendance_locked,
             'current_meeting_agenda_id' => $this->current_meeting_agenda_id,
