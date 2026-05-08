@@ -23,6 +23,7 @@ class NotificationScheduleSeeder extends Seeder
         // Non-reminder: mỗi event có 1 schedule "instant" (moment=null, offset=null) — per org.
         $nonReminder = [
             NotificationEventEnum::DocumentIssued->value,
+            NotificationEventEnum::TaskAssigned->value,
             NotificationEventEnum::TaskCompleted->value,
             NotificationEventEnum::TaskConfirmed->value,
         ];
