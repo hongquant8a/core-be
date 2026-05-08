@@ -30,9 +30,27 @@ class MeetingDiscussionHighlighted implements ShouldBroadcastNow
 
     public function broadcastWith(): array
     {
+        $registration = null;
+        if ($this->meeting->current_meeting_discussion_registration_id) {
+            $registration = \App\Modules\Meeting\Models\MeetingDiscussionRegistration::query()
+                ->with('participant')
+                ->find($this->meeting->current_meeting_discussion_registration_id);
+        }
+
         return [
             'meeting_id' => $this->meeting->id,
             'current_meeting_discussion_registration_id' => $this->meeting->current_meeting_discussion_registration_id,
+            // Detail kèm để FE đại biểu match participant_id của mình → bắn modal
+            // "Mời bạn lên trình bày". Null khi operator bỏ highlight.
+            'registration' => $registration ? [
+                'id' => $registration->id,
+                'meeting_agenda_id' => $registration->meeting_agenda_id,
+                'meeting_participant_id' => $registration->meeting_participant_id,
+                'participant_name' => $registration->participant?->display_name,
+                'type' => $registration->type,
+                'content' => $registration->content,
+                'status' => $registration->status,
+            ] : null,
         ];
     }
 }

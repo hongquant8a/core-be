@@ -136,7 +136,7 @@ class MeetingDiscussionRegistrationService
 
         $storedFiles = [];
         try {
-            return DB::transaction(function () use ($model, $validated, $file, &$storedFiles) {
+            $model = DB::transaction(function () use ($model, $validated, $file, &$storedFiles) {
                 $removeFile = (bool) ($validated['remove_attachment'] ?? false);
                 unset($validated['remove_attachment']);
                 $model->update($validated);
@@ -161,12 +161,20 @@ class MeetingDiscussionRegistrationService
             $this->mediaService->cleanupStoredFiles($storedFiles);
             throw $exception;
         }
+
+        broadcast(new \App\Modules\Meeting\Events\MeetingDiscussionRegistrationUpdated($model))->toOthers();
+
+        return $model;
     }
 
     public function destroy(MeetingDiscussionRegistration $model): void
     {
         $this->ensureOwned($model);
+        $registrationId = $model->id;
+        $meetingId = $model->meeting_id;
         $model->delete();
+
+        broadcast(new \App\Modules\Meeting\Events\MeetingDiscussionRegistrationDeleted($registrationId, $meetingId))->toOthers();
     }
 
     /**

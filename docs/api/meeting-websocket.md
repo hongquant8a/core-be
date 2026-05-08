@@ -110,8 +110,10 @@ VITE_REVERB_SCHEME=http
 | 2 | `vote-response.added` | Đại biểu bỏ phiếu / đổi phiếu | `meeting_vote_topic_id, option, previous_option, voted_at` (anonymized — không có participant info). `previous_option`=null nếu vote lần đầu, string nếu đổi ý. **BE skip broadcast nếu spam cùng option** (no-op, không cộng dồn counter). |
 | 3 | `vote-topic.closed` | Operator bấm `/close` | `id, meeting_id, show_result_on_projector, show_result_on_personal_device, phase='closed', closed_at` |
 | 4 | `meeting.agenda-highlighted` | Operator highlight chương trình | `meeting_id, current_meeting_agenda_id` (null = bỏ highlight) |
-| 5 | `meeting.discussion-highlighted` | Operator highlight phát biểu | `meeting_id, current_meeting_discussion_registration_id` |
+| 5 | `meeting.discussion-highlighted` | Operator highlight phát biểu lên trình bày | `meeting_id, current_meeting_discussion_registration_id, registration: {id, meeting_agenda_id, meeting_participant_id, participant_name, type, content, status}` (`registration=null` khi bỏ highlight) |
 | 6 | `discussion-registration.created` | Đại biểu đăng ký phát biểu/chất vấn | `id, meeting_id, meeting_agenda_id, meeting_participant_id, participant_name, type, content, media_id, status, sort_order` |
+| 6b | `discussion-registration.updated` | Đại biểu sửa nội dung đăng ký | (giống .created) |
+| 6c | `discussion-registration.deleted` | Đại biểu rút đăng ký | `id, meeting_id` |
 | 7 | `discussion-registration.completed` | Operator đánh dấu xong | `id, meeting_id, type, status, completed_at` |
 | 8 | `attendance.checked-in` | Đại biểu submit điểm danh / báo vắng | `id, meeting_id, meeting_participant_id, participant_name, status, checked_in_at` |
 | 9 | `attendance.approved` | Operator approve điểm danh | `id, meeting_id, meeting_participant_id, status` |
@@ -247,11 +249,28 @@ channel
 
 ```js
 channel
-  .listen('.discussion-registration.created', (e) => {
-    store.upsertRegistration(e)  // append vào list realtime
-  })
-  .listen('.discussion-registration.completed', (e) => {
-    store.markCompleted(e.id, e.completed_at)
+  .listen('.discussion-registration.created', (e) => store.upsertRegistration(e))
+  .listen('.discussion-registration.updated', (e) => store.upsertRegistration(e))
+  .listen('.discussion-registration.deleted', (e) => store.removeRegistration(e.id))
+  .listen('.discussion-registration.completed', (e) => store.markCompleted(e.id, e.completed_at))
+
+  // Highlight: operator gọi lên trình bày → đại biểu của registration đó nhận modal mời.
+  .listen('.meeting.discussion-highlighted', (e) => {
+    if (!e.registration) {
+      // Operator bỏ highlight
+      store.clearHighlightedDiscussion()
+      return
+    }
+    store.setHighlightedDiscussion(e.registration)
+
+    // Match participant_id của user hiện tại → bắn modal "Mời bạn lên trình bày"
+    if (e.registration.meeting_participant_id === currentUser.meeting_participant_id) {
+      showInvitationModal({
+        type: e.registration.type,         // discussion / question
+        content: e.registration.content,
+        agendaId: e.registration.meeting_agenda_id,
+      })
+    }
   })
 ```
 
