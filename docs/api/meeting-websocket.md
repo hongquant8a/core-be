@@ -182,13 +182,22 @@ channel
 
 ### 4.3 Tab 3 — Biểu quyết (đại biểu)
 
+**Phân biệt 2 thứ trên cùng tab**:
+- **Popup vote** (input bỏ phiếu) → **luôn bật** khi nhận `vote-topic.opened` để đại biểu chọn option. Không phụ thuộc flag nào.
+- **Panel kết quả tổng hợp** (count live + final stats) → chỉ hiện nếu `show_result_on_personal_device=true`. Spec line 145, 285, 559-561: cờ này chỉ control hiển thị **kết quả tổng hợp** trên thiết bị cá nhân, không liên quan đến quyền vote.
+
 ```js
 channel
   .listen('.vote-topic.opened', (e) => {
-    // Bật popup full-screen với e.description, e.ballot_mode (ẩn danh hay không), e.duration_minutes.
-    // show_result_on_personal_device quyết định hiện count live trong popup hay không
-    // (flag setup tĩnh từ lúc tạo, không toggle giữa chừng).
-    showVotePopup(e, { showLiveCount: e.show_result_on_personal_device })
+    // POPUP VOTE: LUÔN bật để đại biểu bỏ phiếu (không phụ thuộc flag).
+    // Hiển thị description, ballot_mode (ẩn danh hay không), countdown duration_minutes.
+    showVotePopup(e)
+
+    // PANEL KẾT QUẢ TỔNG HỢP (count live): chỉ hiện nếu show_result_on_personal_device=true.
+    // Đây là phần phụ — số phiếu đã đếm — KHÔNG phải input vote. 2 thứ tách biệt UI.
+    if (e.show_result_on_personal_device) {
+      showResultPanel(e)
+    }
 
     // Countdown anchored absolute time. Hết giờ → FE TỰ ĐÓNG popup (BE không bắn timeout event).
     if (e.expires_at_iso) {
@@ -197,14 +206,17 @@ channel
     }
   })
   .listen('.vote-topic.closed', (e) => {
-    // Operator bấm /close → đóng popup, hiển thị kết quả cuối nếu được phép xem.
+    // Đóng popup vote (đại biểu không còn vote được).
     closeVotePopup(e.id, 'manual_close')
+
+    // Hiển thị kết quả tổng hợp final — chỉ khi flag bật.
     if (e.show_result_on_personal_device) {
-      fetchStats(e.id)  // GET /meeting-vote-responses/stats để show kết quả final
+      fetchStats(e.id)  // GET /meeting-vote-responses/stats — BE đã enforce 403 nếu flag=false
     }
   })
   .listen('.vote-response.added', (e) => {
-    // +1 counter local. UI hiện count panel hay không phụ thuộc trạng thái đã set lúc opened.
+    // +1 counter cho panel kết quả tổng hợp. Nếu panel không hiện (show_result_on_personal_device=false)
+    // thì update store cũng không ảnh hưởng UI.
     store.incrementVoteCount(e.meeting_vote_topic_id, e.option)
   })
 ```

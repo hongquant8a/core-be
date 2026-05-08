@@ -106,6 +106,17 @@ BE compute từ opened_at/closed_at. FE không cần đổi.
 
 → FE nên disable nút "Bỏ phiếu" khi countdown hết giờ (dùng `expires_at_iso`), nhưng không cần thiết vì BE block. Nếu user submit muộn → catch 422 và hiển thị error message.
 
+### Phân biệt popup vote vs panel kết quả
+
+Trên Tab 3 đại biểu có 2 thứ tách biệt khi nhận `vote-topic.opened`:
+
+| UI element | Có hiện không? | Phụ thuộc flag |
+|---|---|---|
+| **Popup input bỏ phiếu** | LUÔN bật | Không (đại biểu cần vote) |
+| **Panel kết quả tổng hợp** (count live + final stats) | Tùy flag | `show_result_on_personal_device` |
+
+Tương tự Tab 8 màn chiếu: panel kết quả tổng hợp phụ thuộc `show_result_on_projector`. Cả 2 flag là setup tĩnh từ lúc tạo vote topic, không toggle giữa chừng.
+
 ### Đóng modal popup — 2 case
 
 Cả 2 đều phải đóng popup biểu quyết tại FE:
