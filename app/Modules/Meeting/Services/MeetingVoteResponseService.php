@@ -113,6 +113,18 @@ class MeetingVoteResponseService
             throw new ModelNotFoundException('Bạn không phải đại biểu của cuộc họp này.');
         }
 
+        $existing = MeetingVoteResponse::query()
+            ->where('meeting_vote_topic_id', $topic->id)
+            ->where('meeting_participant_id', $participant->id)
+            ->first();
+
+        // Spam cùng option → no-op + không broadcast (FE counter không bị cộng dồn).
+        if ($existing && $existing->option === $validated['option']) {
+            return $existing->load(['topic', 'participant']);
+        }
+
+        $previousOption = $existing?->option;
+
         $response = MeetingVoteResponse::updateOrCreate(
             [
                 'meeting_vote_topic_id' => $topic->id,
@@ -125,7 +137,9 @@ class MeetingVoteResponseService
             ]
         )->load(['topic', 'participant']);
 
-        broadcast(new \App\Modules\Meeting\Events\MeetingVoteResponseAdded($response))->toOthers();
+        // Broadcast kèm previous_option để FE biết decrement cái cũ + increment cái mới
+        // khi đại biểu đổi ý vote (vd "Tán thành" → "Ý kiến khác").
+        broadcast(new \App\Modules\Meeting\Events\MeetingVoteResponseAdded($response, $previousOption))->toOthers();
 
         return $response;
     }

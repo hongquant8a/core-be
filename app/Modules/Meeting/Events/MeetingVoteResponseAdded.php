@@ -27,7 +27,11 @@ class MeetingVoteResponseAdded implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public function __construct(public MeetingVoteResponse $response) {}
+    /**
+     * @param  ?string  $previousOption  Option trước đó của participant (null = lần vote đầu).
+     *                                   FE dùng để decrement counter cũ khi đại biểu đổi ý.
+     */
+    public function __construct(public MeetingVoteResponse $response, public ?string $previousOption = null) {}
 
     public function broadcastOn(): array
     {
@@ -46,6 +50,7 @@ class MeetingVoteResponseAdded implements ShouldBroadcastNow
         return [
             'meeting_vote_topic_id' => $this->response->meeting_vote_topic_id,
             'option' => $this->response->option,
+            'previous_option' => $this->previousOption,  // null = vote lần đầu, string = đổi từ option cũ
             'voted_at' => $this->response->voted_at?->toIso8601String(),
         ];
     }

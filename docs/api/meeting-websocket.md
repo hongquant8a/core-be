@@ -107,7 +107,7 @@ VITE_REVERB_SCHEME=http
 | # | Event name | Trigger | Payload |
 |---|---|---|---|
 | 1 | `vote-topic.opened` | Operator bấm `/open` vote topic | `id, meeting_id, meeting_agenda_id, title, description, duration_minutes, vote_type, ballot_mode, show_result_on_projector, show_result_on_personal_device, phase='opened', opened_at, expires_at_iso` |
-| 2 | `vote-response.added` | Đại biểu bỏ phiếu | `meeting_vote_topic_id, option, voted_at` (anonymized — không có participant info) |
+| 2 | `vote-response.added` | Đại biểu bỏ phiếu / đổi phiếu | `meeting_vote_topic_id, option, previous_option, voted_at` (anonymized — không có participant info). `previous_option`=null nếu vote lần đầu, string nếu đổi ý. **BE skip broadcast nếu spam cùng option** (no-op, không cộng dồn counter). |
 | 3 | `vote-topic.closed` | Operator bấm `/close` | `id, meeting_id, show_result_on_projector, show_result_on_personal_device, phase='closed', closed_at` |
 | 4 | `meeting.agenda-highlighted` | Operator highlight chương trình | `meeting_id, current_meeting_agenda_id` (null = bỏ highlight) |
 | 5 | `meeting.discussion-highlighted` | Operator highlight phát biểu | `meeting_id, current_meeting_discussion_registration_id` |
@@ -212,9 +212,12 @@ channel
     }
   })
   .listen('.vote-response.added', (e) => {
-    // +1 counter cho section kết quả trong popup. Nếu section không hiện thì
-    // update store cũng không ảnh hưởng UI.
+    // Nếu đại biểu đổi ý (previous_option != null) → giảm counter cũ trước khi tăng cái mới.
+    if (e.previous_option) {
+      store.decrementVoteCount(e.meeting_vote_topic_id, e.previous_option)
+    }
     store.incrementVoteCount(e.meeting_vote_topic_id, e.option)
+    // BE skip broadcast nếu user spam cùng option → counter không bị cộng dồn.
   })
 ```
 
@@ -265,8 +268,11 @@ channel
   // Đăng ký phát biểu mới hiện ngay trên Tab điều hành
   .listen('.discussion-registration.created', (e) => store.addRegistration(e))
   .listen('.discussion-registration.completed', (e) => store.markCompleted(e.id))
-  // Vote count live cho operator dashboard
-  .listen('.vote-response.added', (e) => store.incrementVoteCount(e.meeting_vote_topic_id, e.option))
+  // Vote count live cho operator dashboard. Đổi ý: dec cái cũ + inc cái mới.
+  .listen('.vote-response.added', (e) => {
+    if (e.previous_option) store.decrementVoteCount(e.meeting_vote_topic_id, e.previous_option)
+    store.incrementVoteCount(e.meeting_vote_topic_id, e.option)
+  })
 ```
 
 ### 4.7 Tab 8 — Màn chiếu (Projector)
@@ -303,8 +309,8 @@ channel
     closeVoteSlide(e.id, 'manual_close')
   })
   .listen('.vote-response.added', (e) => {
-    // +1 counter cho section kết quả trong slide. Nếu section không hiện (flag false)
-    // thì update store cũng không ảnh hưởng UI.
+    // Đổi ý: dec cái cũ + inc cái mới. Spam cùng option BE đã skip broadcast.
+    if (e.previous_option) store.decrementVoteCount(e.meeting_vote_topic_id, e.previous_option)
     store.incrementVoteCount(e.meeting_vote_topic_id, e.option)
   })
   .listen('.meeting.ended-early', () => {
