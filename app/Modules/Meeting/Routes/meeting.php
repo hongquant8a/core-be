@@ -17,6 +17,8 @@ Route::patch('/{meeting}/status', [MeetingController::class, 'changeStatus'])->m
 // THAO TÁC NHANH (Tab 7 Điều hành) — operator khoá / mở khoá danh sách điểm danh.
 Route::patch('/{meeting}/lock-attendance', [MeetingController::class, 'lockAttendance'])->middleware('permission:meetings.lockAttendance,web');
 Route::patch('/{meeting}/unlock-attendance', [MeetingController::class, 'unlockAttendance'])->middleware('permission:meetings.unlockAttendance,web');
+// Lấy QR token điểm danh — chỉ privileged role mới được fetch để gen QR.
+Route::get('/{meeting}/qr-token', [MeetingController::class, 'qrToken'])->middleware('permission:meetings.showQrCode,web');
 // Kết thúc cuộc họp sớm — set end_time = now() (FE phase derive theo start_time/end_time).
 Route::patch('/{meeting}/end-early', [MeetingController::class, 'endEarly'])->middleware('permission:meetings.endEarly,web');
 // Highlight pointers cho Tab 8 màn chiếu — operator chỉ định chương trình + đăng ký đang chiếu.

@@ -234,6 +234,22 @@ class MeetingController extends Controller
     }
 
     /**
+     * Lấy QR token điểm danh của cuộc họp — chỉ privileged role (chair/op/secretary).
+     *
+     * FE dùng token để gen QR encode URL như `${origin}/checkin/${token}`. Đại biểu
+     * scan → mở URL FE → FE call POST /api/meeting-attendances/checkin-by-token.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     */
+    public function qrToken(Meeting $meeting)
+    {
+        return $this->success([
+            'meeting_id' => $meeting->id,
+            'token' => $meeting->checkin_token,
+        ]);
+    }
+
+    /**
      * Mở khoá danh sách điểm danh.
      *
      * @urlParam meeting integer required ID cuộc họp. Example: 1

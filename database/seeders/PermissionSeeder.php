@@ -136,6 +136,7 @@ class PermissionSeeder extends Seeder
             'lockAttendance', 'unlockAttendance',
             'endEarly',
             'highlightAgenda', 'highlightDiscussion',
+            'showQrCode',
         ],
         // Meeting - Loại cuộc họp
         'meeting-types' => [
@@ -301,6 +302,7 @@ class PermissionSeeder extends Seeder
         'endEarly' => 'Kết thúc sớm',
         'highlightAgenda' => 'Chiếu chương trình',
         'highlightDiscussion' => 'Chiếu phát biểu',
+        'showQrCode' => 'Xem QR điểm danh',
     ];
 
     /** Tạo đầy đủ permission từ danh sách PERMISSIONS (kèm description, sort_order, parent_id). */

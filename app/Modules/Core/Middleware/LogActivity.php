@@ -150,6 +150,7 @@ class LogActivity
             'end-early' => 'Kết thúc sớm',
             'highlight-agenda' => 'Chiếu chương trình',
             'highlight-discussion' => 'Chiếu phát biểu',
+            'qr-token' => 'Xem QR điểm danh',
         ];
         if ($sub && isset($pathActions[$sub])) {
             return $pathActions[$sub].' '.$this->resourceLabel(str_replace('-', '_', $resource));

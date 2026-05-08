@@ -52,23 +52,42 @@ FE setup route `/checkin/:token` (hoặc query) — landing page xử lý logic 
 
 
 --------------------------------------------------------------------------------
-3. GET checkin_token
+3. GET checkin_token (chỉ privileged)
 --------------------------------------------------------------------------------
 
-`MeetingResource` đã trả `checkin_token` trong mọi endpoint show/index meeting:
+`checkin_token` KHÔNG còn nằm trong `MeetingResource` mặc định (tránh leak).
+Phải fetch qua endpoint riêng:
 
+  GET /api/meetings/{meeting}/qr-token
+  Permission: meetings.showQrCode (chỉ chair/op/secretary/admin có)
+
+Response:
   {
-    "id": 1,
-    "title": "Kỳ họp HĐND thường kỳ tháng 5/2026",
-    "checkin_token": "65f4ca49-8172-4c16-b81c-dd3904f425dc",
-    ...
+    "success": true,
+    "data": {
+      "meeting_id": 1,
+      "token": "65f4ca49-8172-4c16-b81c-dd3904f425dc"
+    }
   }
 
 UI gen QR:
-  - Tab 7 Điều hành / màn quản trị meeting có 1 button "Hiện QR điểm danh".
-  - Click → modal full-screen show QR (dùng lib qrcode.js / vue-qrcode).
-  - QR data: `${window.location.origin}/checkin/${meeting.checkin_token}`
+  - Tab 7 Điều hành có button "Hiện QR điểm danh".
+  - Click → fetch GET /meetings/{id}/qr-token → render modal full-screen.
+  - QR data: `${window.location.origin}/checkin/${token}` (FE pick path).
+  - Lib gợi ý: qrcode.js / vue-qrcode / qrcode.react.
   - Operator chiếu QR lên màn chiếu hoặc in giấy.
+
+Code mẫu (Vue/React):
+```js
+async function showQrModal(meeting) {
+  const r = await api.get(`/meetings/${meeting.id}/qr-token`)
+  const url = `${window.location.origin}/checkin/${r.data.data.token}`
+  modal.show({ qrData: url, title: meeting.title })
+}
+```
+
+> Vai trò không có permission `meetings.showQrCode` → 403. Đại biểu thường KHÔNG
+> thấy nút "Hiện QR" — chỉ chair/op/secretary thấy.
 
 
 --------------------------------------------------------------------------------
@@ -260,8 +279,10 @@ QR (đại biểu scan):
 1. [ ] Tạo route FE `/checkin/:token` (hoặc query-string).
 2. [ ] CheckinPage component: check auth → redirect login hoặc gọi API.
 3. [ ] Login page: respect `?redirect=` để quay lại sau login.
-4. [ ] Tab 7 (operator) thêm modal "Hiện QR điểm danh" — gen QR từ
-       `${origin}/checkin/${meeting.checkin_token}`.
+4. [ ] Tab 7 (operator) button "Hiện QR điểm danh":
+        - Fetch `GET /meetings/{id}/qr-token` (cần permission meetings.showQrCode).
+        - Render modal QR từ `${origin}/checkin/${token}` (lib qrcode.js).
+        - Hide button cho user không có permission.
 5. [ ] Toast/UI feedback theo response status (201/404/422).
 
 Manual (thư ký hộ):

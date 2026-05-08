@@ -73,8 +73,8 @@ class MeetingPermissionSeeder extends Seeder
             }
         }
 
-        // Meetings (full CRUD + status workflow + export + runtime actions + highlight)
-        foreach (['stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'lockAttendance', 'unlockAttendance', 'endEarly', 'highlightAgenda', 'highlightDiscussion'] as $action) {
+        // Meetings (full CRUD + status workflow + export + runtime actions + highlight + QR)
+        foreach (['stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'lockAttendance', 'unlockAttendance', 'endEarly', 'highlightAgenda', 'highlightDiscussion', 'showQrCode'] as $action) {
             $names[] = "meetings.{$action}";
         }
 
