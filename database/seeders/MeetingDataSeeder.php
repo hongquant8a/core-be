@@ -66,7 +66,114 @@ class MeetingDataSeeder extends Seeder
         $this->seedMeetingGiaoBan($types, $locations, $docTypes, $attendees);
         $this->seedMeetingChuyenDeDraft($types, $locations, $attendees);
 
+        // 4 meeting bổ sung — đa dạng status + thời gian.
+        $this->seedAdditionalMeetings($types, $locations, $docTypes, $attendees);
+
         auth()->logout();
+    }
+
+    /**
+     * Seed thêm 4 cuộc họp đa dạng (past finished, upcoming, in-progress now, draft sắp tới).
+     *
+     * @param  array<string, MeetingType>  $types
+     * @param  array<string, MeetingLocation>  $locations
+     * @param  array<string, MeetingDocumentType>  $docTypes
+     * @param  array<int, MeetingAttendee>  $attendees
+     */
+    private function seedAdditionalMeetings(array $types, array $locations, array $docTypes, array $attendees): void
+    {
+        // Helper rút gọn: tạo meeting + auto chair=attendees[0], op=attendees[1], participants=attendees[2..N].
+        $createMeeting = function (array $payload, int $participantCount = 8) use ($attendees): Meeting {
+            $meeting = Meeting::updateOrCreate(
+                ['title' => $payload['title'], 'organization_id' => $this->orgId],
+                array_merge([
+                    'chairperson_meeting_attendee_id' => $attendees[0]->id ?? null,
+                    'operator_meeting_attendee_id' => $attendees[1]->id ?? null,
+                ], $payload)
+            );
+            $this->cleanupChairOpParticipants($meeting, $attendees);
+
+            // Add participants — slice attendees từ index 2.
+            $participants = array_slice($attendees, 2, $participantCount);
+            foreach ($participants as $idx => $attendee) {
+                $attendee->loadMissing('user.profile');
+                $responseStatus = $idx <= ($participantCount - 3) ? 'accepted' : 'pending';
+                MeetingParticipant::firstOrCreate(
+                    ['meeting_id' => $meeting->id, 'meeting_attendee_id' => $attendee->id],
+                    [
+                        'organization_id' => $this->orgId,
+                        'display_name' => $attendee->user?->name,
+                        'position_name' => $attendee->position_name,
+                        'department_name' => $attendee->department_name,
+                        'email' => $attendee->user?->email,
+                        'phone' => $attendee->user?->profile?->phone,
+                        'response_status' => $responseStatus,
+                        'responded_at' => $responseStatus === 'accepted' ? Carbon::parse($payload['start_time'])->subDays(2) : null,
+                    ]
+                );
+            }
+
+            return $meeting;
+        };
+
+        // 1. Cuộc họp đã kết thúc (1 tháng trước) — có nhiều tài liệu kết luận.
+        $start1 = Carbon::parse('2026-04-10 08:30:00');
+        $createMeeting([
+            'title' => 'HĐND chuyên đề về quy hoạch đô thị 2026-2030',
+            'meeting_type_id' => $types['HĐND chuyên đề']->id,
+            'meeting_location_id' => $locations['Hội trường lớn UBND TP Đà Nẵng']->id,
+            'is_public' => true,
+            'content' => 'Đánh giá tổng thể quy hoạch đô thị thành phố giai đoạn 2026-2030, cập nhật điều chỉnh phù hợp tình hình mới.',
+            'start_time' => $start1,
+            'end_time' => $start1->copy()->addHours(7),
+            'status' => 'published',
+            'view_count' => 234,
+            'published_at' => $start1->copy()->subDays(10),
+        ], 14);
+
+        // 2. Cuộc họp sắp tới (2 tuần sau) — public, đã ban hành.
+        $start2 = Carbon::parse('2026-05-22 14:00:00');
+        $createMeeting([
+            'title' => 'Họp UBND triển khai kế hoạch chuyển đổi số quý III',
+            'meeting_type_id' => $types['Họp chuyên đề']->id,
+            'meeting_location_id' => $locations['Phòng họp tầng 5 - Sở Nội vụ']->id,
+            'is_public' => false,
+            'content' => 'Triển khai kế hoạch chuyển đổi số quý III/2026, phân công nhiệm vụ cụ thể cho các sở, ngành.',
+            'start_time' => $start2,
+            'end_time' => $start2->copy()->addHours(3),
+            'status' => 'published',
+            'view_count' => 28,
+            'published_at' => Carbon::parse('2026-05-08 09:00:00'),
+        ], 10);
+
+        // 3. Cuộc họp đột xuất tuần này (start_time = ngày mai) — public.
+        $start3 = Carbon::parse('2026-05-09 09:00:00');
+        $createMeeting([
+            'title' => 'Họp đột xuất ứng phó bão số 5 hướng vào miền Trung',
+            'meeting_type_id' => $types['Họp đột xuất']->id,
+            'meeting_location_id' => $locations['Hội trường lớn UBND TP Đà Nẵng']->id,
+            'is_public' => true,
+            'content' => 'Triển khai phương án ứng phó bão số 5, đảm bảo an toàn dân cư và sản xuất.',
+            'start_time' => $start3,
+            'end_time' => $start3->copy()->addHours(2),
+            'status' => 'published',
+            'view_count' => 412,
+            'published_at' => Carbon::parse('2026-05-08 16:00:00'),
+        ], 12);
+
+        // 4. Cuộc họp giao ban tháng (3 tuần sau, vẫn draft).
+        $start4 = Carbon::parse('2026-05-30 08:00:00');
+        $createMeeting([
+            'title' => 'Họp giao ban tháng 5/2026 - Sở Kế hoạch & Đầu tư',
+            'meeting_type_id' => $types['Họp giao ban']->id,
+            'meeting_location_id' => $locations['Phòng họp tầng 5 - Sở Nội vụ']->id,
+            'is_public' => false,
+            'content' => 'Đánh giá tiến độ công việc tháng 5, triển khai nhiệm vụ tháng 6/2026.',
+            'start_time' => $start4,
+            'end_time' => $start4->copy()->addHours(2),
+            'status' => 'draft',
+            'view_count' => 0,
+        ], 6);
     }
 
     /** @return array<string, MeetingType> */
@@ -157,6 +264,8 @@ class MeetingDataSeeder extends Seeder
         $rows = [
             ['name' => 'Thường trực HĐND', 'description' => 'Thường trực HĐND TP.'],
             ['name' => 'Đại biểu HĐND khóa X', 'description' => 'Đại biểu HĐND khóa X (2021-2026).'],
+            ['name' => 'Lãnh đạo Sở/Ban/Ngành', 'description' => 'Lãnh đạo các sở, ban, ngành TP.'],
+            ['name' => 'Lãnh đạo UBND quận', 'description' => 'Lãnh đạo UBND các quận, huyện.'],
             ['name' => 'Khách mời', 'description' => 'Khách mời ngoài thành phần đại biểu.'],
         ];
 
@@ -213,6 +322,21 @@ class MeetingDataSeeder extends Seeder
             ['user_email' => 'htlan@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở Y tế', 'group' => 'Đại biểu HĐND khóa X', 'spatie_role' => 'Đại biểu họp'],
             ['user_email' => 'dmtuan@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở Giáo dục', 'group' => 'Đại biểu HĐND khóa X', 'spatie_role' => 'Đại biểu họp'],
             ['user_email' => 'btngoc@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở LĐ-TB-XH', 'group' => 'Đại biểu HĐND khóa X', 'spatie_role' => 'Đại biểu họp'],
+            // 12 attendee bổ sung — đa dạng group, role.
+            ['user_email' => 'hvphuc@snvdn.gov.vn',  'position_name' => 'Đại biểu HĐND',          'department_name' => 'Sở Nội vụ',            'group' => 'Đại biểu HĐND khóa X',     'spatie_role' => 'Đại biểu họp'],
+            ['user_email' => 'ntthanh@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND',          'department_name' => 'Sở Tư pháp',           'group' => 'Đại biểu HĐND khóa X',     'spatie_role' => 'Đại biểu họp'],
+            ['user_email' => 'tvkhai@snvdn.gov.vn',  'position_name' => 'Giám đốc',                'department_name' => 'Sở Kế hoạch & Đầu tư', 'group' => 'Lãnh đạo Sở/Ban/Ngành',    'spatie_role' => 'Đại biểu họp'],
+            ['user_email' => 'ltbich@snvdn.gov.vn',  'position_name' => 'Giám đốc',                'department_name' => 'Sở Tài chính',         'group' => 'Lãnh đạo Sở/Ban/Ngành',    'spatie_role' => 'Đại biểu họp'],
+            ['user_email' => 'dqminh@snvdn.gov.vn',  'position_name' => 'Giám đốc',                'department_name' => 'Sở Y tế',              'group' => 'Lãnh đạo Sở/Ban/Ngành',    'spatie_role' => 'Đại biểu họp'],
+            ['user_email' => 'vthha@snvdn.gov.vn',   'position_name' => 'Giám đốc',                'department_name' => 'Sở Giáo dục & Đào tạo', 'group' => 'Lãnh đạo Sở/Ban/Ngành',    'spatie_role' => 'Đại biểu họp'],
+            ['user_email' => 'pdlong@snvdn.gov.vn',  'position_name' => 'Chủ tịch UBND',          'department_name' => 'UBND quận Hải Châu',   'group' => 'Lãnh đạo UBND quận',        'spatie_role' => 'Đại biểu họp'],
+            ['user_email' => 'tmlinh@snvdn.gov.vn',  'position_name' => 'Chủ tịch UBND',          'department_name' => 'UBND quận Thanh Khê',  'group' => 'Lãnh đạo UBND quận',        'spatie_role' => 'Đại biểu họp'],
+            ['user_email' => 'cvson@snvdn.gov.vn',   'position_name' => 'Chủ tịch UBND',          'department_name' => 'UBND quận Sơn Trà',    'group' => 'Lãnh đạo UBND quận',        'spatie_role' => 'Đại biểu họp'],
+            ['user_email' => 'lthuong@snvdn.gov.vn', 'position_name' => 'Chủ tịch UBND',          'department_name' => 'UBND quận Ngũ Hành Sơn','group' => 'Lãnh đạo UBND quận',       'spatie_role' => 'Đại biểu họp'],
+            ['user_email' => 'dbkhoi@snvdn.gov.vn',  'position_name' => 'Chủ tịch UBND',          'department_name' => 'UBND quận Liên Chiểu', 'group' => 'Lãnh đạo UBND quận',        'spatie_role' => 'Đại biểu họp'],
+            ['user_email' => 'thyen@snvdn.gov.vn',   'position_name' => 'Phóng viên',              'department_name' => 'Báo Đà Nẵng',          'group' => 'Khách mời',                 'spatie_role' => 'Đại biểu họp'],
+            ['user_email' => 'mqhung@snvdn.gov.vn',  'position_name' => 'Đại biểu Mặt trận',     'department_name' => 'UBMTTQVN TP',          'group' => 'Khách mời',                 'spatie_role' => 'Đại biểu họp'],
+            ['user_email' => 'htduong@snvdn.gov.vn', 'position_name' => 'Phó Chánh Văn phòng',  'department_name' => 'Văn phòng UBND TP',     'group' => 'Khách mời',                 'spatie_role' => 'Đại biểu họp'],
         ];
 
         $out = [];
@@ -464,8 +588,6 @@ class MeetingDataSeeder extends Seeder
                 'document_number' => 'BC-T18',
                 'summary' => 'Báo cáo tổng kết tuần 18.',
                 'is_public' => false,
-                'status' => 'published',
-                'view_count' => 8,
                 'sort_order' => 1,
             ]
         );

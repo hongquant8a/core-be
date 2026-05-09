@@ -47,6 +47,19 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Bùi Thị Ngọc',      'email' => 'btngoc@snvdn.gov.vn',   'user_name' => 'btngoc',    'status' => 'active'],
             ['name' => 'Hoàng Văn Phúc',     'email' => 'hvphuc@snvdn.gov.vn',   'user_name' => 'hvphuc',    'status' => 'active'],
             ['name' => 'Ngô Thị Thanh',      'email' => 'ntthanh@snvdn.gov.vn',  'user_name' => 'ntthanh',   'status' => 'active'],
+            // 12 user bổ sung cho seed phòng họp + đại biểu phong phú.
+            ['name' => 'Trương Văn Khải',    'email' => 'tvkhai@snvdn.gov.vn',   'user_name' => 'tvkhai',    'status' => 'active'],
+            ['name' => 'Lý Thị Bích',         'email' => 'ltbich@snvdn.gov.vn',   'user_name' => 'ltbich',    'status' => 'active'],
+            ['name' => 'Đỗ Quang Minh',     'email' => 'dqminh@snvdn.gov.vn',   'user_name' => 'dqminh',    'status' => 'active'],
+            ['name' => 'Vũ Thanh Hà',        'email' => 'vthha@snvdn.gov.vn',    'user_name' => 'vthha',     'status' => 'active'],
+            ['name' => 'Phan Đức Long',     'email' => 'pdlong@snvdn.gov.vn',   'user_name' => 'pdlong',    'status' => 'active'],
+            ['name' => 'Trần Mỹ Linh',      'email' => 'tmlinh@snvdn.gov.vn',   'user_name' => 'tmlinh',    'status' => 'active'],
+            ['name' => 'Cao Văn Sơn',       'email' => 'cvson@snvdn.gov.vn',    'user_name' => 'cvson',     'status' => 'active'],
+            ['name' => 'Lưu Thị Hương',     'email' => 'lthuong@snvdn.gov.vn',  'user_name' => 'lthuong',   'status' => 'active'],
+            ['name' => 'Đinh Bá Khôi',       'email' => 'dbkhoi@snvdn.gov.vn',   'user_name' => 'dbkhoi',    'status' => 'active'],
+            ['name' => 'Tạ Hồng Yến',       'email' => 'thyen@snvdn.gov.vn',    'user_name' => 'thyen',     'status' => 'active'],
+            ['name' => 'Mai Quốc Hưng',      'email' => 'mqhung@snvdn.gov.vn',   'user_name' => 'mqhung',    'status' => 'active'],
+            ['name' => 'Hồ Thuỳ Dương',     'email' => 'htduong@snvdn.gov.vn',  'user_name' => 'htduong',   'status' => 'active'],
         ];
 
         foreach ($users as $i => $data) {
