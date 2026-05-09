@@ -23,8 +23,12 @@ class PermissionService
 
     public function index(array $filters, int $limit)
     {
+        // Khi user pass sort_by tường minh → flat sort theo cột đó (skip treeOrder).
+        // Mặc định không có sort_by → giữ tree order (cha trước, con sau theo sort_order).
+        $hasExplicitSort = ! empty($filters['sort_by']);
+
         return Permission::query()
-            ->treeOrder()
+            ->when(! $hasExplicitSort, fn ($q) => $q->treeOrder())
             ->filter($filters)
             ->with(['parent', 'roles:id,name'])
             ->paginate($limit);
