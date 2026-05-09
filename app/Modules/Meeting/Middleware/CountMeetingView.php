@@ -3,6 +3,7 @@
 namespace App\Modules\Meeting\Middleware;
 
 use App\Modules\Meeting\Models\Meeting;
+use App\Modules\Meeting\Models\MeetingDocument;
 use App\Modules\Meeting\Models\MeetingView;
 use Closure;
 use Illuminate\Http\Request;
@@ -34,10 +35,21 @@ class CountMeetingView
     private function trackView(Request $request): void
     {
         $meeting = $request->route('meeting');
-        if (! $meeting instanceof Meeting) {
+        $document = $request->route('meetingDocument');
+
+        if ($meeting instanceof Meeting) {
+            $this->logMeetingView($meeting, $request);
+
             return;
         }
 
+        if ($document instanceof MeetingDocument) {
+            $this->logDocumentView($document, $request);
+        }
+    }
+
+    private function logMeetingView(Meeting $meeting, Request $request): void
+    {
         try {
             DB::transaction(function () use ($meeting, $request) {
                 $meeting->increment('view_count');
@@ -50,6 +62,22 @@ class CountMeetingView
                     'viewed_at' => now(),
                 ]);
             });
+        } catch (Throwable $e) {
+            report($e);
+        }
+    }
+
+    private function logDocumentView(MeetingDocument $document, Request $request): void
+    {
+        try {
+            MeetingView::create([
+                'meeting_id' => $document->meeting_id,
+                'meeting_document_id' => $document->id,
+                'user_id' => auth()->id(),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'viewed_at' => now(),
+            ]);
         } catch (Throwable $e) {
             report($e);
         }

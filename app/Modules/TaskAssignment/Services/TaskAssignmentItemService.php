@@ -612,6 +612,9 @@ class TaskAssignmentItemService
             ->when($filters['department_id'] ?? null, fn ($q, $v) => $q->whereHas('users', fn ($uq) => $uq->where('task_assignment_item_user.department_id', $v)))
             ->when($filters['user_id'] ?? null, fn ($q, $v) => $q->whereHas('users', fn ($uq) => $uq->where('user_id', $v)))
             ->when($filters['priority'] ?? null, fn ($q, $v) => $q->where('priority', $v))
+            // Filter from_date/to_date áp lên `end_at` (deadline) — "tasks có deadline trong khoảng này".
+            ->when($filters['from_date'] ?? null, fn ($q, $v) => $q->where('end_at', '>=', $v))
+            ->when($filters['to_date'] ?? null, fn ($q, $v) => $q->where('end_at', '<=', Carbon::parse($v)->endOfDay()))
             ->orderBy($filters['sort_by'] ?? 'end_at', $filters['sort_order'] ?? 'asc')
             ->paginate($limit);
     }
@@ -630,6 +633,9 @@ class TaskAssignmentItemService
             ->when($filters['department_id'] ?? null, fn ($q, $v) => $q->whereHas('users', fn ($uq) => $uq->where('task_assignment_item_user.department_id', $v)))
             ->when($filters['user_id'] ?? null, fn ($q, $v) => $q->whereHas('users', fn ($uq) => $uq->where('user_id', $v)))
             ->when($filters['priority'] ?? null, fn ($q, $v) => $q->where('priority', $v))
+            // Filter from_date/to_date áp lên `end_at` — AND với khoảng `days` (giao 2 điều kiện).
+            ->when($filters['from_date'] ?? null, fn ($q, $v) => $q->where('end_at', '>=', $v))
+            ->when($filters['to_date'] ?? null, fn ($q, $v) => $q->where('end_at', '<=', Carbon::parse($v)->endOfDay()))
             ->orderBy('end_at', 'asc')
             ->paginate($limit);
     }

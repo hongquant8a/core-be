@@ -43,33 +43,48 @@ class MeetingVoteResponseServiceTest extends TestCase
         ]);
     }
 
-    private function makeParticipant(Meeting $meeting): MeetingParticipant
+    private function makeParticipant(Meeting $meeting, ?User $user = null): MeetingParticipant
     {
-        $user = User::factory()->create();
+        $user ??= User::factory()->create();
         $attendee = MeetingAttendee::create([
             'organization_id' => $this->org->id,
             'user_id' => $user->id,
             'status' => 'active',
         ]);
 
-        return MeetingParticipant::create([
+        $participant = MeetingParticipant::create([
             'organization_id' => $this->org->id,
             'meeting_id' => $meeting->id,
             'meeting_attendee_id' => $attendee->id,
             'display_name' => $user->name,
             'response_status' => 'pending',
         ]);
+
+        // Service derive participant từ auth user → expose user qua relation cho test gọi actingAs.
+        $participant->setRelation('attendee', $attendee->setRelation('user', $user));
+
+        return $participant;
     }
 
-    private function makeTopic(Meeting $meeting, string $status = 'opened'): MeetingVoteTopic
+    private function makeTopic(Meeting $meeting, string $phase = 'opened'): MeetingVoteTopic
     {
+        // Phase derived từ opened_at + closed_at (cột status đã drop ở migration 2026_05_07_230000):
+        //   opened_at NULL                  → 'draft'
+        //   opened_at NOT NULL + closed_at NULL → 'opened'
+        //   closed_at NOT NULL              → 'closed'
+        $timestamps = match ($phase) {
+            'draft' => ['opened_at' => null, 'closed_at' => null],
+            'opened' => ['opened_at' => now(), 'closed_at' => null],
+            'closed' => ['opened_at' => now()->subMinute(), 'closed_at' => now()],
+        };
+
         return MeetingVoteTopic::create([
             'organization_id' => $this->org->id,
             'meeting_id' => $meeting->id,
             'title' => 'T',
             'vote_type' => 'agree_disagree',
             'ballot_mode' => 'open',
-            'status' => $status,
+            ...$timestamps,
         ]);
     }
 
@@ -77,6 +92,7 @@ class MeetingVoteResponseServiceTest extends TestCase
     {
         $meeting = $this->makeMeeting();
         $participant = $this->makeParticipant($meeting);
+        Sanctum::actingAs($participant->attendee->user);
         $topic = $this->makeTopic($meeting);
 
         $first = $this->service->store([
@@ -104,12 +120,13 @@ class MeetingVoteResponseServiceTest extends TestCase
         $meetingY = $this->makeMeeting();
         $topicX = $this->makeTopic($meetingX);
         $participantY = $this->makeParticipant($meetingY);
+        // Acting as user của meeting Y → vote cho topic ở meeting X → không tìm được participant trong X.
+        Sanctum::actingAs($participantY->attendee->user);
 
         $this->expectException(ModelNotFoundException::class);
 
         $this->service->store([
             'meeting_vote_topic_id' => $topicX->id,
-            'meeting_participant_id' => $participantY->id,
             'option' => 'agree',
         ]);
     }
@@ -148,15 +165,15 @@ class MeetingVoteResponseServiceTest extends TestCase
     {
         $meeting = $this->makeMeeting();
         $participant = $this->makeParticipant($meeting);
+        Sanctum::actingAs($participant->attendee->user);
         $topic = $this->makeTopic($meeting, 'opened');
 
         $response = $this->service->store([
             'meeting_vote_topic_id' => $topic->id,
-            'meeting_participant_id' => $participant->id,
             'option' => 'agree',
         ]);
 
-        $topic->update(['status' => 'closed']);
+        $topic->update(['closed_at' => now()]);
 
         $this->expectException(\Illuminate\Validation\ValidationException::class);
 

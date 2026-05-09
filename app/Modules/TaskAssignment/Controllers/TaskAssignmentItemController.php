@@ -395,6 +395,8 @@ class TaskAssignmentItemController extends Controller
      * @queryParam department_id integer Lọc theo phòng ban. Example: 1
      * @queryParam user_id integer Lọc theo người dùng. Example: 1
      * @queryParam priority string Lọc theo mức độ ưu tiên.
+     * @queryParam from_date string Lọc end_at từ ngày (Y-m-d). Example: 2026-04-01
+     * @queryParam to_date string Lọc end_at đến ngày (Y-m-d). Example: 2026-04-30
      * @queryParam sort_by string Sắp xếp theo: end_at, priority, created_at. Example: end_at
      * @queryParam sort_order string Thứ tự: asc, desc. Example: asc
      * @queryParam limit integer Số bản ghi mỗi trang. Example: 10
@@ -417,6 +419,8 @@ class TaskAssignmentItemController extends Controller
      * @queryParam department_id integer Lọc theo phòng ban. Example: 1
      * @queryParam user_id integer Lọc theo người dùng. Example: 1
      * @queryParam priority string Lọc theo mức độ ưu tiên.
+     * @queryParam from_date string Lọc end_at từ ngày (Y-m-d), AND với khoảng `days`. Example: 2026-04-01
+     * @queryParam to_date string Lọc end_at đến ngày (Y-m-d), AND với khoảng `days`. Example: 2026-04-30
      * @queryParam limit integer Số bản ghi mỗi trang. Example: 10
      *
      * @apiResourceCollection App\Modules\TaskAssignment\Resources\ItemCollection
