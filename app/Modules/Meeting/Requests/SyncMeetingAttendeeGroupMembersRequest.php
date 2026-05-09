@@ -14,8 +14,8 @@ class SyncMeetingAttendeeGroupMembersRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'meeting_attendee_ids' => ['required', 'array'],
-            'meeting_attendee_ids.*' => ['integer', 'exists:meeting_attendees,id'],
+            'user_ids' => ['required', 'array'],
+            'user_ids.*' => ['integer', 'exists:users,id'],
         ];
     }
 
@@ -32,17 +32,17 @@ class SyncMeetingAttendeeGroupMembersRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'meeting_attendee_ids' => 'Danh sách đại biểu',
-            'meeting_attendee_ids.*' => 'ID đại biểu',
+            'user_ids' => 'Danh sách user',
+            'user_ids.*' => 'ID user',
         ];
     }
 
     public function bodyParameters(): array
     {
         return [
-            'meeting_attendee_ids' => [
-                'description' => 'Mảng full list ID đại biểu thuộc nhóm sau khi sync. BE diff với current pivot → thêm/xoá pivot rows. Idempotent.',
-                'example' => [5, 6, 7],
+            'user_ids' => [
+                'description' => 'Mảng full list user ID thuộc nhóm sau khi sync. BE auto find-or-create MeetingAttendee cho từng user (1 attendee per org/user) rồi sync pivot. Idempotent.',
+                'example' => [10, 11, 12],
             ],
         ];
     }

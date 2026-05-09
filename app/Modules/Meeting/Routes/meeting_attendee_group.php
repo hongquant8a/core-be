@@ -17,7 +17,10 @@ Route::patch('/{meetingAttendeeGroup}', [MeetingAttendeeGroupController::class, 
 Route::delete('/{meetingAttendeeGroup}', [MeetingAttendeeGroupController::class, 'destroy'])->middleware('permission:meeting-attendee-groups.destroy,web');
 Route::patch('/{meetingAttendeeGroup}/status', [MeetingAttendeeGroupController::class, 'changeStatus'])->middleware('permission:meeting-attendee-groups.changeStatus,web');
 
-// Pivot M-N: đại biểu trong nhóm.
+// Pivot M-N: quản lý đại biểu trong nhóm — pattern y hệt TaskAssignmentDepartment users.
+//   GET    /attendees         — list, mỗi row có {user_id, ...}
+//   POST   /attendees          body { user_ids: [int] }  — sync mode, BE auto find-or-create attendee
+//   DELETE /attendees/{userId} — gỡ user khỏi nhóm bằng user_id
 Route::get('/{meetingAttendeeGroup}/attendees', [MeetingAttendeeGroupController::class, 'attendees'])->middleware('permission:meeting-attendee-groups.attendees,web');
 Route::post('/{meetingAttendeeGroup}/attendees', [MeetingAttendeeGroupController::class, 'syncAttendees'])->middleware('permission:meeting-attendee-groups.attendees,web');
-Route::delete('/{meetingAttendeeGroup}/attendees/{attendee}', [MeetingAttendeeGroupController::class, 'removeAttendee'])->middleware('permission:meeting-attendee-groups.attendees,web');
+Route::delete('/{meetingAttendeeGroup}/attendees/{userId}', [MeetingAttendeeGroupController::class, 'removeAttendee'])->middleware('permission:meeting-attendee-groups.attendees,web');

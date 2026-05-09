@@ -63,6 +63,35 @@ class MeetingAttendeeGroupMembershipService
             ]);
         }
 
+        return $this->doSync($group, $attendeeIds);
+    }
+
+    /**
+     * Sync nhóm bằng user_ids — BE auto find-or-create MeetingAttendee cho từng user
+     * (1 attendee per org/user) rồi gắn pivot. Phù hợp FE workflow pick từ User pool.
+     */
+    public function syncByUserIds(MeetingAttendeeGroup $group, array $userIds): array
+    {
+        $userIds = array_values(array_unique(array_map('intval', $userIds)));
+
+        $attendeeIds = [];
+        foreach ($userIds as $userId) {
+            $attendee = MeetingAttendee::firstOrCreate(
+                ['organization_id' => $group->organization_id, 'user_id' => $userId],
+                ['status' => 'active']
+            );
+            $attendeeIds[] = $attendee->id;
+        }
+
+        return $this->doSync($group, $attendeeIds);
+    }
+
+    /**
+     * Internal — diff existing pivot, attach/detach.
+     */
+    private function doSync(MeetingAttendeeGroup $group, array $attendeeIds): array
+    {
+
         // Diff với pivot hiện có.
         $existing = $group->attendees()->pluck('meeting_attendees.id')->all();
         $toAdd = array_diff($attendeeIds, $existing);
@@ -100,5 +129,20 @@ class MeetingAttendeeGroupMembershipService
         if ($detached === 0) {
             throw new ModelNotFoundException('Đại biểu không thuộc nhóm này.');
         }
+    }
+
+    /**
+     * Gỡ attendee ra khỏi nhóm bằng user_id (FE pick từ User pool, không cần biết attendee_id).
+     */
+    public function removeByUserId(MeetingAttendeeGroup $group, int $userId): void
+    {
+        $attendee = MeetingAttendee::query()
+            ->where('organization_id', $group->organization_id)
+            ->where('user_id', $userId)
+            ->first();
+        if (! $attendee) {
+            throw new ModelNotFoundException('User không phải đại biểu của tổ chức.');
+        }
+        $this->removeAttendee($group, $attendee->id);
     }
 }

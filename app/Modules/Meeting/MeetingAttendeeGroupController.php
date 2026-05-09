@@ -241,23 +241,24 @@ class MeetingAttendeeGroupController extends Controller
      */
     public function syncAttendees(SyncMeetingAttendeeGroupMembersRequest $request, MeetingAttendeeGroup $meetingAttendeeGroup)
     {
-        $summary = $this->membershipService->syncAttendees(
+        // FE pattern: pick từ User pool → BE auto find-or-create MeetingAttendee.
+        $summary = $this->membershipService->syncByUserIds(
             $meetingAttendeeGroup,
-            $request->validated('meeting_attendee_ids'),
+            $request->validated('user_ids'),
         );
 
         return $this->success($summary, 'Cập nhật danh sách đại biểu thành công.');
     }
 
     /**
-     * Gỡ 1 đại biểu khỏi nhóm.
+     * Gỡ đại biểu khỏi nhóm bằng user_id — pattern TaskAssignmentDepartment users.
      *
      * @urlParam meetingAttendeeGroup integer required ID nhóm. Example: 1
-     * @urlParam attendee integer required ID đại biểu (entity, KHÔNG phải pivot id). Example: 5
+     * @urlParam userId integer required ID user (User entity, KHÔNG phải attendee_id). Example: 10
      */
-    public function removeAttendee(MeetingAttendeeGroup $meetingAttendeeGroup, int $attendee)
+    public function removeAttendee(MeetingAttendeeGroup $meetingAttendeeGroup, int $userId)
     {
-        $this->membershipService->removeAttendee($meetingAttendeeGroup, $attendee);
+        $this->membershipService->removeByUserId($meetingAttendeeGroup, $userId);
 
         return $this->success(null, 'Đã gỡ đại biểu khỏi nhóm.');
     }
