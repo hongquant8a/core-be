@@ -34,10 +34,17 @@ return new class extends Migration
         });
 
         // Sau backfill, set NOT NULL + unique để đảm bảo invariant.
+        // Guard unique: fresh DB đã có unique từ create migration → bỏ qua tránh duplicate key.
         Schema::table('meetings', function (Blueprint $table) {
             $table->uuid('checkin_token')->nullable(false)->change();
-            $table->unique('checkin_token');
         });
+
+        $hasUnique = collect(DB::select('SHOW INDEX FROM meetings WHERE Key_name = ?', ['meetings_checkin_token_unique']))->isNotEmpty();
+        if (! $hasUnique) {
+            Schema::table('meetings', function (Blueprint $table) {
+                $table->unique('checkin_token');
+            });
+        }
     }
 
     public function down(): void

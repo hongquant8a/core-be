@@ -101,7 +101,7 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
-        return $this->successResource(new UserResource($user));
+        return $this->successResource(new UserResource($user->load(['creator.media', 'editor.media', 'profile'])));
     }
 
     /**

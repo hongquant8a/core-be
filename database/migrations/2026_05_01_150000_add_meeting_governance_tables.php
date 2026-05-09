@@ -43,7 +43,7 @@ return new class extends Migration
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();
 
-            $table->index(['organization_id', 'meeting_id', 'status']);
+            $table->index(['organization_id', 'meeting_id']);
             $table->foreign('created_by')->references('id')->on('users')->nullOnDelete();
             $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
         });
