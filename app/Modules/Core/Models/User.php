@@ -198,7 +198,7 @@ class User extends Authenticatable implements HasMedia
         })->when($filters['sort_by'] ?? 'created_at', function ($query, $sortBy) use ($filters) {
             $allowed = ['id', 'name', 'email', 'user_name', 'created_at'];
             $column = in_array($sortBy, $allowed) ? $sortBy : 'created_at';
-            $query->orderBy($column, $filters['sort_order'] ?? 'desc');
+            \App\Modules\Core\Support\VietnameseSort::apply($query, $column, $filters['sort_order'] ?? 'desc');
         });
     }
 }

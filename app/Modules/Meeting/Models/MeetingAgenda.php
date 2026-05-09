@@ -52,7 +52,7 @@ class MeetingAgenda extends Model
             ->when($filters['sort_by'] ?? 'sort_order', function ($q, $sortBy) use ($filters) {
                 $allowed = ['id', 'sort_order', 'start_time', 'created_at', 'updated_at'];
                 $column = in_array($sortBy, $allowed, true) ? $sortBy : 'sort_order';
-                $q->orderBy($column, $filters['sort_order'] ?? 'asc');
+                \App\Modules\Core\Support\VietnameseSort::apply($q, $column, $filters['sort_order'] ?? 'asc');
             });
     }
 }

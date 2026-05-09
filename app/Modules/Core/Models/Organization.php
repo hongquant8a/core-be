@@ -95,7 +95,7 @@ class Organization extends Model
         })->when($filters['sort_by'] ?? 'id', function ($q, $sortBy) use ($filters) {
             $allowed = ['id', 'name', 'slug', 'status', 'parent_id', 'sort_order', 'created_at', 'updated_at'];
             $column = in_array($sortBy, $allowed) ? $sortBy : 'id';
-            $q->orderBy($column, $filters['sort_order'] ?? 'desc');
+            \App\Modules\Core\Support\VietnameseSort::apply($q, $column, $filters['sort_order'] ?? 'desc');
         });
 
         return $query;

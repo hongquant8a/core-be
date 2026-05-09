@@ -59,7 +59,7 @@ class Permission extends SpatiePermission
         })->when($filters['sort_by'] ?? null, function ($q, $sortBy) use ($filters) {
             $allowed = ['id', 'name', 'guard_name', 'description', 'sort_order', 'parent_id', 'created_at', 'updated_at'];
             $column = in_array($sortBy, $allowed) ? $sortBy : 'id';
-            $q->orderBy($column, $filters['sort_order'] ?? 'asc');
+            \App\Modules\Core\Support\VietnameseSort::apply($q, $column, $filters['sort_order'] ?? 'asc');
         });
 
         return $query;

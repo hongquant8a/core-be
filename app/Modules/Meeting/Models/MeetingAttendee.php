@@ -85,7 +85,7 @@ class MeetingAttendee extends Model
             ->when($filters['sort_by'] ?? 'created_at', function ($q, $sortBy) use ($filters) {
                 $allowed = ['id', 'status', 'created_at', 'updated_at'];
                 $column = in_array($sortBy, $allowed, true) ? $sortBy : 'created_at';
-                $q->orderBy($column, $filters['sort_order'] ?? 'desc');
+                \App\Modules\Core\Support\VietnameseSort::apply($q, $column, $filters['sort_order'] ?? 'desc');
             });
     }
 }

@@ -31,7 +31,7 @@ class LogActivityController extends Controller
      * @queryParam user_id integer Lọc theo người thực hiện. Example: 1
      * @queryParam from_date date Lọc từ ngày (Y-m-d). Example: 2026-01-01
      * @queryParam to_date date Lọc đến ngày (Y-m-d). Example: 2026-12-31
-     * @queryParam method_type string GET, POST, PUT, PATCH, DELETE. Example: GET
+     * @queryParam method_type string GET, POST, PUT, PATCH, DELETE — hoặc alias "view"/"create"/"update"/"delete" (update gom PUT+PATCH). Example: GET
      * @queryParam status_code integer Mã HTTP (200, 400, 500...). Example: 200
      * @queryParam sort_by string id, description, route, method_type, status_code, ip_address, country, created_at. Example: created_at
      * @queryParam sort_order string asc, desc. Example: desc
@@ -104,7 +104,7 @@ class LogActivityController extends Controller
      * @queryParam user_id integer Lọc theo người thực hiện. Example: 1
      * @queryParam from_date date Từ ngày (Y-m-d). Example: 2026-01-01
      * @queryParam to_date date Đến ngày (Y-m-d). Example: 2026-12-31
-     * @queryParam method_type string GET, POST, PUT, PATCH, DELETE. Example: GET
+     * @queryParam method_type string GET, POST, PUT, PATCH, DELETE — hoặc alias "view"/"create"/"update"/"delete" (update gom PUT+PATCH). Example: GET
      * @queryParam status_code integer Mã HTTP. Example: 200
      * @queryParam granularity string `day` hoặc `month` (mặc định `month`). Example: month
      * @queryParam top_users_limit integer 1-100, mặc định 5. Example: 5
@@ -135,7 +135,7 @@ class LogActivityController extends Controller
      * @queryParam user_id integer Lọc theo người thực hiện. Example: 1
      * @queryParam from_date date Từ ngày. Example: 2026-01-01
      * @queryParam to_date date Đến ngày. Example: 2026-12-31
-     * @queryParam method_type string GET, POST, PUT, PATCH, DELETE.
+     * @queryParam method_type string GET, POST, PUT, PATCH, DELETE — hoặc alias "view"/"create"/"update"/"delete" (update gom PUT+PATCH).
      * @queryParam status_code integer Mã HTTP.
      * @queryParam sort_by string Example: created_at
      * @queryParam sort_order string asc, desc. Example: desc
@@ -164,7 +164,7 @@ class LogActivityController extends Controller
      * @queryParam user_id integer Lọc theo người thực hiện. Example: 1
      * @queryParam from_date date Lọc từ ngày (Y-m-d). Example: 2026-01-01
      * @queryParam to_date date Lọc đến ngày (Y-m-d). Example: 2026-12-31
-     * @queryParam method_type string GET, POST, PUT, PATCH, DELETE. Example: GET
+     * @queryParam method_type string GET, POST, PUT, PATCH, DELETE — hoặc alias "view"/"create"/"update"/"delete" (update gom PUT+PATCH). Example: GET
      * @queryParam status_code integer Mã HTTP (200, 400, 500...). Example: 200
      * @queryParam sort_by string id, description, route, method_type, status_code, ip_address, country, created_at.
      * @queryParam sort_order string asc, desc. Example: desc

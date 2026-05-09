@@ -19,7 +19,7 @@ class UpdateCatalogRequest extends FormRequest
             'description' => 'nullable|string|max:65535',
             'status' => ['sometimes', MeetingCatalogStatusEnum::rule()],
             'address' => 'nullable|string|max:255',
-            'google_maps_url' => 'nullable|url|max:255',
+            'google_maps_url' => 'nullable|url|max:2048',
         ];
     }
 

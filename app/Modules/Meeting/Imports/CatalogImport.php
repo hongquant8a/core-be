@@ -74,6 +74,9 @@ class CatalogImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnF
     {
         return [
             'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'address' => 'nullable|string|max:255',
+            'google_maps_url' => 'nullable|url|max:2048',
             'status' => 'nullable|in:active,inactive',
         ];
     }
@@ -83,6 +86,11 @@ class CatalogImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnF
         return [
             'name.required' => 'Tên không được để trống.',
             'name.max' => 'Tên không được vượt quá 255 ký tự.',
+            'description.string' => 'Mô tả phải là chuỗi.',
+            'address.string' => 'Địa chỉ phải là chuỗi.',
+            'address.max' => 'Địa chỉ không được vượt quá 255 ký tự.',
+            'google_maps_url.url' => 'Google Maps URL không hợp lệ (phải là URL bắt đầu bằng http:// hoặc https://).',
+            'google_maps_url.max' => 'Google Maps URL không được vượt quá 2048 ký tự.',
             'status.in' => 'Trạng thái phải là active hoặc inactive.',
         ];
     }
@@ -91,6 +99,9 @@ class CatalogImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnF
     {
         return [
             'name' => 'Tên',
+            'description' => 'Mô tả',
+            'address' => 'Địa chỉ',
+            'google_maps_url' => 'Google Maps URL',
             'status' => 'Trạng thái',
         ];
     }

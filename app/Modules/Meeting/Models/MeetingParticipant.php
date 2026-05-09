@@ -47,7 +47,7 @@ class MeetingParticipant extends Model
             ->when($filters['sort_by'] ?? 'id', function ($q, $sortBy) use ($filters) {
                 $allowed = ['id', 'display_name', 'responded_at', 'created_at'];
                 $column = in_array($sortBy, $allowed, true) ? $sortBy : 'id';
-                $q->orderBy($column, $filters['sort_order'] ?? 'asc');
+                \App\Modules\Core\Support\VietnameseSort::apply($q, $column, $filters['sort_order'] ?? 'asc');
             });
     }
 }
