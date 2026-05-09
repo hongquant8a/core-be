@@ -41,14 +41,14 @@ class MeetingAttendeeService
     {
         $payload = [...$validated, 'organization_id' => $this->resolveCurrentOrganizationId()];
 
-        return MeetingAttendee::create($payload)->load(['group', 'creator.media', 'editor.media']);
+        return MeetingAttendee::create($payload)->load(['groups', 'creator.media', 'editor.media']);
     }
 
     public function update(MeetingAttendee $meetingAttendee, array $validated): MeetingAttendee
     {
         $meetingAttendee->update($validated);
 
-        return $meetingAttendee->load(['group', 'creator.media', 'editor.media']);
+        return $meetingAttendee->load(['groups', 'creator.media', 'editor.media']);
     }
 
     public function destroy(MeetingAttendee $meetingAttendee): void
@@ -76,7 +76,7 @@ class MeetingAttendeeService
     {
         $meetingAttendee->update(['status' => $status]);
 
-        return $meetingAttendee->load(['group', 'creator.media', 'editor.media']);
+        return $meetingAttendee->load(['groups', 'creator.media', 'editor.media']);
     }
 
     /**
