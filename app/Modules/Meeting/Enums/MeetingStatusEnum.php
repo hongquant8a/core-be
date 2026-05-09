@@ -21,4 +21,13 @@ enum MeetingStatusEnum: string
     {
         return 'in:'.implode(',', self::values());
     }
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::Draft => 'Bản nháp',
+            self::Published => 'Đã công bố',
+            self::Cancelled => 'Đã hủy',
+        };
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Modules\Core\Exports;
 
+use App\Modules\Core\Enums\StatusEnum;
 use App\Modules\Core\Models\Organization;
 use App\Modules\Core\Services\OrganizationService;
 use Maatwebsite\Excel\Concerns\FromCollection;
@@ -25,7 +26,7 @@ class OrganizationsExport implements FromCollection, WithHeadings
             'name' => $o->name,
             'slug' => $o->slug,
             'description' => $o->description,
-            'status' => $o->status,
+            'status' => StatusEnum::tryFrom((string) $o->status)?->label() ?? $o->status,
             'parent_slug' => $o->parent_id ? (Organization::find($o->parent_id)?->slug ?? '') : '',
             'sort_order' => $o->sort_order,
             'depth' => $service->getDepth($o),

@@ -2,6 +2,7 @@
 
 namespace App\Modules\Meeting\Exports;
 
+use App\Modules\Meeting\Enums\MeetingCatalogStatusEnum;
 use App\Modules\Meeting\Models\MeetingAttendee;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -26,7 +27,7 @@ class MeetingAttendeeExport implements FromCollection, WithHeadings
                 'group_name' => $item->group?->name,
                 'position_name' => $item->position_name,
                 'department_name' => $item->department_name,
-                'status' => $item->status,
+                'status' => MeetingCatalogStatusEnum::tryFrom((string) $item->status)?->label() ?? $item->status,
                 'note' => $item->note,
                 'created_by' => $item->creator?->name ?? 'N/A',
                 'updated_by' => $item->editor?->name ?? 'N/A',

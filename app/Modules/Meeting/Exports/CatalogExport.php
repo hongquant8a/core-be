@@ -2,6 +2,7 @@
 
 namespace App\Modules\Meeting\Exports;
 
+use App\Modules\Meeting\Enums\MeetingCatalogStatusEnum;
 use Illuminate\Database\Eloquent\Model;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -35,7 +36,7 @@ class CatalogExport implements FromCollection, WithHeadings
                 'description' => $item->description,
                 'address' => $hasLocation ? $item->address : null,
                 'google_maps_url' => $hasLocation ? $item->google_maps_url : null,
-                'status' => $item->status,
+                'status' => MeetingCatalogStatusEnum::tryFrom((string) $item->status)?->label() ?? $item->status,
                 'created_by' => $item->creator?->name ?? 'N/A',
                 'updated_by' => $item->editor?->name ?? 'N/A',
                 'created_at' => $item->created_at?->format('H:i:s d/m/Y'),

@@ -2,6 +2,7 @@
 
 namespace App\Modules\Meeting\Exports;
 
+use App\Modules\Meeting\Enums\MeetingStatusEnum;
 use App\Modules\Meeting\Models\Meeting;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -25,7 +26,7 @@ class MeetingExport implements FromCollection, WithHeadings
                 'is_public' => $item->is_public ? 'Có' : 'Không',
                 'start_time' => $item->start_time?->format('H:i:s d/m/Y'),
                 'end_time' => $item->end_time?->format('H:i:s d/m/Y'),
-                'status' => $item->status,
+                'status' => MeetingStatusEnum::tryFrom((string) $item->status)?->label() ?? $item->status,
                 'view_count' => $item->view_count ?? 0,
                 'published_at' => $item->published_at?->format('H:i:s d/m/Y'),
                 'created_by' => $item->creator?->name ?? 'N/A',

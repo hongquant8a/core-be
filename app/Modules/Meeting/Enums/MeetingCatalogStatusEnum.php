@@ -16,4 +16,12 @@ enum MeetingCatalogStatusEnum: string
     {
         return 'in:'.implode(',', self::values());
     }
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::Active => 'Đang hoạt động',
+            self::Inactive => 'Không hoạt động',
+        };
+    }
 }

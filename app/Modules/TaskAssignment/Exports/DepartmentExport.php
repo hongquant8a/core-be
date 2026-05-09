@@ -2,6 +2,7 @@
 
 namespace App\Modules\TaskAssignment\Exports;
 
+use App\Modules\Core\Enums\StatusEnum;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDepartment;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -22,7 +23,7 @@ class DepartmentExport implements FromCollection, WithHeadings
                 'code' => $dept->code,
                 'name' => $dept->name,
                 'description' => $dept->description,
-                'status' => $dept->status,
+                'status' => StatusEnum::tryFrom((string) $dept->status)?->label() ?? $dept->status,
                 'sort_order' => $dept->sort_order,
                 'created_by' => $dept->creator?->name ?? 'N/A',
                 'updated_by' => $dept->editor?->name ?? 'N/A',

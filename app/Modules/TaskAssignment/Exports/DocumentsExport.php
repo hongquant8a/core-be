@@ -2,6 +2,7 @@
 
 namespace App\Modules\TaskAssignment\Exports;
 
+use App\Modules\TaskAssignment\Enums\TaskAssignmentDocumentStatusEnum;
 use App\Modules\TaskAssignment\Exports\Concerns\StripsHtml;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDocument;
 use Maatwebsite\Excel\Concerns\FromCollection;
@@ -27,7 +28,7 @@ class DocumentsExport implements FromCollection, WithHeadings
                 'summary' => $this->stripHtml($doc->summary),
                 'issue_date' => $doc->issue_date?->format('d/m/Y'),
                 'type' => $doc->type?->name ?? 'N/A',
-                'status' => $doc->status,
+                'status' => TaskAssignmentDocumentStatusEnum::tryFrom((string) $doc->status)?->label() ?? $doc->status,
                 'issued_at' => $doc->issued_at?->format('H:i:s d/m/Y'),
                 'items_count' => $doc->items_count,
                 'created_by' => $doc->creator?->name ?? 'N/A',

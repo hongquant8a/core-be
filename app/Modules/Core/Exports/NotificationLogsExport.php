@@ -28,7 +28,14 @@ class NotificationLogsExport implements FromCollection, WithHeadings
         return $notifications->values()->map(function (Notification $n, $i) {
             $deliveries = $n->deliveries;
             $channels = $deliveries->pluck('channel')->unique()->implode(', ');
-            $statuses = $deliveries->pluck('status')->unique()->implode(', ');
+            $statusLabels = [
+                'pending' => 'Chờ gửi',
+                'sent' => 'Đã gửi',
+                'failed' => 'Thất bại',
+            ];
+            $statuses = $deliveries->pluck('status')->unique()
+                ->map(fn ($s) => $statusLabels[$s] ?? $s)
+                ->implode(', ');
 
             return [
                 'stt' => $i + 1,

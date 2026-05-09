@@ -2,6 +2,9 @@
 
 namespace App\Modules\TaskAssignment\Exports;
 
+use App\Modules\TaskAssignment\Enums\TaskDeadlineTypeEnum;
+use App\Modules\TaskAssignment\Enums\TaskPriorityEnum;
+use App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum;
 use App\Modules\TaskAssignment\Exports\Concerns\StripsHtml;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use Maatwebsite\Excel\Concerns\FromCollection;
@@ -29,12 +32,12 @@ class ItemsExport implements FromCollection, WithHeadings
                 'description' => $this->stripHtml($item->description),
                 'document' => $item->document?->name ?? 'N/A',
                 'item_type' => $item->itemType?->name ?? 'N/A',
-                'deadline_type' => $item->deadline_type,
+                'deadline_type' => TaskDeadlineTypeEnum::tryFrom((string) $item->deadline_type)?->label() ?? $item->deadline_type,
                 'start_at' => $item->start_at?->format('H:i:s d/m/Y'),
                 'end_at' => $item->end_at?->format('H:i:s d/m/Y'),
-                'processing_status' => $item->processing_status,
+                'processing_status' => TaskProgressStatusEnum::tryFrom((string) $item->processing_status)?->label() ?? $item->processing_status,
                 'completion_percent' => $item->completion_percent,
-                'priority' => $item->priority,
+                'priority' => TaskPriorityEnum::tryFrom((string) $item->priority)?->label() ?? $item->priority,
                 'completed_at' => $item->completed_at?->format('H:i:s d/m/Y'),
                 'departments' => $item->users->pluck('pivot.department_id')->unique()->map(fn ($id) => $depts->get($id))->filter()->join(', '),
                 'created_by' => $item->creator?->name ?? 'N/A',

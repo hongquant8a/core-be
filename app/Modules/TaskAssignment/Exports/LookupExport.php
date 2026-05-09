@@ -2,6 +2,7 @@
 
 namespace App\Modules\TaskAssignment\Exports;
 
+use App\Modules\Core\Enums\StatusEnum;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 
@@ -25,7 +26,7 @@ class LookupExport implements FromCollection, WithHeadings
                 'stt' => $i + 1,
                 'name' => $item->name,
                 'description' => $item->description,
-                'status' => $item->status,
+                'status' => StatusEnum::tryFrom((string) $item->status)?->label() ?? $item->status,
                 'created_by' => $item->creator?->name ?? 'N/A',
                 'updated_by' => $item->editor?->name ?? 'N/A',
                 'created_at' => $item->created_at?->format('H:i:s d/m/Y'),
