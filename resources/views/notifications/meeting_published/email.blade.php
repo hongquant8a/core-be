@@ -40,7 +40,7 @@
         @if($meeting->content)
             <tr>
                 <td class="info-label">Nội dung</td>
-                <td class="info-value">{!! nl2br(e($meeting->content)) !!}</td>
+                <td class="info-value">{!! strip_tags($meeting->content, '<p><br><strong><b><em><i><u><ol><ul><li><a><span><div>') !!}</td>
             </tr>
         @endif
     </table>

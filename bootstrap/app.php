@@ -61,9 +61,10 @@ return Application::configure(basePath: dirname(__DIR__))
         });
         $exceptions->renderable(function (\Spatie\Permission\Exceptions\UnauthorizedException $e, $request) {
             if ($request->expectsJson() || $request->is('api/*')) {
+                // Spatie default message English ("User does not have the right permissions") — override sang tiếng Việt.
                 return response()->json([
                     'success' => false,
-                    'message' => $e->getMessage(),
+                    'message' => 'Bạn không có quyền thực hiện thao tác này.',
                     'code' => 'FORBIDDEN',
                 ], 403);
             }

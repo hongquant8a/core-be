@@ -22,7 +22,7 @@
         @if($item->description)
             <tr>
                 <td class="info-label">Nội dung</td>
-                <td class="info-value">{!! nl2br(e($item->description)) !!}</td>
+                <td class="info-value">{!! strip_tags($item->description, '<p><br><strong><b><em><i><u><ol><ul><li><a><span><div>') !!}</td>
             </tr>
         @endif
     </table>
