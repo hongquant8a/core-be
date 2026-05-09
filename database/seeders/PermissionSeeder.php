@@ -130,12 +130,13 @@ class PermissionSeeder extends Seeder
             'index',
         ],
         // Meeting - Cuộc họp
+        // In-meeting control actions (lockAttendance/unlockAttendance/endEarly/highlightAgenda/
+        // highlightDiscussion + vote-topics open/close) đã chuyển sang MeetingPolicy gate
+        // (chair/operator của meeting đó). showQrCode giữ Spatie role-based vì admin role được
+        // xem QR cho mọi meeting (không gắn với meeting cụ thể).
         'meetings' => [
             'stats', 'index', 'show', 'store', 'update', 'destroy',
             'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
-            'lockAttendance', 'unlockAttendance',
-            'endEarly',
-            'highlightAgenda', 'highlightDiscussion',
             'showQrCode',
         ],
         // Meeting - Loại cuộc họp
@@ -297,12 +298,6 @@ class PermissionSeeder extends Seeder
         'complete' => 'Đánh dấu hoàn thành',
         'approve' => 'Duyệt',
         'reject' => 'Từ chối',
-        'lockAttendance' => 'Khoá điểm danh',
-        'unlockAttendance' => 'Mở khoá điểm danh',
-        'endEarly' => 'Kết thúc sớm',
-        'highlightAgenda' => 'Chiếu chương trình',
-        'highlightDiscussion' => 'Chiếu phát biểu',
-        'showQrCode' => 'Xem QR điểm danh',
     ];
 
     /** Tạo đầy đủ permission từ danh sách PERMISSIONS (kèm description, sort_order, parent_id). */

@@ -5,6 +5,11 @@ namespace App\Providers;
 use App\Modules\Core\Models\User;
 use App\Modules\Core\Observers\UserObserver;
 use App\Modules\Core\Services\SettingService;
+use App\Modules\Meeting\Models\Meeting;
+use App\Modules\Meeting\Models\MeetingVoteTopic;
+use App\Modules\Meeting\Policies\MeetingPolicy;
+use App\Modules\Meeting\Policies\MeetingVoteTopicPolicy;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Knuckles\Scribe\Scribe;
@@ -28,6 +33,19 @@ class AppServiceProvider extends ServiceProvider
     {
         // Auto-create UserProfile mỗi khi tạo User.
         User::observe(UserObserver::class);
+
+        // Register policies cho in-meeting control actions (Spatie permission vẫn giữ cho catalog/CRUD).
+        Gate::policy(Meeting::class, MeetingPolicy::class);
+        Gate::policy(MeetingVoteTopic::class, MeetingVoteTopicPolicy::class);
+
+        // Super Admin bypass tất cả policy — return non-null từ Gate::before.
+        Gate::before(function (User $user, string $ability) {
+            if ($user->hasRole('Super Admin')) {
+                return true;
+            }
+
+            return null; // Không quyết định, để policy xử lý.
+        });
 
         // Giữ nguyên header Excel khi import (không lowercase/snake_case).
         // Cho phép import dùng header tiếng Việt giống hệt template export.

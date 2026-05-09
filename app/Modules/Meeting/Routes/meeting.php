@@ -14,13 +14,14 @@ Route::put('/{meeting}', [MeetingController::class, 'update'])->middleware('perm
 Route::patch('/{meeting}', [MeetingController::class, 'update'])->middleware('permission:meetings.update,web');
 Route::delete('/{meeting}', [MeetingController::class, 'destroy'])->middleware('permission:meetings.destroy,web');
 Route::patch('/{meeting}/status', [MeetingController::class, 'changeStatus'])->middleware('permission:meetings.changeStatus,web');
-// THAO TÁC NHANH (Tab 7 Điều hành) — operator khoá / mở khoá danh sách điểm danh.
-Route::patch('/{meeting}/lock-attendance', [MeetingController::class, 'lockAttendance'])->middleware('permission:meetings.lockAttendance,web');
-Route::patch('/{meeting}/unlock-attendance', [MeetingController::class, 'unlockAttendance'])->middleware('permission:meetings.unlockAttendance,web');
-// Lấy QR token điểm danh — chỉ privileged role mới được fetch để gen QR.
+// In-meeting control — Policy gate: chair/operator của CHÍNH meeting đó (Spatie permission cho catalog vẫn giữ).
+// THAO TÁC NHANH (Tab 7 Điều hành) — chair + operator khoá / mở khoá danh sách điểm danh.
+Route::patch('/{meeting}/lock-attendance', [MeetingController::class, 'lockAttendance'])->middleware('can:manageAttendance,meeting');
+Route::patch('/{meeting}/unlock-attendance', [MeetingController::class, 'unlockAttendance'])->middleware('can:manageAttendance,meeting');
+// Lấy QR token điểm danh — Spatie permission (role-based, không gắn với meeting cụ thể).
 Route::get('/{meeting}/qr-token', [MeetingController::class, 'qrToken'])->middleware('permission:meetings.showQrCode,web');
-// Kết thúc cuộc họp sớm — set end_time = now() (FE phase derive theo start_time/end_time).
-Route::patch('/{meeting}/end-early', [MeetingController::class, 'endEarly'])->middleware('permission:meetings.endEarly,web');
-// Highlight pointers cho Tab 8 màn chiếu — operator chỉ định chương trình + đăng ký đang chiếu.
-Route::patch('/{meeting}/highlight-agenda', [MeetingController::class, 'highlightAgenda'])->middleware('permission:meetings.highlightAgenda,web');
-Route::patch('/{meeting}/highlight-discussion', [MeetingController::class, 'highlightDiscussion'])->middleware('permission:meetings.highlightDiscussion,web');
+// Kết thúc cuộc họp sớm — chair + operator (thư ký là người điều hành thực tế).
+Route::patch('/{meeting}/end-early', [MeetingController::class, 'endEarly'])->middleware('can:endEarly,meeting');
+// Highlight pointers cho Tab 8 màn chiếu — chair + operator chỉ định chương trình + đăng ký đang chiếu.
+Route::patch('/{meeting}/highlight-agenda', [MeetingController::class, 'highlightAgenda'])->middleware('can:highlight,meeting');
+Route::patch('/{meeting}/highlight-discussion', [MeetingController::class, 'highlightDiscussion'])->middleware('can:highlight,meeting');

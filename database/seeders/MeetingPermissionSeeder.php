@@ -73,8 +73,10 @@ class MeetingPermissionSeeder extends Seeder
             }
         }
 
-        // Meetings (full CRUD + status workflow + export + runtime actions + highlight + QR)
-        foreach (['stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'lockAttendance', 'unlockAttendance', 'endEarly', 'highlightAgenda', 'highlightDiscussion', 'showQrCode'] as $action) {
+        // Meetings (full CRUD + status workflow + export + showQrCode). Runtime actions
+        // (lockAttendance/endEarly/highlight + vote-topics open/close) đã chuyển sang
+        // MeetingPolicy gate — chair/operator của meeting đó được phép, không qua Spatie.
+        foreach (['stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'showQrCode'] as $action) {
             $names[] = "meetings.{$action}";
         }
 

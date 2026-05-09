@@ -45,6 +45,9 @@ class MeetingResource extends JsonResource
             'documents_count' => $this->when(isset($this->documents_count), (int) $this->documents_count),
             'published_at' => $this->published_at?->format('H:i:s d/m/Y'),
             'attendance_locked' => (bool) $this->attendance_locked,
+            // FE dùng field này để show/hide button điều hành (end-early, lock-attendance, highlight, vote open/close).
+            // Trả về vai trò của user đang request trong meeting này: 'chairperson' | 'operator' | 'participant' | null.
+            'current_user_meeting_role' => $request->user() ? $this->resource->userMeetingRole($request->user()) : null,
             // Lưu ý: `checkin_token` (UUID dùng gen QR điểm danh) KHÔNG expose ở đây.
             // Token chỉ truy cập qua endpoint riêng `GET /api/meetings/{id}/qr-token`
             // với permission `meetings.showQrCode` (chỉ chair/op/secretary lấy được).

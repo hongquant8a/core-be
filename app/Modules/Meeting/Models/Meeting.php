@@ -94,6 +94,59 @@ class Meeting extends Model
         return $this->hasMany(MeetingParticipant::class, 'meeting_id');
     }
 
+    /**
+     * User là chủ trì của meeting? Match qua chairperson_meeting_attendee_id → attendee.user_id.
+     */
+    public function isChairperson(\App\Modules\Core\Models\User $user): bool
+    {
+        if ($this->chairperson_meeting_attendee_id === null) {
+            return false;
+        }
+
+        return $this->chairperson?->user_id === $user->id;
+    }
+
+    /**
+     * User là thư ký/operator của meeting?
+     */
+    public function isOperator(\App\Modules\Core\Models\User $user): bool
+    {
+        if ($this->operator_meeting_attendee_id === null) {
+            return false;
+        }
+
+        return $this->operator?->user_id === $user->id;
+    }
+
+    /**
+     * User là đại biểu (participant đã được mời) của meeting? Check qua participant.attendee.user_id.
+     */
+    public function isParticipant(\App\Modules\Core\Models\User $user): bool
+    {
+        return $this->participants()
+            ->whereHas('attendee', fn ($q) => $q->where('user_id', $user->id))
+            ->exists();
+    }
+
+    /**
+     * Trả về vai trò của user trong meeting: 'chairperson' | 'operator' | 'participant' | null.
+     * Ưu tiên chair > operator > participant.
+     */
+    public function userMeetingRole(\App\Modules\Core\Models\User $user): ?string
+    {
+        if ($this->isChairperson($user)) {
+            return 'chairperson';
+        }
+        if ($this->isOperator($user)) {
+            return 'operator';
+        }
+        if ($this->isParticipant($user)) {
+            return 'participant';
+        }
+
+        return null;
+    }
+
     public function agendas()
     {
         return $this->hasMany(MeetingAgenda::class, 'meeting_id')->orderBy('sort_order');
