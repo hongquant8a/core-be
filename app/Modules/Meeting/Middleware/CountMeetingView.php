@@ -60,6 +60,7 @@ class CountMeetingView
                     'ip_address' => $request->ip(),
                     'user_agent' => $request->userAgent(),
                     'viewed_at' => now(),
+                    'kind' => 'meeting',
                 ]);
             });
         } catch (Throwable $e) {
@@ -70,6 +71,8 @@ class CountMeetingView
     private function logDocumentView(MeetingDocument $document, Request $request): void
     {
         try {
+            // GET /meeting-documents/public/{id} = fetch metadata page, KHÔNG phải xem file.
+            // File view/download đi qua endpoint /download?type=view|download riêng.
             MeetingView::create([
                 'meeting_id' => $document->meeting_id,
                 'meeting_document_id' => $document->id,
@@ -77,6 +80,7 @@ class CountMeetingView
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
                 'viewed_at' => now(),
+                'kind' => 'document_meta_view',
             ]);
         } catch (Throwable $e) {
             report($e);

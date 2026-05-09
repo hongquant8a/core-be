@@ -26,6 +26,7 @@ class MeetingDocumentResource extends JsonResource
             'file_name' => $this->mediaFile?->file_name,
             'is_public' => $this->is_public,
             'download_count' => $this->download_count,
+            'view_count' => $this->view_count,
             'sort_order' => $this->sort_order,
             'created_by' => $this->whenLoaded('creator', fn () => $this->formatUserSummary($this->creator), null),
             'updated_by' => $this->whenLoaded('editor', fn () => $this->formatUserSummary($this->editor), null),

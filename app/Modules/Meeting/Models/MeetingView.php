@@ -18,6 +18,7 @@ class MeetingView extends Model
         'ip_address',
         'user_agent',
         'viewed_at',
+        'kind',
     ];
 
     protected $casts = [

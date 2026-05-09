@@ -62,21 +62,29 @@ class MeetingDocumentService
     }
 
     /**
-     * Track + resolve download URL cho tài liệu (cả public và authenticated dùng chung logic).
+     * Track + resolve URL truy cập tệp đính kèm (chung cho cả public và authenticated).
      *
-     * @return array{url: string, file_name: ?string}
+     * `type`:
+     *  - 'download': increment download_count, log kind=document_download
+     *  - 'view'    : increment view_count,    log kind=document_view
+     *
+     * @return array{url: string, file_name: ?string, type: string}
      */
-    public function trackDownload(MeetingDocument $meetingDocument): array
+    public function trackAccess(MeetingDocument $meetingDocument, string $type = 'download'): array
     {
+        $type = in_array($type, ['download', 'view'], true) ? $type : 'download';
+
         $meetingDocument->loadMissing('mediaFile');
         if (! $meetingDocument->mediaFile) {
             throw new ModelNotFoundException('Tài liệu không có tệp đính kèm.');
         }
 
         $request = request();
+        $counterColumn = $type === 'view' ? 'view_count' : 'download_count';
+        $logKind = $type === 'view' ? 'document_view' : 'document_download';
 
-        DB::transaction(function () use ($meetingDocument, $request) {
-            $meetingDocument->increment('download_count');
+        DB::transaction(function () use ($meetingDocument, $request, $counterColumn, $logKind) {
+            $meetingDocument->increment($counterColumn);
             MeetingView::create([
                 'meeting_id' => $meetingDocument->meeting_id,
                 'meeting_document_id' => $meetingDocument->id,
@@ -84,6 +92,7 @@ class MeetingDocumentService
                 'ip_address' => $request?->ip(),
                 'user_agent' => $request?->userAgent(),
                 'viewed_at' => now(),
+                'kind' => $logKind,
             ]);
         });
 
@@ -92,6 +101,7 @@ class MeetingDocumentService
         return [
             'url' => '/storage/'.$media->id.'/'.$media->file_name,
             'file_name' => $media->file_name,
+            'type' => $type,
         ];
     }
 

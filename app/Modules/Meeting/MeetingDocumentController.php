@@ -54,34 +54,47 @@ class MeetingDocumentController extends Controller
     }
 
     /**
-     * Tải tài liệu công khai — increment download_count + log + redirect 302 tới file.
+     * Truy cập tài liệu công khai — track + 302 redirect tới file.
+     *
+     * Query `type` chọn loại counter:
+     *  - `download` (mặc định): tăng `download_count`, log kind=document_download
+     *  - `view`               : tăng `view_count`,    log kind=document_view
      *
      * @unauthenticated
      *
      * @urlParam meetingDocument integer required ID tài liệu họp. Example: 1
+     *
+     * @queryParam type string Loại truy cập (`download`|`view`). Mặc định `download`. Example: view
      */
     public function publicDownload(MeetingDocument $meetingDocument)
     {
         // Validate public visibility (mirror publicShow check) trước khi track.
         $this->meetingDocumentService->publicShow($meetingDocument);
 
-        return $this->respondDownload($meetingDocument);
+        return $this->respondAccess($meetingDocument);
     }
 
     /**
-     * Tải tài liệu (auth) — increment download_count + log + redirect 302 tới file.
-     * FE dùng URL này thay cho file_url để BE track lượt tải.
+     * Truy cập tài liệu (auth) — track + 302 redirect tới file.
+     * FE dùng URL này thay cho `file_url` để BE đếm lượt tải/xem.
+     *
+     * Query `type` chọn loại counter:
+     *  - `download` (mặc định): tăng `download_count`, log kind=document_download
+     *  - `view`               : tăng `view_count`,    log kind=document_view
      *
      * @urlParam meetingDocument integer required ID tài liệu họp. Example: 1
+     *
+     * @queryParam type string Loại truy cập (`download`|`view`). Mặc định `download`. Example: view
      */
     public function download(MeetingDocument $meetingDocument)
     {
-        return $this->respondDownload($meetingDocument);
+        return $this->respondAccess($meetingDocument);
     }
 
-    private function respondDownload(MeetingDocument $meetingDocument)
+    private function respondAccess(MeetingDocument $meetingDocument)
     {
-        $info = $this->meetingDocumentService->trackDownload($meetingDocument);
+        $type = (string) request()->query('type', 'download');
+        $info = $this->meetingDocumentService->trackAccess($meetingDocument, $type);
 
         return redirect()->away($info['url'], 302, [
             'Cache-Control' => 'no-store, no-cache, must-revalidate',
