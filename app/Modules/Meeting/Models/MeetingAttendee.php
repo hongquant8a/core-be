@@ -12,7 +12,6 @@ class MeetingAttendee extends Model
 
     protected $fillable = [
         'organization_id',
-        'meeting_attendee_group_id',
         'user_id',
         'position_name',
         'department_name',
@@ -48,9 +47,18 @@ class MeetingAttendee extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function group()
+    /**
+     * Many-to-many với MeetingAttendeeGroup qua pivot meeting_attendee_group_members.
+     * Trước đây là belongsTo (FK đơn) — refactor 2026-05-08.
+     */
+    public function groups()
     {
-        return $this->belongsTo(MeetingAttendeeGroup::class, 'meeting_attendee_group_id');
+        return $this->belongsToMany(
+            MeetingAttendeeGroup::class,
+            'meeting_attendee_group_members',
+            'meeting_attendee_id',
+            'meeting_attendee_group_id'
+        )->withPivot('id', 'organization_id')->withTimestamps();
     }
 
     public function getNameAttribute(): ?string
@@ -79,7 +87,14 @@ class MeetingAttendee extends Model
                 });
             })
             ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
-            ->when($filters['meeting_attendee_group_id'] ?? null, fn ($q, $groupId) => $q->where('meeting_attendee_group_id', $groupId))
+            // Filter theo group qua pivot — chấp nhận `groups[]=1&groups[]=2` (multi)
+            // hoặc `meeting_attendee_group_id=1` (legacy single — back-compat).
+            ->when(! empty($filters['groups']) && is_array($filters['groups']), function ($q) use ($filters) {
+                $q->whereHas('groups', fn ($g) => $g->whereIn('meeting_attendee_groups.id', $filters['groups']));
+            })
+            ->when($filters['meeting_attendee_group_id'] ?? null, function ($q, $groupId) {
+                $q->whereHas('groups', fn ($g) => $g->where('meeting_attendee_groups.id', $groupId));
+            })
             ->when($filters['from_date'] ?? null, fn ($q, $date) => $q->whereDate('created_at', '>=', $date))
             ->when($filters['to_date'] ?? null, fn ($q, $date) => $q->whereDate('created_at', '<=', $date))
             ->when($filters['sort_by'] ?? 'created_at', function ($q, $sortBy) use ($filters) {

@@ -16,3 +16,8 @@ Route::put('/{meetingAttendeeGroup}', [MeetingAttendeeGroupController::class, 'u
 Route::patch('/{meetingAttendeeGroup}', [MeetingAttendeeGroupController::class, 'update'])->middleware('permission:meeting-attendee-groups.update,web');
 Route::delete('/{meetingAttendeeGroup}', [MeetingAttendeeGroupController::class, 'destroy'])->middleware('permission:meeting-attendee-groups.destroy,web');
 Route::patch('/{meetingAttendeeGroup}/status', [MeetingAttendeeGroupController::class, 'changeStatus'])->middleware('permission:meeting-attendee-groups.changeStatus,web');
+
+// Pivot M-N: đại biểu trong nhóm.
+Route::get('/{meetingAttendeeGroup}/attendees', [MeetingAttendeeGroupController::class, 'attendees'])->middleware('permission:meeting-attendee-groups.attendees,web');
+Route::post('/{meetingAttendeeGroup}/attendees', [MeetingAttendeeGroupController::class, 'syncAttendees'])->middleware('permission:meeting-attendee-groups.attendees,web');
+Route::delete('/{meetingAttendeeGroup}/attendees/{attendee}', [MeetingAttendeeGroupController::class, 'removeAttendee'])->middleware('permission:meeting-attendee-groups.attendees,web');

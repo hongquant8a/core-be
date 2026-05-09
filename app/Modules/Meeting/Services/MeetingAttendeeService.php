@@ -27,14 +27,14 @@ class MeetingAttendeeService
 
     public function index(array $filters, int $limit)
     {
-        return MeetingAttendee::with(['group', 'creator.media', 'editor.media'])
+        return MeetingAttendee::with(['groups', 'creator.media', 'editor.media'])
             ->filter($filters)
             ->paginate($limit);
     }
 
     public function show(MeetingAttendee $meetingAttendee): MeetingAttendee
     {
-        return $meetingAttendee->load(['group', 'creator.media', 'editor.media']);
+        return $meetingAttendee->load(['groups', 'creator.media', 'editor.media']);
     }
 
     public function store(array $validated): MeetingAttendee

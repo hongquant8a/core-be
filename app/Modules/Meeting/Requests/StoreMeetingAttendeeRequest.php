@@ -18,7 +18,9 @@ class StoreMeetingAttendeeRequest extends FormRequest
         $orgId = function_exists('getPermissionsTeamId') ? getPermissionsTeamId() : null;
 
         return [
-            'meeting_attendee_group_id' => 'nullable|integer|exists:meeting_attendee_groups,id',
+            // meeting_attendee_group_id: bỏ sau refactor M-N (2026-05-08). Group quản lý qua
+            // pivot endpoint /meeting-attendee-groups/{id}/attendees. Field này nếu FE còn
+            // gửi → ignore (rule không có nên Laravel strip khỏi validated).
             'user_id' => [
                 'required', 'integer', 'exists:users,id',
                 Rule::unique('meeting_attendees', 'user_id')->where(fn ($q) => $q->where('organization_id', $orgId)),
@@ -46,7 +48,6 @@ class StoreMeetingAttendeeRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'meeting_attendee_group_id' => 'Nhóm đại biểu',
             'user_id' => 'Người dùng',
             'position_name' => 'Chức vụ',
             'department_name' => 'Đơn vị',
@@ -58,7 +59,6 @@ class StoreMeetingAttendeeRequest extends FormRequest
     public function bodyParameters(): array
     {
         return [
-            'meeting_attendee_group_id' => ['description' => 'ID nhóm đại biểu.', 'example' => 1],
             'user_id' => ['description' => 'ID tài khoản trong tổ chức (bắt buộc, unique theo org).', 'example' => 12],
             'position_name' => ['description' => 'Chức vụ override cho ngữ cảnh họp (mặc định lấy từ user).', 'example' => 'Phó chủ tịch'],
             'department_name' => ['description' => 'Đơn vị override cho ngữ cảnh họp.', 'example' => 'UBND phường'],

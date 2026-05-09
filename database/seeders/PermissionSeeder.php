@@ -157,6 +157,7 @@ class PermissionSeeder extends Seeder
         'meeting-attendee-groups' => [
             'stats', 'index', 'show', 'store', 'update', 'destroy',
             'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
+            'attendees',
         ],
         'meeting-attendees' => [
             'stats', 'index', 'show', 'store', 'update', 'destroy',
@@ -298,6 +299,7 @@ class PermissionSeeder extends Seeder
         'complete' => 'Đánh dấu hoàn thành',
         'approve' => 'Duyệt',
         'reject' => 'Từ chối',
+        'attendees' => 'Quản lý đại biểu trong nhóm',
     ];
 
     /** Tạo đầy đủ permission từ danh sách PERMISSIONS (kèm description, sort_order, parent_id). */

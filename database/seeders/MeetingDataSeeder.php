@@ -224,12 +224,18 @@ class MeetingDataSeeder extends Seeder
             $attendee = MeetingAttendee::firstOrCreate(
                 ['organization_id' => $this->orgId, 'user_id' => $user->id],
                 [
-                    'meeting_attendee_group_id' => $groups[$row['group']]->id,
                     'position_name' => $row['position_name'],
                     'department_name' => $row['department_name'],
                     'status' => 'active',
                 ]
             );
+
+            // Sync group qua pivot M-N (refactor 2026-05-08).
+            $groupId = $groups[$row['group']]->id;
+            $attendee->groups()->syncWithoutDetaching([
+                $groupId => ['organization_id' => $this->orgId],
+            ]);
+
             // Sync Spatie role — guard 'web' theo MeetingPermissionSeeder.
             $user->syncRoles([$row['spatie_role']]);
             $out[] = $attendee;

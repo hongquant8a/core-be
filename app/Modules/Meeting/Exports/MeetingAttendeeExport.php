@@ -14,7 +14,7 @@ class MeetingAttendeeExport implements FromCollection, WithHeadings
     public function collection()
     {
         return MeetingAttendee::query()
-            ->with(['creator', 'editor', 'group', 'user.profile'])
+            ->with(['creator', 'editor', 'groups', 'user.profile'])
             ->filter($this->filters)
             ->orderByDesc('id')
             ->get()
@@ -24,7 +24,7 @@ class MeetingAttendeeExport implements FromCollection, WithHeadings
                 'name' => $item->user?->name,
                 'email' => $item->user?->email,
                 'phone' => $item->user?->profile?->phone,
-                'group_name' => $item->group?->name,
+                'group_name' => $item->groups?->pluck('name')->implode(', '),
                 'position_name' => $item->position_name,
                 'department_name' => $item->department_name,
                 'status' => MeetingCatalogStatusEnum::tryFrom((string) $item->status)?->label() ?? $item->status,

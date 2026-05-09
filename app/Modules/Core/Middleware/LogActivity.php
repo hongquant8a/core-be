@@ -151,6 +151,7 @@ class LogActivity
             'highlight-agenda' => 'Chiếu chương trình',
             'highlight-discussion' => 'Chiếu phát biểu',
             'qr-token' => 'Xem QR điểm danh',
+            'attendees' => 'Quản lý đại biểu nhóm',
         ];
         if ($sub && isset($pathActions[$sub])) {
             return $pathActions[$sub].' '.$this->resourceLabel(str_replace('-', '_', $resource));

@@ -35,6 +35,19 @@ class MeetingAttendeeGroup extends Model
         return $this->belongsTo(User::class, 'updated_by');
     }
 
+    /**
+     * Many-to-many với MeetingAttendee qua pivot meeting_attendee_group_members.
+     */
+    public function attendees()
+    {
+        return $this->belongsToMany(
+            MeetingAttendee::class,
+            'meeting_attendee_group_members',
+            'meeting_attendee_group_id',
+            'meeting_attendee_id'
+        )->withPivot('id', 'organization_id')->withTimestamps();
+    }
+
     public function scopeFilter($query, array $filters)
     {
         $organizationId = function_exists('getPermissionsTeamId') ? getPermissionsTeamId() : null;

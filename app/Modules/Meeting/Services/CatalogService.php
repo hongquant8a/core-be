@@ -63,14 +63,24 @@ class CatalogService
         /** @var Model $model */
         $model = app($modelClass);
 
-        return $model->newQuery()
-            ->with(['creator.media', 'editor.media'])
-            ->filter($filters)
-            ->paginate($limit);
+        $query = $model->newQuery()
+            ->with(['creator.media', 'editor.media']);
+
+        // MeetingAttendeeGroup: bổ sung attendees_count cho UI list (nhóm có bao nhiêu đại biểu).
+        if ($modelClass === \App\Modules\Meeting\Models\MeetingAttendeeGroup::class) {
+            $query->withCount('attendees');
+        }
+
+        return $query->filter($filters)->paginate($limit);
     }
 
     public function show(Model $model): Model
     {
+        // MeetingAttendeeGroup show — kèm attendees_count.
+        if ($model instanceof \App\Modules\Meeting\Models\MeetingAttendeeGroup) {
+            $model->loadCount('attendees');
+        }
+
         return $model->load(['creator.media', 'editor.media']);
     }
 

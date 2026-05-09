@@ -73,6 +73,9 @@ class MeetingPermissionSeeder extends Seeder
             }
         }
 
+        // Pivot M-N: thư ký quản lý đại biểu trong nhóm.
+        $names[] = 'meeting-attendee-groups.attendees';
+
         // Meetings (full CRUD + status workflow + export + showQrCode). Runtime actions
         // (lockAttendance/endEarly/highlight + vote-topics open/close) đã chuyển sang
         // MeetingPolicy gate — chair/operator của meeting đó được phép, không qua Spatie.

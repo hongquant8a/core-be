@@ -14,6 +14,8 @@ use App\Modules\Meeting\Requests\UpdateCatalogRequest;
 use App\Modules\Meeting\Resources\CatalogCollection;
 use App\Modules\Meeting\Resources\CatalogResource;
 use App\Modules\Meeting\Services\CatalogService;
+use App\Modules\Meeting\Services\MeetingAttendeeGroupMembershipService;
+use App\Modules\Meeting\Requests\SyncMeetingAttendeeGroupMembersRequest;
 
 /**
  * @group Meeting - Nhóm đại biểu
@@ -23,7 +25,10 @@ use App\Modules\Meeting\Services\CatalogService;
  */
 class MeetingAttendeeGroupController extends Controller
 {
-    public function __construct(private CatalogService $catalogService) {}
+    public function __construct(
+        private CatalogService $catalogService,
+        private MeetingAttendeeGroupMembershipService $membershipService,
+    ) {}
 
     /**
      * Thống kê nhóm đại biểu.
@@ -177,5 +182,83 @@ class MeetingAttendeeGroupController extends Controller
             new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Meeting\Imports\CatalogImport::TEMPLATE_LABELS),
             'import-meeting-attendee-groups-template.xlsx'
         );
+    }
+
+    /**
+     * Danh sách đại biểu thuộc 1 nhóm — phân trang.
+     *
+     * Mỗi item trả `id` (pivot record id), `meeting_attendee_id` (entity id), thông tin attendee.
+     *
+     * @urlParam meetingAttendeeGroup integer required ID nhóm. Example: 1
+     * @queryParam search string Từ khóa tìm theo tên/email. Example: nguyen
+     * @queryParam sort_by string Sắp xếp theo trường. Example: created_at
+     * @queryParam sort_order string asc|desc. Example: desc
+     * @queryParam limit integer Số bản ghi mỗi trang (1-100). Example: 20
+     */
+    public function attendees(FilterRequest $request, MeetingAttendeeGroup $meetingAttendeeGroup)
+    {
+        $items = $this->membershipService->listAttendees(
+            $meetingAttendeeGroup,
+            $request->all(),
+            (int) ($request->limit ?? 20),
+        );
+
+        $mapped = $items->getCollection()->map(function ($attendee) {
+            $user = $attendee->user;
+
+            return [
+                'id' => (int) $attendee->pivot->id,                          // pivot record id
+                'meeting_attendee_id' => (int) $attendee->id,                // entity id
+                'name' => $user?->name,
+                'email' => $user?->email,
+                'phone' => $user?->profile?->phone,
+                'position_name' => $attendee->position_name,
+                'department_name' => $attendee->department_name,
+                'status' => $attendee->status,
+                'user_id' => $attendee->user_id,
+                'added_at' => $attendee->pivot->created_at?->format('H:i:s d/m/Y'),
+            ];
+        });
+
+        return $this->success([
+            'items' => $mapped,
+            'pagination' => [
+                'current_page' => $items->currentPage(),
+                'last_page' => $items->lastPage(),
+                'per_page' => $items->perPage(),
+                'total' => $items->total(),
+            ],
+        ]);
+    }
+
+    /**
+     * Đồng bộ danh sách đại biểu trong nhóm (full list — sync mode).
+     *
+     * BE diff với pivot hiện có → thêm/xoá. Idempotent: gọi lại với cùng IDs không có thay đổi.
+     *
+     * @urlParam meetingAttendeeGroup integer required ID nhóm. Example: 1
+     * @bodyParam meeting_attendee_ids integer[] required Danh sách full ID đại biểu thuộc nhóm. Example: [5,6,7]
+     */
+    public function syncAttendees(SyncMeetingAttendeeGroupMembersRequest $request, MeetingAttendeeGroup $meetingAttendeeGroup)
+    {
+        $summary = $this->membershipService->syncAttendees(
+            $meetingAttendeeGroup,
+            $request->validated('meeting_attendee_ids'),
+        );
+
+        return $this->success($summary, 'Cập nhật danh sách đại biểu thành công.');
+    }
+
+    /**
+     * Gỡ 1 đại biểu khỏi nhóm.
+     *
+     * @urlParam meetingAttendeeGroup integer required ID nhóm. Example: 1
+     * @urlParam attendee integer required ID đại biểu (entity, KHÔNG phải pivot id). Example: 5
+     */
+    public function removeAttendee(MeetingAttendeeGroup $meetingAttendeeGroup, int $attendee)
+    {
+        $this->membershipService->removeAttendee($meetingAttendeeGroup, $attendee);
+
+        return $this->success(null, 'Đã gỡ đại biểu khỏi nhóm.');
     }
 }

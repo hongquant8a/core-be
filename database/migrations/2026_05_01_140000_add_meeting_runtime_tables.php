@@ -26,7 +26,8 @@ return new class extends Migration
         Schema::create('meeting_attendees', function (Blueprint $table) {
             $table->id();
             $table->foreignId('organization_id')->constrained('organizations')->cascadeOnDelete();
-            $table->foreignId('meeting_attendee_group_id')->nullable()->constrained('meeting_attendee_groups')->nullOnDelete();
+            // Trước: meeting_attendee_group_id (FK đơn 1-N). Refactor sang many-to-many
+            // qua pivot meeting_attendee_group_members (migration 2026_05_08_120000).
             $table->unsignedBigInteger('user_id');
             $table->string('position_name')->nullable();
             $table->string('department_name')->nullable();

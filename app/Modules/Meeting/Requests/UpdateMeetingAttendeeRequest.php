@@ -16,7 +16,8 @@ class UpdateMeetingAttendeeRequest extends FormRequest
     {
         return [
             'user_id' => 'prohibited',
-            'meeting_attendee_group_id' => 'nullable|integer|exists:meeting_attendee_groups,id',
+            // meeting_attendee_group_id: bỏ sau refactor M-N. Quản lý groups qua endpoint
+            // pivot /meeting-attendee-groups/{id}/attendees.
             'position_name' => 'nullable|string|max:255',
             'department_name' => 'nullable|string|max:255',
             'status' => ['sometimes', MeetingCatalogStatusEnum::rule()],
@@ -40,7 +41,6 @@ class UpdateMeetingAttendeeRequest extends FormRequest
     {
         return [
             'user_id' => 'Người dùng',
-            'meeting_attendee_group_id' => 'Nhóm đại biểu',
             'position_name' => 'Chức vụ',
             'department_name' => 'Đơn vị',
             'status' => 'Trạng thái',
@@ -51,7 +51,6 @@ class UpdateMeetingAttendeeRequest extends FormRequest
     public function bodyParameters(): array
     {
         return [
-            'meeting_attendee_group_id' => ['description' => 'ID nhóm đại biểu.', 'example' => 1],
             'position_name' => ['description' => 'Chức vụ override.', 'example' => 'Trưởng ban'],
             'department_name' => ['description' => 'Đơn vị override.', 'example' => 'UBND quận'],
             'status' => ['description' => 'Trạng thái.', 'example' => 'inactive'],

@@ -15,8 +15,11 @@ class MeetingAttendeeResource extends JsonResource
         return [
             'id' => $this->id,
             'organization_id' => $this->organization_id,
-            'meeting_attendee_group_id' => $this->meeting_attendee_group_id,
-            'group_name' => $this->group?->name,
+            // Many-to-many groups (refactor 2026-05-08).
+            'groups' => $this->whenLoaded('groups', fn () => $this->groups->map(fn ($g) => [
+                'id' => $g->id,
+                'name' => $g->name,
+            ])->all(), []),
             'user_id' => $this->user_id,
             'name' => $this->name,
             'position_name' => $this->position_name,
