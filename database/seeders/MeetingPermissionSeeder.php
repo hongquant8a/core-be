@@ -46,17 +46,19 @@ class MeetingPermissionSeeder extends Seeder
 
     /**
      * Đại biểu có full action ở các sub-resource trong meeting (BE scope per-meeting).
-     * KHÔNG có: meetings.store/update/destroy/changeStatus/bulkDestroy/bulkUpdateStatus/export
-     * + meetings.showQrCode (admin only) + catalog CRUD + dashboard + notification config.
+     * KHÔNG có meetings.* permission nào — đại biểu list/show meeting qua endpoint public
+     * (`/api/meetings/public[/stats|/{id}]`), không cần Spatie permission. Tránh phơi
+     * `meetings.index` ra cho đại biểu khiến FE render màn quản trị meeting list dù không
+     * phải admin. Catalog CRUD + dashboard + notification config + showQrCode -> admin only.
      */
     private function getDaiBieuPermissionNames(): array
     {
         $names = [];
 
-        // Meetings — read-only
-        foreach (['stats', 'index', 'show'] as $action) {
-            $names[] = "meetings.{$action}";
-        }
+        // User profile + log activity của chính họ (service auto-scope theo auth()->id()).
+        $names[] = 'users.show';
+        $names[] = 'log-activities.index';
+        $names[] = 'log-activities.stats';
 
         // Sub-resources trong meeting — full action (BE service scope theo participation)
         foreach (['meeting-agendas', 'meeting-documents'] as $resource) {
