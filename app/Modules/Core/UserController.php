@@ -105,6 +105,35 @@ class UserController extends Controller
     }
 
     /**
+     * Self profile — tài khoản đang đăng nhập.
+     *
+     * Auth-only (Sanctum), không yêu cầu Spatie permission. Dùng cho trang profile cá nhân.
+     */
+    public function me()
+    {
+        $user = auth()->user()->load(['creator.media', 'editor.media', 'profile']);
+
+        return $this->successResource(new UserResource($user));
+    }
+
+    /**
+     * Cập nhật self profile — tài khoản đang đăng nhập.
+     *
+     * Auth-only, dùng cùng UpdateUserRequest. Service đảm bảo không cho phép đổi role/quyền (assignments)
+     * — non-admin chỉ sửa được name/email/phone/avatar/password/profile basic fields.
+     */
+    public function updateMe(UpdateUserRequest $request)
+    {
+        $payload = $request->validated();
+        // Self-update tuyệt đối không động vào assignments/status — chặn ở payload trước khi gọi service.
+        unset($payload['assignments'], $payload['status']);
+
+        $user = $this->userService->update(auth()->user(), $payload);
+
+        return $this->successResource(new UserResource($user), 'Tài khoản đã được cập nhật!');
+    }
+
+    /**
      * Tạo người dùng mới
      *
      * @bodyParam name string required Tên người dùng. Example: Nguyễn Văn A

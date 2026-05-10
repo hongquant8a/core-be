@@ -12,6 +12,13 @@ Route::patch('/bulk-status', [UserController::class, 'bulkUpdateStatus'])->middl
 Route::get('/stats', [UserController::class, 'stats'])->middleware('permission:users.stats,web');
 Route::get('/stats/by-organization', [UserController::class, 'statsByOrganization'])->middleware('permission:users.stats,web');
 Route::get('/', [UserController::class, 'index'])->middleware('permission:users.index,web');
+// Self endpoints — auth-only (Sanctum), không Spatie permission. Controller force ID = auth.
+Route::get('/me', [UserController::class, 'me']);
+Route::put('/me', [UserController::class, 'updateMe']);
+Route::patch('/me', [UserController::class, 'updateMe']);
+Route::get('/me/profile', [UserProfileController::class, 'showMe']);
+Route::put('/me/profile', [UserProfileController::class, 'updateMe']);
+
 Route::get('/{user}', [UserController::class, 'show'])->middleware('permission:users.show,web');
 Route::post('/', [UserController::class, 'store'])->middleware('permission:users.store,web');
 Route::put('/{user}', [UserController::class, 'update'])->middleware('permission:users.update,web');

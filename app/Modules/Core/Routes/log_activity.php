@@ -3,6 +3,10 @@
 use App\Modules\Core\LogActivityController;
 use Illuminate\Support\Facades\Route;
 
+// Self endpoints — auth-only, controller force user_id=auth (lấy log/timeline của chính mình).
+Route::get('/me', [LogActivityController::class, 'meIndex']);
+Route::get('/me/stats/timeline', [LogActivityController::class, 'meTimeline']);
+
 Route::get('/export', [LogActivityController::class, 'export'])->middleware('permission:log-activities.export,web');
 Route::get('/stats', [LogActivityController::class, 'stats'])->middleware('permission:log-activities.stats,web');
 Route::get('/stats/dashboard', [LogActivityController::class, 'dashboard'])->middleware('permission:log-activities.stats,web');

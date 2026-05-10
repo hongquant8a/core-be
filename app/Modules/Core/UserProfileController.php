@@ -57,4 +57,26 @@ class UserProfileController extends Controller
 
         return $this->successResource(new UserProfileResource($profile), 'Cập nhật thông tin cá nhân thành công!');
     }
+
+    /**
+     * Lấy profile của tài khoản đang đăng nhập.
+     *
+     * Auth-only (Sanctum), không yêu cầu Spatie permission.
+     */
+    public function showMe()
+    {
+        return $this->successResource(new UserProfileResource($this->service->show(auth()->user())));
+    }
+
+    /**
+     * Cập nhật profile của tài khoản đang đăng nhập.
+     *
+     * Auth-only.
+     */
+    public function updateMe(UpdateUserProfileRequest $request)
+    {
+        $profile = $this->service->update(auth()->user(), $request->validated());
+
+        return $this->successResource(new UserProfileResource($profile), 'Cập nhật thông tin cá nhân thành công!');
+    }
 }

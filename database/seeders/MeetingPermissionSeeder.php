@@ -55,10 +55,7 @@ class MeetingPermissionSeeder extends Seeder
     {
         $names = [];
 
-        // User profile + log activity của chính họ (service auto-scope theo auth()->id()).
-        $names[] = 'users.show';
-        $names[] = 'log-activities.index';
-        $names[] = 'log-activities.stats';
+        // (Self profile + log activity dùng /me endpoints — không qua Spatie permission, không cần khai báo ở đây.)
 
         // Sub-resources trong meeting — full action (BE service scope theo participation)
         foreach (['meeting-agendas', 'meeting-documents'] as $resource) {

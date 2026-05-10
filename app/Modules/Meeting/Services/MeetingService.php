@@ -34,8 +34,8 @@ class MeetingService
         $query = Meeting::with([
                 'meetingType',
                 'meetingLocation',
-                'chairperson',
-                'operator',
+                'chairperson.user',
+                'operator.user',
                 // Doc preload có filter: is_public=true HOẶC thuộc meeting user tham gia.
                 'documents' => function ($q) use ($myMeetingIds) {
                     $q->where(function ($sub) use ($myMeetingIds) {
@@ -113,8 +113,8 @@ class MeetingService
         return $meeting->load([
             'meetingType',
             'meetingLocation',
-            'chairperson',
-            'operator',
+            'chairperson.user',
+            'operator.user',
             'agendas',
             'documents' => fn ($q) => $isParticipant ? $q : $q->where('is_public', true),
             'documents.documentType',
@@ -177,8 +177,8 @@ class MeetingService
         return $meeting->load([
             'meetingType',
             'meetingLocation',
-            'chairperson',
-            'operator',
+            'chairperson.user',
+            'operator.user',
             'creator.media',
             'editor.media',
             'participants.attendee.user',
@@ -199,14 +199,14 @@ class MeetingService
             'organization_id' => $this->resolveCurrentOrganizationId(),
         ];
 
-        return Meeting::create($payload)->load(['meetingType', 'meetingLocation', 'chairperson', 'operator', 'creator.media', 'editor.media']);
+        return Meeting::create($payload)->load(['meetingType', 'meetingLocation', 'chairperson.user', 'operator.user', 'creator.media', 'editor.media']);
     }
 
     public function update(Meeting $meeting, array $validated): Meeting
     {
         $meeting->update($validated);
 
-        return $meeting->load(['meetingType', 'meetingLocation', 'chairperson', 'operator', 'creator.media', 'editor.media']);
+        return $meeting->load(['meetingType', 'meetingLocation', 'chairperson.user', 'operator.user', 'creator.media', 'editor.media']);
     }
 
     public function destroy(Meeting $meeting): void
@@ -340,7 +340,7 @@ class MeetingService
 
         broadcast(new \App\Modules\Meeting\Events\MeetingEndedEarly($meeting))->toOthers();
 
-        return $meeting->load(['meetingType', 'meetingLocation', 'chairperson', 'operator']);
+        return $meeting->load(['meetingType', 'meetingLocation', 'chairperson.user', 'operator.user']);
     }
 
     /**
@@ -350,7 +350,7 @@ class MeetingService
     {
         $meeting->update(['attendance_locked' => true]);
 
-        return $meeting->load(['meetingType', 'meetingLocation', 'chairperson', 'operator']);
+        return $meeting->load(['meetingType', 'meetingLocation', 'chairperson.user', 'operator.user']);
     }
 
     /**
@@ -360,7 +360,7 @@ class MeetingService
     {
         $meeting->update(['attendance_locked' => false]);
 
-        return $meeting->load(['meetingType', 'meetingLocation', 'chairperson', 'operator']);
+        return $meeting->load(['meetingType', 'meetingLocation', 'chairperson.user', 'operator.user']);
     }
 
     /**
@@ -383,7 +383,7 @@ class MeetingService
         broadcast(new \App\Modules\Meeting\Events\MeetingAgendaHighlighted($meeting))->toOthers();
 
         return $meeting->load([
-            'meetingType', 'meetingLocation', 'chairperson', 'operator',
+            'meetingType', 'meetingLocation', 'chairperson.user', 'operator.user',
             'currentAgenda', 'currentDiscussionRegistration',
         ]);
     }
@@ -411,7 +411,7 @@ class MeetingService
         broadcast(new \App\Modules\Meeting\Events\MeetingDiscussionHighlighted($meeting))->toOthers();
 
         return $meeting->load([
-            'meetingType', 'meetingLocation', 'chairperson', 'operator',
+            'meetingType', 'meetingLocation', 'chairperson.user', 'operator.user',
             'currentAgenda', 'currentDiscussionRegistration',
         ]);
     }

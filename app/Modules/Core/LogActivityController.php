@@ -155,6 +155,35 @@ class LogActivityController extends Controller
     }
 
     /**
+     * Self log activity — auth-only, force user_id = auth().
+     *
+     * Endpoint cho user thường xem nhật ký hoạt động của chính mình.
+     */
+    public function meIndex(FilterRequest $request)
+    {
+        $filters = $request->all();
+        $filters['user_id'] = auth()->id();
+
+        $logs = $this->logActivityService->index($filters, (int) ($request->limit ?? 10));
+
+        return $this->successCollection(new LogActivityCollection($logs));
+    }
+
+    /**
+     * Self timeline stats — auth-only, force user_id = auth().
+     *
+     * @queryParam granularity string `day` hoặc `month`. Mặc định `month`. Example: month
+     */
+    public function meTimeline(FilterRequest $request)
+    {
+        $granularity = (string) $request->input('granularity', 'month');
+        $filters = $request->all();
+        $filters['user_id'] = auth()->id();
+
+        return $this->success($this->logActivityService->timeline($granularity, $filters));
+    }
+
+    /**
      * Xuất danh sách nhật ký
      *
      * Áp dụng cùng bộ lọc với index. Trả về file Excel.

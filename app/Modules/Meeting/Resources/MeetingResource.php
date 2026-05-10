@@ -26,6 +26,13 @@ class MeetingResource extends JsonResource
                 'email' => $this->chairperson->email,
                 'position_name' => $this->chairperson->position_name,
                 'department_name' => $this->chairperson->department_name,
+                'user_id' => $this->chairperson->user_id,
+                'user' => $this->chairperson->user ? [
+                    'id' => $this->chairperson->user->id,
+                    'name' => $this->chairperson->user->name,
+                    'email' => $this->chairperson->user->email,
+                    'user_name' => $this->chairperson->user->user_name,
+                ] : null,
             ] : null,
             'operator_meeting_attendee_id' => $this->operator_meeting_attendee_id,
             'operator' => $this->operator_meeting_attendee_id && $this->operator ? [
@@ -34,6 +41,13 @@ class MeetingResource extends JsonResource
                 'email' => $this->operator->email,
                 'position_name' => $this->operator->position_name,
                 'department_name' => $this->operator->department_name,
+                'user_id' => $this->operator->user_id,
+                'user' => $this->operator->user ? [
+                    'id' => $this->operator->user->id,
+                    'name' => $this->operator->user->name,
+                    'email' => $this->operator->user->email,
+                    'user_name' => $this->operator->user->user_name,
+                ] : null,
             ] : null,
             'title' => $this->title,
             'is_public' => $this->is_public,
