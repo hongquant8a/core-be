@@ -115,14 +115,23 @@ class ReminderContentBuilder implements ContentBuilder
 
     private function toZalo(User $recipient, TaskAssignmentItem $item): ?NotificationPayload
     {
-        if (! $recipient->phone) {
+        if (! $recipient->zalo_user_id) {
             return null;
         }
 
+        $deadline = $item->end_at ? " (hạn {$item->end_at->format('d/m/Y H:i')})" : '';
+        $prefix = match ($this->moment) {
+            'before' => 'Sắp đến hạn công việc',
+            'on' => 'Đến hạn công việc',
+            'after' => 'Quá hạn công việc',
+            default => 'Nhắc công việc',
+        };
+        $text = "{$prefix}: {$item->name}{$deadline}.";
+
         return new NotificationPayload(
             channels: ['zalo'],
-            recipient: new Recipient(phone: $recipient->phone, name: $recipient->name),
-            content: '',
+            recipient: new Recipient(zaloId: $recipient->zalo_user_id, name: $recipient->name),
+            content: $text,
             context: [
                 'customer_name' => $recipient->name,
                 'task_name' => $item->name,

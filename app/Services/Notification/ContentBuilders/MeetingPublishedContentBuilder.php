@@ -92,14 +92,17 @@ class MeetingPublishedContentBuilder implements ContentBuilder
 
     private function toZalo(User $recipient, Meeting $meeting): ?NotificationPayload
     {
-        if (! $recipient->phone) {
+        if (! $recipient->zalo_user_id) {
             return null;
         }
 
+        $start = $meeting->start_time?->format('d/m/Y H:i') ?? '';
+        $text = "Bạn được mời tham dự cuộc họp: {$meeting->title}.".($start ? " Thời gian: {$start}." : '');
+
         return new NotificationPayload(
             channels: ['zalo'],
-            recipient: new Recipient(phone: $recipient->phone, name: $recipient->name),
-            content: '',
+            recipient: new Recipient(zaloId: $recipient->zalo_user_id, name: $recipient->name),
+            content: $text,
             context: [
                 'customer_name' => $recipient->name,
                 'meeting_title' => $meeting->title,

@@ -86,14 +86,16 @@ class TaskConfirmedContentBuilder implements ContentBuilder
 
     private function toZalo(User $recipient, TaskAssignmentItem $item): ?NotificationPayload
     {
-        if (! $recipient->phone) {
+        if (! $recipient->zalo_user_id) {
             return null;
         }
 
+        $text = "Công việc đã được xác nhận: {$item->name}.";
+
         return new NotificationPayload(
             channels: ['zalo'],
-            recipient: new Recipient(phone: $recipient->phone, name: $recipient->name),
-            content: '',
+            recipient: new Recipient(zaloId: $recipient->zalo_user_id, name: $recipient->name),
+            content: $text,
             context: [
                 'customer_name' => $recipient->name,
                 'task_name' => $item->name,

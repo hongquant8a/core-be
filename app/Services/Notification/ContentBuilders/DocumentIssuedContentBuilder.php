@@ -90,14 +90,18 @@ class DocumentIssuedContentBuilder implements ContentBuilder
 
     private function toZalo(User $recipient, TaskAssignmentItem $item, $document): ?NotificationPayload
     {
-        if (! $recipient->phone) {
+        if (! $recipient->zalo_user_id) {
             return null;
         }
 
+        $documentName = $document?->name ?? '';
+        $deadline = $item->end_at ? " (hạn {$item->end_at->format('d/m/Y H:i')})" : '';
+        $text = "Văn bản đã ban hành: {$documentName}. Công việc: {$item->name}{$deadline}.";
+
         return new NotificationPayload(
             channels: ['zalo'],
-            recipient: new Recipient(phone: $recipient->phone, name: $recipient->name),
-            content: '',
+            recipient: new Recipient(zaloId: $recipient->zalo_user_id, name: $recipient->name),
+            content: $text,
             context: [
                 'customer_name' => $recipient->name,
                 'task_name' => $item->name,
