@@ -103,7 +103,7 @@ class PermissionSeeder extends Seeder
         ],
         // Core - Dashboard
         'dashboard' => [
-            'index',
+            'systemOverview',
         ],
         // Core - Thông báo kiểm thử (SMS/Mail/Zalo)
         'notifications' => [
@@ -300,6 +300,7 @@ class PermissionSeeder extends Seeder
         'approve' => 'Duyệt',
         'reject' => 'Từ chối',
         'attendees' => 'Quản lý đại biểu trong nhóm',
+        'systemOverview' => 'Tổng quan hệ thống',
     ];
 
     /** Tạo đầy đủ permission từ danh sách PERMISSIONS (kèm description, sort_order, parent_id). */
