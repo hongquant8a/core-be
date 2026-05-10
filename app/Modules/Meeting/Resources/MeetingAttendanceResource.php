@@ -9,11 +9,21 @@ class MeetingAttendanceResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $participant = $this->participant;
+
         return [
             'id' => $this->id,
             'meeting_id' => $this->meeting_id,
             'meeting_participant_id' => $this->meeting_participant_id,
-            'participant_name' => $this->participant?->display_name,
+            'meeting_attendee_id' => $participant?->meeting_attendee_id,
+            'attendee_name' => $participant?->attendee?->name,
+            'display_name' => $participant?->display_name,
+            'participant_name' => $participant?->display_name,
+            'position_name' => $participant?->position_name,
+            'department_name' => $participant?->department_name,
+            'email' => $participant?->email,
+            'phone' => $participant?->phone,
+            'response_status' => $participant?->response_status,
             'status' => $this->status,
             'checkin_method' => $this->checkin_method,
             'checked_in_at' => $this->checked_in_at?->format('H:i:s d/m/Y'),

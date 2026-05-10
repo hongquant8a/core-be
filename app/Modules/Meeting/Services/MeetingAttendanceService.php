@@ -4,6 +4,7 @@ namespace App\Modules\Meeting\Services;
 
 use App\Modules\Meeting\Enums\MeetingAttendanceStatusEnum;
 use App\Modules\Meeting\Enums\MeetingCheckinMethodEnum;
+use App\Modules\Meeting\Enums\MeetingParticipantResponseStatusEnum;
 use App\Modules\Meeting\Models\MeetingAttendance;
 use App\Modules\Meeting\Models\MeetingParticipant;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -34,14 +35,14 @@ class MeetingAttendanceService
 
     public function index(array $filters, int $limit)
     {
-        return MeetingAttendance::with('participant')
+        return MeetingAttendance::with('participant.attendee')
             ->filter($filters)
             ->paginate($limit);
     }
 
     public function show(MeetingAttendance $meetingAttendance): MeetingAttendance
     {
-        return $meetingAttendance->load('participant');
+        return $meetingAttendance->load('participant.attendee');
     }
 
     public function store(array $validated): MeetingAttendance
@@ -50,14 +51,14 @@ class MeetingAttendanceService
             ...$validated,
             'organization_id' => $this->resolveCurrentOrganizationId(),
             'checked_in_by' => auth()->id(),
-        ])->load('participant');
+        ])->load('participant.attendee');
     }
 
     public function update(MeetingAttendance $meetingAttendance, array $validated): MeetingAttendance
     {
         $meetingAttendance->update($validated);
 
-        return $meetingAttendance->load('participant');
+        return $meetingAttendance->load('participant.attendee');
     }
 
     public function destroy(MeetingAttendance $meetingAttendance): void
@@ -85,7 +86,7 @@ class MeetingAttendanceService
 
         broadcast(new \App\Modules\Meeting\Events\MeetingAttendanceApproved($attendance))->toOthers();
 
-        return $attendance->load('participant');
+        return $attendance->load('participant.attendee');
     }
 
     /**
@@ -106,7 +107,7 @@ class MeetingAttendanceService
 
         broadcast(new \App\Modules\Meeting\Events\MeetingAttendanceRejected($attendance))->toOthers();
 
-        return $attendance->load('participant');
+        return $attendance->load('participant.attendee');
     }
 
     /**
@@ -131,7 +132,10 @@ class MeetingAttendanceService
                 'checked_in_by' => auth()->id(),
                 'note' => null,
             ]
-        )->load('participant');
+        )->load('participant.attendee');
+
+        // Đã checkin → infer RSVP = accepted nếu còn pending (đại biểu k bấm respond riêng).
+        $this->syncParticipantResponseFromAttendance($participant, MeetingParticipantResponseStatusEnum::Accepted->value);
 
         broadcast(new \App\Modules\Meeting\Events\MeetingAttendanceCheckedIn($attendance))->toOthers();
 
@@ -191,7 +195,10 @@ class MeetingAttendanceService
                 'checked_in_by' => auth()->id(),
                 'note' => $note,
             ]
-        )->load('participant');
+        )->load('participant.attendee');
+
+        // Tự báo vắng → infer RSVP = declined nếu còn pending.
+        $this->syncParticipantResponseFromAttendance($participant, MeetingParticipantResponseStatusEnum::Declined->value);
 
         // markAbsent cũng phát event checked-in để Tab điều hành cập nhật list (status=absent → loại khỏi pending list).
         broadcast(new \App\Modules\Meeting\Events\MeetingAttendanceCheckedIn($attendance))->toOthers();
@@ -243,11 +250,32 @@ class MeetingAttendanceService
                 'checked_in_by' => auth()->id(),
                 'note' => $note,
             ]
-        )->load('participant');
+        )->load('participant.attendee');
+
+        // Manual checkin từ thư ký → infer RSVP cho participant nếu còn pending.
+        $rsvp = $status === MeetingAttendanceStatusEnum::Present->value
+            ? MeetingParticipantResponseStatusEnum::Accepted->value
+            : MeetingParticipantResponseStatusEnum::Declined->value;
+        $this->syncParticipantResponseFromAttendance($participant, $rsvp);
 
         broadcast(new \App\Modules\Meeting\Events\MeetingAttendanceCheckedIn($attendance))->toOthers();
 
         return $attendance;
+    }
+
+    /**
+     * Đồng bộ participant.response_status sau khi điểm danh — chỉ overwrite nếu đang Pending,
+     * tránh ghi đè quyết định RSVP đại biểu đã chủ động bấm trước đó (Accepted/Declined).
+     */
+    private function syncParticipantResponseFromAttendance(MeetingParticipant $participant, string $rsvp): void
+    {
+        if ($participant->response_status !== MeetingParticipantResponseStatusEnum::Pending->value) {
+            return;
+        }
+        $participant->update([
+            'response_status' => $rsvp,
+            'responded_at' => now(),
+        ]);
     }
 
     /**
