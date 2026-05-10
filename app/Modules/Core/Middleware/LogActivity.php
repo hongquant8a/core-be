@@ -268,7 +268,7 @@ class LogActivity
         try {
             $position = Location::get($ip);
 
-            return $position?->countryName;
+            return $position ? $position->countryName : null;
         } catch (\Throwable $e) {
             report($e);
 
