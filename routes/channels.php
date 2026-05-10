@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Broadcast;
  *
  * Allow nếu:
  *  1) User là chair / operator / participant của meeting (FK match), HOẶC
- *  2) User có Spatie role privileged (Super Admin / Admin / Thư ký họp) trong org
+ *  2) User có Spatie role privileged (Super Admin / Admin / Quản trị) trong org
  *     của meeting đó — set permissions team từ meeting.organization_id để Spatie
  *     check chính xác (không phụ thuộc header X-Organization-Id của request).
  */
@@ -42,12 +42,12 @@ Broadcast::channel('meeting.{meetingId}', function ($user, int $meetingId) {
         return true;
     }
 
-    // Spatie role privileged trong org của meeting (Super Admin / Admin / Thư ký họp).
+    // Spatie role privileged trong org của meeting (Super Admin / Admin / Quản trị).
     // Set permissions team theo meeting.organization_id để check role chính xác.
     if (function_exists('setPermissionsTeamId')) {
         setPermissionsTeamId((int) $meeting->organization_id);
     }
-    if (method_exists($user, 'hasAnyRole') && $user->hasAnyRole(['Super Admin', 'Admin', 'Thư ký họp'])) {
+    if (method_exists($user, 'hasAnyRole') && $user->hasAnyRole(['Super Admin', 'Admin', 'Quản trị'])) {
         return true;
     }
 

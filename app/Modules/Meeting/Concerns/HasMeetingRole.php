@@ -9,7 +9,7 @@ use App\Modules\Meeting\Models\Meeting;
  * trong endpoint biểu quyết, đăng ký phát biểu, attendance.
  *
  *  - "privileged" = chair / operator của meeting (FK match) HOẶC role org-wide
- *    (Super Admin, Admin, Thư ký họp). Privileged thấy chi tiết per-person.
+ *    (Super Admin, Admin, Quản trị). Privileged thấy chi tiết per-person.
  *  - "delegate" = participant của meeting (đại biểu thường). Delegate chỉ thấy aggregate
  *    nếu flag hiển thị bật.
  */
@@ -37,6 +37,6 @@ trait HasMeetingRole
         $user = auth()->user();
 
         return $user && method_exists($user, 'hasAnyRole')
-            && $user->hasAnyRole(['Super Admin', 'Admin', 'Thư ký họp']);
+            && $user->hasAnyRole(['Super Admin', 'Admin', 'Quản trị']);
     }
 }

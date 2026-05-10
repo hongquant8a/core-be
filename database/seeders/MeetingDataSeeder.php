@@ -308,35 +308,33 @@ class MeetingDataSeeder extends Seeder
     private function seedAttendees(array $groups): array
     {
         // Mỗi đại biểu link với 1 user nội bộ (1-1 unique trong org).
-        // Spatie role gán theo vai trò nghiệp vụ:
-        //  - idx=0 (Hùng) — chủ trì cố định cho cả 3 meeting → role "Đại biểu họp" (chủ trì cũng cần vote).
-        //  - idx=1 (Mai)  — thư ký cố định cho cả 3 meeting → role "Thư ký họp" (privileged: duyệt điểm danh, mở/đóng vote, ...).
-        //  - idx=2..7     — participant thường → role "Đại biểu họp".
+        // Sau refactor 2026-05-10: tất cả attendee dùng chung role "Đại biểu". FE check render
+        // chair/operator dựa vào FK chairperson_meeting_attendee_id / operator_meeting_attendee_id.
         // Quy ước "1 user 1 vai trò xuyên suốt": chủ trì/thư ký không kiêm participant ở bất kỳ meeting nào (xem skip ở seedMeeting*).
         $rows = [
-            ['user_email' => 'nvhung@snvdn.gov.vn', 'position_name' => 'Chủ tịch HĐND', 'department_name' => 'HĐND TP', 'group' => 'Thường trực HĐND', 'spatie_role' => 'Đại biểu họp'],
-            ['user_email' => 'ttmai@snvdn.gov.vn', 'position_name' => 'Phó Chủ tịch HĐND', 'department_name' => 'HĐND TP', 'group' => 'Thường trực HĐND', 'spatie_role' => 'Thư ký họp'],
-            ['user_email' => 'lhnam@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở Kế hoạch & Đầu tư', 'group' => 'Đại biểu HĐND khóa X', 'spatie_role' => 'Đại biểu họp'],
-            ['user_email' => 'pthong@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở Tài chính', 'group' => 'Đại biểu HĐND khóa X', 'spatie_role' => 'Đại biểu họp'],
-            ['user_email' => 'vdthang@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'UBND quận Hải Châu', 'group' => 'Đại biểu HĐND khóa X', 'spatie_role' => 'Đại biểu họp'],
-            ['user_email' => 'htlan@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở Y tế', 'group' => 'Đại biểu HĐND khóa X', 'spatie_role' => 'Đại biểu họp'],
-            ['user_email' => 'dmtuan@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở Giáo dục', 'group' => 'Đại biểu HĐND khóa X', 'spatie_role' => 'Đại biểu họp'],
-            ['user_email' => 'btngoc@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở LĐ-TB-XH', 'group' => 'Đại biểu HĐND khóa X', 'spatie_role' => 'Đại biểu họp'],
+            ['user_email' => 'nvhung@snvdn.gov.vn', 'position_name' => 'Chủ tịch HĐND', 'department_name' => 'HĐND TP', 'group' => 'Thường trực HĐND', 'spatie_role' => 'Đại biểu'],
+            ['user_email' => 'ttmai@snvdn.gov.vn', 'position_name' => 'Phó Chủ tịch HĐND', 'department_name' => 'HĐND TP', 'group' => 'Thường trực HĐND', 'spatie_role' => 'Đại biểu'],
+            ['user_email' => 'lhnam@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở Kế hoạch & Đầu tư', 'group' => 'Đại biểu HĐND khóa X', 'spatie_role' => 'Đại biểu'],
+            ['user_email' => 'pthong@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở Tài chính', 'group' => 'Đại biểu HĐND khóa X', 'spatie_role' => 'Đại biểu'],
+            ['user_email' => 'vdthang@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'UBND quận Hải Châu', 'group' => 'Đại biểu HĐND khóa X', 'spatie_role' => 'Đại biểu'],
+            ['user_email' => 'htlan@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở Y tế', 'group' => 'Đại biểu HĐND khóa X', 'spatie_role' => 'Đại biểu'],
+            ['user_email' => 'dmtuan@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở Giáo dục', 'group' => 'Đại biểu HĐND khóa X', 'spatie_role' => 'Đại biểu'],
+            ['user_email' => 'btngoc@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở LĐ-TB-XH', 'group' => 'Đại biểu HĐND khóa X', 'spatie_role' => 'Đại biểu'],
             // 12 attendee bổ sung — đa dạng group, role.
-            ['user_email' => 'hvphuc@snvdn.gov.vn',  'position_name' => 'Đại biểu HĐND',          'department_name' => 'Sở Nội vụ',            'group' => 'Đại biểu HĐND khóa X',     'spatie_role' => 'Đại biểu họp'],
-            ['user_email' => 'ntthanh@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND',          'department_name' => 'Sở Tư pháp',           'group' => 'Đại biểu HĐND khóa X',     'spatie_role' => 'Đại biểu họp'],
-            ['user_email' => 'tvkhai@snvdn.gov.vn',  'position_name' => 'Giám đốc',                'department_name' => 'Sở Kế hoạch & Đầu tư', 'group' => 'Lãnh đạo Sở/Ban/Ngành',    'spatie_role' => 'Đại biểu họp'],
-            ['user_email' => 'ltbich@snvdn.gov.vn',  'position_name' => 'Giám đốc',                'department_name' => 'Sở Tài chính',         'group' => 'Lãnh đạo Sở/Ban/Ngành',    'spatie_role' => 'Đại biểu họp'],
-            ['user_email' => 'dqminh@snvdn.gov.vn',  'position_name' => 'Giám đốc',                'department_name' => 'Sở Y tế',              'group' => 'Lãnh đạo Sở/Ban/Ngành',    'spatie_role' => 'Đại biểu họp'],
-            ['user_email' => 'vthha@snvdn.gov.vn',   'position_name' => 'Giám đốc',                'department_name' => 'Sở Giáo dục & Đào tạo', 'group' => 'Lãnh đạo Sở/Ban/Ngành',    'spatie_role' => 'Đại biểu họp'],
-            ['user_email' => 'pdlong@snvdn.gov.vn',  'position_name' => 'Chủ tịch UBND',          'department_name' => 'UBND quận Hải Châu',   'group' => 'Lãnh đạo UBND quận',        'spatie_role' => 'Đại biểu họp'],
-            ['user_email' => 'tmlinh@snvdn.gov.vn',  'position_name' => 'Chủ tịch UBND',          'department_name' => 'UBND quận Thanh Khê',  'group' => 'Lãnh đạo UBND quận',        'spatie_role' => 'Đại biểu họp'],
-            ['user_email' => 'cvson@snvdn.gov.vn',   'position_name' => 'Chủ tịch UBND',          'department_name' => 'UBND quận Sơn Trà',    'group' => 'Lãnh đạo UBND quận',        'spatie_role' => 'Đại biểu họp'],
-            ['user_email' => 'lthuong@snvdn.gov.vn', 'position_name' => 'Chủ tịch UBND',          'department_name' => 'UBND quận Ngũ Hành Sơn','group' => 'Lãnh đạo UBND quận',       'spatie_role' => 'Đại biểu họp'],
-            ['user_email' => 'dbkhoi@snvdn.gov.vn',  'position_name' => 'Chủ tịch UBND',          'department_name' => 'UBND quận Liên Chiểu', 'group' => 'Lãnh đạo UBND quận',        'spatie_role' => 'Đại biểu họp'],
-            ['user_email' => 'thyen@snvdn.gov.vn',   'position_name' => 'Phóng viên',              'department_name' => 'Báo Đà Nẵng',          'group' => 'Khách mời',                 'spatie_role' => 'Đại biểu họp'],
-            ['user_email' => 'mqhung@snvdn.gov.vn',  'position_name' => 'Đại biểu Mặt trận',     'department_name' => 'UBMTTQVN TP',          'group' => 'Khách mời',                 'spatie_role' => 'Đại biểu họp'],
-            ['user_email' => 'htduong@snvdn.gov.vn', 'position_name' => 'Phó Chánh Văn phòng',  'department_name' => 'Văn phòng UBND TP',     'group' => 'Khách mời',                 'spatie_role' => 'Đại biểu họp'],
+            ['user_email' => 'hvphuc@snvdn.gov.vn',  'position_name' => 'Đại biểu HĐND',          'department_name' => 'Sở Nội vụ',            'group' => 'Đại biểu HĐND khóa X',     'spatie_role' => 'Đại biểu'],
+            ['user_email' => 'ntthanh@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND',          'department_name' => 'Sở Tư pháp',           'group' => 'Đại biểu HĐND khóa X',     'spatie_role' => 'Đại biểu'],
+            ['user_email' => 'tvkhai@snvdn.gov.vn',  'position_name' => 'Giám đốc',                'department_name' => 'Sở Kế hoạch & Đầu tư', 'group' => 'Lãnh đạo Sở/Ban/Ngành',    'spatie_role' => 'Đại biểu'],
+            ['user_email' => 'ltbich@snvdn.gov.vn',  'position_name' => 'Giám đốc',                'department_name' => 'Sở Tài chính',         'group' => 'Lãnh đạo Sở/Ban/Ngành',    'spatie_role' => 'Đại biểu'],
+            ['user_email' => 'dqminh@snvdn.gov.vn',  'position_name' => 'Giám đốc',                'department_name' => 'Sở Y tế',              'group' => 'Lãnh đạo Sở/Ban/Ngành',    'spatie_role' => 'Đại biểu'],
+            ['user_email' => 'vthha@snvdn.gov.vn',   'position_name' => 'Giám đốc',                'department_name' => 'Sở Giáo dục & Đào tạo', 'group' => 'Lãnh đạo Sở/Ban/Ngành',    'spatie_role' => 'Đại biểu'],
+            ['user_email' => 'pdlong@snvdn.gov.vn',  'position_name' => 'Chủ tịch UBND',          'department_name' => 'UBND quận Hải Châu',   'group' => 'Lãnh đạo UBND quận',        'spatie_role' => 'Đại biểu'],
+            ['user_email' => 'tmlinh@snvdn.gov.vn',  'position_name' => 'Chủ tịch UBND',          'department_name' => 'UBND quận Thanh Khê',  'group' => 'Lãnh đạo UBND quận',        'spatie_role' => 'Đại biểu'],
+            ['user_email' => 'cvson@snvdn.gov.vn',   'position_name' => 'Chủ tịch UBND',          'department_name' => 'UBND quận Sơn Trà',    'group' => 'Lãnh đạo UBND quận',        'spatie_role' => 'Đại biểu'],
+            ['user_email' => 'lthuong@snvdn.gov.vn', 'position_name' => 'Chủ tịch UBND',          'department_name' => 'UBND quận Ngũ Hành Sơn','group' => 'Lãnh đạo UBND quận',       'spatie_role' => 'Đại biểu'],
+            ['user_email' => 'dbkhoi@snvdn.gov.vn',  'position_name' => 'Chủ tịch UBND',          'department_name' => 'UBND quận Liên Chiểu', 'group' => 'Lãnh đạo UBND quận',        'spatie_role' => 'Đại biểu'],
+            ['user_email' => 'thyen@snvdn.gov.vn',   'position_name' => 'Phóng viên',              'department_name' => 'Báo Đà Nẵng',          'group' => 'Khách mời',                 'spatie_role' => 'Đại biểu'],
+            ['user_email' => 'mqhung@snvdn.gov.vn',  'position_name' => 'Đại biểu Mặt trận',     'department_name' => 'UBMTTQVN TP',          'group' => 'Khách mời',                 'spatie_role' => 'Đại biểu'],
+            ['user_email' => 'htduong@snvdn.gov.vn', 'position_name' => 'Phó Chánh Văn phòng',  'department_name' => 'Văn phòng UBND TP',     'group' => 'Khách mời',                 'spatie_role' => 'Đại biểu'],
         ];
 
         $out = [];

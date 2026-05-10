@@ -1,0 +1,85 @@
+CHANGE LOG — Meeting role removal (2026-05-10)
+==================================================
+
+CONTEXT
+- Bỏ role Spatie "Thư ký họp" + "Đại biểu họp" trong module Meeting.
+- Thay bằng 1 role generic "Đại biểu" với full quyền API ở các sub-resource trong meeting.
+- FE check render dựa vào FK: chairperson_meeting_attendee_id / operator_meeting_attendee_id
+  + participants list, không dựa vào Spatie role.
+- Catalog admin (CRUD meeting-types/locations/document-types/attendees/groups, tạo/xóa
+  meeting, đổi trạng thái, showQrCode, dashboard, notification config) -> Super Admin /
+  Admin / Quản trị giữ.
+
+CHANGES
+1) database/seeders/MeetingPermissionSeeder.php
+   - Drop role "Thư ký họp".
+   - Drop role "Đại biểu họp" (rename về "Đại biểu" generic).
+   - Role "Đại biểu" có:
+     * meetings.{stats,index,show}
+     * meeting-agendas.{index,show,store,update,destroy,bulkDestroy}
+     * meeting-documents.{index,show,store,update,destroy,bulkDestroy}
+     * meeting-participants.{stats,index,show,store,update,destroy,bulkDestroy,respond}
+     * meeting-attendances.{stats,index,show,store,update,destroy,bulkDestroy,checkin,markAbsent,approve,reject}
+     * meeting-vote-topics.{stats,index,show,store,update,destroy,bulkDestroy}
+     * meeting-vote-responses.{stats,index,show,store,update,destroy,bulkDestroy}
+     * meeting-discussion-registrations.{stats,index,show,store,update,destroy,complete}
+     * meeting-personal-notes.{index,show,store,update,destroy,bulkDestroy}
+     * meeting-personal-note-attachments.{index,store,update,destroy}
+   - KHÔNG có:
+     * meetings.{store,update,destroy,changeStatus,bulkDestroy,bulkUpdateStatus,export,showQrCode}
+     * Catalog CRUD (meeting-types, meeting-locations, meeting-document-types, meeting-attendees, meeting-attendee-groups full)
+     * dashboard.index, notifications.*
+
+2) database/seeders/MeetingDataSeeder.php
+   - Tất cả seed attendee gán role "Đại biểu" (trước đây split "Thư ký họp" / "Đại biểu họp").
+   - Comment cập nhật triết lý FK-based render.
+
+3) database/migrations/2026_05_10_120000_drop_legacy_meeting_roles.php
+   - Reassign user role "Thư ký họp"/"Đại biểu họp" -> "Đại biểu".
+   - Detach + drop 2 role legacy khỏi roles, model_has_roles, role_has_permissions.
+
+4) routes/channels.php (channel auth meeting.{id})
+   - Spatie role privileged đổi từ ['Super Admin', 'Admin', 'Thư ký họp']
+     -> ['Super Admin', 'Admin', 'Quản trị'].
+
+5) app/Modules/Meeting/Concerns/HasMeetingRole.php (privileged check)
+   - Đổi như channels.php.
+
+6) tests/
+   - MeetingPolicyTest, UserAssignmentValidationTest cập nhật role name "Đại biểu".
+
+DEPLOY
+1. git pull
+2. composer install --no-dev --optimize-autoloader
+3. php artisan migrate --force         # chạy migration cleanup role legacy
+4. php artisan db:seed --class=MeetingPermissionSeeder --force   # seed role mới + perm
+5. (optional) php artisan db:seed --class=MeetingDataSeeder --force   # nếu cần re-seed data sample
+6. php artisan config:cache
+7. php artisan route:cache
+8. php artisan queue:restart            # noti job pickup code mới
+9. sudo /etc/init.d/php-fpm-83 reload   # OPcache invalidate
+
+PRODUCTION USER ROLE ASSIGNMENT
+- KHÔNG có observer auto-assign. Admin manual gán role "Đại biểu" cho user mới qua màn
+  quản lý role. Hoặc: bổ sung default role assignment trong RegisterController nếu cần.
+
+AUDIT TODO (chưa làm — cần verify sau seed)
+Services dưới đây CẦN scope theo "user là chair/operator/participant của meeting"
+(không phải chỉ org_id), nếu không user có role "Đại biểu" có thể đọc/sửa data của
+meeting họ không tham gia trong cùng org:
+
+[ ] MeetingService::index/show — verify scopeFilter có filter theo participation
+[ ] MeetingAgendaService — verify access by meeting (chỉ thấy agenda của meeting user join)
+[ ] MeetingDocumentService — auth index đã có org scope; verify per-meeting access
+[ ] MeetingParticipantService — verify chỉ thấy/sửa participant của meeting user join
+[ ] MeetingAttendanceService — verify checkin/show theo meeting user join
+[ ] MeetingVoteTopicService — verify index/show theo meeting user join + ballot_mode visibility (đã có HasMeetingRole)
+[ ] MeetingVoteResponseService — verify ballot_mode + ownership store/update
+[ ] MeetingDiscussionRegistrationService — verify ownership store/update
+[ ] MeetingPersonalNote(Attachment)Service — service scope theo user_id (đã có)
+
+Smoke test trên staging:
+1. Login user thường (chỉ role "Đại biểu") -> tham gia meeting A.
+2. Mở từng tab (1-7) -> tất cả API trả 200, data đúng meeting A.
+3. Thử fetch meeting B (user không tham gia) -> phải 403/404 hoặc empty.
+4. Thử POST agenda/document vào meeting B -> phải 403.

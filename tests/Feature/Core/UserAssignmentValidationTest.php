@@ -34,7 +34,7 @@ class UserAssignmentValidationTest extends TestCase
         $admin->assignRole('Super Admin');
         Sanctum::actingAs($admin);
 
-        $this->roleA = Role::firstOrCreate(['name' => 'Đại biểu họp', 'guard_name' => 'web']);
+        $this->roleA = Role::firstOrCreate(['name' => 'Đại biểu', 'guard_name' => 'web']);
         $this->roleB = Role::firstOrCreate(['name' => 'Nhân viên', 'guard_name' => 'web']);
     }
 

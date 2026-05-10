@@ -48,13 +48,13 @@ class MeetingPolicyTest extends TestCase
         // 4 user khác nhau cho 4 vai trò. Cần assign role để middleware SetPermissionsTeamId
         // cho phép truy cập org (Spatie layer 1 — gate entry vào org).
         $this->chair = User::factory()->create();
-        $this->chair->assignRole('Đại biểu họp');
+        $this->chair->assignRole('Đại biểu');
         $this->operator = User::factory()->create();
-        $this->operator->assignRole('Đại biểu họp');
+        $this->operator->assignRole('Đại biểu');
         $this->participant = User::factory()->create();
-        $this->participant->assignRole('Đại biểu họp');
+        $this->participant->assignRole('Đại biểu');
         $this->outsider = User::factory()->create();
-        $this->outsider->assignRole('Đại biểu họp');
+        $this->outsider->assignRole('Đại biểu');
 
         // Tạo attendee + bind relation cho meeting.
         $chairAttendee = MeetingAttendee::create(['organization_id' => $this->org->id, 'user_id' => $this->chair->id, 'status' => 'active']);
