@@ -21,7 +21,9 @@ class UpdateUserRequest extends FormRequest
 
     public function rules(): array
     {
-        $userId = $this->route('user')?->id;
+        // Endpoint /me không có route param {user} → fallback auth()->id() để rule unique
+        // exclude đúng record đang edit (nếu không sẽ flag email/user_name/zalo_id của chính họ là duplicate).
+        $userId = $this->route('user')?->id ?? auth()->id();
 
         return [
             'name' => 'sometimes|string|max:255',
