@@ -3,6 +3,7 @@
 namespace App\Modules\Meeting\Concerns;
 
 use App\Modules\Meeting\Models\Meeting;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * Logic xác định user có thấy được toàn bộ tài liệu của meeting không.
@@ -19,7 +20,9 @@ trait HasDocumentVisibility
             return false;
         }
 
-        $userId = auth()->id();
+        // Ép guard sanctum để resolve Bearer token kể cả khi route không có middleware
+        // auth:sanctum (vd /meetings/public). auth()->id() default web guard không thấy được token.
+        $userId = auth()->id() ?? Auth::guard('sanctum')->id();
         if (! $userId) {
             return false;
         }

@@ -10,6 +10,7 @@ use App\Modules\Meeting\Models\MeetingInvitation;
 use App\Modules\Meeting\Models\MeetingParticipant;
 use App\Services\Notification\Events\MeetingPublished;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Maatwebsite\Excel\Facades\Excel;
@@ -28,7 +29,7 @@ class MeetingService
      */
     public function publicIndex(array $filters, int $limit)
     {
-        $userId = auth()->id();
+        $userId = $this->resolveUserId();
         $myMeetingIds = $userId ? $this->visibleMeetingIdsForUser($userId) : [];
 
         $query = Meeting::with([
@@ -94,6 +95,16 @@ class MeetingService
     }
 
     /**
+     * Resolve auth user id — ép guard sanctum để pick up Bearer token kể cả khi route
+     * không có middleware auth:sanctum (vd /meetings/public). auth()->id() default guard
+     * không resolve được token vì Sanctum chỉ activate khi middleware chạy.
+     */
+    private function resolveUserId(): ?int
+    {
+        return auth()->id() ?? Auth::guard('sanctum')->id();
+    }
+
+    /**
      * "Visible" show — endpoint dùng chung:
      *   - Public + published meeting: ai cũng xem được
      *   - Meeting riêng tư: chỉ chủ trì / thư ký / participant xem được
@@ -138,18 +149,27 @@ class MeetingService
     }
 
     /**
-     * Stats cho trang công khai — phase derived từ start_time/end_time vs now (không cần auth).
-     * Scope: is_public=true + status=published.
+     * Stats cho trang công khai + đại biểu — phase derived từ start_time/end_time vs now.
+     * Scope: meeting public-published HOẶC meeting user là chair/operator/participant (nếu auth).
      */
     public function publicStats(array $filters): array
     {
-        $publicFilters = [
-            ...$filters,
-            'is_public' => true,
-            'status' => MeetingStatusEnum::Published->value,
-        ];
+        $userId = $this->resolveUserId();
 
-        $base = Meeting::filter($publicFilters);
+        $base = Meeting::query()
+            ->filter($filters)
+            ->where(function ($outer) use ($userId) {
+                $outer->where(function ($public) {
+                    $public->where('is_public', true)
+                        ->where('status', MeetingStatusEnum::Published->value);
+                });
+                if ($userId) {
+                    $outer->orWhereHas('chairperson', fn ($q) => $q->where('user_id', $userId))
+                        ->orWhereHas('operator', fn ($q) => $q->where('user_id', $userId))
+                        ->orWhereHas('participants.attendee', fn ($q) => $q->where('user_id', $userId));
+                }
+            });
+
         $now = now();
 
         return [
