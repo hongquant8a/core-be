@@ -35,19 +35,27 @@ class CatalogExport implements FromCollection, WithHeadings
             ->orderByDesc('id')
             ->get()
             ->values()
-            ->map(fn ($item, $i) => array_filter([
-                'stt' => $i + 1,
-                'name' => $item->name,
-                'description' => $item->description,
-                'address' => $this->hasLocation ? ($item->address ?? '') : null,
-                'google_maps_url' => $this->hasLocation ? ($item->google_maps_url ?? '') : null,
-                'status' => MeetingCatalogStatusEnum::tryFrom((string) $item->status)?->label() ?? $item->status,
-                'created_by' => $item->creator?->name ?? 'N/A',
-                'updated_by' => $item->editor?->name ?? 'N/A',
-                'created_at' => $item->created_at?->format('H:i:s d/m/Y'),
-                'updated_at' => $item->updated_at?->format('H:i:s d/m/Y'),
-                'id' => $item->id,
-            ], fn ($v) => $v !== null));
+            ->map(function ($item, $i) {
+                // Build row conditionally — KHÔNG dùng array_filter null vì sẽ shift cell (mất alignment với headings).
+                // Null field giữ nguyên empty string '' để Excel render đúng cột.
+                $row = [
+                    'stt' => $i + 1,
+                    'name' => $item->name ?? '',
+                    'description' => $item->description ?? '',
+                ];
+                if ($this->hasLocation) {
+                    $row['address'] = $item->address ?? '';
+                    $row['google_maps_url'] = $item->google_maps_url ?? '';
+                }
+                $row['status'] = MeetingCatalogStatusEnum::tryFrom((string) $item->status)?->label() ?? ($item->status ?? '');
+                $row['created_by'] = $item->creator?->name ?? 'N/A';
+                $row['updated_by'] = $item->editor?->name ?? 'N/A';
+                $row['created_at'] = $item->created_at?->format('H:i:s d/m/Y') ?? '';
+                $row['updated_at'] = $item->updated_at?->format('H:i:s d/m/Y') ?? '';
+                $row['id'] = $item->id;
+
+                return $row;
+            });
     }
 
     public function headings(): array
