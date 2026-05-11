@@ -12,10 +12,16 @@ class MeetingPersonalNote extends Model
     protected $fillable = [
         'organization_id',
         'meeting_id',
+        'user_id',
         'meeting_participant_id',
         'content',
         'sort_order',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(\App\Modules\Core\Models\User::class, 'user_id');
+    }
 
     public function participant()
     {

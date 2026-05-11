@@ -35,21 +35,31 @@ class MeetingPersonalNoteService
         $userId = $this->resolveCurrentUserId();
         $meetingId = (int) $validated['meeting_id'];
 
-        // Auto-derive participant_id từ user — đảm bảo user tạo note cho chính mình.
+        // Verify user có access tới meeting: chair / operator / participant.
+        $meeting = \App\Modules\Meeting\Models\Meeting::with(['chairperson', 'operator'])
+            ->find($meetingId);
+        if (! $meeting) {
+            throw new ModelNotFoundException('Cuộc họp không tồn tại.');
+        }
+
+        $isChair = (int) ($meeting->chairperson?->user_id ?? 0) === $userId;
+        $isOperator = (int) ($meeting->operator?->user_id ?? 0) === $userId;
         $participant = MeetingParticipant::query()
             ->where('meeting_id', $meetingId)
             ->whereHas('attendee', fn ($q) => $q->where('user_id', $userId))
             ->first();
 
-        if (! $participant) {
-            throw new ModelNotFoundException('Bạn không phải đại biểu của cuộc họp này.');
+        if (! $isChair && ! $isOperator && ! $participant) {
+            throw new ModelNotFoundException('Bạn không có quyền ghi chú cho cuộc họp này.');
         }
 
         $payload = [
             'meeting_id' => $meetingId,
-            'meeting_participant_id' => $participant->id,
+            'user_id' => $userId,
+            // participant_id chỉ set nếu user có participant row (chair/op không bắt buộc).
+            'meeting_participant_id' => $participant?->id,
             'content' => $validated['content'],
-            'sort_order' => $validated['sort_order'] ?? $this->nextSortOrder($meetingId, $participant->id),
+            'sort_order' => $validated['sort_order'] ?? $this->nextSortOrder($meetingId, $userId),
             'organization_id' => $this->resolveCurrentOrganizationId(),
         ];
 
@@ -87,15 +97,14 @@ class MeetingPersonalNoteService
     }
 
     /**
-     * Base query auto-scope theo organization + ownership của auth user.
+     * Base query auto-scope theo organization + ownership theo user_id trực tiếp
+     * (chair/op cũng có note nhưng không có participant row).
      */
     private function ownedQuery(): Builder
     {
-        $userId = $this->resolveCurrentUserId();
-
         return MeetingPersonalNote::query()
             ->where('organization_id', $this->resolveCurrentOrganizationId())
-            ->whereHas('participant.attendee', fn ($q) => $q->where('user_id', $userId));
+            ->where('user_id', $this->resolveCurrentUserId());
     }
 
     /**
@@ -103,20 +112,17 @@ class MeetingPersonalNoteService
      */
     private function ensureOwned(MeetingPersonalNote $note): void
     {
-        $userId = $this->resolveCurrentUserId();
-        $note->loadMissing('participant.attendee');
-
-        if ((int) ($note->participant?->attendee?->user_id ?? 0) !== (int) $userId) {
+        if ((int) $note->user_id !== $this->resolveCurrentUserId()) {
             throw new ModelNotFoundException('Không tìm thấy ghi chú.');
         }
     }
 
-    private function nextSortOrder(int $meetingId, int $meetingParticipantId): int
+    private function nextSortOrder(int $meetingId, int $userId): int
     {
         return ((int) MeetingPersonalNote::query()
             ->where('organization_id', $this->resolveCurrentOrganizationId())
             ->where('meeting_id', $meetingId)
-            ->where('meeting_participant_id', $meetingParticipantId)
+            ->where('user_id', $userId)
             ->max('sort_order')) + 1;
     }
 
