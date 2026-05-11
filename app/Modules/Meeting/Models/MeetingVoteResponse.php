@@ -12,6 +12,7 @@ class MeetingVoteResponse extends Model
     protected $fillable = [
         'organization_id',
         'meeting_vote_topic_id',
+        'user_id',
         'meeting_participant_id',
         'option',
         'voted_at',
@@ -24,6 +25,11 @@ class MeetingVoteResponse extends Model
     public function topic()
     {
         return $this->belongsTo(MeetingVoteTopic::class, 'meeting_vote_topic_id');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(\App\Modules\Core\Models\User::class, 'user_id');
     }
 
     public function participant()

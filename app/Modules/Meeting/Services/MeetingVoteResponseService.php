@@ -92,6 +92,7 @@ class MeetingVoteResponseService
 
         $topic = MeetingVoteTopic::query()
             ->where('organization_id', $organizationId)
+            ->with('meeting.chairperson')
             ->findOrFail($validated['meeting_vote_topic_id']);
 
         // Spec line 165: chỉ vote khi topic đang opened.
@@ -103,19 +104,21 @@ class MeetingVoteResponseService
             ]);
         }
 
-        // Auto-derive participant từ auth user — tìm participant của user trong meeting của topic.
+        // Allow: chủ trì meeting (FK match) HOẶC participant (đại biểu được mời).
+        // Operator (thư ký) — vai trò vận hành, KHÔNG vote.
+        $isChair = (int) ($topic->meeting?->chairperson?->user_id ?? 0) === $userId;
         $participant = MeetingParticipant::query()
             ->where('meeting_id', $topic->meeting_id)
             ->whereHas('attendee', fn ($q) => $q->where('user_id', $userId))
             ->first();
 
-        if (! $participant) {
-            throw new ModelNotFoundException('Bạn không phải đại biểu của cuộc họp này.');
+        if (! $isChair && ! $participant) {
+            throw new ModelNotFoundException('Bạn không có quyền bỏ phiếu trong cuộc họp này.');
         }
 
         $existing = MeetingVoteResponse::query()
             ->where('meeting_vote_topic_id', $topic->id)
-            ->where('meeting_participant_id', $participant->id)
+            ->where('user_id', $userId)
             ->first();
 
         // Spam cùng option → no-op + không broadcast (FE counter không bị cộng dồn).
@@ -128,10 +131,12 @@ class MeetingVoteResponseService
         $response = MeetingVoteResponse::updateOrCreate(
             [
                 'meeting_vote_topic_id' => $topic->id,
-                'meeting_participant_id' => $participant->id,
+                'user_id' => $userId,
             ],
             [
                 'organization_id' => $organizationId,
+                // participant_id nullable — set nếu user là participant, null nếu là chair.
+                'meeting_participant_id' => $participant?->id,
                 'option' => $validated['option'],
                 'voted_at' => now(),
             ]
@@ -204,13 +209,11 @@ class MeetingVoteResponseService
 
     /**
      * Throw 404 nếu phiếu không thuộc auth user (tránh leak ID-existence).
+     * Scope theo user_id trực tiếp — đúng cho cả chair (không có participant) lẫn đại biểu.
      */
     private function ensureOwned(MeetingVoteResponse $response): void
     {
-        $userId = $this->resolveCurrentUserId();
-        $response->loadMissing('participant.attendee');
-
-        if ((int) ($response->participant?->attendee?->user_id ?? 0) !== (int) $userId) {
+        if ((int) $response->user_id !== $this->resolveCurrentUserId()) {
             throw new ModelNotFoundException('Không tìm thấy phiếu.');
         }
     }
