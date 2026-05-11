@@ -191,6 +191,9 @@ class PermissionSeeder extends Seeder
         'meeting-personal-note-attachments' => [
             'index', 'store', 'update', 'destroy',
         ],
+        'meeting-minutes-templates' => [
+            'index', 'show', 'store', 'update', 'destroy',
+        ],
     ];
 
     public function run(): void
@@ -263,6 +266,7 @@ class PermissionSeeder extends Seeder
         'meeting-discussion-registrations' => 'Đăng ký thảo luận/chất vấn',
         'meeting-personal-notes' => 'Ghi chú cá nhân họp',
         'meeting-personal-note-attachments' => 'File ghi chú cá nhân',
+        'meeting-minutes-templates' => 'Template biên bản họp',
     ];
 
     /** Nhãn action (để description). */

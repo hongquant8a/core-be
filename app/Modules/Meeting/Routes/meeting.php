@@ -3,6 +3,9 @@
 use App\Modules\Meeting\MeetingController;
 use Illuminate\Support\Facades\Route;
 
+// Export biên bản .docx từ template — auth-only, gate MeetingPolicy::operate (chair/operator).
+Route::post('/{meeting}/export-minutes', [\App\Modules\Meeting\MeetingMinutesTemplateController::class, 'exportMinutes']);
+
 Route::delete('/bulk-delete', [MeetingController::class, 'bulkDestroy'])->middleware('permission:meetings.bulkDestroy,web');
 Route::patch('/bulk-status', [MeetingController::class, 'bulkUpdateStatus'])->middleware('permission:meetings.bulkUpdateStatus,web');
 Route::get('/export', [MeetingController::class, 'export'])->middleware('permission:meetings.export,web');

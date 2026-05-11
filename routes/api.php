@@ -145,4 +145,8 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
     Route::prefix('meeting-personal-note-attachments')->middleware('ensure.route.org')->group(function () {
         require base_path('app/Modules/Meeting/Routes/meeting_personal_note_attachment.php');
     });
+    // Template biên bản (.docx) — không scope theo org, per module Meeting.
+    Route::prefix('meeting-minutes-templates')->group(function () {
+        require base_path('app/Modules/Meeting/Routes/meeting_minutes_template.php');
+    });
 });
