@@ -32,46 +32,40 @@ class MeetingService
         $userId = $this->resolveUserId();
         $myMeetingIds = $userId ? $this->visibleMeetingIdsForUser($userId) : [];
 
+        // Doc filter dùng chung cho preload + count: is_public=true HOẶC thuộc meeting user tham gia.
+        $docFilter = function ($q) use ($myMeetingIds) {
+            $q->where(function ($sub) use ($myMeetingIds) {
+                $sub->where('is_public', true);
+                if (! empty($myMeetingIds)) {
+                    $sub->orWhereIn('meeting_id', $myMeetingIds);
+                }
+            });
+        };
+
         $query = Meeting::with([
                 'meetingType',
                 'meetingLocation',
                 'chairperson.user',
                 'operator.user',
-                // Doc preload có filter: is_public=true HOẶC thuộc meeting user tham gia.
-                'documents' => function ($q) use ($myMeetingIds) {
-                    $q->where(function ($sub) use ($myMeetingIds) {
-                        $sub->where('is_public', true);
-                        if (! empty($myMeetingIds)) {
-                            $sub->orWhereIn('meeting_id', $myMeetingIds);
-                        }
-                    });
-                },
+                'documents' => $docFilter,
                 'documents.documentType',
                 'documents.mediaFile',
                 'participants.attendee',
             ])
             // documents_count: số tài liệu visible cho caller — dùng cho sidebar UI count.
-            ->withCount(['documents as documents_count' => function ($q) use ($myMeetingIds) {
-                $q->where(function ($sub) use ($myMeetingIds) {
-                    $sub->where('is_public', true);
-                    if (! empty($myMeetingIds)) {
-                        $sub->orWhereIn('meeting_id', $myMeetingIds);
-                    }
-                });
-            }])
+            ->withCount(['documents as documents_count' => $docFilter])
             ->filter($filters)
-            ->where(function ($outer) use ($userId) {
+            ->where(function ($outer) use ($myMeetingIds) {
                 // Branch 1: cuộc họp công khai + đã ban hành.
                 $outer->where(function ($public) {
                     $public->where('is_public', true)
                         ->where('status', MeetingStatusEnum::Published->value);
                 });
 
-                // Branch 2 (auth): meeting user là chủ trì / thư ký / đã được mời tham gia.
-                if ($userId) {
-                    $outer->orWhereHas('chairperson', fn ($q) => $q->where('user_id', $userId))
-                        ->orWhereHas('operator', fn ($q) => $q->where('user_id', $userId))
-                        ->orWhereHas('participants.attendee', fn ($q) => $q->where('user_id', $userId));
+                // Branch 2 (auth): meeting user là chủ trì / thư ký / participant
+                // — dùng id list đã pluck từ visibleMeetingIdsForUser thay vì 3 whereHas.
+                if (! empty($myMeetingIds)) {
+                    $outer->orWhereIn('id', $myMeetingIds);
                 }
             });
 
@@ -155,18 +149,17 @@ class MeetingService
     public function publicStats(array $filters): array
     {
         $userId = $this->resolveUserId();
+        $myMeetingIds = $userId ? $this->visibleMeetingIdsForUser($userId) : [];
 
         $base = Meeting::query()
             ->filter($filters)
-            ->where(function ($outer) use ($userId) {
+            ->where(function ($outer) use ($myMeetingIds) {
                 $outer->where(function ($public) {
                     $public->where('is_public', true)
                         ->where('status', MeetingStatusEnum::Published->value);
                 });
-                if ($userId) {
-                    $outer->orWhereHas('chairperson', fn ($q) => $q->where('user_id', $userId))
-                        ->orWhereHas('operator', fn ($q) => $q->where('user_id', $userId))
-                        ->orWhereHas('participants.attendee', fn ($q) => $q->where('user_id', $userId));
+                if (! empty($myMeetingIds)) {
+                    $outer->orWhereIn('id', $myMeetingIds);
                 }
             });
 
