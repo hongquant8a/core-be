@@ -84,6 +84,11 @@ class MeetingAttendanceService
             'checked_in_by' => auth()->id(),
         ]);
 
+        // Sync RSVP cho participant nếu còn pending → accepted (đại biểu đã có mặt).
+        if ($attendance->participant) {
+            $this->syncParticipantResponseFromAttendance($attendance->participant, MeetingParticipantResponseStatusEnum::Accepted->value);
+        }
+
         broadcast(new \App\Modules\Meeting\Events\MeetingAttendanceApproved($attendance))->toOthers();
 
         return $attendance->load('participant.attendee');
@@ -104,6 +109,11 @@ class MeetingAttendanceService
             'status' => MeetingAttendanceStatusEnum::Absent->value,
             'checked_in_by' => auth()->id(),
         ]);
+
+        // Sync RSVP cho participant nếu còn pending → declined (operator xác nhận vắng).
+        if ($attendance->participant) {
+            $this->syncParticipantResponseFromAttendance($attendance->participant, MeetingParticipantResponseStatusEnum::Declined->value);
+        }
 
         broadcast(new \App\Modules\Meeting\Events\MeetingAttendanceRejected($attendance))->toOthers();
 

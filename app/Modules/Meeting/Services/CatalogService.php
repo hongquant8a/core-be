@@ -142,7 +142,21 @@ class CatalogService
 
     public function import(string $modelClass, $file): void
     {
-        Excel::import(new CatalogImport($modelClass), $file);
+        $import = new CatalogImport($modelClass);
+        Excel::import($import, $file);
+
+        // Surface validation failures — không để silently skip (API trả 200 nhưng 0 row insert).
+        $failures = $import->failures();
+        if ($failures->isNotEmpty()) {
+            $errors = [];
+            foreach ($failures as $failure) {
+                $row = $failure->row();
+                foreach ($failure->errors() as $msg) {
+                    $errors["row_{$row}"][] = $msg;
+                }
+            }
+            throw \Illuminate\Validation\ValidationException::withMessages($errors);
+        }
     }
 
     private function resolveCurrentOrganizationId(): int

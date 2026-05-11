@@ -78,7 +78,9 @@ class MeetingService
      */
     private function visibleMeetingIdsForUser(int $userId): array
     {
+        // Loại draft hoàn toàn — chair/operator xem draft qua admin endpoint /api/meetings.
         return Meeting::query()
+            ->where('status', '!=', MeetingStatusEnum::Draft->value)
             ->where(function ($q) use ($userId) {
                 $q->whereHas('chairperson', fn ($a) => $a->where('user_id', $userId))
                     ->orWhereHas('operator', fn ($a) => $a->where('user_id', $userId))

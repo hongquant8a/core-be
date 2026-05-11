@@ -22,14 +22,14 @@ class MeetingParticipantService
 
     public function index(array $filters, int $limit)
     {
-        return MeetingParticipant::with(['attendee'])
+        return MeetingParticipant::with(['attendee', 'attendance'])
             ->filter($filters)
             ->paginate($limit);
     }
 
     public function show(MeetingParticipant $meetingParticipant): MeetingParticipant
     {
-        return $meetingParticipant->load(['attendee']);
+        return $meetingParticipant->load(['attendee', 'attendance']);
     }
 
     public function store(array $validated): MeetingParticipant
@@ -50,14 +50,14 @@ class MeetingParticipantService
             'phone' => $attendee->user?->profile?->phone,
             'response_status' => $validated['response_status'] ?? MeetingParticipantResponseStatusEnum::Pending->value,
             'absence_reason' => $validated['absence_reason'] ?? null,
-        ])->load(['attendee']);
+        ])->load(['attendee', 'attendance']);
     }
 
     public function update(MeetingParticipant $meetingParticipant, array $validated): MeetingParticipant
     {
         $meetingParticipant->update($validated);
 
-        return $meetingParticipant->load(['attendee']);
+        return $meetingParticipant->load(['attendee', 'attendance']);
     }
 
     public function destroy(MeetingParticipant $meetingParticipant): void
@@ -89,7 +89,7 @@ class MeetingParticipantService
             'responded_at' => now(),
         ]);
 
-        return $meetingParticipant->load(['attendee']);
+        return $meetingParticipant->load(['attendee', 'attendance']);
     }
 
     public function bulkDestroy(array $ids): void

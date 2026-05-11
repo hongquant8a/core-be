@@ -37,6 +37,15 @@ class MeetingParticipant extends Model
         return $this->belongsTo(MeetingAttendee::class, 'meeting_attendee_id');
     }
 
+    /**
+     * Bản ghi điểm danh của participant này — 1-1 do unique (meeting_id, meeting_participant_id).
+     * Có thể null nếu đại biểu chưa điểm danh.
+     */
+    public function attendance()
+    {
+        return $this->hasOne(MeetingAttendance::class, 'meeting_participant_id');
+    }
+
     public function scopeFilter($query, array $filters)
     {
         $organizationId = function_exists('getPermissionsTeamId') ? getPermissionsTeamId() : null;

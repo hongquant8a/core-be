@@ -130,7 +130,20 @@ class MeetingAttendeeService
 
     public function import($file): void
     {
-        Excel::import(new MeetingAttendeeImport, $file);
+        $import = new MeetingAttendeeImport;
+        Excel::import($import, $file);
+
+        $failures = $import->failures();
+        if ($failures->isNotEmpty()) {
+            $errors = [];
+            foreach ($failures as $failure) {
+                $row = $failure->row();
+                foreach ($failure->errors() as $msg) {
+                    $errors["row_{$row}"][] = $msg;
+                }
+            }
+            throw \Illuminate\Validation\ValidationException::withMessages($errors);
+        }
     }
 
     private function resolveCurrentOrganizationId(): int
