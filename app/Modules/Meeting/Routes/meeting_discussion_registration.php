@@ -3,6 +3,9 @@
 use App\Modules\Meeting\MeetingDiscussionRegistrationController;
 use Illuminate\Support\Facades\Route;
 
+// Export — auth-only, không Spatie permission. Gate qua MeetingPolicy::operate (chair/operator).
+Route::get('/export', [MeetingDiscussionRegistrationController::class, 'export']);
+
 Route::patch('/reorder', [MeetingDiscussionRegistrationController::class, 'reorder'])->middleware('permission:meeting-discussion-registrations.update,web');
 // Operator đánh dấu hoàn thành (registered -> completed). Sprint 1 sẽ wrap thêm middleware meeting.role.
 Route::patch('/{meetingDiscussionRegistration}/complete', [MeetingDiscussionRegistrationController::class, 'complete'])->middleware('permission:meeting-discussion-registrations.complete,web');

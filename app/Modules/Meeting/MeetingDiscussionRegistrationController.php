@@ -139,6 +139,38 @@ class MeetingDiscussionRegistrationController extends Controller
      *
      * @bodyParam items object[] required Danh sách đăng ký cần sắp xếp. Example: [{"id":1,"sort_order":1},{"id":2,"sort_order":2}]
      */
+    /**
+     * Xuất danh sách thảo luận hoặc chất vấn của 1 cuộc họp ra Excel.
+     *
+     * Auth-only, không qua Spatie permission. Gate qua MeetingPolicy::operate
+     * (chair/operator của meeting) — đại biểu thường không được export.
+     *
+     * Xuất ra các trường: STT, Chương trình, Người đăng ký, Thời gian đăng ký, Nội dung, Trạng thái.
+     *
+     * @queryParam meeting_id integer required ID cuộc họp. Example: 1
+     * @queryParam type string required Loại đăng ký (discussion|question). Example: discussion
+     */
+    public function export(FilterRequest $request)
+    {
+        $request->validate([
+            'meeting_id' => 'required|integer|exists:meetings,id',
+            'type' => 'required|in:discussion,question',
+        ]);
+
+        $meetingId = (int) $request->input('meeting_id');
+        $type = (string) $request->input('type');
+
+        $meeting = \App\Modules\Meeting\Models\Meeting::findOrFail($meetingId);
+        \Illuminate\Support\Facades\Gate::authorize('operate', $meeting);
+
+        $fileName = $type === 'question' ? 'meeting-questions.xlsx' : 'meeting-discussions.xlsx';
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Modules\Meeting\Exports\MeetingDiscussionRegistrationExport($meetingId, $type),
+            $fileName,
+        );
+    }
+
     public function reorder(ReorderMeetingDiscussionRegistrationRequest $request)
     {
         $this->meetingDiscussionRegistrationService->reorder($request->validated('items'));

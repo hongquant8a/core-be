@@ -46,4 +46,13 @@ class MeetingPolicy
     {
         return $meeting->userMeetingRole($user) !== null;
     }
+
+    /**
+     * Operate — chủ trì hoặc thư ký được xuất báo cáo / export danh sách của meeting.
+     * Đại biểu thường KHÔNG được truy cập export (chỉ xem dữ liệu của mình qua read API).
+     */
+    public function operate(User $user, Meeting $meeting): bool
+    {
+        return $meeting->isChairperson($user) || $meeting->isOperator($user);
+    }
 }

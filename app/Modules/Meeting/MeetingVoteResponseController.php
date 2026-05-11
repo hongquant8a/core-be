@@ -123,4 +123,65 @@ class MeetingVoteResponseController extends Controller
 
         return $this->success(null, 'Xóa hàng loạt thành công!');
     }
+
+    /**
+     * Xuất danh sách chi tiết phiếu biểu quyết của 1 topic — mỗi row 1 phiếu.
+     *
+     * Auth-only, không qua Spatie permission. Gate qua MeetingPolicy::operate
+     * (chair/operator của meeting chứa topic này).
+     *
+     * Anonymize tên đại biểu nếu topic.ballot_mode = anonymous.
+     * Xuất ra các trường: STT, Nội dung biểu quyết, Tên đại biểu, Biểu quyết.
+     *
+     * @queryParam meeting_vote_topic_id integer required ID phiên biểu quyết. Example: 1
+     */
+    public function export(FilterRequest $request)
+    {
+        $request->validate([
+            'meeting_vote_topic_id' => 'required|integer|exists:meeting_vote_topics,id',
+        ]);
+
+        $topicId = (int) $request->input('meeting_vote_topic_id');
+        $topic = \App\Modules\Meeting\Models\MeetingVoteTopic::with('meeting')->findOrFail($topicId);
+        \Illuminate\Support\Facades\Gate::authorize('operate', $topic->meeting);
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Modules\Meeting\Exports\MeetingVoteResponseDetailExport($topicId),
+            'meeting-vote-detail.xlsx',
+        );
+    }
+
+    /**
+     * Xuất danh sách tổng hợp biểu quyết — mỗi row 1 topic + count theo option.
+     *
+     * Auth-only, không qua Spatie permission. Gate qua MeetingPolicy::operate.
+     * Filter: meeting_id (tất cả topic của 1 meeting) HOẶC meeting_vote_topic_id (1 topic).
+     *
+     * Xuất ra các trường: STT, Nội dung biểu quyết, Đồng ý, Không đồng ý, Ý kiến khác.
+     *
+     * @queryParam meeting_id integer ID cuộc họp. Example: 1
+     * @queryParam meeting_vote_topic_id integer ID phiên biểu quyết (chỉ 1 topic). Example: 1
+     */
+    public function exportSummary(FilterRequest $request)
+    {
+        $request->validate([
+            'meeting_id' => 'nullable|integer|exists:meetings,id|required_without:meeting_vote_topic_id',
+            'meeting_vote_topic_id' => 'nullable|integer|exists:meeting_vote_topics,id|required_without:meeting_id',
+        ]);
+
+        $meetingId = $request->filled('meeting_id') ? (int) $request->input('meeting_id') : null;
+        $topicId = $request->filled('meeting_vote_topic_id') ? (int) $request->input('meeting_vote_topic_id') : null;
+
+        // Resolve meeting để authorize policy.
+        $meeting = $meetingId
+            ? \App\Modules\Meeting\Models\Meeting::findOrFail($meetingId)
+            : \App\Modules\Meeting\Models\MeetingVoteTopic::with('meeting')->findOrFail($topicId)->meeting;
+
+        \Illuminate\Support\Facades\Gate::authorize('operate', $meeting);
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Modules\Meeting\Exports\MeetingVoteResponseSummaryExport($meetingId, $topicId),
+            'meeting-vote-summary.xlsx',
+        );
+    }
 }

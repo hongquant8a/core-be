@@ -214,4 +214,31 @@ class MeetingAttendanceController extends Controller
 
         return $this->successResource(new MeetingAttendanceResource($item), 'Đã ghi nhận báo vắng.');
     }
+
+    /**
+     * Xuất danh sách đại biểu tham dự + trạng thái điểm danh ra Excel.
+     *
+     * Auth-only, không qua Spatie permission. Gate qua MeetingPolicy::operate
+     * (chair/operator của meeting).
+     *
+     * Xuất ra các trường: STT, Tên đại biểu, Chức vụ, Xác nhận tham gia, Đã điểm danh,
+     * Đã xác nhận điểm danh, Giờ điểm danh.
+     *
+     * @queryParam meeting_id integer required ID cuộc họp. Example: 1
+     */
+    public function export(FilterRequest $request)
+    {
+        $request->validate([
+            'meeting_id' => 'required|integer|exists:meetings,id',
+        ]);
+
+        $meetingId = (int) $request->input('meeting_id');
+        $meeting = \App\Modules\Meeting\Models\Meeting::findOrFail($meetingId);
+        \Illuminate\Support\Facades\Gate::authorize('operate', $meeting);
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Modules\Meeting\Exports\MeetingAttendanceExport($meetingId),
+            'meeting-attendances.xlsx',
+        );
+    }
 }

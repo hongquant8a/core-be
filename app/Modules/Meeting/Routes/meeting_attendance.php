@@ -3,6 +3,9 @@
 use App\Modules\Meeting\MeetingAttendanceController;
 use Illuminate\Support\Facades\Route;
 
+// Export — auth-only, không Spatie permission. Gate qua MeetingPolicy::operate (chair/operator).
+Route::get('/export', [MeetingAttendanceController::class, 'export']);
+
 Route::delete('/bulk-delete', [MeetingAttendanceController::class, 'bulkDestroy'])->middleware('permission:meeting-attendances.bulkDestroy,web');
 Route::post('/checkin', [MeetingAttendanceController::class, 'checkin'])->middleware('permission:meeting-attendances.checkin,web');
 // Điểm danh qua QR — auth required, dùng chung permission `checkin` với endpoint button.
