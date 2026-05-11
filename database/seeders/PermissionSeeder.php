@@ -533,7 +533,7 @@ class PermissionSeeder extends Seeder
         $names[] = 'task-assignment-item-notes.store';
 
         // Dashboard + 2 màn công việc cá nhân
-        $names[] = 'dashboard.index';
+        $names[] = 'dashboard.systemOverview';
         $names[] = 'my-assigned-tasks.index';
         $names[] = 'my-received-tasks.index';
 
@@ -582,7 +582,7 @@ class PermissionSeeder extends Seeder
             'task-assignment-item-notes.store',
 
             // Dashboard + 2 màn công việc cá nhân
-            'dashboard.index',
+            'dashboard.systemOverview',
             'my-assigned-tasks.index',
             'my-received-tasks.index',
         ];
@@ -592,9 +592,10 @@ class PermissionSeeder extends Seeder
     protected function getNhanVienPermissionNames(): array
     {
         return [
-            // Phòng ban giao việc (để lấy danh sách user cho chức năng điều chuyển)
-            'task-assignment-departments.index',
-            'task-assignment-departments.users',
+            // Phòng ban: không cấp Spatie perm cho Nhân viên — FE dùng endpoint public:
+            //   - GET /api/task-assignment-departments/public-options  (dropdown)
+            //   - GET /api/task-assignment-departments/{id}/users      (lookup user, không qua Spatie)
+            // Để FE không tự hiểu nhầm "có perm departments.X" = show menu quản lý.
 
             // Công việc (xem + cập nhật tiến độ)
             'task-assignment-items.stats',

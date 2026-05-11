@@ -16,6 +16,8 @@ Route::put('/{taskAssignmentDepartment}', [TaskAssignmentDepartmentController::c
 Route::patch('/{taskAssignmentDepartment}', [TaskAssignmentDepartmentController::class, 'update'])->middleware('permission:task-assignment-departments.update,web');
 Route::delete('/{taskAssignmentDepartment}', [TaskAssignmentDepartmentController::class, 'destroy'])->middleware('permission:task-assignment-departments.destroy,web');
 Route::patch('/{taskAssignmentDepartment}/status', [TaskAssignmentDepartmentController::class, 'changeStatus'])->middleware('permission:task-assignment-departments.changeStatus,web');
-Route::get('/{taskAssignmentDepartment}/users', [TaskAssignmentDepartmentController::class, 'users'])->middleware('permission:task-assignment-departments.users,web');
+// Lookup user trong phòng ban — không qua Spatie permission để mọi authenticated user gọi được
+// (dropdown điều chuyển task). FE không show menu quản lý chỉ vì có perm này.
+Route::get('/{taskAssignmentDepartment}/users', [TaskAssignmentDepartmentController::class, 'users']);
 Route::post('/{taskAssignmentDepartment}/users', [TaskAssignmentDepartmentController::class, 'syncUsers'])->middleware('permission:task-assignment-departments.syncUsers,web');
 Route::delete('/{taskAssignmentDepartment}/users/{userId}', [TaskAssignmentDepartmentController::class, 'removeUser'])->middleware('permission:task-assignment-departments.removeUser,web');
