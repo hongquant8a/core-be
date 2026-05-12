@@ -19,6 +19,7 @@ class MeetingDiscussionRegistration extends Model implements HasMedia
         'meeting_participant_id',
         'type',
         'content',
+        'operator_note',
         'media_id',
         'status',
         'completed_at',
@@ -34,6 +35,11 @@ class MeetingDiscussionRegistration extends Model implements HasMedia
     public function participant()
     {
         return $this->belongsTo(MeetingParticipant::class, 'meeting_participant_id');
+    }
+
+    public function meeting()
+    {
+        return $this->belongsTo(Meeting::class, 'meeting_id');
     }
 
     public function agenda()

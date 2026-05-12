@@ -97,6 +97,7 @@ class MeetingMinutesGenerator
                 'd_stt' => 'STT',
                 'd_speaker' => 'Đại biểu phát biểu',
                 'd_content' => 'Nội dung ý kiến',
+                'd_note' => 'Ghi chú thảo luận (operator điền)',
             ],
         ],
         'question' => [
@@ -106,6 +107,7 @@ class MeetingMinutesGenerator
                 'q_stt' => 'STT',
                 'q_speaker' => 'Đại biểu chất vấn',
                 'q_content' => 'Nội dung chất vấn',
+                'q_answer' => 'Nội dung trả lời chất vấn (operator điền)',
             ],
         ],
         'vote' => [
@@ -233,13 +235,15 @@ class MeetingMinutesGenerator
         $section->addText('Sau khi nghe trình bày các nội dung, các đại biểu tiến hành thảo luận:');
         $t = $section->addTable('MainTable');
         $hr = $t->addRow();
-        $hr->addCell(800, $headerRow)->addText('STT', ['bold' => true], $center);
-        $hr->addCell(3500, $headerRow)->addText('Đại biểu phát biểu', ['bold' => true], $center);
-        $hr->addCell(5500, $headerRow)->addText('Nội dung ý kiến thảo luận', ['bold' => true], $center);
+        $hr->addCell(700, $headerRow)->addText('STT', ['bold' => true], $center);
+        $hr->addCell(3000, $headerRow)->addText('Đại biểu phát biểu', ['bold' => true], $center);
+        $hr->addCell(3000, $headerRow)->addText('Nội dung ý kiến thảo luận', ['bold' => true], $center);
+        $hr->addCell(3300, $headerRow)->addText('Ghi chú thảo luận', ['bold' => true], $center);
         $dr = $t->addRow();
-        $dr->addCell(800)->addText('${d_stt}', null, $center);
-        $dr->addCell(3500)->addText('${d_speaker}');
-        $dr->addCell(5500)->addText('${d_content}');
+        $dr->addCell(700)->addText('${d_stt}', null, $center);
+        $dr->addCell(3000)->addText('${d_speaker}');
+        $dr->addCell(3000)->addText('${d_content}');
+        $dr->addCell(3300)->addText('${d_note}');
         $section->addTextBreak(1);
 
         // VI. Chất vấn
@@ -247,13 +251,15 @@ class MeetingMinutesGenerator
         $section->addText('Phần chất vấn và trả lời chất vấn tại kỳ họp:');
         $t = $section->addTable('MainTable');
         $hr = $t->addRow();
-        $hr->addCell(800, $headerRow)->addText('STT', ['bold' => true], $center);
-        $hr->addCell(3500, $headerRow)->addText('Đại biểu chất vấn', ['bold' => true], $center);
-        $hr->addCell(5500, $headerRow)->addText('Nội dung chất vấn', ['bold' => true], $center);
+        $hr->addCell(700, $headerRow)->addText('STT', ['bold' => true], $center);
+        $hr->addCell(3000, $headerRow)->addText('Đại biểu chất vấn', ['bold' => true], $center);
+        $hr->addCell(3000, $headerRow)->addText('Nội dung chất vấn', ['bold' => true], $center);
+        $hr->addCell(3300, $headerRow)->addText('Nội dung trả lời', ['bold' => true], $center);
         $dr = $t->addRow();
-        $dr->addCell(800)->addText('${q_stt}', null, $center);
-        $dr->addCell(3500)->addText('${q_speaker}');
-        $dr->addCell(5500)->addText('${q_content}');
+        $dr->addCell(700)->addText('${q_stt}', null, $center);
+        $dr->addCell(3000)->addText('${q_speaker}');
+        $dr->addCell(3000)->addText('${q_content}');
+        $dr->addCell(3300)->addText('${q_answer}');
         $section->addTextBreak(1);
 
         // VII. Biểu quyết
@@ -463,6 +469,7 @@ class MeetingMinutesGenerator
             $tp->setValue("d_stt#{$idx}", (string) $idx);
             $tp->setValue("d_speaker#{$idx}", (string) ($r->participant?->display_name ?? ''));
             $tp->setValue("d_content#{$idx}", (string) ($r->content ?? ''));
+            $tp->setValue("d_note#{$idx}", (string) ($r->operator_note ?? ''));
         }
     }
 
@@ -480,6 +487,7 @@ class MeetingMinutesGenerator
             $tp->setValue("q_stt#{$idx}", (string) $idx);
             $tp->setValue("q_speaker#{$idx}", (string) ($r->participant?->display_name ?? ''));
             $tp->setValue("q_content#{$idx}", (string) ($r->content ?? ''));
+            $tp->setValue("q_answer#{$idx}", (string) ($r->operator_note ?? ''));
         }
     }
 

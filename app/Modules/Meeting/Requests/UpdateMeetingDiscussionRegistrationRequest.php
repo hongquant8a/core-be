@@ -19,6 +19,7 @@ class UpdateMeetingDiscussionRegistrationRequest extends FormRequest
             'meeting_agenda_id' => 'nullable|integer|exists:meeting_agendas,id',
             'type' => ['sometimes', MeetingDiscussionTypeEnum::rule()],
             'content' => 'sometimes|string',
+            'operator_note' => 'sometimes|nullable|string|max:5000',
             'attachment' => 'nullable|file|max:10240',
             'remove_attachment' => 'nullable|boolean',
             'status' => ['sometimes', MeetingDiscussionStatusEnum::rule()],
@@ -53,6 +54,7 @@ class UpdateMeetingDiscussionRegistrationRequest extends FormRequest
             'meeting_agenda_id' => 'ID chương trình họp',
             'type' => 'type',
             'content' => 'Nội dung',
+            'operator_note' => 'Ghi chú thảo luận / Nội dung trả lời',
             'attachment' => 'Tệp đính kèm',
             'remove_attachment' => 'Xóa tệp đính kèm',
             'status' => 'Trạng thái',
@@ -65,6 +67,10 @@ class UpdateMeetingDiscussionRegistrationRequest extends FormRequest
         return [
             'type' => ['description' => 'Loại đăng ký.', 'example' => 'question'],
             'content' => ['description' => 'Nội dung đăng ký.', 'example' => 'Xin chất vấn nội dung tài liệu'],
+            'operator_note' => [
+                'description' => 'Operator/Chair điền sau khi đại biểu xong lượt. Discussion -> ghi chú thảo luận; Question -> nội dung trả lời chất vấn. Đại biểu KHÔNG sửa được field này.',
+                'example' => 'Đã trả lời: phân bổ ngân sách bổ sung 200 tỷ VND.',
+            ],
             'attachment' => ['description' => 'Tệp đính kèm mới (sẽ thay tệp cũ qua MediaService).'],
             'remove_attachment' => ['description' => 'Xóa tệp đính kèm hiện tại hay không.', 'example' => false],
             'status' => ['description' => 'Trạng thái đăng ký (registered | completed).', 'example' => 'completed'],

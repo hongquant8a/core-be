@@ -132,7 +132,33 @@ class MeetingDiscussionRegistrationService
 
     public function update(MeetingDiscussionRegistration $model, array $validated, $file = null): MeetingDiscussionRegistration
     {
-        $this->ensureOwned($model);
+        // Phân quyền:
+        //   - Owner đại biểu (auth = participant.attendee.user_id): update content/attachment/status/sort_order.
+        //   - Chair/Operator của meeting (MeetingPolicy::operate): update operator_note (ghi chú thảo luận
+        //     hoặc nội dung trả lời chất vấn).
+        //   - Cả 2 vai trò có thể giao nhau (vd chair tự đăng ký phát biểu).
+        $userId = $this->resolveCurrentUserId();
+        $model->loadMissing(['participant.attendee', 'meeting.chairperson', 'meeting.operator']);
+
+        $isOwner = (int) ($model->participant?->attendee?->user_id ?? 0) === (int) $userId;
+        $isChair = (int) ($model->meeting?->chairperson?->user_id ?? 0) === (int) $userId;
+        $isOperator = (int) ($model->meeting?->operator?->user_id ?? 0) === (int) $userId;
+        $canOperate = $isChair || $isOperator;
+
+        if (! $isOwner && ! $canOperate) {
+            throw new ModelNotFoundException('Không tìm thấy đăng ký.');
+        }
+
+        // Filter field theo vai trò:
+        //   Non-owner -> chỉ cho update operator_note (strip các field khác).
+        //   Non-operator -> không được set operator_note (strip).
+        if (! $isOwner) {
+            $validated = array_intersect_key($validated, array_flip(['operator_note']));
+            $file = null;
+        }
+        if (! $canOperate) {
+            unset($validated['operator_note']);
+        }
 
         $storedFiles = [];
         try {

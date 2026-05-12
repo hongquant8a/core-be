@@ -37,13 +37,17 @@ class MeetingDiscussionRegistrationExport implements FromCollection, WithHeading
                     ?? '',
                 'registered_at' => $item->created_at?->format('H:i:s d/m/Y'),
                 'content' => $item->content,
+                'operator_note' => $item->operator_note ?? '',
                 'status' => $this->statusLabel($item->status),
             ]);
     }
 
     public function headings(): array
     {
-        return ['STT', 'Chương trình', 'Người đăng ký', 'Thời gian đăng ký', 'Nội dung', 'Trạng thái'];
+        // Cột "Ghi chú thảo luận" (type=discussion) hoặc "Nội dung trả lời" (type=question).
+        $extra = $this->type === 'question' ? 'Nội dung trả lời' : 'Ghi chú thảo luận';
+
+        return ['STT', 'Chương trình', 'Người đăng ký', 'Thời gian đăng ký', 'Nội dung', $extra, 'Trạng thái'];
     }
 
     private function statusLabel(?string $status): string

@@ -1,0 +1,60 @@
+CHANGE LOG FE — Ghi chú thảo luận / Nội dung trả lời chất vấn
+Ngày: 2026-05-11
+
+TÓM TẮT
+Điều hành (chair/operator) cập nhật nội dung sau khi đại biểu xong lượt:
+  - type=discussion -> "Ghi chú thảo luận"
+  - type=question   -> "Nội dung trả lời chất vấn"
+Mang sang export Excel + biên bản .docx (template phpword).
+
+SCHEMA THAY ĐỔI
+- meeting_discussion_registrations: thêm cột `operator_note` (text, nullable).
+- Dùng chung cho cả 2 type — FE phân biệt label theo registration.type.
+
+ENDPOINT
+PATCH /api/meeting-discussion-registrations/{id}
+  Body (multipart hoặc JSON):
+    operator_note?: string (max 5000 chars)
+    + các field cũ (content / attachment / status / sort_order)
+
+  Phân quyền (BE auto enforce):
+    - Owner đại biểu (auth user = participant.attendee.user_id):
+        Update được: content, attachment, status, sort_order.
+        operator_note -> BE auto strip (không lưu).
+    - Chair / Operator (FK meeting.chairperson hoặc meeting.operator):
+        Update được: operator_note.
+        Field khác -> BE auto strip.
+    - User không thuộc 2 nhóm trên -> 404.
+    - Chair tự đăng ký phát biểu -> có cả 2 quyền (đăng ký xong tự ghi chú).
+
+RESPONSE
+MeetingDiscussionRegistrationResource thêm field:
+  "operator_note": "..." | null
+
+UI ĐỀ XUẤT
+Tab "Điều hành phát biểu/chất vấn" (Tab 7 / chair-operator):
+  Mỗi row đăng ký có ô textarea "Ghi chú" (discussion) hoặc "Nội dung trả lời" (question).
+  Cho phép nhập, autosave qua PATCH endpoint.
+  Đại biểu thường xem được (resource expose) nhưng không sửa được (BE strip).
+
+EXPORT EXCEL
+GET /api/meeting-discussion-registrations/export?meeting_id=X&type=discussion|question
+  Header thêm cột mới sau "Nội dung":
+    - type=discussion -> "Ghi chú thảo luận"
+    - type=question   -> "Nội dung trả lời"
+
+BIÊN BẢN .DOCX (TemplateProcessor)
+Template biến mới:
+  - d_note  (table discussion) -> Ghi chú thảo luận
+  - q_answer (table question)  -> Nội dung trả lời chất vấn
+
+GET /api/meeting-minutes-templates/sample -> file .docx mẫu giờ có sẵn cột này.
+GET /api/meeting-minutes-templates/variables -> response.tables.discussion.columns
+  + d_note ; response.tables.question.columns + q_answer.
+
+DEPLOY
+git pull
+php artisan migrate --force
+php artisan optimize:clear
+php artisan queue:restart
+sudo /etc/init.d/php-fpm-83 reload
