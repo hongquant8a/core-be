@@ -54,6 +54,10 @@ class MeetingResource extends JsonResource
             'content' => $this->content,
             'start_time' => $this->start_time?->format('H:i:s d/m/Y'),
             'end_time' => $this->end_time?->format('H:i:s d/m/Y'),
+            // Khung giờ điểm danh — FE check để show/hide nút điểm danh.
+            // ISO format để FE compare với now() chuẩn timezone.
+            'attendance_open_at' => $this->attendance_open_at?->toIso8601String(),
+            'attendance_close_at' => $this->attendance_close_at?->toIso8601String(),
             'status' => $this->status,
             'view_count' => $this->view_count,
             'documents_count' => $this->when(isset($this->documents_count), (int) $this->documents_count),

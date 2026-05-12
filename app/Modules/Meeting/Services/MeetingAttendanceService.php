@@ -127,6 +127,7 @@ class MeetingAttendanceService
     public function checkin(int $meetingId, string $checkinMethod = MeetingCheckinMethodEnum::Button->value): MeetingAttendance
     {
         $this->ensureAttendanceNotLocked($meetingId);
+        $this->ensureWithinAttendanceWindow($meetingId);
         $participant = $this->resolveOwnedParticipant($meetingId);
 
         $attendance = MeetingAttendance::updateOrCreate(
@@ -188,6 +189,7 @@ class MeetingAttendanceService
     public function markAbsent(int $meetingId, ?string $note = null): MeetingAttendance
     {
         $this->ensureAttendanceNotLocked($meetingId);
+        $this->ensureWithinAttendanceWindow($meetingId);
         $participant = $this->resolveOwnedParticipant($meetingId);
 
         $attendance = MeetingAttendance::updateOrCreate(
@@ -300,6 +302,32 @@ class MeetingAttendanceService
         if ($locked) {
             throw \Illuminate\Validation\ValidationException::withMessages([
                 'meeting_id' => ['Cuộc họp đã khoá danh sách điểm danh — không thể thao tác.'],
+            ]);
+        }
+    }
+
+    /**
+     * Chặn self-action (checkin/markAbsent) nếu now() ngoài khung giờ điểm danh đã cấu hình
+     * trên meeting (attendance_open_at .. attendance_close_at). Null = không giới hạn (skip check).
+     * Manual checkin của thư ký không gọi method này — thư ký luôn được phép.
+     */
+    private function ensureWithinAttendanceWindow(int $meetingId): void
+    {
+        $meeting = \App\Modules\Meeting\Models\Meeting::query()
+            ->whereKey($meetingId)
+            ->first(['attendance_open_at', 'attendance_close_at']);
+        if (! $meeting) {
+            return;
+        }
+        $now = now();
+        if ($meeting->attendance_open_at && $now->lt($meeting->attendance_open_at)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'meeting_id' => ['Chưa đến giờ điểm danh. Mở lúc '.$meeting->attendance_open_at->format('H:i d/m/Y').'.'],
+            ]);
+        }
+        if ($meeting->attendance_close_at && $now->gt($meeting->attendance_close_at)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'meeting_id' => ['Đã hết giờ điểm danh. Đóng lúc '.$meeting->attendance_close_at->format('H:i d/m/Y').'.'],
             ]);
         }
     }

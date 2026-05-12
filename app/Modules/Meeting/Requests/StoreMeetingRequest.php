@@ -24,6 +24,8 @@ class StoreMeetingRequest extends FormRequest
             'content' => 'nullable|string',
             'start_time' => 'required|date',
             'end_time' => 'nullable|date|after_or_equal:start_time',
+            'attendance_open_at' => 'nullable|date',
+            'attendance_close_at' => 'nullable|date|after_or_equal:attendance_open_at',
             'status' => ['nullable', MeetingStatusEnum::rule()],
             'published_at' => 'nullable|date',
         ];
@@ -59,6 +61,8 @@ class StoreMeetingRequest extends FormRequest
             'content' => 'Nội dung',
             'start_time' => 'Thời gian bắt đầu',
             'end_time' => 'Thời gian kết thúc',
+            'attendance_open_at' => 'Thời gian mở điểm danh',
+            'attendance_close_at' => 'Thời gian đóng điểm danh',
             'status' => 'Trạng thái',
             'published_at' => 'Thời gian công khai',
         ];
@@ -93,6 +97,14 @@ class StoreMeetingRequest extends FormRequest
             'end_time' => [
                 'description' => 'Thời gian kết thúc.',
                 'example' => '2026-05-01 10:00:00',
+            ],
+            'attendance_open_at' => [
+                'description' => 'Thời điểm mở điểm danh (đại biểu chỉ bấm điểm danh được trong khoảng này). Null = không giới hạn.',
+                'example' => '2026-05-01 07:30:00',
+            ],
+            'attendance_close_at' => [
+                'description' => 'Thời điểm đóng điểm danh. Null = không giới hạn.',
+                'example' => '2026-05-01 08:15:00',
             ],
             'status' => [
                 'description' => 'Trạng thái cuộc họp.',

@@ -76,9 +76,18 @@ class MeetingParticipantService
             throw new ModelNotFoundException('Cần đăng nhập để phản hồi mời họp.');
         }
 
-        $meetingParticipant->loadMissing('attendee');
+        $meetingParticipant->loadMissing(['attendee', 'meeting']);
         if ((int) ($meetingParticipant->attendee?->user_id ?? 0) !== (int) $userId) {
             throw new ModelNotFoundException('Bạn không phải đại biểu này.');
+        }
+
+        // Chỉ cho phản hồi (xác nhận tham gia / báo vắng) TRƯỚC khi cuộc họp bắt đầu.
+        // Sau start_time, đại biểu chỉ có thể điểm danh / báo vắng tại chỗ qua endpoint attendance.
+        $startTime = $meetingParticipant->meeting?->start_time;
+        if ($startTime && now()->gte($startTime)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'response_status' => ['Cuộc họp đã bắt đầu — không thể cập nhật xác nhận tham gia / báo vắng nữa.'],
+            ]);
         }
 
         $meetingParticipant->update([

@@ -24,6 +24,8 @@ class UpdateMeetingRequest extends FormRequest
             'content' => 'nullable|string',
             'start_time' => 'sometimes|date',
             'end_time' => 'nullable|date|after_or_equal:start_time',
+            'attendance_open_at' => 'nullable|date',
+            'attendance_close_at' => 'nullable|date|after_or_equal:attendance_open_at',
             'status' => ['sometimes', MeetingStatusEnum::rule()],
             'published_at' => 'nullable|date',
         ];

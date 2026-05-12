@@ -215,12 +215,33 @@ class MeetingDiscussionRegistrationService
             ]);
         }
 
-        $model->update([
-            'status' => MeetingDiscussionStatusEnum::Completed->value,
-            'completed_at' => now(),
-        ]);
+        $shouldUnhighlight = false;
+        \Illuminate\Support\Facades\DB::transaction(function () use ($model, &$shouldUnhighlight) {
+            $model->update([
+                'status' => MeetingDiscussionStatusEnum::Completed->value,
+                'completed_at' => now(),
+                'highlighted_at' => null,
+            ]);
+
+            // Nếu registration này đang được highlight trên meeting -> auto unhighlight để Tab Projector + Tab Điều hành tự tắt slide người phát biểu.
+            $meeting = \App\Modules\Meeting\Models\Meeting::find($model->meeting_id);
+            if ($meeting && (int) $meeting->current_meeting_discussion_registration_id === (int) $model->id) {
+                $meeting->update(['current_meeting_discussion_registration_id' => null]);
+                $shouldUnhighlight = true;
+                $model->setRelation('meeting', $meeting->fresh());
+            }
+        });
 
         broadcast(new \App\Modules\Meeting\Events\MeetingDiscussionRegistrationCompleted($model))->toOthers();
+
+        // Bắn event unhighlight để Tab Projector/FE clear slide người phát biểu hiện tại.
+        if ($shouldUnhighlight) {
+            $meeting = \App\Modules\Meeting\Models\Meeting::with(['chairperson', 'operator', 'currentAgenda', 'currentDiscussionRegistration'])
+                ->find($model->meeting_id);
+            if ($meeting) {
+                broadcast(new \App\Modules\Meeting\Events\MeetingDiscussionHighlighted($meeting))->toOthers();
+            }
+        }
 
         return $model->load(['participant', 'agenda', 'mediaFile']);
     }
