@@ -128,6 +128,7 @@ class MeetingService
             'documents.mediaFile',
             'participants.attendee',
             'voteTopics',
+            'voteTopics.userResponses' => \App\Modules\Meeting\Services\MeetingVoteTopicService::userResponsesEagerLoad(),
             'currentAgenda',
             'currentDiscussionRegistration',
         ]);
@@ -202,6 +203,7 @@ class MeetingService
             'documents.documentType',
             'documents.mediaFile',
             'voteTopics',
+            'voteTopics.userResponses' => \App\Modules\Meeting\Services\MeetingVoteTopicService::userResponsesEagerLoad(),
             'currentAgenda',
             'currentDiscussionRegistration',
         ]);

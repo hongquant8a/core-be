@@ -26,14 +26,31 @@ class MeetingVoteTopicService
 
     public function index(array $filters, int $limit)
     {
-        return MeetingVoteTopic::with(['creator.media', 'editor.media'])
+        return MeetingVoteTopic::with(['creator.media', 'editor.media', 'userResponses' => $this->userResponsesEagerLoad()])
             ->filter($filters)
             ->paginate($limit);
     }
 
     public function show(MeetingVoteTopic $meetingVoteTopic): MeetingVoteTopic
     {
-        return $meetingVoteTopic->load(['creator.media', 'editor.media']);
+        return $meetingVoteTopic->load(['creator.media', 'editor.media', 'userResponses' => $this->userResponsesEagerLoad()]);
+    }
+
+    /**
+     * Closure filter `userResponses` theo auth user_id — resource trả `my_response`.
+     * Không auth → return relation rỗng (whereRaw 1=0).
+     */
+    public static function userResponsesEagerLoad(): \Closure
+    {
+        $userId = auth()->id();
+
+        return function ($q) use ($userId) {
+            if ($userId) {
+                $q->where('user_id', $userId);
+            } else {
+                $q->whereRaw('1 = 0');
+            }
+        };
     }
 
     public function store(array $validated): MeetingVoteTopic
@@ -48,14 +65,14 @@ class MeetingVoteTopicService
         return MeetingVoteTopic::create([
             ...$validated,
             'organization_id' => $this->resolveCurrentOrganizationId(),
-        ])->load(['creator.media', 'editor.media']);
+        ])->load(['creator.media', 'editor.media', 'userResponses' => self::userResponsesEagerLoad()]);
     }
 
     public function update(MeetingVoteTopic $meetingVoteTopic, array $validated): MeetingVoteTopic
     {
         $meetingVoteTopic->update($validated);
 
-        return $meetingVoteTopic->load(['creator.media', 'editor.media']);
+        return $meetingVoteTopic->load(['creator.media', 'editor.media', 'userResponses' => self::userResponsesEagerLoad()]);
     }
 
     public function destroy(MeetingVoteTopic $meetingVoteTopic): void
@@ -88,7 +105,7 @@ class MeetingVoteTopicService
 
         broadcast(new \App\Modules\Meeting\Events\MeetingVoteTopicOpened($meetingVoteTopic))->toOthers();
 
-        return $meetingVoteTopic->load(['creator.media', 'editor.media']);
+        return $meetingVoteTopic->load(['creator.media', 'editor.media', 'userResponses' => self::userResponsesEagerLoad()]);
     }
 
     public function close(MeetingVoteTopic $meetingVoteTopic): MeetingVoteTopic
@@ -99,7 +116,7 @@ class MeetingVoteTopicService
 
         broadcast(new \App\Modules\Meeting\Events\MeetingVoteTopicClosed($meetingVoteTopic))->toOthers();
 
-        return $meetingVoteTopic->load(['creator.media', 'editor.media']);
+        return $meetingVoteTopic->load(['creator.media', 'editor.media', 'userResponses' => self::userResponsesEagerLoad()]);
     }
 
     public function reorder(array $items): void

@@ -33,6 +33,17 @@ class MeetingVoteTopicResource extends JsonResource
             'closed_at' => $this->closed_at?->format('H:i:s d/m/Y'),
             // ISO 8601 cho FE countdown (anchored to absolute time, không drift theo clock skew).
             'expires_at_iso' => $this->expiresAt()?->toIso8601String(),
+            // Pre-fill lựa chọn cũ của auth user (nếu đã vote trước đó hoặc topic re-open).
+            // Service phải eager-load userResponses filtered by auth user_id để tránh N+1.
+            // Null nếu user chưa vote / không auth.
+            'my_response' => $this->whenLoaded('userResponses', function () {
+                $mine = $this->userResponses->first();
+
+                return $mine ? [
+                    'option' => $mine->option,
+                    'voted_at' => $mine->voted_at?->utc()->toIso8601String(),
+                ] : null;
+            }, null),
             'created_by' => $this->whenLoaded('creator', fn () => $this->formatUserSummary($this->creator), null),
             'updated_by' => $this->whenLoaded('editor', fn () => $this->formatUserSummary($this->editor), null),
             'created_at' => $this->created_at?->format('H:i:s d/m/Y'),

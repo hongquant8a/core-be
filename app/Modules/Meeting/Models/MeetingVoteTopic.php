@@ -48,6 +48,15 @@ class MeetingVoteTopic extends Model
     }
 
     /**
+     * Tất cả phiếu thuộc topic này. Dùng cho eager load filter theo auth user_id để
+     * trả `my_response` trong resource (đại biểu re-open vote → pre-fill lựa chọn cũ).
+     */
+    public function userResponses()
+    {
+        return $this->hasMany(MeetingVoteResponse::class, 'meeting_vote_topic_id');
+    }
+
+    /**
      * Phase derive: opened_at NULL → draft; closed_at NOT NULL → closed;
      * opened_at + duration_minutes < now → closed (timeout); else opened.
      */
