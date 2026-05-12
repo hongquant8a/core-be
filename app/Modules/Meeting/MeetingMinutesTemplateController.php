@@ -44,6 +44,22 @@ class MeetingMinutesTemplateController extends Controller
     }
 
     /**
+     * Tải file template mẫu (.docx) — chứa toàn bộ placeholder + cấu trúc biên bản HĐND chuẩn.
+     *
+     * Auth-only, không Spatie permission. User download về làm starting point khi soạn
+     * template thật (mở Word -> chỉnh style/font -> upload qua endpoint store).
+     */
+    public function downloadSample()
+    {
+        $path = $this->generator->generateSample();
+
+        return response()->download(
+            $path,
+            'meeting-minutes-template-sample.docx'
+        )->deleteFileAfterSend(true);
+    }
+
+    /**
      * Danh sách template biên bản.
      *
      * @queryParam search string Tìm theo tên template. Example: HĐND
