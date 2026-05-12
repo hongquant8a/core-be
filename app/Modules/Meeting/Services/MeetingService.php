@@ -448,7 +448,7 @@ class MeetingService
         ]);
     }
 
-    public function export(array $filters, string $fileName = 'meetings.xlsx'): BinaryFileResponse
+    public function export(array $filters, string $fileName = 'export__cuoc-hop.xlsx'): BinaryFileResponse
     {
         return Excel::download(new MeetingExport($filters), $fileName);
     }

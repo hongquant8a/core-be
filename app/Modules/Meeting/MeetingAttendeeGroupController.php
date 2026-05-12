@@ -156,7 +156,7 @@ class MeetingAttendeeGroupController extends Controller
      */
     public function export(FilterRequest $request)
     {
-        return $this->catalogService->export(MeetingAttendeeGroup::class, $request->all(), 'meeting-attendee-groups.xlsx');
+        return $this->catalogService->export(MeetingAttendeeGroup::class, $request->all(), 'export__nhom-dai-bieu.xlsx');
     }
 
     /**

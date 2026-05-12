@@ -238,7 +238,7 @@ class MeetingAttendanceController extends Controller
 
         return \Maatwebsite\Excel\Facades\Excel::download(
             new \App\Modules\Meeting\Exports\MeetingAttendanceExport($meetingId),
-            'meeting-attendances.xlsx',
+            'export__diem-danh-hop.xlsx',
         );
     }
 }

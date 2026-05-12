@@ -163,7 +163,7 @@ class MeetingDiscussionRegistrationController extends Controller
         $meeting = \App\Modules\Meeting\Models\Meeting::findOrFail($meetingId);
         \Illuminate\Support\Facades\Gate::authorize('operate', $meeting);
 
-        $fileName = $type === 'question' ? 'meeting-questions.xlsx' : 'meeting-discussions.xlsx';
+        $fileName = $type === 'question' ? 'export__chat-van-hop.xlsx' : 'export__thao-luan-hop.xlsx';
 
         return \Maatwebsite\Excel\Facades\Excel::download(
             new \App\Modules\Meeting\Exports\MeetingDiscussionRegistrationExport($meetingId, $type),

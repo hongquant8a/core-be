@@ -238,7 +238,7 @@ class TaskAssignmentItemTypeController extends Controller
      */
     public function export(FilterRequest $request)
     {
-        return $this->lookupService->export(TaskAssignmentItemType::class, $request->all(), 'task-assignment-item-types.xlsx');
+        return $this->lookupService->export(TaskAssignmentItemType::class, $request->all(), 'export__loai-cong-viec.xlsx');
     }
 
     /**

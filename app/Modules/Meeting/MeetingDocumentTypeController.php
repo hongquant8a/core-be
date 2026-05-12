@@ -178,7 +178,7 @@ class MeetingDocumentTypeController extends Controller
      */
     public function export(FilterRequest $request)
     {
-        return $this->catalogService->export(MeetingDocumentType::class, $request->all(), 'meeting-document-types.xlsx');
+        return $this->catalogService->export(MeetingDocumentType::class, $request->all(), 'export__loai-tai-lieu-hop.xlsx');
     }
 
     /**

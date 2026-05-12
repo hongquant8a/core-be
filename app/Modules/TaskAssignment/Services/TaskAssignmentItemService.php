@@ -185,12 +185,12 @@ class TaskAssignmentItemService
 
     public function export(array $filters): BinaryFileResponse
     {
-        return Excel::download(new ItemsExport($filters), 'task-assignment-items.xlsx');
+        return Excel::download(new ItemsExport($filters), 'export__cong-viec-giao.xlsx');
     }
 
     public function exportMonthlyReport(string $month): BinaryFileResponse
     {
-        $filename = "bao-cao-giao-ban-{$month}.xlsx";
+        $filename = "export__bao-cao-giao-ban-{$month}.xlsx";
 
         return Excel::download(new \App\Modules\TaskAssignment\Exports\MonthlyReportExport($month), $filename);
     }

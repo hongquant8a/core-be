@@ -196,7 +196,7 @@ class UserService
 
     public function export(array $filters): BinaryFileResponse
     {
-        return Excel::download(new UsersExport($filters), 'users.xlsx');
+        return Excel::download(new UsersExport($filters), 'export__nguoi-dung.xlsx');
     }
 
     public function import($file): void

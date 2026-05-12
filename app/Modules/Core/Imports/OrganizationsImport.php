@@ -17,11 +17,11 @@ class OrganizationsImport implements ToModel, WithHeadingRow, WithValidation
 
     public const FIELD_LABELS = [
         'name' => 'Tên tổ chức',
-        'slug' => 'Slug',
+        'slug' => 'Mã định danh',
         'description' => 'Mô tả',
         'status' => 'Trạng thái',
         'sort_order' => 'Thứ tự',
-        'parent_slug' => 'Slug tổ chức cha',
+        'parent_slug' => 'Mã định danh tổ chức cha',
     ];
 
     /** Subset xuất ra template — chỉ field required theo StoreOrganizationRequest. */
@@ -80,10 +80,10 @@ class OrganizationsImport implements ToModel, WithHeadingRow, WithValidation
     {
         return [
             'name' => 'Tên tổ chức',
-            'slug' => 'Slug',
+            'slug' => 'Mã định danh',
             'description' => 'Mô tả',
             'status' => 'Trạng thái',
-            'parent_slug' => 'Slug của tổ chức cha',
+            'parent_slug' => 'Mã định danh tổ chức cha',
             'sort_order' => 'Thứ tự sắp xếp',
         ];
     }

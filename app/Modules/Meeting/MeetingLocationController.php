@@ -178,7 +178,7 @@ class MeetingLocationController extends Controller
      */
     public function export(FilterRequest $request)
     {
-        return $this->catalogService->export(MeetingLocation::class, $request->all(), 'meeting-locations.xlsx');
+        return $this->catalogService->export(MeetingLocation::class, $request->all(), 'export__dia-diem-hop.xlsx');
     }
 
     /**

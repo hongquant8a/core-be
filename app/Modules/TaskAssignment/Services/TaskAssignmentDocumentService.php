@@ -301,7 +301,7 @@ class TaskAssignmentDocumentService
 
     public function export(array $filters): BinaryFileResponse
     {
-        return Excel::download(new DocumentsExport($filters), 'task-assignment-documents.xlsx');
+        return Excel::download(new DocumentsExport($filters), 'export__van-ban-giao-viec.xlsx');
     }
 
     private function removeAttachments(TaskAssignmentDocument $document, array $attachmentIds): void

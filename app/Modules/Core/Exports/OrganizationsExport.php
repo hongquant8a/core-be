@@ -40,6 +40,6 @@ class OrganizationsExport implements FromCollection, WithHeadings
 
     public function headings(): array
     {
-        return ['STT', 'Tên tổ chức', 'Slug', 'Mô tả', 'Trạng thái', 'Slug tổ chức cha', 'Thứ tự', 'Cấp', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
+        return ['STT', 'Tên tổ chức', 'Mã định danh', 'Mô tả', 'Trạng thái', 'Mã định danh tổ chức cha', 'Thứ tự', 'Cấp', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
     }
 }

@@ -127,7 +127,7 @@ class OrganizationService
 
     public function export(array $filters): BinaryFileResponse
     {
-        return Excel::download(new OrganizationsExport($filters), 'organizations.xlsx');
+        return Excel::download(new OrganizationsExport($filters), 'export__to-chuc.xlsx');
     }
 
     public function import($file): void

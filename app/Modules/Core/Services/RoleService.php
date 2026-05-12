@@ -78,7 +78,7 @@ class RoleService
 
     public function export(array $filters): BinaryFileResponse
     {
-        return Excel::download(new RolesExport($filters), 'roles.xlsx');
+        return Excel::download(new RolesExport($filters), 'export__vai-tro.xlsx');
     }
 
     public function import($file): void

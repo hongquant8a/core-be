@@ -75,7 +75,7 @@ class PermissionService
 
     public function export(array $filters): BinaryFileResponse
     {
-        return Excel::download(new PermissionsExport($filters), 'permissions.xlsx');
+        return Excel::download(new PermissionsExport($filters), 'export__quyen-han.xlsx');
     }
 
     public function import($file): void

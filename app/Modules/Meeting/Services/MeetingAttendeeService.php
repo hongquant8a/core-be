@@ -123,7 +123,7 @@ class MeetingAttendeeService
             ->all();
     }
 
-    public function export(array $filters, string $fileName = 'meeting-attendees.xlsx'): BinaryFileResponse
+    public function export(array $filters, string $fileName = 'export__dai-bieu-hop.xlsx'): BinaryFileResponse
     {
         return Excel::download(new MeetingAttendeeExport($filters), $fileName);
     }

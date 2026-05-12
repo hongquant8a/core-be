@@ -93,7 +93,7 @@ class NotificationLogController extends Controller
                 $this->currentOrganizationId(),
                 $request->all()
             ),
-            'notification-logs.xlsx'
+            'export__nhat-ky-thong-bao.xlsx'
         );
     }
 

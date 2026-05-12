@@ -147,7 +147,7 @@ class MeetingVoteResponseController extends Controller
 
         return \Maatwebsite\Excel\Facades\Excel::download(
             new \App\Modules\Meeting\Exports\MeetingVoteResponseDetailExport($topicId),
-            'meeting-vote-detail.xlsx',
+            'export__chi-tiet-bieu-quyet.xlsx',
         );
     }
 
@@ -181,7 +181,7 @@ class MeetingVoteResponseController extends Controller
 
         return \Maatwebsite\Excel\Facades\Excel::download(
             new \App\Modules\Meeting\Exports\MeetingVoteResponseSummaryExport($meetingId, $topicId),
-            'meeting-vote-summary.xlsx',
+            'export__tong-hop-bieu-quyet.xlsx',
         );
     }
 }

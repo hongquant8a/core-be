@@ -96,7 +96,7 @@ class TaskAssignmentDepartmentService
 
     public function export(array $filters): BinaryFileResponse
     {
-        return Excel::download(new DepartmentExport($filters), 'task-assignment-departments.xlsx');
+        return Excel::download(new DepartmentExport($filters), 'export__phong-ban-giao-viec.xlsx');
     }
 
     public function import($file): void

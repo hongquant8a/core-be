@@ -217,6 +217,6 @@ class LogActivityService
 
     public function export(array $filters): BinaryFileResponse
     {
-        return Excel::download(new LogActivitiesExport($filters), 'log-activities.xlsx');
+        return Excel::download(new LogActivitiesExport($filters), 'export__nhat-ky-hoat-dong.xlsx');
     }
 }
