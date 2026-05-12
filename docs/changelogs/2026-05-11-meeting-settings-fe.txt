@@ -1,0 +1,75 @@
+CHANGE LOG FE — Cấu hình cuộc họp (singleton per organization)
+Ngày: 2026-05-11
+
+TÓM TẮT
+Menu "Cấu hình cuộc họp" — admin upload 3 ảnh cấu hình cho org hiện tại:
+  - Hình màn trình chiếu (Tab 8 hiển thị nền)
+  - Chữ ký chủ tọa (nhúng vào biên bản .docx)
+  - Icon QR code (hiển thị giữa QR điểm danh)
+
+Singleton 1 row / 1 org. BE auto find-or-create theo X-Organization-Id header.
+Đổi org -> trả cấu hình của org đó (KHÔNG share giữa org).
+
+ENDPOINTS
+
+1) GET /api/meeting-settings
+   - Auth + X-Organization-Id required.
+   - Permission: meeting-settings.show (Super Admin / Admin / Quản trị mặc định có).
+   - Response shape:
+     {
+       "success": true,
+       "data": {
+         "id": 1,
+         "organization_id": 2,
+         "projector_image_url": "/storage/123/projector.jpg" | null,
+         "chairperson_signature_url": "/storage/124/signature.png" | null,
+         "qr_icon_url": "/storage/125/logo.png" | null,
+         "updated_at": "11:22:33 11/05/2026"
+       }
+     }
+
+2) POST /api/meeting-settings  (hoặc PUT — cùng handler)
+   - Permission: meeting-settings.update
+   - Multipart form-data, có thể gửi 1 hoặc nhiều file:
+     + projector_image       (jpg/jpeg/png/webp, max 10MB)
+     + chairperson_signature (jpg/jpeg/png/webp, max 5MB)
+     + qr_icon               (jpg/jpeg/png/webp/svg, max 2MB)
+   - Boolean flags để xóa file hiện tại (không upload mới):
+     + remove_projector_image=true
+     + remove_chairperson_signature=true
+     + remove_qr_icon=true
+   - Field nào FE không gửi -> BE giữ nguyên giá trị cũ.
+   - Upload file mới -> auto replace file cũ (single file collection ở Spatie media).
+
+UI ĐỀ XUẤT
+Menu sidebar: "Cài đặt → Cấu hình cuộc họp"
+
+Form 3 ô upload:
+  [Hình màn trình chiếu]   [Preview ảnh hiện tại]  [Chọn file] [Xóa]
+  [Chữ ký chủ tọa]         [Preview]               [Chọn file] [Xóa]
+  [Icon QR code]           [Preview]               [Chọn file] [Xóa]
+  [Lưu thay đổi]
+
+Logic submit:
+  - Chỉ gửi field nào user thực sự thay đổi (avoid touching unchanged files).
+  - Click "Xóa" + Save -> gửi remove_<field>=true.
+  - Click "Chọn file" + Save -> gửi file qua FormData. BE auto thay file cũ.
+
+ÁP DỤNG VÀO CÁC TÍNH NĂNG KHÁC
+
+- Tab 8 Màn chiếu: FE fetch projector_image_url làm background.
+- Biên bản .docx: BE sẽ inject signature vào template (đang chuẩn bị, sẽ ra ở bản kế).
+- QR điểm danh: FE generate QR + overlay qr_icon_url ở giữa.
+  Ví dụ thư viện qrcode.react hỗ trợ `imageSettings={{ src: qr_icon_url, width: 50, height: 50, excavate: true }}`.
+
+ĐỔI TỔ CHỨC
+Khi user switch org qua dropdown -> FE refetch GET /api/meeting-settings để load config mới.
+BE auto-resolve theo X-Organization-Id, không cần truyền org id trong body.
+
+DEPLOY (sau khi pull)
+  php artisan migrate --force
+  php artisan db:seed --class=PermissionSeeder --force
+  php artisan permission:cache-reset
+  php artisan optimize:clear
+  php artisan queue:restart
+  sudo /etc/init.d/php-fpm-83 reload

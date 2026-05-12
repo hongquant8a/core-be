@@ -149,4 +149,8 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
     Route::prefix('meeting-minutes-templates')->group(function () {
         require base_path('app/Modules/Meeting/Routes/meeting_minutes_template.php');
     });
+    // Cấu hình cuộc họp — singleton per org (auto find-or-create theo X-Organization-Id).
+    Route::prefix('meeting-settings')->group(function () {
+        require base_path('app/Modules/Meeting/Routes/meeting_setting.php');
+    });
 });
