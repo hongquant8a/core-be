@@ -25,7 +25,7 @@ class SettingSeeder extends Seeder
         ['key' => 'app_title', 'value' => 'Tiêu đề trang', 'group' => 'general', 'is_public' => true, 'type' => 'string', 'label' => 'Tiêu đề trang', 'sort_order' => 11],
         // Admin page — admin_app_name/admin_app_description/admin_welcome_title đã chuyển sang general.app_name/app_description.
         // seed:cleanup-obsolete sẽ tự xóa 3 key cũ trong DB.
-        ['key' => 'admin_logo_title', 'value' => 'Hệ thống quản trị', 'group' => 'admin_page', 'is_public' => true, 'type' => 'string', 'label' => 'Tiêu đề logo (cạnh logo Trang quản trị)', 'sort_order' => 1],
+        ['key' => 'admin_logo_title', 'value' => 'Hệ thống quản trị', 'group' => 'admin_page', 'is_public' => true, 'type' => 'string', 'label' => 'Tiêu đề trang đăng nhập(cạnh logo Trang quản trị)', 'sort_order' => 1],
         ['key' => 'admin_background_image', 'value' => null, 'group' => 'admin_page', 'is_public' => true, 'type' => 'image', 'label' => 'Ảnh nền', 'sort_order' => 2],
         // Org select page — bỏ org_select_description (đợi cleanup).
         ['key' => 'org_select_title', 'value' => 'Chọn tổ chức', 'group' => 'org_select_page', 'is_public' => true, 'type' => 'string', 'label' => 'Tiêu đề trang chọn tổ chức', 'sort_order' => 1],
