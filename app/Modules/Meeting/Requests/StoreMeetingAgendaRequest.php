@@ -20,7 +20,9 @@ class StoreMeetingAgendaRequest extends FormRequest
             'content' => 'required|string',
             'person_in_charge' => 'nullable|string|max:255',
             'allow_discussion_registration' => 'nullable|boolean',
+            'discussion_duration_minutes' => 'nullable|integer|min:1|max:600',
             'allow_question_registration' => 'nullable|boolean',
+            'question_duration_minutes' => 'nullable|integer|min:1|max:600',
             'parent_id' => 'nullable|integer|exists:meeting_agendas,id',
             'sort_order' => 'nullable|integer|min:0',
         ];
@@ -54,8 +56,10 @@ class StoreMeetingAgendaRequest extends FormRequest
             'end_time' => 'Thời gian kết thúc',
             'content' => 'Nội dung',
             'person_in_charge' => 'person in charge',
-            'allow_discussion_registration' => 'allow discussion registration',
-            'allow_question_registration' => 'allow question registration',
+            'allow_discussion_registration' => 'Cho phép đăng ký thảo luận',
+            'discussion_duration_minutes' => 'Thời lượng đăng ký thảo luận (phút)',
+            'allow_question_registration' => 'Cho phép đăng ký chất vấn',
+            'question_duration_minutes' => 'Thời lượng đăng ký chất vấn (phút)',
             'parent_id' => 'ID bản ghi cha',
             'sort_order' => 'Thứ tự sắp xếp',
         ];
@@ -87,9 +91,17 @@ class StoreMeetingAgendaRequest extends FormRequest
                 'description' => 'Cho phép đăng ký thảo luận.',
                 'example' => true,
             ],
+            'discussion_duration_minutes' => [
+                'description' => 'Thời lượng cho phép đăng ký thảo luận (phút). Áp dụng khi allow_discussion_registration=true.',
+                'example' => 30,
+            ],
             'allow_question_registration' => [
                 'description' => 'Cho phép đăng ký chất vấn.',
                 'example' => false,
+            ],
+            'question_duration_minutes' => [
+                'description' => 'Thời lượng cho phép đăng ký chất vấn (phút). Áp dụng khi allow_question_registration=true.',
+                'example' => 15,
             ],
             'parent_id' => [
                 'description' => 'ID chương trình cha nếu là mục con.',

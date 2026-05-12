@@ -19,7 +19,9 @@ class UpdateMeetingAgendaRequest extends FormRequest
             'content' => 'sometimes|string',
             'person_in_charge' => 'nullable|string|max:255',
             'allow_discussion_registration' => 'nullable|boolean',
+            'discussion_duration_minutes' => 'nullable|integer|min:1|max:600',
             'allow_question_registration' => 'nullable|boolean',
+            'question_duration_minutes' => 'nullable|integer|min:1|max:600',
             'parent_id' => 'nullable|integer|exists:meeting_agendas,id',
             'sort_order' => 'nullable|integer|min:0',
         ];
@@ -52,8 +54,10 @@ class UpdateMeetingAgendaRequest extends FormRequest
             'end_time' => 'Thời gian kết thúc',
             'content' => 'Nội dung',
             'person_in_charge' => 'person in charge',
-            'allow_discussion_registration' => 'allow discussion registration',
-            'allow_question_registration' => 'allow question registration',
+            'allow_discussion_registration' => 'Cho phép đăng ký thảo luận',
+            'discussion_duration_minutes' => 'Thời lượng đăng ký thảo luận (phút)',
+            'allow_question_registration' => 'Cho phép đăng ký chất vấn',
+            'question_duration_minutes' => 'Thời lượng đăng ký chất vấn (phút)',
             'parent_id' => 'ID bản ghi cha',
             'sort_order' => 'Thứ tự sắp xếp',
         ];
@@ -64,7 +68,9 @@ class UpdateMeetingAgendaRequest extends FormRequest
             'content' => ['description' => 'Nội dung chương trình.', 'example' => 'Thảo luận chuyên đề A'],
             'person_in_charge' => ['description' => 'Người phụ trách.', 'example' => 'Lê Văn C'],
             'allow_discussion_registration' => ['description' => 'Cho phép đăng ký thảo luận.', 'example' => true],
+            'discussion_duration_minutes' => ['description' => 'Thời lượng cho phép đăng ký thảo luận (phút).', 'example' => 30],
             'allow_question_registration' => ['description' => 'Cho phép đăng ký chất vấn.', 'example' => true],
+            'question_duration_minutes' => ['description' => 'Thời lượng cho phép đăng ký chất vấn (phút).', 'example' => 15],
             'parent_id' => ['description' => 'ID mục cha.', 'example' => null],
             'sort_order' => ['description' => 'Thứ tự hiển thị.', 'example' => 3],
         ];

@@ -22,6 +22,8 @@ class MeetingDiscussionRegistrationResource extends JsonResource
             'file_name' => $this->mediaFile?->file_name,
             'status' => $this->status,
             'completed_at' => $this->completed_at?->format('H:i:s d/m/Y'),
+            // ISO timestamp (UTC) — FE compute countdown: agenda.duration_minutes - (now - highlighted_at).
+            'highlighted_at' => $this->highlighted_at?->toIso8601String(),
             'sort_order' => $this->sort_order,
             'created_at' => $this->created_at?->format('H:i:s d/m/Y'),
             'updated_at' => $this->updated_at?->format('H:i:s d/m/Y'),

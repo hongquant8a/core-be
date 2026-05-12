@@ -17,7 +17,9 @@ class MeetingAgenda extends Model
         'content',
         'person_in_charge',
         'allow_discussion_registration',
+        'discussion_duration_minutes',
         'allow_question_registration',
+        'question_duration_minutes',
         'parent_id',
         'sort_order',
     ];
@@ -25,6 +27,8 @@ class MeetingAgenda extends Model
     protected $casts = [
         'allow_discussion_registration' => 'boolean',
         'allow_question_registration' => 'boolean',
+        'discussion_duration_minutes' => 'integer',
+        'question_duration_minutes' => 'integer',
     ];
 
     public function meeting()

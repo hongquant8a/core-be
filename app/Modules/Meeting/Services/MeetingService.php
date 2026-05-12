@@ -421,7 +421,22 @@ class MeetingService
             }
         }
 
-        $meeting->update(['current_meeting_discussion_registration_id' => $discussionRegistrationId]);
+        DB::transaction(function () use ($meeting, $discussionRegistrationId) {
+            // Clear highlighted_at của registration cũ (nếu có) — 1 highlight/meeting tại 1 thời điểm.
+            $prevId = $meeting->current_meeting_discussion_registration_id;
+            if ($prevId && $prevId !== $discussionRegistrationId) {
+                \App\Modules\Meeting\Models\MeetingDiscussionRegistration::where('id', $prevId)
+                    ->update(['highlighted_at' => null]);
+            }
+
+            // Set highlighted_at = now() cho registration mới.
+            if ($discussionRegistrationId) {
+                \App\Modules\Meeting\Models\MeetingDiscussionRegistration::where('id', $discussionRegistrationId)
+                    ->update(['highlighted_at' => now()]);
+            }
+
+            $meeting->update(['current_meeting_discussion_registration_id' => $discussionRegistrationId]);
+        });
 
         broadcast(new \App\Modules\Meeting\Events\MeetingDiscussionHighlighted($meeting))->toOthers();
 

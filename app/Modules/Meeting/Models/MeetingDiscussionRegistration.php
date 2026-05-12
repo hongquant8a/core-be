@@ -22,11 +22,13 @@ class MeetingDiscussionRegistration extends Model implements HasMedia
         'media_id',
         'status',
         'completed_at',
+        'highlighted_at',
         'sort_order',
     ];
 
     protected $casts = [
         'completed_at' => 'datetime',
+        'highlighted_at' => 'datetime',
     ];
 
     public function participant()
