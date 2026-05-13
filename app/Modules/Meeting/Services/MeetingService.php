@@ -69,31 +69,29 @@ class MeetingService
                 }
             });
 
-        // Sort mặc định 3 bucket:
+        // Sort cố định cho list đại biểu — 3 bucket, override sort_by từ FE (business logic).
         //   1. Đang diễn ra: start <= now AND (end IS NULL OR end > now) — ưu tiên cao nhất.
         //   2. Sắp diễn ra: start > now — ASC (gần now nhất trước).
         //   3. Đã kết thúc: end_time IS NOT NULL AND end <= now — DESC (mới nhất trước).
-        if (! isset($filters['sort_by'])) {
-            $query->reorder()
-                ->orderByRaw('
-                    CASE
-                        WHEN start_time <= NOW() AND (end_time IS NULL OR end_time > NOW()) THEN 0
-                        WHEN start_time > NOW() THEN 1
-                        ELSE 2
-                    END ASC
-                ')
-                ->orderByRaw('
-                    CASE
-                        WHEN start_time <= NOW() AND (end_time IS NULL OR end_time > NOW()) THEN start_time
-                    END ASC
-                ')
-                ->orderByRaw('CASE WHEN start_time > NOW() THEN start_time END ASC')
-                ->orderByRaw('
-                    CASE
-                        WHEN start_time <= NOW() AND end_time IS NOT NULL AND end_time <= NOW() THEN start_time
-                    END DESC
-                ');
-        }
+        $query->reorder()
+            ->orderByRaw('
+                CASE
+                    WHEN start_time <= NOW() AND (end_time IS NULL OR end_time > NOW()) THEN 0
+                    WHEN start_time > NOW() THEN 1
+                    ELSE 2
+                END ASC
+            ')
+            ->orderByRaw('
+                CASE
+                    WHEN start_time <= NOW() AND (end_time IS NULL OR end_time > NOW()) THEN start_time
+                END ASC
+            ')
+            ->orderByRaw('CASE WHEN start_time > NOW() THEN start_time END ASC')
+            ->orderByRaw('
+                CASE
+                    WHEN start_time <= NOW() AND end_time IS NOT NULL AND end_time <= NOW() THEN start_time
+                END DESC
+            ');
 
         return $query->paginate($limit);
     }
