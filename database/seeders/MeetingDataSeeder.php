@@ -467,11 +467,12 @@ class MeetingDataSeeder extends Seeder
         ]);
     }
 
-    /** @return array<int, MeetingParticipant> participants array (chair, operator, 3 đại biểu, 4 extras) */
+    /** @return array<int, MeetingParticipant> participants = chỉ đại biểu (3 daibieu + 4 extras).
+     * Chair + Operator KHÔNG vào participants vì đã có FK riêng chairperson_meeting_attendee_id /
+     * operator_meeting_attendee_id trên meetings, và được mời qua invitation theo attendee_id. */
     private function createParticipantsForMeeting(Meeting $meeting): array
     {
         $all = array_merge(
-            [$this->demoAttendees['chutri'], $this->demoAttendees['thuky']],
             $this->demoAttendees['daibieus'],
             $this->demoAttendees['extras']
         );
