@@ -15,3 +15,10 @@ Artisan::command('inspire', function () {
 Schedule::command(ProcessRemindersCommand::class)
     ->everyMinute()
     ->withoutOverlapping(10);
+
+// Refresh Zalo OA token (access_token TTL 1h) + sync followers vào DB.
+// User-spec: 45 phút. Cron không có exact 45p — dùng cron raw "*/45 * * * *" fires minute 0 và 45
+// mỗi giờ (chu kỳ 45p-15p-45p-15p, đảm bảo token luôn fresh dưới TTL 1h).
+Schedule::command('zalo:refresh-and-sync')
+    ->cron('*/45 * * * *')
+    ->withoutOverlapping(30);

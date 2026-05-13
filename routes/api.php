@@ -39,6 +39,9 @@ Route::get('/meeting-documents/public/{meetingDocument}/download', [\App\Modules
 Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'log.activity'])->group(function () {
     Route::get('/user', [AuthController::class, 'me']);
 
+    // Zalo OA followers — sync 45p, auth-only, không Spatie. FE admin pick user_id để gán vào users.zalo_user_id.
+    Route::get('/zalo-oa-followers', [\App\Modules\Core\ZaloOaFollowerController::class, 'index']);
+
     Route::prefix('users')->group(function () {
         require base_path('app/Modules/Core/Routes/user.php');
     });
