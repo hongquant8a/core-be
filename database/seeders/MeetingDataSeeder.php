@@ -2,11 +2,15 @@
 
 namespace Database\Seeders;
 
+use App\Modules\Core\Models\Role;
 use App\Modules\Core\Models\User;
+use App\Modules\Core\Services\MediaService;
 use App\Modules\Meeting\Models\Meeting;
 use App\Modules\Meeting\Models\MeetingAgenda;
+use App\Modules\Meeting\Models\MeetingAttendance;
 use App\Modules\Meeting\Models\MeetingAttendee;
 use App\Modules\Meeting\Models\MeetingAttendeeGroup;
+use App\Modules\Meeting\Models\MeetingDiscussionRegistration;
 use App\Modules\Meeting\Models\MeetingDocument;
 use App\Modules\Meeting\Models\MeetingDocumentType;
 use App\Modules\Meeting\Models\MeetingLocation;
@@ -16,656 +20,698 @@ use App\Modules\Meeting\Models\MeetingVoteResponse;
 use App\Modules\Meeting\Models\MeetingVoteTopic;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 /**
- * Seed dữ liệu mẫu cho module Meeting.
+ * Demo seeder cho module Meeting — phục vụ demo sản phẩm.
  *
- * Catalog (4 + 4 + 4 + 3 + ~10):
- *  - meeting_types, meeting_locations, meeting_document_types, meeting_attendee_groups, meeting_attendees
+ * 3 nhóm tài khoản dùng để login demo (mọi meeting đều xoay quanh 3 nhóm này):
+ *  - chutri@example.com   — Chủ trì cố định, mọi meeting đều là người này
+ *  - thuky@example.com    — Thư ký cố định, mọi meeting đều là người này
+ *  - daibieu1..3@example.com — Đại biểu, được mời ở tất cả meeting
  *
- * Sample meetings (3):
- *  - HĐND thường kỳ tháng 5 (published, public) — đầy đủ chương trình, tài liệu, biểu quyết, kết luận
- *  - Họp giao ban tuần (published, internal) — chương trình + tài liệu nội bộ
- *  - Họp chuyên đề (draft) — đang chuẩn bị
+ * 6 meeting với trạng thái khác nhau (past finished, in-progress, upcoming, draft)
+ * — login bất kỳ user nào trong 5 user trên sẽ thấy nhiều meeting để demo.
+ *
+ * Mọi meeting tạo bởi seeder có marker `[DEMO]` ở description để cleanup idempotent.
+ * Tài liệu attach dùng file `template-upload.xlsx` ở project root.
  */
 class MeetingDataSeeder extends Seeder
 {
+    private const DEMO_MARKER = '[DEMO]';
+
+    private const PASSWORD = 'password';
+
     private int $orgId = 1;
 
-    /** @var array<int> User IDs khả dụng để gán creator/attendee. */
-    private array $userIds = [];
+    /** @var array{chutri: User, thuky: User, daibieus: array<int, User>} */
+    private array $demoUsers;
+
+    /** @var array{chutri: MeetingAttendee, thuky: MeetingAttendee, daibieus: array<int, MeetingAttendee>, extras: array<int, MeetingAttendee>} */
+    private array $demoAttendees;
+
+    private MediaService $mediaService;
+
+    /** Path tới file .docx demo (generate 1 lần ở đầu run, dùng chung cho mọi document). */
+    private ?string $demoDocxPath = null;
 
     public function run(): void
     {
         $admin = User::firstWhere('email', 'admin@example.com') ?? User::first();
         if (! $admin) {
-            $this->command?->warn('MeetingDataSeeder: chưa có user nào — bỏ qua seed.');
+            $this->command?->warn('MeetingDataSeeder: chưa có admin — skip.');
 
             return;
         }
-
         auth()->login($admin);
         if (function_exists('setPermissionsTeamId')) {
             setPermissionsTeamId($this->orgId);
         }
 
-        $this->userIds = User::query()
-            ->where('status', 'active')
-            ->orderBy('id')
-            ->limit(8)
-            ->pluck('id')
-            ->all();
+        $this->mediaService = app(MediaService::class);
+        $this->demoDocxPath = $this->generateSharedDemoDocx();
 
-        $types = $this->seedMeetingTypes();
-        $locations = $this->seedMeetingLocations();
-        $docTypes = $this->seedDocumentTypes();
-        $groups = $this->seedAttendeeGroups();
-        $attendees = $this->seedAttendees($groups);
+        $this->cleanupOldDemoMeetings();
+        $this->seedDemoUsers();
+        $catalogs = $this->seedCatalogs();
+        $this->seedDemoAttendees($catalogs['groups']);
 
-        $this->seedMeetingHdndThuongKy($types, $locations, $docTypes, $attendees);
-        $this->seedMeetingGiaoBan($types, $locations, $docTypes, $attendees);
-        $this->seedMeetingChuyenDeDraft($types, $locations, $attendees);
-
-        // 4 meeting bổ sung — đa dạng status + thời gian.
-        $this->seedAdditionalMeetings($types, $locations, $docTypes, $attendees);
+        $this->seedFinishedMeeting($catalogs, 'tuần trước', now()->subWeek()->setTime(8, 30));
+        $this->seedFinishedMeeting($catalogs, 'hôm qua', now()->subDay()->setTime(14, 0));
+        $this->seedInProgressMeeting($catalogs, now()->copy()->setTime(now()->hour, 0)->subHour());
+        $this->seedUpcomingMeeting($catalogs, 'chiều nay', now()->addHours(3)->setTime(15, 0), withFullData: true);
+        $this->seedUpcomingMeeting($catalogs, 'tuần tới', now()->addWeek()->setTime(9, 0), withFullData: false);
+        $this->seedDraftMeeting($catalogs, now()->addWeeks(2)->setTime(9, 0));
 
         auth()->logout();
+
+        if ($this->demoDocxPath && is_file($this->demoDocxPath)) {
+            @unlink($this->demoDocxPath);
+        }
+
+        $this->command?->info('MeetingDataSeeder: seeded 6 demo meetings + 5 demo users.');
+    }
+
+    // ────────────────────────────────────────────────────────────────────────────
+    // Cleanup + users + catalogs
+    // ────────────────────────────────────────────────────────────────────────────
+
+    private function cleanupOldDemoMeetings(): void
+    {
+        $ids = Meeting::query()
+            ->where('organization_id', $this->orgId)
+            ->where('content', 'like', '%'.self::DEMO_MARKER.'%')
+            ->pluck('id')
+            ->all();
+        if (empty($ids)) {
+            return;
+        }
+        // Xóa sub-tables thủ công vì 1 số FK không cascade đúng cách.
+        \Illuminate\Support\Facades\DB::table('meeting_vote_responses')
+            ->whereIn('meeting_vote_topic_id', MeetingVoteTopic::whereIn('meeting_id', $ids)->pluck('id'))
+            ->delete();
+        MeetingVoteTopic::whereIn('meeting_id', $ids)->delete();
+        MeetingDiscussionRegistration::whereIn('meeting_id', $ids)->delete();
+        MeetingAttendance::whereIn('meeting_id', $ids)->delete();
+        MeetingDocument::whereIn('meeting_id', $ids)->delete();
+        MeetingAgenda::whereIn('meeting_id', $ids)->delete();
+        \App\Modules\Meeting\Models\MeetingInvitation::whereIn('meeting_id', $ids)->delete();
+        MeetingParticipant::whereIn('meeting_id', $ids)->delete();
+        Meeting::whereIn('id', $ids)->delete();
+    }
+
+    private function seedDemoUsers(): void
+    {
+        $daiBieuRole = Role::firstWhere('name', 'Đại biểu họp');
+        $thuKyRole = Role::firstWhere('name', 'Thư ký họp') ?? $daiBieuRole;
+
+        $chutri = $this->upsertUser('chutri@example.com', 'Lê Văn Chủ Trì', 'chutri');
+        $chutri->syncRoles([$daiBieuRole]);
+
+        $thuky = $this->upsertUser('thuky@example.com', 'Nguyễn Thị Thư Ký', 'thuky');
+        $thuky->syncRoles([$thuKyRole]);
+
+        $daibieus = [];
+        $names = ['Trần Văn Đại Biểu 1', 'Phạm Thị Đại Biểu 2', 'Hoàng Văn Đại Biểu 3'];
+        foreach (range(1, 3) as $i) {
+            $u = $this->upsertUser("daibieu{$i}@example.com", $names[$i - 1], "daibieu{$i}");
+            $u->syncRoles([$daiBieuRole]);
+            $daibieus[] = $u;
+        }
+
+        $this->demoUsers = [
+            'chutri' => $chutri,
+            'thuky' => $thuky,
+            'daibieus' => $daibieus,
+        ];
+    }
+
+    private function upsertUser(string $email, string $name, string $userName): User
+    {
+        $user = User::firstWhere('email', $email);
+        if (! $user) {
+            $user = User::create([
+                'email' => $email,
+                'name' => $name,
+                'user_name' => $userName,
+                'password' => Hash::make(self::PASSWORD),
+                'status' => 'active',
+                'email_verified_at' => now(),
+            ]);
+            $user->forceFill(['created_by' => $user->id, 'updated_by' => $user->id])->save();
+        }
+
+        return $user;
     }
 
     /**
-     * Seed thêm 4 cuộc họp đa dạng (past finished, upcoming, in-progress now, draft sắp tới).
-     *
-     * @param  array<string, MeetingType>  $types
-     * @param  array<string, MeetingLocation>  $locations
-     * @param  array<string, MeetingDocumentType>  $docTypes
-     * @param  array<int, MeetingAttendee>  $attendees
+     * @return array{type: MeetingType, location: MeetingLocation, docTypes: array<string, MeetingDocumentType>, groups: array<string, MeetingAttendeeGroup>}
      */
-    private function seedAdditionalMeetings(array $types, array $locations, array $docTypes, array $attendees): void
+    private function seedCatalogs(): array
     {
-        // Helper rút gọn: tạo meeting + auto chair=attendees[0], op=attendees[1], participants=attendees[2..N].
-        $createMeeting = function (array $payload, int $participantCount = 8) use ($attendees): Meeting {
-            $meeting = Meeting::updateOrCreate(
-                ['title' => $payload['title'], 'organization_id' => $this->orgId],
-                array_merge([
-                    'chairperson_meeting_attendee_id' => $attendees[0]->id ?? null,
-                    'operator_meeting_attendee_id' => $attendees[1]->id ?? null,
-                ], $payload)
-            );
-            $this->cleanupChairOpParticipants($meeting, $attendees);
+        $type = MeetingType::firstOrCreate(
+            ['organization_id' => $this->orgId, 'name' => 'Họp HĐND'],
+            ['description' => 'Họp Hội đồng nhân dân', 'status' => 'active']
+        );
 
-            // Add participants — slice attendees từ index 2.
-            $participants = array_slice($attendees, 2, $participantCount);
-            foreach ($participants as $idx => $attendee) {
-                $attendee->loadMissing('user.profile');
-                $responseStatus = $idx <= ($participantCount - 3) ? 'accepted' : 'pending';
-                MeetingParticipant::firstOrCreate(
-                    ['meeting_id' => $meeting->id, 'meeting_attendee_id' => $attendee->id],
-                    [
-                        'organization_id' => $this->orgId,
-                        'display_name' => $attendee->user?->name,
-                        'position_name' => $attendee->position_name,
-                        'department_name' => $attendee->department_name,
-                        'email' => $attendee->user?->email,
-                        'phone' => $attendee->user?->profile?->phone,
-                        'response_status' => $responseStatus,
-                        'responded_at' => $responseStatus === 'accepted' ? Carbon::parse($payload['start_time'])->subDays(2) : null,
-                    ]
-                );
-            }
+        $location = MeetingLocation::firstOrCreate(
+            ['organization_id' => $this->orgId, 'name' => 'Hội trường UBND phường'],
+            [
+                'description' => 'Hội trường tầng 2',
+                'address' => 'Số 1 Trần Phú, P. Hòa Cường, Đà Nẵng',
+                'google_maps_url' => 'https://maps.google.com/?q=16.0544,108.2022',
+                'status' => 'active',
+            ]
+        );
 
-            return $meeting;
-        };
-
-        // 1. Cuộc họp đã kết thúc (1 tháng trước) — có nhiều tài liệu kết luận.
-        $start1 = Carbon::parse('2026-04-10 08:30:00');
-        $createMeeting([
-            'title' => 'HĐND chuyên đề về quy hoạch đô thị 2026-2030',
-            'meeting_type_id' => $types['HĐND chuyên đề']->id,
-            'meeting_location_id' => $locations['Hội trường lớn UBND TP Đà Nẵng']->id,
-            'is_public' => true,
-            'content' => 'Đánh giá tổng thể quy hoạch đô thị thành phố giai đoạn 2026-2030, cập nhật điều chỉnh phù hợp tình hình mới.',
-            'start_time' => $start1,
-            'end_time' => $start1->copy()->addHours(7),
-            'status' => 'published',
-            'view_count' => 234,
-            'published_at' => $start1->copy()->subDays(10),
-        ], 14);
-
-        // 2. Cuộc họp sắp tới (2 tuần sau) — public, đã ban hành.
-        $start2 = Carbon::parse('2026-05-22 14:00:00');
-        $createMeeting([
-            'title' => 'Họp UBND triển khai kế hoạch chuyển đổi số quý III',
-            'meeting_type_id' => $types['Họp chuyên đề']->id,
-            'meeting_location_id' => $locations['Phòng họp tầng 5 - Sở Nội vụ']->id,
-            'is_public' => false,
-            'content' => 'Triển khai kế hoạch chuyển đổi số quý III/2026, phân công nhiệm vụ cụ thể cho các sở, ngành.',
-            'start_time' => $start2,
-            'end_time' => $start2->copy()->addHours(3),
-            'status' => 'published',
-            'view_count' => 28,
-            'published_at' => Carbon::parse('2026-05-08 09:00:00'),
-        ], 10);
-
-        // 3. Cuộc họp đột xuất tuần này (start_time = ngày mai) — public.
-        $start3 = Carbon::parse('2026-05-09 09:00:00');
-        $createMeeting([
-            'title' => 'Họp đột xuất ứng phó bão số 5 hướng vào miền Trung',
-            'meeting_type_id' => $types['Họp đột xuất']->id,
-            'meeting_location_id' => $locations['Hội trường lớn UBND TP Đà Nẵng']->id,
-            'is_public' => true,
-            'content' => 'Triển khai phương án ứng phó bão số 5, đảm bảo an toàn dân cư và sản xuất.',
-            'start_time' => $start3,
-            'end_time' => $start3->copy()->addHours(2),
-            'status' => 'published',
-            'view_count' => 412,
-            'published_at' => Carbon::parse('2026-05-08 16:00:00'),
-        ], 12);
-
-        // 4. Cuộc họp giao ban tháng (3 tuần sau, vẫn draft).
-        $start4 = Carbon::parse('2026-05-30 08:00:00');
-        $createMeeting([
-            'title' => 'Họp giao ban tháng 5/2026 - Sở Kế hoạch & Đầu tư',
-            'meeting_type_id' => $types['Họp giao ban']->id,
-            'meeting_location_id' => $locations['Phòng họp tầng 5 - Sở Nội vụ']->id,
-            'is_public' => false,
-            'content' => 'Đánh giá tiến độ công việc tháng 5, triển khai nhiệm vụ tháng 6/2026.',
-            'start_time' => $start4,
-            'end_time' => $start4->copy()->addHours(2),
-            'status' => 'draft',
-            'view_count' => 0,
-        ], 6);
-    }
-
-    /** @return array<string, MeetingType> */
-    private function seedMeetingTypes(): array
-    {
-        $rows = [
-            ['name' => 'HĐND thường kỳ', 'description' => 'Kỳ họp HĐND tổ chức định kỳ theo quy định.'],
-            ['name' => 'HĐND chuyên đề', 'description' => 'Kỳ họp HĐND chuyên đề về một lĩnh vực cụ thể.'],
-            ['name' => 'Họp giao ban', 'description' => 'Họp nội bộ giao ban tuần/tháng.'],
-            ['name' => 'Họp chuyên đề', 'description' => 'Họp chuyên đề theo lĩnh vực, dự án.'],
-            ['name' => 'Họp đột xuất', 'description' => 'Họp đột xuất theo yêu cầu lãnh đạo.'],
-        ];
-
-        $out = [];
-        foreach ($rows as $row) {
-            $out[$row['name']] = MeetingType::firstOrCreate(
-                ['name' => $row['name'], 'organization_id' => $this->orgId],
-                ['description' => $row['description'], 'status' => 'active']
+        $docTypes = [];
+        foreach ([
+            'tai-lieu-chinh' => 'Tài liệu chính',
+            'bao-cao' => 'Báo cáo',
+            'phu-luc' => 'Phụ lục',
+            'ket-luan' => 'Tài liệu kết luận cuộc họp',
+        ] as $slug => $name) {
+            $docTypes[$slug] = MeetingDocumentType::firstOrCreate(
+                ['organization_id' => $this->orgId, 'name' => $name],
+                ['description' => $name, 'status' => 'active']
             );
         }
 
-        return $out;
-    }
-
-    /** @return array<string, MeetingLocation> */
-    private function seedMeetingLocations(): array
-    {
-        $rows = [
-            [
-                'name' => 'Hội trường lớn UBND TP Đà Nẵng',
-                'address' => '24 Trần Phú, Hải Châu, Đà Nẵng',
-                'google_maps_url' => 'https://maps.google.com/?q=16.0739,108.2240',
-                'description' => 'Hội trường chính tầng 2.',
-            ],
-            [
-                'name' => 'Phòng họp tầng 5 - Sở Nội vụ',
-                'address' => 'Số 1 Trần Phú, Đà Nẵng',
-                'description' => 'Phòng họp dùng chung tầng 5.',
-            ],
-            [
-                'name' => 'Phòng họp HĐND TP',
-                'address' => '24 Trần Phú, Hải Châu, Đà Nẵng',
-                'description' => 'Phòng họp riêng HĐND.',
-            ],
-            [
-                'name' => 'Họp trực tuyến (Zoom)',
-                'address' => null,
-                'description' => 'Phòng họp ảo qua Zoom.',
-            ],
-        ];
-
-        $out = [];
-        foreach ($rows as $row) {
-            $out[$row['name']] = MeetingLocation::firstOrCreate(
-                ['name' => $row['name'], 'organization_id' => $this->orgId],
-                array_merge($row, ['status' => 'active'])
+        $groups = [];
+        foreach ([
+            'lanh-dao' => 'Lãnh đạo',
+            'dai-bieu' => 'Đại biểu',
+            'khach-moi' => 'Khách mời',
+        ] as $slug => $name) {
+            $groups[$slug] = MeetingAttendeeGroup::firstOrCreate(
+                ['organization_id' => $this->orgId, 'name' => $name],
+                ['description' => $name, 'status' => 'active']
             );
         }
 
-        return $out;
-    }
-
-    /** @return array<string, MeetingDocumentType> */
-    private function seedDocumentTypes(): array
-    {
-        $rows = [
-            ['name' => 'Tờ trình', 'description' => 'Tờ trình HĐND, UBND.'],
-            ['name' => 'Báo cáo', 'description' => 'Báo cáo công tác.'],
-            ['name' => 'Dự thảo nghị quyết', 'description' => 'Dự thảo nghị quyết chờ biểu quyết.'],
-            ['name' => 'Tài liệu tham khảo', 'description' => 'Tài liệu tham khảo bổ trợ.'],
-            ['name' => 'Tài liệu kết luận cuộc họp', 'description' => 'Văn bản kết luận thư ký upload sau họp.'],
-        ];
-
-        $out = [];
-        foreach ($rows as $row) {
-            $out[$row['name']] = MeetingDocumentType::firstOrCreate(
-                ['name' => $row['name'], 'organization_id' => $this->orgId],
-                ['description' => $row['description'], 'status' => 'active']
-            );
-        }
-
-        return $out;
-    }
-
-    /** @return array<string, MeetingAttendeeGroup> */
-    private function seedAttendeeGroups(): array
-    {
-        $rows = [
-            ['name' => 'Thường trực HĐND', 'description' => 'Thường trực HĐND TP.'],
-            ['name' => 'Đại biểu HĐND khóa X', 'description' => 'Đại biểu HĐND khóa X (2021-2026).'],
-            ['name' => 'Lãnh đạo Sở/Ban/Ngành', 'description' => 'Lãnh đạo các sở, ban, ngành TP.'],
-            ['name' => 'Lãnh đạo UBND quận', 'description' => 'Lãnh đạo UBND các quận, huyện.'],
-            ['name' => 'Khách mời', 'description' => 'Khách mời ngoài thành phần đại biểu.'],
-        ];
-
-        $out = [];
-        foreach ($rows as $row) {
-            $out[$row['name']] = MeetingAttendeeGroup::firstOrCreate(
-                ['name' => $row['name'], 'organization_id' => $this->orgId],
-                ['description' => $row['description'], 'status' => 'active']
-            );
-        }
-
-        return $out;
+        return ['type' => $type, 'location' => $location, 'docTypes' => $docTypes, 'groups' => $groups];
     }
 
     /**
      * @param  array<string, MeetingAttendeeGroup>  $groups
-     * @return array<int, MeetingAttendee>
      */
-    /**
-     * Xoá participants trùng với chair/op của meeting — đảm bảo quy ước
-     * "1 user 1 vai trò trong meeting" sau khi re-seed (dữ liệu cũ có thể đã add chair/op vào participants).
-     *
-     * @param  array<int, MeetingAttendee>  $attendees
-     */
-    private function cleanupChairOpParticipants(Meeting $meeting, array $attendees): void
+    private function seedDemoAttendees(array $groups): void
     {
-        $chairAttendeeId = $attendees[0]->id ?? null;
-        $opAttendeeId = $attendees[1]->id ?? null;
-        $idsToRemove = array_filter([$chairAttendeeId, $opAttendeeId]);
-        if (empty($idsToRemove)) {
-            return;
+        $chutri = $this->upsertAttendee(
+            $this->demoUsers['chutri']->id,
+            $groups['lanh-dao']->id,
+            'Chủ tịch HĐND',
+            'UBND phường'
+        );
+        $thuky = $this->upsertAttendee(
+            $this->demoUsers['thuky']->id,
+            $groups['lanh-dao']->id,
+            'Thư ký HĐND',
+            'Văn phòng UBND'
+        );
+
+        $daibieus = [];
+        $positions = ['Đại biểu HĐND', 'Trưởng phòng', 'Phó trưởng phòng'];
+        $depts = ['Phòng Tài chính', 'Phòng Văn hóa', 'Phòng Giáo dục'];
+        foreach ($this->demoUsers['daibieus'] as $i => $user) {
+            $daibieus[] = $this->upsertAttendee(
+                $user->id,
+                $groups['dai-bieu']->id,
+                $positions[$i] ?? 'Đại biểu',
+                $depts[$i] ?? 'Phòng ban'
+            );
         }
 
-        MeetingParticipant::query()
-            ->where('meeting_id', $meeting->id)
-            ->whereIn('meeting_attendee_id', $idsToRemove)
-            ->delete();
+        // Extra attendees không có user account — để dropdown nhiều người + thêm thực tế.
+        $extras = [];
+        $extraData = [
+            ['Đỗ Quốc Bình', 'Phó chủ tịch UBND', 'UBND phường'],
+            ['Nguyễn Thị Lan', 'Trưởng ban Kinh tế', 'Ban Kinh tế'],
+            ['Trần Anh Tuấn', 'Trưởng phòng Nội vụ', 'Phòng Nội vụ'],
+            ['Lê Thị Hoa', 'Cán bộ phụ trách', 'Văn phòng'],
+        ];
+        foreach ($extraData as [$displayName, $pos, $dept]) {
+            // Extras vẫn cần user_id (FK NOT NULL trên meeting_attendees) — tạo placeholder user.
+            $slug = Str::slug($displayName);
+            $user = $this->upsertUser("{$slug}@example.com", $displayName, $slug);
+            $extras[] = $this->upsertAttendee(
+                $user->id,
+                $groups['khach-moi']->id,
+                $pos,
+                $dept
+            );
+        }
+
+        $this->demoAttendees = [
+            'chutri' => $chutri,
+            'thuky' => $thuky,
+            'daibieus' => $daibieus,
+            'extras' => $extras,
+        ];
     }
 
-    private function seedAttendees(array $groups): array
+    private function upsertAttendee(int $userId, int $groupId, string $position, string $dept): MeetingAttendee
     {
-        // Mỗi đại biểu link với 1 user nội bộ (1-1 unique trong org).
-        // Sau refactor 2026-05-10: tất cả attendee dùng chung role "Đại biểu". FE check render
-        // chair/operator dựa vào FK chairperson_meeting_attendee_id / operator_meeting_attendee_id.
-        // Quy ước "1 user 1 vai trò xuyên suốt": chủ trì/thư ký không kiêm participant ở bất kỳ meeting nào (xem skip ở seedMeeting*).
-        $rows = [
-            ['user_email' => 'nvhung@snvdn.gov.vn', 'position_name' => 'Chủ tịch HĐND', 'department_name' => 'HĐND TP', 'group' => 'Thường trực HĐND', 'spatie_role' => 'Đại biểu'],
-            ['user_email' => 'ttmai@snvdn.gov.vn', 'position_name' => 'Phó Chủ tịch HĐND', 'department_name' => 'HĐND TP', 'group' => 'Thường trực HĐND', 'spatie_role' => 'Đại biểu'],
-            ['user_email' => 'lhnam@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở Kế hoạch & Đầu tư', 'group' => 'Đại biểu HĐND khóa X', 'spatie_role' => 'Đại biểu'],
-            ['user_email' => 'pthong@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở Tài chính', 'group' => 'Đại biểu HĐND khóa X', 'spatie_role' => 'Đại biểu'],
-            ['user_email' => 'vdthang@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'UBND quận Hải Châu', 'group' => 'Đại biểu HĐND khóa X', 'spatie_role' => 'Đại biểu'],
-            ['user_email' => 'htlan@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở Y tế', 'group' => 'Đại biểu HĐND khóa X', 'spatie_role' => 'Đại biểu'],
-            ['user_email' => 'dmtuan@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở Giáo dục', 'group' => 'Đại biểu HĐND khóa X', 'spatie_role' => 'Đại biểu'],
-            ['user_email' => 'btngoc@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND', 'department_name' => 'Sở LĐ-TB-XH', 'group' => 'Đại biểu HĐND khóa X', 'spatie_role' => 'Đại biểu'],
-            // 12 attendee bổ sung — đa dạng group, role.
-            ['user_email' => 'hvphuc@snvdn.gov.vn',  'position_name' => 'Đại biểu HĐND',          'department_name' => 'Sở Nội vụ',            'group' => 'Đại biểu HĐND khóa X',     'spatie_role' => 'Đại biểu'],
-            ['user_email' => 'ntthanh@snvdn.gov.vn', 'position_name' => 'Đại biểu HĐND',          'department_name' => 'Sở Tư pháp',           'group' => 'Đại biểu HĐND khóa X',     'spatie_role' => 'Đại biểu'],
-            ['user_email' => 'tvkhai@snvdn.gov.vn',  'position_name' => 'Giám đốc',                'department_name' => 'Sở Kế hoạch & Đầu tư', 'group' => 'Lãnh đạo Sở/Ban/Ngành',    'spatie_role' => 'Đại biểu'],
-            ['user_email' => 'ltbich@snvdn.gov.vn',  'position_name' => 'Giám đốc',                'department_name' => 'Sở Tài chính',         'group' => 'Lãnh đạo Sở/Ban/Ngành',    'spatie_role' => 'Đại biểu'],
-            ['user_email' => 'dqminh@snvdn.gov.vn',  'position_name' => 'Giám đốc',                'department_name' => 'Sở Y tế',              'group' => 'Lãnh đạo Sở/Ban/Ngành',    'spatie_role' => 'Đại biểu'],
-            ['user_email' => 'vthha@snvdn.gov.vn',   'position_name' => 'Giám đốc',                'department_name' => 'Sở Giáo dục & Đào tạo', 'group' => 'Lãnh đạo Sở/Ban/Ngành',    'spatie_role' => 'Đại biểu'],
-            ['user_email' => 'pdlong@snvdn.gov.vn',  'position_name' => 'Chủ tịch UBND',          'department_name' => 'UBND quận Hải Châu',   'group' => 'Lãnh đạo UBND quận',        'spatie_role' => 'Đại biểu'],
-            ['user_email' => 'tmlinh@snvdn.gov.vn',  'position_name' => 'Chủ tịch UBND',          'department_name' => 'UBND quận Thanh Khê',  'group' => 'Lãnh đạo UBND quận',        'spatie_role' => 'Đại biểu'],
-            ['user_email' => 'cvson@snvdn.gov.vn',   'position_name' => 'Chủ tịch UBND',          'department_name' => 'UBND quận Sơn Trà',    'group' => 'Lãnh đạo UBND quận',        'spatie_role' => 'Đại biểu'],
-            ['user_email' => 'lthuong@snvdn.gov.vn', 'position_name' => 'Chủ tịch UBND',          'department_name' => 'UBND quận Ngũ Hành Sơn','group' => 'Lãnh đạo UBND quận',       'spatie_role' => 'Đại biểu'],
-            ['user_email' => 'dbkhoi@snvdn.gov.vn',  'position_name' => 'Chủ tịch UBND',          'department_name' => 'UBND quận Liên Chiểu', 'group' => 'Lãnh đạo UBND quận',        'spatie_role' => 'Đại biểu'],
-            ['user_email' => 'thyen@snvdn.gov.vn',   'position_name' => 'Phóng viên',              'department_name' => 'Báo Đà Nẵng',          'group' => 'Khách mời',                 'spatie_role' => 'Đại biểu'],
-            ['user_email' => 'mqhung@snvdn.gov.vn',  'position_name' => 'Đại biểu Mặt trận',     'department_name' => 'UBMTTQVN TP',          'group' => 'Khách mời',                 'spatie_role' => 'Đại biểu'],
-            ['user_email' => 'htduong@snvdn.gov.vn', 'position_name' => 'Phó Chánh Văn phòng',  'department_name' => 'Văn phòng UBND TP',     'group' => 'Khách mời',                 'spatie_role' => 'Đại biểu'],
+        $attendee = MeetingAttendee::firstWhere([
+            'organization_id' => $this->orgId,
+            'user_id' => $userId,
+        ]);
+        if (! $attendee) {
+            $attendee = MeetingAttendee::create([
+                'organization_id' => $this->orgId,
+                'user_id' => $userId,
+                'position_name' => $position,
+                'department_name' => $dept,
+                'status' => 'active',
+            ]);
+        }
+
+        // Group relation qua pivot table (meeting_attendee_group_members).
+        $attendee->groups()->syncWithoutDetaching([
+            $groupId => ['organization_id' => $this->orgId],
+        ]);
+
+        return $attendee;
+    }
+
+    // ────────────────────────────────────────────────────────────────────────────
+    // Meeting builders — scenarios khác nhau
+    // ────────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Past finished — đầy đủ data: attendance, votes, discussion, documents, kết luận.
+     *
+     * @param  array{type: MeetingType, location: MeetingLocation, docTypes: array, groups: array}  $cat
+     */
+    private function seedFinishedMeeting(array $cat, string $label, Carbon $startTime): Meeting
+    {
+        $meeting = $this->createMeeting(
+            cat: $cat,
+            title: "Cuộc họp HĐND thường kỳ — {$label}",
+            content: self::DEMO_MARKER.' Cuộc họp đã kết thúc. Có đầy đủ điểm danh, biểu quyết, kết luận và tài liệu.',
+            startTime: $startTime,
+            duration: 4,  // hours
+            status: 'published',
+            attendanceLocked: true,
+        );
+
+        $participants = $this->createParticipantsForMeeting($meeting);
+        $this->createInvitations($meeting, $participants);
+        $agendas = $this->createAgendas($meeting);
+        $this->createDocumentsWithFiles($meeting, $cat['docTypes'], $agendas, includeKetLuan: true);
+        $this->createAttendances($meeting, $participants, fullCheckIn: true);
+        $this->createVoteTopics($meeting, $agendas, $participants, allClosed: true);
+        $this->createDiscussionRegistrations($meeting, $agendas, $participants, allCompleted: true);
+
+        return $meeting;
+    }
+
+    /**
+     * In-progress — đang diễn ra, partial attendance + 1 vote đang mở.
+     */
+    private function seedInProgressMeeting(array $cat, Carbon $startTime): Meeting
+    {
+        $meeting = $this->createMeeting(
+            cat: $cat,
+            title: 'Cuộc họp HĐND chuyên đề — đang diễn ra',
+            content: self::DEMO_MARKER.' Cuộc họp đang diễn ra. Đang điểm danh và biểu quyết.',
+            startTime: $startTime,
+            duration: 3,
+            status: 'published',
+            attendanceLocked: false,
+        );
+
+        $participants = $this->createParticipantsForMeeting($meeting);
+        $this->createInvitations($meeting, $participants);
+        $agendas = $this->createAgendas($meeting);
+        $this->createDocumentsWithFiles($meeting, $cat['docTypes'], $agendas, includeKetLuan: false);
+
+        // Partial check-in: 60% đại biểu đã check in
+        $this->createAttendances($meeting, $participants, fullCheckIn: false);
+
+        // 1 vote topic đang mở, 1 chưa mở
+        $this->createVoteTopics($meeting, $agendas, $participants, allClosed: false);
+
+        $this->createDiscussionRegistrations($meeting, $agendas, $participants, allCompleted: false);
+
+        return $meeting;
+    }
+
+    /**
+     * Upcoming — sắp diễn ra, có agenda + documents nhưng chưa có attendance/vote.
+     */
+    private function seedUpcomingMeeting(array $cat, string $label, Carbon $startTime, bool $withFullData): Meeting
+    {
+        $meeting = $this->createMeeting(
+            cat: $cat,
+            title: "Cuộc họp HĐND — {$label}",
+            content: self::DEMO_MARKER.' Cuộc họp sắp diễn ra. Đã có chương trình và tài liệu.',
+            startTime: $startTime,
+            duration: 3,
+            status: 'published',
+            attendanceLocked: false,
+        );
+
+        $participants = $this->createParticipantsForMeeting($meeting);
+        $this->createInvitations($meeting, $participants);
+        $agendas = $this->createAgendas($meeting);
+
+        if ($withFullData) {
+            $this->createDocumentsWithFiles($meeting, $cat['docTypes'], $agendas, includeKetLuan: false);
+        }
+
+        return $meeting;
+    }
+
+    /**
+     * Draft — chưa publish, thông tin tối thiểu.
+     */
+    private function seedDraftMeeting(array $cat, Carbon $startTime): Meeting
+    {
+        $meeting = $this->createMeeting(
+            cat: $cat,
+            title: 'Cuộc họp dự thảo — chưa công bố',
+            content: self::DEMO_MARKER.' Cuộc họp đang ở trạng thái dự thảo, chưa công bố cho đại biểu.',
+            startTime: $startTime,
+            duration: 2,
+            status: 'draft',
+            attendanceLocked: false,
+        );
+
+        $this->createAgendas($meeting, simple: true);
+
+        return $meeting;
+    }
+
+    // ────────────────────────────────────────────────────────────────────────────
+    // Building blocks
+    // ────────────────────────────────────────────────────────────────────────────
+
+    private function createMeeting(
+        array $cat,
+        string $title,
+        string $content,
+        Carbon $startTime,
+        int $duration,
+        string $status,
+        bool $attendanceLocked,
+    ): Meeting {
+        return Meeting::create([
+            'organization_id' => $this->orgId,
+            'meeting_type_id' => $cat['type']->id,
+            'meeting_location_id' => $cat['location']->id,
+            'chairperson_meeting_attendee_id' => $this->demoAttendees['chutri']->id,
+            'operator_meeting_attendee_id' => $this->demoAttendees['thuky']->id,
+            'title' => $title,
+            'content' => $content,
+            'is_public' => true,
+            'start_time' => $startTime,
+            'end_time' => $startTime->copy()->addHours($duration),
+            'status' => $status,
+            'attendance_locked' => $attendanceLocked,
+            'view_count' => random_int(20, 150),
+            'published_at' => $status === 'published' ? $startTime->copy()->subDays(3) : null,
+            'created_by' => $this->demoUsers['thuky']->id,
+            'updated_by' => $this->demoUsers['thuky']->id,
+        ]);
+    }
+
+    /** @return array<int, MeetingParticipant> participants array (chair, operator, 3 đại biểu, 4 extras) */
+    private function createParticipantsForMeeting(Meeting $meeting): array
+    {
+        $all = array_merge(
+            [$this->demoAttendees['chutri'], $this->demoAttendees['thuky']],
+            $this->demoAttendees['daibieus'],
+            $this->demoAttendees['extras']
+        );
+
+        $participants = [];
+        foreach ($all as $attendee) {
+            $participants[] = MeetingParticipant::create([
+                'organization_id' => $this->orgId,
+                'meeting_id' => $meeting->id,
+                'meeting_attendee_id' => $attendee->id,
+                'display_name' => $attendee->user?->name ?? 'Đại biểu',
+                'position_name' => $attendee->position_name,
+                'department_name' => $attendee->department_name,
+                'response_status' => 'accepted',
+                'responded_at' => now()->subDays(random_int(1, 5)),
+            ]);
+        }
+
+        return $participants;
+    }
+
+    /** @param array<int, MeetingParticipant> $participants */
+    private function createInvitations(Meeting $meeting, array $participants): void
+    {
+        foreach ($participants as $p) {
+            \App\Modules\Meeting\Models\MeetingInvitation::create([
+                'organization_id' => $this->orgId,
+                'meeting_id' => $meeting->id,
+                'meeting_participant_id' => $p->id,
+                'send_type' => 'now',
+                'status' => 'sent',
+                'sent_at' => $meeting->published_at ?? now()->subDay(),
+            ]);
+        }
+    }
+
+    /** @return array<int, MeetingAgenda> */
+    private function createAgendas(Meeting $meeting, bool $simple = false): array
+    {
+        $items = $simple
+            ? [
+                ['Nội dung dự thảo 1', 30],
+                ['Nội dung dự thảo 2', 30],
+            ]
+            : [
+                ['Khai mạc + thông qua chương trình', 15],
+                ['Báo cáo tình hình kinh tế xã hội', 45],
+                ['Thảo luận, chất vấn', 60],
+                ['Biểu quyết nghị quyết', 30],
+                ['Bế mạc', 15],
+            ];
+
+        $agendas = [];
+        $cursor = $meeting->start_time->copy();
+        foreach ($items as $i => [$content, $minutes]) {
+            $agendas[] = MeetingAgenda::create([
+                'organization_id' => $this->orgId,
+                'meeting_id' => $meeting->id,
+                'start_time' => $cursor->copy(),
+                'end_time' => $cursor->copy()->addMinutes($minutes),
+                'content' => $content,
+                'person_in_charge' => $i === 0 ? $this->demoUsers['chutri']->name : null,
+                'allow_discussion_registration' => $i === 2,
+                'discussion_duration_minutes' => $i === 2 ? 5 : null,
+                'allow_question_registration' => $i === 2,
+                'question_duration_minutes' => $i === 2 ? 3 : null,
+                'sort_order' => $i + 1,
+            ]);
+            $cursor->addMinutes($minutes);
+        }
+
+        return $agendas;
+    }
+
+    /** @param array<int, MeetingAgenda> $agendas */
+    private function createDocumentsWithFiles(Meeting $meeting, array $docTypes, array $agendas, bool $includeKetLuan): void
+    {
+        $configs = [
+            ['Báo cáo tình hình kinh tế xã hội', $docTypes['bao-cao'], $agendas[1] ?? null, '01/2026/BC-UBND'],
+            ['Dự thảo Nghị quyết', $docTypes['tai-lieu-chinh'], $agendas[3] ?? null, '02/2026/NQ-HDND'],
+            ['Phụ lục số liệu', $docTypes['phu-luc'], $agendas[1] ?? null, '02/2026/PL-UBND'],
         ];
+        if ($includeKetLuan) {
+            $configs[] = ['Kết luận cuộc họp', $docTypes['ket-luan'], $agendas[4] ?? null, '03/2026/KL-HDND'];
+        }
 
-        $out = [];
-        foreach ($rows as $row) {
-            $user = User::where('email', $row['user_email'])->first();
-            if (! $user) {
-                continue;
-            }
-            $attendee = MeetingAttendee::firstOrCreate(
-                ['organization_id' => $this->orgId, 'user_id' => $user->id],
-                [
-                    'position_name' => $row['position_name'],
-                    'department_name' => $row['department_name'],
-                    'status' => 'active',
-                ]
-            );
-
-            // Sync group qua pivot M-N (refactor 2026-05-08).
-            $groupId = $groups[$row['group']]->id;
-            $attendee->groups()->syncWithoutDetaching([
-                $groupId => ['organization_id' => $this->orgId],
+        foreach ($configs as $sortOrder => [$title, $docType, $agenda, $docNumber]) {
+            $doc = MeetingDocument::create([
+                'organization_id' => $this->orgId,
+                'meeting_id' => $meeting->id,
+                'meeting_agenda_id' => $agenda?->id,
+                'meeting_document_type_id' => $docType->id,
+                'title' => $title,
+                'document_number' => $docNumber,
+                'summary' => "Tóm tắt: {$title}",
+                'is_public' => true,
+                'download_count' => random_int(5, 50),
+                'sort_order' => $sortOrder + 1,
+                'created_by' => $this->demoUsers['thuky']->id,
+                'updated_by' => $this->demoUsers['thuky']->id,
             ]);
 
-            // Sync Spatie role — guard 'web' theo MeetingPermissionSeeder.
-            $user->syncRoles([$row['spatie_role']]);
-            $out[] = $attendee;
-        }
-
-        return $out;
-    }
-
-    /**
-     * Cuộc họp 1: HĐND thường kỳ tháng 5 — published, public, đầy đủ data.
-     *
-     * @param  array<string, MeetingType>  $types
-     * @param  array<string, MeetingLocation>  $locations
-     * @param  array<string, MeetingDocumentType>  $docTypes
-     * @param  array<int, MeetingAttendee>  $attendees
-     */
-    private function seedMeetingHdndThuongKy(array $types, array $locations, array $docTypes, array $attendees): void
-    {
-        $start = Carbon::parse('2026-05-15 08:00:00');
-
-        // attendees[0] = Nguyễn Văn Hùng → chủ trì
-        // attendees[1] = Trần Thị Mai → thư ký
-        $meeting = Meeting::updateOrCreate(
-            ['title' => 'Kỳ họp HĐND thường kỳ tháng 5/2026', 'organization_id' => $this->orgId],
-            [
-                'meeting_type_id' => $types['HĐND thường kỳ']->id,
-                'meeting_location_id' => $locations['Hội trường lớn UBND TP Đà Nẵng']->id,
-                'chairperson_meeting_attendee_id' => $attendees[0]->id ?? null,
-                'operator_meeting_attendee_id' => $attendees[1]->id ?? null,
-                'is_public' => true,
-                'content' => 'Xem xét tình hình KT-XH 4 tháng đầu năm; thông qua nghị quyết phân bổ ngân sách bổ sung; chất vấn lãnh đạo các sở.',
-                'start_time' => $start,
-                'end_time' => $start->copy()->addHours(8),
-                'status' => 'published',
-                'view_count' => 145,
-                'published_at' => $start->copy()->subDays(7),
-            ]
-        );
-
-        // Clean up: xoá participants trùng chair/op (data từ seed cũ).
-        $this->cleanupChairOpParticipants($meeting, $attendees);
-
-        // 4 chương trình họp
-        $agendaRows = [
-            ['start' => '08:00', 'end' => '08:30', 'content' => 'Khai mạc kỳ họp, thông qua chương trình, báo cáo thẩm tra.', 'person' => 'Chủ tịch HĐND', 'allow_disc' => false, 'allow_q' => false],
-            ['start' => '08:30', 'end' => '10:00', 'content' => 'Báo cáo tình hình KT-XH 4 tháng đầu năm 2026.', 'person' => 'Chủ tịch UBND', 'allow_disc' => true, 'allow_q' => true],
-            ['start' => '10:15', 'end' => '11:30', 'content' => 'Thảo luận, chất vấn lãnh đạo các sở.', 'person' => 'Thường trực HĐND', 'allow_disc' => true, 'allow_q' => true],
-            ['start' => '14:00', 'end' => '15:30', 'content' => 'Biểu quyết thông qua nghị quyết phân bổ ngân sách bổ sung; bế mạc kỳ họp.', 'person' => 'Thường trực HĐND', 'allow_disc' => false, 'allow_q' => false],
-        ];
-        $agendas = [];
-        foreach ($agendaRows as $i => $row) {
-            $agendas[] = MeetingAgenda::firstOrCreate(
-                ['meeting_id' => $meeting->id, 'sort_order' => $i + 1],
-                [
-                    'organization_id' => $this->orgId,
-                    'start_time' => $row['start'],
-                    'end_time' => $row['end'],
-                    'content' => $row['content'],
-                    'person_in_charge' => $row['person'],
-                    'allow_discussion_registration' => $row['allow_disc'],
-                    'allow_question_registration' => $row['allow_q'],
-                ]
-            );
-        }
-
-        // 3 tài liệu
-        $docRows = [
-            ['title' => 'Tờ trình về phân bổ ngân sách bổ sung 2026', 'doc_no' => '01/TTr-UBND', 'type' => 'Tờ trình', 'is_public' => true, 'agenda_idx' => 1],
-            ['title' => 'Báo cáo KT-XH 4 tháng đầu năm 2026', 'doc_no' => '02/BC-UBND', 'type' => 'Báo cáo', 'is_public' => true, 'agenda_idx' => 1],
-            ['title' => 'Dự thảo Nghị quyết phân bổ ngân sách bổ sung 2026', 'doc_no' => '03/DT-NQ', 'type' => 'Dự thảo nghị quyết', 'is_public' => false, 'agenda_idx' => 3],
-        ];
-        foreach ($docRows as $i => $row) {
-            MeetingDocument::firstOrCreate(
-                ['title' => $row['title'], 'meeting_id' => $meeting->id],
-                [
-                    'organization_id' => $this->orgId,
-                    'meeting_agenda_id' => $agendas[$row['agenda_idx']]->id,
-                    'meeting_document_type_id' => $docTypes[$row['type']]->id,
-                    'document_number' => $row['doc_no'],
-                    'summary' => "Tóm tắt cho {$row['title']}.",
-                    'is_public' => $row['is_public'],
-                    'sort_order' => $i + 1,
-                ]
-            );
-        }
-
-        // Participants — chỉ attendees[2..7]. attendees[0] (chair) + [1] (operator) đã set qua
-        // FK trên meeting, KHÔNG kiêm participant theo quy ước "1 user 1 vai trò".
-        $participants = [];
-        foreach (array_slice($attendees, 2) as $idx => $attendee) {
-            $attendee->loadMissing('user.profile');
-            // Index trong subset (0..5) — 4 đầu accepted, 2 cuối pending để có data đa dạng.
-            $responseStatus = $idx <= 3 ? 'accepted' : 'pending';
-
-            $participants[] = MeetingParticipant::firstOrCreate(
-                ['meeting_id' => $meeting->id, 'meeting_attendee_id' => $attendee->id],
-                [
-                    'organization_id' => $this->orgId,
-                    'display_name' => $attendee->user?->name,
-                    'position_name' => $attendee->position_name,
-                    'department_name' => $attendee->department_name,
-                    'email' => $attendee->user?->email,
-                    'phone' => $attendee->user?->profile?->phone,
-                    'response_status' => $responseStatus,
-                    'responded_at' => $responseStatus === 'accepted' ? $start->copy()->subDays(3) : null,
-                ]
-            );
-        }
-
-        // 2 chương trình biểu quyết
-        $voteTopics = [
-            ['title' => 'Biểu quyết thông qua dự thảo Nghị quyết phân bổ ngân sách bổ sung 2026', 'vote_type' => 'agree_disagree_abstain', 'ballot_mode' => 'public_named', 'agenda_idx' => 3],
-            ['title' => 'Biểu quyết bổ nhiệm Trưởng ban Kinh tế - Ngân sách', 'vote_type' => 'approve_reject_abstain', 'ballot_mode' => 'anonymous', 'agenda_idx' => 3],
-        ];
-        foreach ($voteTopics as $i => $vt) {
-            $topic = MeetingVoteTopic::firstOrCreate(
-                ['title' => $vt['title'], 'meeting_id' => $meeting->id],
-                [
-                    'organization_id' => $this->orgId,
-                    'meeting_agenda_id' => $agendas[$vt['agenda_idx']]->id,
-                    'vote_type' => $vt['vote_type'],
-                    'ballot_mode' => $vt['ballot_mode'],
-                    'show_result_on_projector' => true,
-                    'show_result_on_personal_device' => true,
-                    'sort_order' => $i + 1,
-                    // Phase derive từ opened_at + closed_at — set cả 2 để đại diện vote đã đóng.
-                    'opened_at' => $start->copy()->addHours(6),
-                    'closed_at' => $start->copy()->addHours(6)->addMinutes(15),
-                ]
-            );
-
-            // Tạo phiếu cho từng participant — phân bổ agree/disagree/abstain
-            foreach ($participants as $pIdx => $participant) {
-                $option = match ($pIdx % 5) {
-                    0, 1, 2 => $vt['vote_type'] === 'agree_disagree_abstain' ? 'agree' : 'approve',
-                    3 => $vt['vote_type'] === 'agree_disagree_abstain' ? 'disagree' : 'reject',
-                    4 => 'abstain',
-                };
-                MeetingVoteResponse::firstOrCreate(
-                    ['meeting_vote_topic_id' => $topic->id, 'meeting_participant_id' => $participant->id],
-                    [
-                        'organization_id' => $this->orgId,
-                        'option' => $option,
-                        'voted_at' => $start->copy()->addHours(6)->addMinutes(rand(1, 14)),
-                    ]
+            try {
+                if (! $this->demoDocxPath || ! is_file($this->demoDocxPath)) {
+                    throw new \RuntimeException('File demo .docx không tồn tại.');
+                }
+                $safeName = Str::slug($title, '-').'.docx';
+                // Clone temp file vì MediaService có thể move file gốc.
+                $cloned = tempnam(sys_get_temp_dir(), 'demo_doc_').'.docx';
+                copy($this->demoDocxPath, $cloned);
+                $file = new UploadedFile(
+                    $cloned,
+                    $safeName,
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    null,
+                    true
                 );
+                $media = $this->mediaService->uploadOne($doc, $file, 'meeting-document-attachments', ['disk' => 'public']);
+                $doc->update(['media_id' => $media->id]);
+            } catch (\Throwable $e) {
+                $this->command?->warn("Không attach được file cho doc '{$title}': ".$e->getMessage());
             }
         }
-
-        // Kết luận: thư ký upload qua meeting_documents với loại "Tài liệu kết luận cuộc họp" (post-meeting upload).
-        $conclusionDocType = $docTypes['Tài liệu kết luận cuộc họp'] ?? null;
-        if ($conclusionDocType) {
-            MeetingDocument::firstOrCreate(
-                ['title' => 'Kết luận kỳ họp HĐND thường kỳ tháng 5/2026', 'meeting_id' => $meeting->id],
-                [
-                    'organization_id' => $this->orgId,
-                    'meeting_agenda_id' => $agendas[3]->id ?? null,
-                    'meeting_document_type_id' => $conclusionDocType->id,
-                    'document_number' => '04/KL-UBND',
-                    'summary' => 'Kỳ họp đã thông qua nghị quyết phân bổ ngân sách bổ sung 2026 với tỷ lệ tán thành cao. Yêu cầu UBND TP triển khai theo kế hoạch.',
-                    'is_public' => true,
-                    'sort_order' => 4,
-                ]
-            );
-        }
     }
 
     /**
-     * Cuộc họp 2: Họp giao ban tuần — published, internal.
-     *
-     * @param  array<string, MeetingType>  $types
-     * @param  array<string, MeetingLocation>  $locations
-     * @param  array<string, MeetingDocumentType>  $docTypes
-     * @param  array<int, MeetingAttendee>  $attendees
+     * Sinh 1 file .docx mẫu (1 lần / seed run) — share content cho mọi document.
+     * Caller dùng `copy()` trước mỗi attach để tránh MediaService move file gốc.
      */
-    private function seedMeetingGiaoBan(array $types, array $locations, array $docTypes, array $attendees): void
+    private function generateSharedDemoDocx(): string
     {
-        $start = Carbon::parse('2026-05-04 14:00:00');
+        $phpWord = new \PhpOffice\PhpWord\PhpWord();
+        $phpWord->setDefaultFontName('Times New Roman');
+        $phpWord->setDefaultFontSize(13);
 
-        $meeting = Meeting::updateOrCreate(
-            ['title' => 'Họp giao ban tuần 19/2026', 'organization_id' => $this->orgId],
-            [
-                'meeting_type_id' => $types['Họp giao ban']->id,
-                'meeting_location_id' => $locations['Phòng họp tầng 5 - Sở Nội vụ']->id,
-                'chairperson_meeting_attendee_id' => $attendees[0]->id ?? null,
-                'operator_meeting_attendee_id' => $attendees[1]->id ?? null,
-                'is_public' => false,
-                'content' => 'Tổng kết công việc tuần trước, triển khai nhiệm vụ tuần này.',
-                'start_time' => $start,
-                'end_time' => $start->copy()->addHours(2),
-                'status' => 'published',
-                'view_count' => 12,
-                'published_at' => $start->copy()->subDay(),
-            ]
-        );
+        $section = $phpWord->addSection();
+        $section->addText('CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM', ['bold' => true, 'size' => 13], ['alignment' => 'center']);
+        $section->addText('Độc lập - Tự do - Hạnh phúc', ['bold' => true, 'italic' => true], ['alignment' => 'center']);
+        $section->addTextBreak(1);
 
-        $this->cleanupChairOpParticipants($meeting, $attendees);
+        $section->addText('TÀI LIỆU CUỘC HỌP (DEMO)', ['bold' => true, 'size' => 16], ['alignment' => 'center']);
+        $section->addText('(File mẫu sinh tự động bởi seeder)', ['italic' => true, 'size' => 12], ['alignment' => 'center']);
+        $section->addTextBreak(2);
 
-        $agendas = [];
-        $agendaRows = [
-            ['content' => 'Tổng kết công việc tuần 18.', 'start' => '14:00', 'end' => '14:45'],
-            ['content' => 'Triển khai nhiệm vụ tuần 19.', 'start' => '14:45', 'end' => '15:30'],
-            ['content' => 'Trao đổi vướng mắc, đề xuất.', 'start' => '15:30', 'end' => '16:00'],
+        $section->addText('I. NỘI DUNG', ['bold' => true, 'size' => 14]);
+        $section->addText('Đây là tài liệu mẫu phục vụ demo sản phẩm. Nội dung minh hoạ cấu trúc văn bản hành chính cơ bản.');
+        $section->addTextBreak(1);
+
+        $section->addText('II. CĂN CỨ', ['bold' => true, 'size' => 14]);
+        $section->addListItem('Luật Tổ chức chính quyền địa phương năm 2015 (sửa đổi 2019).');
+        $section->addListItem('Nghị quyết HĐND về chương trình công tác năm 2026.');
+        $section->addListItem('Báo cáo của các phòng ban chuyên môn.');
+        $section->addTextBreak(2);
+
+        $section->addText('TM. UỶ BAN NHÂN DÂN', ['bold' => true], ['alignment' => 'right']);
+        $section->addText('CHỦ TỊCH', ['bold' => true], ['alignment' => 'right']);
+        $section->addText('(Đã ký)', ['italic' => true], ['alignment' => 'right']);
+
+        $tmpPath = tempnam(sys_get_temp_dir(), 'demo_shared_').'.docx';
+        \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007')->save($tmpPath);
+
+        return $tmpPath;
+    }
+
+    /** @param array<int, MeetingParticipant> $participants */
+    private function createAttendances(Meeting $meeting, array $participants, bool $fullCheckIn): void
+    {
+        $total = count($participants);
+        $checkInCount = $fullCheckIn ? $total : (int) ceil($total * 0.6);
+
+        foreach ($participants as $i => $p) {
+            $isCheckedIn = $i < $checkInCount;
+            MeetingAttendance::create([
+                'organization_id' => $this->orgId,
+                'meeting_id' => $meeting->id,
+                'meeting_participant_id' => $p->id,
+                'status' => $isCheckedIn ? 'present' : 'absent',
+                'checkin_method' => $isCheckedIn ? (random_int(0, 1) ? 'qr' : 'manual') : null,
+                'checked_in_at' => $isCheckedIn ? $meeting->start_time->copy()->addMinutes(random_int(-10, 15)) : null,
+                'checked_in_by' => $isCheckedIn ? $this->demoUsers['thuky']->id : null,
+                'note' => $isCheckedIn ? null : 'Vắng có phép',
+            ]);
+        }
+    }
+
+    /** @param array<int, MeetingAgenda> $agendas @param array<int, MeetingParticipant> $participants */
+    private function createVoteTopics(Meeting $meeting, array $agendas, array $participants, bool $allClosed): void
+    {
+        $voteAgenda = $agendas[3] ?? $agendas[0];
+        $topics = [
+            ['Thông qua chương trình họp', 'agree_disagree_abstain', 'open'],
+            ['Phê duyệt nghị quyết', 'agree_disagree_abstain', 'anonymous'],
         ];
-        foreach ($agendaRows as $i => $row) {
-            $agendas[] = MeetingAgenda::firstOrCreate(
-                ['meeting_id' => $meeting->id, 'sort_order' => $i + 1],
-                [
-                    'organization_id' => $this->orgId,
-                    'start_time' => $row['start'],
-                    'end_time' => $row['end'],
-                    'content' => $row['content'],
-                    'person_in_charge' => 'Trưởng phòng',
-                    'allow_discussion_registration' => true,
-                    'allow_question_registration' => false,
-                ]
-            );
-        }
 
-        MeetingDocument::firstOrCreate(
-            ['title' => 'Báo cáo tổng kết tuần 18/2026', 'meeting_id' => $meeting->id],
-            [
+        foreach ($topics as $idx => [$title, $voteType, $ballotMode]) {
+            $isClosed = $allClosed || $idx === 0; // in-progress: topic[0] đã đóng, topic[1] đang mở
+            $isOpen = ! $isClosed;
+
+            $topic = MeetingVoteTopic::create([
                 'organization_id' => $this->orgId,
-                'meeting_agenda_id' => $agendas[0]->id,
-                'meeting_document_type_id' => $docTypes['Báo cáo']->id,
-                'document_number' => 'BC-T18',
-                'summary' => 'Báo cáo tổng kết tuần 18.',
-                'is_public' => false,
-                'sort_order' => 1,
-            ]
-        );
+                'meeting_id' => $meeting->id,
+                'meeting_agenda_id' => $voteAgenda->id,
+                'title' => $title,
+                'description' => "Biểu quyết: {$title}",
+                'duration_minutes' => 5,
+                'vote_type' => $voteType,
+                'ballot_mode' => $ballotMode,
+                'show_result_on_projector' => true,
+                'show_result_on_personal_device' => true,
+                'sort_order' => $idx + 1,
+                'opened_at' => $meeting->start_time->copy()->addMinutes(180 + $idx * 10),
+                'closed_at' => $isClosed ? $meeting->start_time->copy()->addMinutes(185 + $idx * 10) : null,
+                'created_by' => $this->demoUsers['thuky']->id,
+                'updated_by' => $this->demoUsers['thuky']->id,
+            ]);
 
-        // Participants — chỉ vài đại biểu nội bộ
-        foreach (array_slice($attendees, 2, 5) as $attendee) {
-            $attendee->loadMissing('user.profile');
-            MeetingParticipant::firstOrCreate(
-                ['meeting_id' => $meeting->id, 'meeting_attendee_id' => $attendee->id],
-                [
+            // Vote responses chỉ cho topic đã đóng hoặc đang mở (skip pure-draft topics)
+            if (! $isClosed && ! $isOpen) {
+                continue;
+            }
+
+            $options = ['agree', 'disagree', 'abstain'];
+            $voteCount = $isClosed ? count($participants) : (int) ceil(count($participants) * 0.5);
+
+            foreach (array_slice($participants, 0, $voteCount) as $p) {
+                $pickedOption = $options[array_rand($options)];
+                // Đa số đồng ý → bias 70% agree
+                if (random_int(1, 10) <= 7) {
+                    $pickedOption = 'agree';
+                }
+                MeetingVoteResponse::create([
                     'organization_id' => $this->orgId,
-                    'display_name' => $attendee->user?->name,
-                    'position_name' => $attendee->position_name,
-                    'department_name' => $attendee->department_name,
-                    'email' => $attendee->user?->email,
-                    'phone' => $attendee->user?->profile?->phone,
-                    'response_status' => 'accepted',
-                    'responded_at' => $start->copy()->subHours(4),
-                ]
-            );
+                    'meeting_vote_topic_id' => $topic->id,
+                    'user_id' => $p->meeting_attendee_id ? MeetingAttendee::find($p->meeting_attendee_id)?->user_id : null,
+                    'meeting_participant_id' => $p->id,
+                    'option' => $pickedOption,
+                    'voted_at' => $topic->opened_at->copy()->addSeconds(random_int(30, 240)),
+                ]);
+            }
         }
     }
 
-    /**
-     * Cuộc họp 3: Họp chuyên đề — draft, đang chuẩn bị.
-     *
-     * @param  array<string, MeetingType>  $types
-     * @param  array<string, MeetingLocation>  $locations
-     * @param  array<int, MeetingAttendee>  $attendees
-     */
-    private function seedMeetingChuyenDeDraft(array $types, array $locations, array $attendees): void
+    /** @param array<int, MeetingAgenda> $agendas @param array<int, MeetingParticipant> $participants */
+    private function createDiscussionRegistrations(Meeting $meeting, array $agendas, array $participants, bool $allCompleted): void
     {
-        $start = Carbon::parse('2026-05-25 08:30:00');
+        $discussAgenda = $agendas[2] ?? $agendas[0];
+        $registrations = [
+            ['discussion', 'Đề nghị làm rõ tình hình thu chi quý 1.', $participants[2] ?? null],
+            ['question', 'Tại sao tiến độ dự án X chậm hơn kế hoạch?', $participants[3] ?? null],
+            ['discussion', 'Góp ý về quy hoạch khu công viên mới.', $participants[4] ?? null],
+        ];
 
-        $meeting = Meeting::updateOrCreate(
-            ['title' => 'Họp chuyên đề chuyển đổi số ngành y tế (DRAFT)', 'organization_id' => $this->orgId],
-            [
-                'meeting_type_id' => $types['Họp chuyên đề']->id,
-                'meeting_location_id' => $locations['Họp trực tuyến (Zoom)']->id,
-                'chairperson_meeting_attendee_id' => $attendees[0]->id ?? null,
-                'operator_meeting_attendee_id' => $attendees[1]->id ?? null,
-                'is_public' => false,
-                'content' => 'Đánh giá tiến độ chuyển đổi số ngành y tế thành phố — bản thảo.',
-                'start_time' => $start,
-                'end_time' => $start->copy()->addHours(3),
-                'status' => 'draft',
-                'view_count' => 0,
-            ]
-        );
-
-        $this->cleanupChairOpParticipants($meeting, $attendees);
-
-        MeetingAgenda::firstOrCreate(
-            ['meeting_id' => $meeting->id, 'sort_order' => 1],
-            [
+        foreach ($registrations as $idx => [$type, $content, $participant]) {
+            if (! $participant) {
+                continue;
+            }
+            $isCompleted = $allCompleted || $idx === 0;
+            MeetingDiscussionRegistration::create([
                 'organization_id' => $this->orgId,
-                'start_time' => '08:30',
-                'end_time' => '11:30',
-                'content' => 'Báo cáo tiến độ + thảo luận giải pháp.',
-                'person_in_charge' => 'Sở Y tế',
-                'allow_discussion_registration' => true,
-                'allow_question_registration' => false,
-            ]
-        );
-
-        // Một vài attendee dự kiến (chưa publish nên chưa có invitations)
-        foreach (array_slice($attendees, 5, 3) as $attendee) {
-            $attendee->loadMissing('user.profile');
-            MeetingParticipant::firstOrCreate(
-                ['meeting_id' => $meeting->id, 'meeting_attendee_id' => $attendee->id],
-                [
-                    'organization_id' => $this->orgId,
-                    'display_name' => $attendee->user?->name,
-                    'position_name' => $attendee->position_name,
-                    'department_name' => $attendee->department_name,
-                    'email' => $attendee->user?->email,
-                    'phone' => $attendee->user?->profile?->phone,
-                    'response_status' => 'pending',
-                ]
-            );
+                'meeting_id' => $meeting->id,
+                'meeting_agenda_id' => $discussAgenda->id,
+                'meeting_participant_id' => $participant->id,
+                'type' => $type,
+                'content' => $content,
+                'operator_note' => $isCompleted ? 'Đã được chủ trì giải đáp.' : null,
+                'status' => $isCompleted ? 'completed' : 'pending',
+                'completed_at' => $isCompleted ? $meeting->start_time->copy()->addHours(2)->addMinutes($idx * 5) : null,
+                'sort_order' => $idx + 1,
+            ]);
         }
     }
 }

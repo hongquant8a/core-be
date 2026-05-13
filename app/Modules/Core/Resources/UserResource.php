@@ -32,6 +32,8 @@ class UserResource extends JsonResource
             'created_by' => $this->whenLoaded('creator', fn () => $this->formatUserSummary($this->creator), null),
             'updated_by' => $this->whenLoaded('editor', fn () => $this->formatUserSummary($this->editor), null),
             'assignments' => $this->roleAssignments(),
+            // Derive từ personal_access_tokens.created_at max (Sanctum). Null nếu user chưa từng login.
+            'last_login_at' => $this->last_login_at?->format('d/m/Y H:i:s'),
             'created_at' => $this->created_at?->format('d/m/Y H:i:s'),
             'updated_at' => $this->updated_at?->format('d/m/Y H:i:s'),
         ];
