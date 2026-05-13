@@ -46,8 +46,20 @@ class MeetingDocumentService
         $meeting = $meetingDocument->meeting;
         $isParticipant = $this->shouldSeeAllDocs($meeting);
 
-        if (! $isParticipant) {
-            // Guest hoặc auth non-participant: doc + meeting đều phải public + published
+        // Public route không có middleware auth:sanctum + set.permissions.team. Tự resolve thủ công:
+        //  - Ưu tiên Authorization Bearer header (cách chuẩn)
+        //  - Fallback: cookie `accessToken` (FE SPA của project dùng cookie thay vì header)
+        $authUser = auth()->user() ?? \Illuminate\Support\Facades\Auth::guard('sanctum')->user();
+        if (! $authUser) {
+            $authUser = $this->resolveUserFromCookieToken();
+        }
+        if ($authUser && function_exists('setPermissionsTeamId') && $meeting) {
+            setPermissionsTeamId((int) $meeting->organization_id);
+        }
+        $hasViewPermission = $authUser?->can('meeting-documents.show') ?? false;
+
+        // Guest hoặc auth-không-có-quyền: yêu cầu doc + meeting đều public + published.
+        if (! $isParticipant && ! $hasViewPermission) {
             if (
                 ! $meetingDocument->is_public
                 || ! $meeting
@@ -59,6 +71,38 @@ class MeetingDocumentService
         }
 
         return $meetingDocument->load(['agenda', 'documentType', 'mediaFile']);
+    }
+
+    /**
+     * FE SPA dùng cookie `accessToken` (format Sanctum: `id|plain_token`) thay vì Bearer header.
+     * Resolve thủ công thành User instance.
+     */
+    private function resolveUserFromCookieToken(): ?\App\Modules\Core\Models\User
+    {
+        $request = request();
+        if (! $request) {
+            return null;
+        }
+        $token = $request->cookie('accessToken');
+        if (! $token) {
+            return null;
+        }
+        // Format Sanctum: `id|plain_text` — split, hash plain_text rồi match.
+        if (! str_contains($token, '|')) {
+            return null;
+        }
+        [$id, $plain] = explode('|', $token, 2);
+        $accessToken = \Laravel\Sanctum\PersonalAccessToken::find($id);
+        if (! $accessToken) {
+            return null;
+        }
+        if (! hash_equals($accessToken->token, hash('sha256', $plain))) {
+            return null;
+        }
+
+        return $accessToken->tokenable instanceof \App\Modules\Core\Models\User
+            ? $accessToken->tokenable
+            : null;
     }
 
     /**
