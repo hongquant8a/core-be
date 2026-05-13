@@ -145,20 +145,22 @@ class MeetingDataSeeder extends Seeder
 
     private function seedDemoUsers(): void
     {
-        $daiBieuRole = Role::firstWhere('name', 'Đại biểu họp');
-        $thuKyRole = Role::firstWhere('name', 'Thư ký họp') ?? $daiBieuRole;
+        // Sau refactor 2026-05-10: chỉ còn 1 role meeting "Đại biểu". Chair/operator phân biệt
+        // qua FK chairperson_meeting_attendee_id / operator_meeting_attendee_id trên meeting,
+        // không qua Spatie role.
+        $daiBieuRole = Role::firstWhere('name', 'Đại biểu');
 
         $chutri = $this->upsertUser('chutri@example.com', 'Lê Văn Chủ Trì', 'chutri');
-        $chutri->syncRoles([$daiBieuRole]);
+        if ($daiBieuRole) $chutri->syncRoles([$daiBieuRole]);
 
         $thuky = $this->upsertUser('thuky@example.com', 'Nguyễn Thị Thư Ký', 'thuky');
-        $thuky->syncRoles([$thuKyRole]);
+        if ($daiBieuRole) $thuky->syncRoles([$daiBieuRole]);
 
         $daibieus = [];
         $names = ['Trần Văn Đại Biểu 1', 'Phạm Thị Đại Biểu 2', 'Hoàng Văn Đại Biểu 3'];
         foreach (range(1, 3) as $i) {
             $u = $this->upsertUser("daibieu{$i}@example.com", $names[$i - 1], "daibieu{$i}");
-            $u->syncRoles([$daiBieuRole]);
+            if ($daiBieuRole) $u->syncRoles([$daiBieuRole]);
             $daibieus[] = $u;
         }
 
