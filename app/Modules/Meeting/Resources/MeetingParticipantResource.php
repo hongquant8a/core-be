@@ -19,6 +19,14 @@ class MeetingParticipantResource extends JsonResource
             'id' => $this->id,
             'meeting_id' => $this->meeting_id,
             'meeting_attendee_id' => $this->meeting_attendee_id,
+            // user_id của đại biểu — derive từ attendee.user_id. FE match auth user qua field này.
+            'user_id' => $this->attendee?->user_id,
+            'user' => $this->attendee?->user ? [
+                'id' => $this->attendee->user->id,
+                'name' => $this->attendee->user->name,
+                'email' => $this->attendee->user->email,
+                'user_name' => $this->attendee->user->user_name,
+            ] : null,
             'attendee_name' => $this->attendee?->name,
             'display_name' => $this->display_name,
             'position_name' => $this->position_name,
