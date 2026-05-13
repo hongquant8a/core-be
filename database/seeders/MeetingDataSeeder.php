@@ -738,7 +738,7 @@ class MeetingDataSeeder extends Seeder
                 'type' => $type,
                 'content' => $content,
                 'operator_note' => $isCompleted ? 'Đã được chủ trì giải đáp.' : null,
-                'status' => $isCompleted ? 'completed' : 'pending',
+                'status' => $isCompleted ? 'completed' : 'registered',
                 'completed_at' => $isCompleted ? $meeting->start_time->copy()->addHours(2)->addMinutes($idx * 5) : null,
                 'sort_order' => $idx + 1,
             ]);
