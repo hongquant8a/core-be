@@ -46,6 +46,7 @@ class MeetingDiscussionRegistrationController extends Controller
      * @queryParam meeting_participant_id integer Lọc theo người tham dự. Example: 1
      * @queryParam discussion_type string Lọc theo loại đăng ký. Example: discussion
      * @queryParam status string Lọc theo trạng thái đăng ký. Example: pending
+     * @queryParam my boolean Chỉ trả về đăng ký của user đang login (resolve user→attendee→participant). Example: true
      * @queryParam sort_by string Sắp xếp theo trường. Example: sort_order
      * @queryParam sort_order string Thứ tự sắp xếp (asc/desc). Example: asc
      * @queryParam limit integer Số bản ghi mỗi trang. Example: 10

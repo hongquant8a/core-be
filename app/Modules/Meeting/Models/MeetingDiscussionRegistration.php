@@ -64,6 +64,20 @@ class MeetingDiscussionRegistration extends Model implements HasMedia
             ->when($filters['meeting_id'] ?? null, fn ($q, $meetingId) => $q->where('meeting_id', $meetingId))
             ->when($filters['meeting_agenda_id'] ?? null, fn ($q, $agendaId) => $q->where('meeting_agenda_id', $agendaId))
             ->when($filters['meeting_participant_id'] ?? null, fn ($q, $participantId) => $q->where('meeting_participant_id', $participantId))
+            // Filter `?my=true` / `?mine=1` — chỉ registrations của user đang login.
+            // Traverse: meeting_participant_id → MeetingParticipant.meeting_attendee_id → MeetingAttendee.user_id
+            ->when(
+                filter_var($filters['my'] ?? $filters['mine'] ?? $filters['only_mine'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                function ($q) {
+                    $userId = auth()->id() ?? \Illuminate\Support\Facades\Auth::guard('sanctum')->id();
+                    if (! $userId) {
+                        $q->whereRaw('1 = 0');  // chưa login → list rỗng
+
+                        return;
+                    }
+                    $q->whereHas('participant.attendee', fn ($q2) => $q2->where('user_id', $userId));
+                }
+            )
             ->when($filters['type'] ?? null, fn ($q, $type) => $q->where('type', $type))
             ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
             ->when($filters['search'] ?? null, fn ($q, $search) => $q->where('content', 'like', '%'.$search.'%'))
