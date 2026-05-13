@@ -11,6 +11,19 @@ class UpdateMeetingSettingRequest extends FormRequest
         return true;
     }
 
+    /**
+     * FE thường gửi lại URL string của ảnh hiện có ("/storage/...") cho image fields khi
+     * không upload file mới. Strip ra trước validation — chỉ giữ giá trị nếu là UploadedFile.
+     */
+    protected function prepareForValidation(): void
+    {
+        foreach (['projector_image', 'chairperson_signature', 'qr_icon'] as $field) {
+            if ($this->has($field) && ! $this->file($field) instanceof \Illuminate\Http\UploadedFile) {
+                $this->offsetUnset($field);
+            }
+        }
+    }
+
     public function rules(): array
     {
         return [
