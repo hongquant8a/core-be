@@ -78,12 +78,33 @@ class MeetingDataSeeder extends Seeder
         $catalogs = $this->seedCatalogs();
         $this->seedDemoAttendees($catalogs['groups']);
 
+        // ── Past finished (8 cuộc) — trải dài 3 tháng gần nhất
+        $this->seedFinishedMeeting($catalogs, 'quý trước', now()->subMonths(3)->setTime(8, 0));
+        $this->seedFinishedMeeting($catalogs, '2 tháng trước', now()->subMonths(2)->setTime(14, 30));
+        $this->seedFinishedMeeting($catalogs, 'tháng trước', now()->subMonth()->setTime(9, 0));
+        $this->seedFinishedMeeting($catalogs, '3 tuần trước', now()->subWeeks(3)->setTime(8, 30));
+        $this->seedFinishedMeeting($catalogs, '2 tuần trước', now()->subWeeks(2)->setTime(15, 0));
         $this->seedFinishedMeeting($catalogs, 'tuần trước', now()->subWeek()->setTime(8, 30));
+        $this->seedFinishedMeeting($catalogs, '2 ngày trước', now()->subDays(2)->setTime(13, 30));
         $this->seedFinishedMeeting($catalogs, 'hôm qua', now()->subDay()->setTime(14, 0));
-        $this->seedInProgressMeeting($catalogs, now()->copy()->setTime(now()->hour, 0)->subHour());
+
+        // ── In-progress (2 cuộc) — đang diễn ra
+        $this->seedInProgressMeeting($catalogs, now()->copy()->setTime(now()->hour, 0)->subHour(), 'phiên sáng');
+        $this->seedInProgressMeeting($catalogs, now()->copy()->setTime(max(8, now()->hour - 2), 0), 'phiên chiều');
+
+        // ── Upcoming (7 cuộc) — trải dài 3 tháng tới
         $this->seedUpcomingMeeting($catalogs, 'chiều nay', now()->addHours(3)->setTime(15, 0), withFullData: true);
+        $this->seedUpcomingMeeting($catalogs, 'ngày mai', now()->addDay()->setTime(8, 30), withFullData: true);
+        $this->seedUpcomingMeeting($catalogs, 'vài ngày tới', now()->addDays(3)->setTime(14, 0), withFullData: true);
         $this->seedUpcomingMeeting($catalogs, 'tuần tới', now()->addWeek()->setTime(9, 0), withFullData: false);
-        $this->seedDraftMeeting($catalogs, now()->addWeeks(2)->setTime(9, 0));
+        $this->seedUpcomingMeeting($catalogs, '2 tuần tới', now()->addWeeks(2)->setTime(14, 30), withFullData: false);
+        $this->seedUpcomingMeeting($catalogs, 'tháng tới', now()->addMonth()->setTime(8, 0), withFullData: false);
+        $this->seedUpcomingMeeting($catalogs, '2 tháng tới', now()->addMonths(2)->setTime(9, 30), withFullData: false);
+
+        // ── Draft (3 cuộc) — chưa publish
+        $this->seedDraftMeeting($catalogs, now()->addWeeks(2)->setTime(9, 0), 'kỳ họp giữa tháng');
+        $this->seedDraftMeeting($catalogs, now()->addMonths(1)->setTime(14, 0), 'kỳ chuyên đề');
+        $this->seedDraftMeeting($catalogs, now()->addMonths(3)->setTime(8, 0), 'kỳ thường niên');
 
         auth()->logout();
 
@@ -91,7 +112,7 @@ class MeetingDataSeeder extends Seeder
             @unlink($this->demoDocxPath);
         }
 
-        $this->command?->info('MeetingDataSeeder: seeded 6 demo meetings + 5 demo users.');
+        $this->command?->info('MeetingDataSeeder: seeded 20 demo meetings (8 finished + 2 in-progress + 7 upcoming + 3 draft) + 5 demo users.');
     }
 
     // ────────────────────────────────────────────────────────────────────────────
@@ -331,11 +352,12 @@ class MeetingDataSeeder extends Seeder
     /**
      * In-progress — đang diễn ra, partial attendance + 1 vote đang mở.
      */
-    private function seedInProgressMeeting(array $cat, Carbon $startTime): Meeting
+    private function seedInProgressMeeting(array $cat, Carbon $startTime, ?string $titleSuffix = null): Meeting
     {
+        $title = 'Cuộc họp HĐND chuyên đề — đang diễn ra'.($titleSuffix ? ' '.$titleSuffix : '');
         $meeting = $this->createMeeting(
             cat: $cat,
-            title: 'Cuộc họp HĐND chuyên đề — đang diễn ra',
+            title: $title,
             content: self::DEMO_MARKER.' Cuộc họp đang diễn ra. Đang điểm danh và biểu quyết.',
             startTime: $startTime,
             duration: 3,
@@ -388,11 +410,12 @@ class MeetingDataSeeder extends Seeder
     /**
      * Draft — chưa publish, thông tin tối thiểu.
      */
-    private function seedDraftMeeting(array $cat, Carbon $startTime): Meeting
+    private function seedDraftMeeting(array $cat, Carbon $startTime, ?string $titleSuffix = null): Meeting
     {
+        $title = 'Cuộc họp dự thảo — chưa công bố'.($titleSuffix ? ' '.$titleSuffix : '');
         $meeting = $this->createMeeting(
             cat: $cat,
-            title: 'Cuộc họp dự thảo — chưa công bố',
+            title: $title,
             content: self::DEMO_MARKER.' Cuộc họp đang ở trạng thái dự thảo, chưa công bố cho đại biểu.',
             startTime: $startTime,
             duration: 2,
