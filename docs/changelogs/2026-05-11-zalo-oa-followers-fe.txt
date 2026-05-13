@@ -1,0 +1,71 @@
+CHANGE LOG FE — Zalo OA Followers (sync + fetch API)
+Ngày: 2026-05-11
+
+TỔNG QUAN
+BE tự sync danh sách follower Zalo Official Account mỗi 45 phút qua schedule
+`zalo:refresh-and-sync`. FE có endpoint để fetch list, dùng cho usecase admin pick
+zalo_user_id gán vào users.zalo_user_id (để gửi tin nhắn qua kênh Zalo).
+
+ENDPOINT
+GET /api/zalo-oa-followers
+  - Auth-only (Sanctum Bearer + X-Organization-Id header). KHÔNG cần Spatie permission.
+  - Bất kỳ user nào trong org đều fetch được.
+
+QUERY PARAMS
+  search       string   Tìm theo display_name (like %s%). Example: "Nguyễn"
+  sort_by      string   display_name | last_synced_at | id. Default: display_name
+  sort_order   string   asc | desc. Default: asc
+  limit        integer  1-100. Default: 20
+
+RESPONSE
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": 1,
+        "user_id": "7186086631826132217",    // Zalo user_id (string) — gán vào users.zalo_user_id
+        "display_name": "Nguyễn Văn A",
+        "user_alias": "alias_xxx",            // Zalo user_id_by_app, nullable
+        "avatar": "https://s120-ava-talk.zadn.vn/...",
+        "last_synced_at": "11:00:00 11/05/2026"
+      }
+    ],
+    "pagination": {
+      "current_page": 1,
+      "last_page": 5,
+      "per_page": 20,
+      "total": 87
+    }
+  }
+}
+
+USECASE FE — Gán Zalo user_id cho user
+
+Form sửa user (Cấu hình → Người dùng → chi tiết):
+  1. Field "Zalo user ID" hiện tại nhập text thủ công → đổi thành dropdown / search.
+  2. Khi user click input → mở popup tìm kiếm với:
+     - Input search (debounce 300ms) → call `GET /api/zalo-oa-followers?search=...&limit=20`
+     - Render list: avatar + display_name + (user_alias)
+     - Click row → pick user_id → fill vào form.users.zalo_user_id, đóng popup.
+  3. Submit PUT /api/users/{id} body { zalo_user_id: 'xxx' } như cũ.
+
+LƯU Ý
+- `user_id` trong response = Zalo user_id (string, dài) — KHÔNG phải users.id của hệ thống.
+- Sync 45 phút/lần qua schedule → nếu user vừa follow OA, có thể đợi tới 45p mới thấy.
+  Force sync ngay (cần SSH server): `php artisan zalo:refresh-and-sync`.
+- Unfollow tự reflect: user unfollow → lần sync tiếp theo BE auto delete khỏi DB.
+
+CREDENTIALS SETUP (chỉ làm 1 lần — admin)
+Vào màn Cấu hình → Zalo, nhập:
+  - zalo_app_id          (Zalo Developer Console)
+  - zalo_app_secret      (secret key)
+  - zalo_access_token    (token đầu tiên — gen thủ công từ Zalo Developer Console)
+  - zalo_refresh_token   (refresh token đầu tiên — gen cùng access_token)
+
+Sau lần đầu, BE tự refresh pair token mỗi 45p, FE không cần input lại.
+
+KHÔNG CẦN FE LÀM GÌ THÊM
+- Không có WS event cho sync (không real-time).
+- Không có endpoint trigger sync manual từ FE (chỉ qua CLI/cron).
+- Endpoint list này read-only.
