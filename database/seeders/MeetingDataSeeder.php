@@ -451,9 +451,13 @@ class MeetingDataSeeder extends Seeder
             'operator_meeting_attendee_id' => $this->demoAttendees['thuky']->id,
             'title' => $title,
             'content' => $content,
-            'is_public' => true,
+            // Xen kẽ public/private để FE test cả 2 case (50/50 random).
+            'is_public' => (bool) random_int(0, 1),
             'start_time' => $startTime,
             'end_time' => $startTime->copy()->addHours($duration),
+            // Khung điểm danh: mở 1h trước start, đóng 1h sau start.
+            'attendance_open_at' => $startTime->copy()->subHour(),
+            'attendance_close_at' => $startTime->copy()->addHour(),
             'status' => $status,
             'attendance_locked' => $attendanceLocked,
             'view_count' => random_int(20, 150),
@@ -563,7 +567,8 @@ class MeetingDataSeeder extends Seeder
                 'title' => $title,
                 'document_number' => $docNumber,
                 'summary' => "Tóm tắt: {$title}",
-                'is_public' => true,
+                // Xen kẽ public/internal — FE test cả 2 case visibility.
+                'is_public' => (bool) random_int(0, 1),
                 'download_count' => random_int(5, 50),
                 'sort_order' => $sortOrder + 1,
                 'created_by' => $this->demoUsers['thuky']->id,
