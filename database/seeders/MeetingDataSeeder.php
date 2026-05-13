@@ -567,8 +567,7 @@ class MeetingDataSeeder extends Seeder
                 'title' => $title,
                 'document_number' => $docNumber,
                 'summary' => "Tóm tắt: {$title}",
-                // Xen kẽ public/internal — FE test cả 2 case visibility.
-                'is_public' => (bool) random_int(0, 1),
+                'is_public' => true,
                 'download_count' => random_int(5, 50),
                 'sort_order' => $sortOrder + 1,
                 'created_by' => $this->demoUsers['thuky']->id,
