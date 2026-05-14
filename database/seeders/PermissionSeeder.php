@@ -163,6 +163,11 @@ class PermissionSeeder extends Seeder
             'stats', 'index', 'show', 'store', 'update', 'destroy',
             'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
         ],
+        // Khách mời — danh bạ org-level, chỉ dùng để gửi thư mời (email/SMS), không có user account.
+        'meeting-guests' => [
+            'stats', 'index', 'show', 'store', 'update', 'destroy',
+            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
+        ],
         'meeting-agendas' => [
             'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
         ],

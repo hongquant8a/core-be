@@ -132,7 +132,11 @@ class MeetingController extends Controller
      */
     public function store(StoreMeetingRequest $request)
     {
-        $meeting = $this->meetingService->store($request->validated(), $request->file('projector_image'));
+        $meeting = $this->meetingService->store(
+            $request->validated(),
+            $request->file('projector_image'),
+            $request->input('guest_ids', []),
+        );
 
         return $this->successResource(new MeetingResource($meeting), 'Tạo cuộc họp thành công!', 201);
     }
@@ -152,7 +156,12 @@ class MeetingController extends Controller
      */
     public function update(UpdateMeetingRequest $request, Meeting $meeting)
     {
-        $meeting = $this->meetingService->update($meeting, $request->validated(), $request->file('projector_image'));
+        $meeting = $this->meetingService->update(
+            $meeting,
+            $request->validated(),
+            $request->file('projector_image'),
+            $request->has('guest_ids') ? $request->input('guest_ids', []) : null,
+        );
 
         return $this->successResource(new MeetingResource($meeting), 'Cập nhật cuộc họp thành công!');
     }

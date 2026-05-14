@@ -31,6 +31,8 @@ class UpdateMeetingRequest extends FormRequest
             'chairperson_meeting_attendee_id' => 'nullable|integer|exists:meeting_attendees,id',
             'operator_meeting_attendee_id' => 'nullable|integer|exists:meeting_attendees,id',
             'qr_manager_user_id' => ['nullable', 'integer', 'exists:users,id', $this->qrManagerSameOrgRule()],
+            'guest_ids' => 'nullable|array',
+            'guest_ids.*' => 'integer|exists:meeting_guests,id',
             'projector_image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:10240',
             'remove_projector_image' => 'nullable|boolean',
             'title' => 'sometimes|string|max:255',
@@ -92,6 +94,7 @@ class UpdateMeetingRequest extends FormRequest
             'meeting_type_id' => 'ID loại cuộc họp',
             'meeting_location_id' => 'ID địa điểm họp',
             'qr_manager_user_id' => 'Người quản lý QR điểm danh',
+            'guest_ids' => 'Danh sách khách mời',
             'projector_image' => 'Ảnh nền màn chiếu',
             'remove_projector_image' => 'Xóa ảnh nền màn chiếu',
             'title' => 'Tiêu đề',
@@ -117,6 +120,10 @@ class UpdateMeetingRequest extends FormRequest
             'qr_manager_user_id' => [
                 'description' => 'User được giao quyền bật QR điểm danh. Phải cùng tổ chức với meeting. Null = bỏ.',
                 'example' => 5,
+            ],
+            'guest_ids' => [
+                'description' => 'Danh sách ID khách mời. BE sync — guest_ids mới mà chưa có invitation → tạo. Guest cũ KHÔNG còn trong list → xóa invitation (nếu chưa sent). Pass empty array [] để xóa toàn bộ.',
+                'example' => [12, 15],
             ],
             'projector_image' => [
                 'description' => 'Ảnh nền màn chiếu mới (jpg/png/webp, ≤10MB). Sẽ thay ảnh cũ nếu có.',

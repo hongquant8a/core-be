@@ -13,6 +13,7 @@ class MeetingInvitation extends TenantModel
         'meeting_id',
         'meeting_participant_id',
         'meeting_attendee_id',
+        'meeting_guest_id',
         'send_type',
         'scheduled_at',
         'sent_at',
@@ -38,5 +39,10 @@ class MeetingInvitation extends TenantModel
     public function attendee()
     {
         return $this->belongsTo(MeetingAttendee::class, 'meeting_attendee_id');
+    }
+
+    public function guest()
+    {
+        return $this->belongsTo(MeetingGuest::class, 'meeting_guest_id');
     }
 }

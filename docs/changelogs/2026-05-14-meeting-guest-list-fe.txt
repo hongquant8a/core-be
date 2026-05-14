@@ -1,0 +1,147 @@
+================================================================================
+BE CHANGELOG — 2026-05-14 — Meeting: danh bạ khách mời + gửi thư mời
+================================================================================
+
+TÓM TẮT
+─────────
+Thêm danh bạ khách mời (`meeting_guests`) — reusable contact PER ORG. Khách mời
+KHÔNG có tài khoản hệ thống, chỉ dùng để gửi thư mời (email/SMS) khi meeting
+publish hoặc theo lịch reminder.
+
+FE flow:
+  1. Admin quản lý danh bạ khách mời qua trang /meeting-guests (CRUD).
+  2. Khi tạo/sửa meeting, FE attach `guest_ids: int[]` → BE tạo invitation cho
+     từng khách → gửi thư mời tự động khi meeting publish.
+
+
+────────────────────────────────────────────────────────────────────────────────
+A. SCHEMA
+────────────────────────────────────────────────────────────────────────────────
+Migration 1: 2026_05_14_161612_create_meeting_guests_table
+  - id, organization_id, name (req), email (req), phone (req), note (nullable),
+    status, created_by, updated_by, timestamps.
+
+Migration 2: 2026_05_14_161613_add_meeting_guest_id_to_meeting_invitations
+  - meeting_invitations.meeting_guest_id (nullable FK) — link invitation tới guest.
+
+`meeting_invitations` giờ chứa 3 loại recipient (mutually exclusive):
+  - meeting_participant_id (đại biểu)
+  - meeting_attendee_id    (chủ trì + thư ký gửi qua attendee)
+  - meeting_guest_id       (khách mời, raw email/SMS)
+
+
+────────────────────────────────────────────────────────────────────────────────
+B. CATALOG ADMIN — /api/meeting-guests
+────────────────────────────────────────────────────────────────────────────────
+Spatie permission group `meeting-guests.*` (cần seed). Endpoints chuẩn catalog:
+
+  GET    /api/meeting-guests                          permission:meeting-guests.index
+  GET    /api/meeting-guests/stats                    permission:meeting-guests.stats
+  GET    /api/meeting-guests/{guest}                  permission:meeting-guests.show
+  POST   /api/meeting-guests                          permission:meeting-guests.store
+  PUT/PATCH /api/meeting-guests/{guest}               permission:meeting-guests.update
+  DELETE /api/meeting-guests/{guest}                  permission:meeting-guests.destroy
+  DELETE /api/meeting-guests/bulk-delete              permission:meeting-guests.bulkDestroy
+  PATCH  /api/meeting-guests/bulk-status              permission:meeting-guests.bulkUpdateStatus
+  PATCH  /api/meeting-guests/{guest}/status           permission:meeting-guests.changeStatus
+  GET    /api/meeting-guests/export                   permission:meeting-guests.export
+  POST   /api/meeting-guests/import                   permission:meeting-guests.import
+  GET    /api/meeting-guests/import-template          permission:meeting-guests.import
+
+Request body Store/Update:
+  {
+    "name": "Nguyễn Văn A",       // required
+    "email": "a@example.com",      // required
+    "phone": "0901234567",         // required
+    "note": "Đại diện Sở Y tế",    // optional
+    "status": "active"             // optional, default active
+  }
+
+Resource response:
+  {
+    "id", "organization_id", "name", "email", "phone", "note", "status",
+    "created_by", "updated_by", "created_at", "updated_at"
+  }
+
+
+────────────────────────────────────────────────────────────────────────────────
+C. MEETING — ATTACH GUEST KHI TẠO/SỬA
+────────────────────────────────────────────────────────────────────────────────
+Endpoint POST + PUT/PATCH /api/meetings nhận thêm field:
+
+  {
+    ...
+    "guest_ids": [12, 15, 23]   // int[] (optional)
+  }
+
+Logic BE:
+  - POST /meetings: tạo meeting + tạo invitation pending cho mỗi guest_id.
+  - PUT/PATCH /meetings/{id}:
+    * Field `guest_ids` KHÔNG gửi → giữ nguyên invitation hiện có.
+    * Field `guest_ids: [...]` → SYNC:
+      - Guest mới trong list (chưa có invitation) → tạo invitation pending.
+      - Guest cũ không còn trong list + invitation status='pending' → XÓA.
+      - Guest cũ không còn trong list + invitation status='sent' → GIỮ (audit).
+    * Field `guest_ids: []` → xóa toàn bộ invitation guest (chỉ những cái pending).
+
+Validation: mỗi guest_id phải `exists:meeting_guests,id`.
+
+
+────────────────────────────────────────────────────────────────────────────────
+D. GỬI THƯ MỜI — KHI MEETING PUBLISH
+────────────────────────────────────────────────────────────────────────────────
+Event `MeetingPublished` → listener `SendMeetingPublishedNotifications` (ShouldQueue)
+iterate invitation pending, resolve recipient theo loại:
+
+  - participant / attendee:
+    Resolve user_id → dispatch qua NotificationDispatcher (channels theo config
+    module Meeting: mail/sms/zalo/fcm).
+
+  - guest:
+    Build NotificationPayload inline (subject + body text/html với meeting.title
+    + start_time) → gửi qua NotificationService::send() trực tiếp:
+      * Mail channel: dùng guest.email.
+      * SMS channel: dùng guest.phone.
+      * Zalo OA + FCM: SKIP (guest không có zalo_user_id / device token).
+    Sau khi gửi: invitation.status = 'sent', sent_at = now().
+    Lỗi: status = 'failed', error_message lưu lỗi.
+
+Schedule reminder (MeetingReminderScheduler) cũng cover guest invitations theo
+config notification_event_configs.schedules (no extra FE action).
+
+
+────────────────────────────────────────────────────────────────────────────────
+E. DEDUP
+────────────────────────────────────────────────────────────────────────────────
+  - Listener track `$sentGuestIds[]` → 1 guest_id chỉ gửi 1 tin/event.
+  - Tương tự `$sentUserIds[]` cho user (đại biểu kiêm chair).
+  - Cẩn thận khi chair đồng thời có participant entry + guest entry trùng
+    contact: hiện BE coi như 2 recipient khác nhau (chair gửi qua user channels,
+    guest gửi qua raw email/SMS). FE warn admin nếu tạo guest trùng user.
+
+
+────────────────────────────────────────────────────────────────────────────────
+F. IMPORT EXCEL
+────────────────────────────────────────────────────────────────────────────────
+POST /api/meeting-guests/import (multipart file)
+
+  Cột bắt buộc: name, email, phone
+  Cột không bắt buộc: note, status (mặc định active)
+
+Tải mẫu:
+  GET /api/meeting-guests/import-template → file Excel với heading sẵn.
+
+
+────────────────────────────────────────────────────────────────────────────────
+G. FE — VIỆC CẦN LÀM
+────────────────────────────────────────────────────────────────────────────────
+1. Trang Quản trị > Khách mời: CRUD list (tương tự /meeting-attendees), kèm
+   import/export Excel.
+
+2. Form tạo/sửa meeting: bổ sung multi-select "Khách mời" → source dropdown từ
+   GET /api/meeting-guests?status=active. Submit attach `guest_ids: int[]`.
+
+3. UI hiển thị guest list trong chi tiết meeting (admin view):
+   - Có thể gọi GET /api/meetings/{id} → BE chưa expose `guests` relation trong
+     resource (chỉ qua `meeting_invitations` table). FE filter từ list invitations
+     nếu cần, hoặc đợi BE bổ sung field sau.

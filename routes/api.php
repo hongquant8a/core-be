@@ -148,6 +148,9 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
     Route::prefix('meeting-attendees')->middleware('ensure.route.org')->group(function () {
         require base_path('app/Modules/Meeting/Routes/meeting_attendee.php');
     });
+    Route::prefix('meeting-guests')->middleware('ensure.route.org')->group(function () {
+        require base_path('app/Modules/Meeting/Routes/meeting_guest.php');
+    });
     Route::prefix('meeting-agendas')->middleware('ensure.route.org')->group(function () {
         require base_path('app/Modules/Meeting/Routes/meeting_agenda.php');
     });
