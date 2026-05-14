@@ -5,6 +5,7 @@ namespace App\Services\Notification\ContentBuilders;
 use App\Modules\Core\Models\User;
 use App\Modules\Meeting\Models\Meeting;
 use App\Services\Notification\Contracts\ContentBuilder;
+use App\Services\Notification\ContentBuilders\Concerns\BuildsFrontendUrl;
 use App\Services\Notification\DTOs\NotificationPayload;
 use App\Services\Notification\DTOs\Recipient;
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +13,8 @@ use Illuminate\Support\Str;
 
 class MeetingPublishedContentBuilder implements ContentBuilder
 {
+    use BuildsFrontendUrl;
+
     public function build(string $channelKey, User $recipient, Model $notifiable, mixed ...$extraArgs): ?NotificationPayload
     {
         if (! $notifiable instanceof Meeting) {
@@ -45,8 +48,9 @@ class MeetingPublishedContentBuilder implements ContentBuilder
     {
         if ($notifiable instanceof Meeting) {
             return [
-                'url' => "/meetings/{$notifiable->id}",
+                'url' => $this->meetingFrontendUrl($notifiable),
                 'meeting_id' => $notifiable->id,
+                'event' => 'meeting_published',
             ];
         }
 
@@ -59,7 +63,8 @@ class MeetingPublishedContentBuilder implements ContentBuilder
             return null;
         }
         $start = $meeting->start_time?->format('d/m/Y H:i') ?? '';
-        $text = "Ban duoc moi tham du cuoc hop: {$meeting->title}. Thoi gian: {$start}.";
+        $url = $this->meetingFrontendUrl($meeting);
+        $text = "Ban duoc moi tham du cuoc hop: {$meeting->title}. Thoi gian: {$start}. Xem chi tiet: {$url}";
 
         return new NotificationPayload(
             channels: ['sms'],
@@ -74,12 +79,13 @@ class MeetingPublishedContentBuilder implements ContentBuilder
             return null;
         }
 
-        // Preload relations cho blade template tránh N+1 trong vòng dispatch.
         $meeting->loadMissing(['meetingLocation', 'meetingType']);
+        $url = $this->meetingFrontendUrl($meeting);
 
         $html = view('notifications.meeting_published.email', [
             'recipient' => $recipient,
             'meeting' => $meeting,
+            'url' => $url,
         ])->render();
 
         return new NotificationPayload(
@@ -95,9 +101,9 @@ class MeetingPublishedContentBuilder implements ContentBuilder
         if (! $recipient->zalo_user_id) {
             return null;
         }
-
         $start = $meeting->start_time?->format('d/m/Y H:i') ?? '';
-        $text = "Bạn được mời tham dự cuộc họp: {$meeting->title}.".($start ? " Thời gian: {$start}." : '');
+        $url = $this->meetingFrontendUrl($meeting);
+        $text = "Bạn được mời tham dự cuộc họp: {$meeting->title}.".($start ? " Thời gian: {$start}." : '')." Xem chi tiết: {$url}";
 
         return new NotificationPayload(
             channels: ['zalo'],
@@ -106,6 +112,7 @@ class MeetingPublishedContentBuilder implements ContentBuilder
             context: [
                 'customer_name' => $recipient->name,
                 'meeting_title' => $meeting->title,
+                'url' => $url,
                 'event' => 'meeting_published',
             ],
         );
@@ -124,7 +131,7 @@ class MeetingPublishedContentBuilder implements ContentBuilder
             content: "Cuộc họp mới: {$meeting->title}",
             subject: 'Mời họp',
             context: [
-                'url' => "/meetings/{$meeting->id}",
+                'url' => $this->meetingFrontendUrl($meeting),
                 'type' => 'meeting_published',
             ],
         );

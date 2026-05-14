@@ -34,4 +34,7 @@
     </table>
 
     <p class="action-note">Đề nghị Quý vị tham dự ngay tại địa điểm/đường dẫn trên.</p>
+    @isset($url)
+        <p class="action-note">Xem chi tiết: <a href="{{ $url }}">{{ $url }}</a></p>
+    @endisset
 @endsection

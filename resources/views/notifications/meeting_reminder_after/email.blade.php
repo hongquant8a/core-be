@@ -40,4 +40,7 @@
     </table>
 
     <p class="action-note">Đề nghị Quý vị tra cứu biên bản, tài liệu kết luận và các nhiệm vụ phát sinh trên hệ thống.</p>
+    @isset($url)
+        <p class="action-note">Xem chi tiết: <a href="{{ $url }}">{{ $url }}</a></p>
+    @endisset
 @endsection

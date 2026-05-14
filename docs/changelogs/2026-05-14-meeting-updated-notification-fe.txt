@@ -122,7 +122,29 @@ F. TÁC ĐỘNG FE
 
 
 ────────────────────────────────────────────────────────────────────────────────
-G. EDGE CASES
+G. URL DEEP-LINK ÁP DỤNG TOÀN MODULE MEETING
+────────────────────────────────────────────────────────────────────────────────
+KHÔNG chỉ event `meeting_updated` — TOÀN BỘ notification của module Meeting
+giờ đều kèm URL FE trong mọi channel (Mail / SMS / Zalo OA / FCM):
+
+  - meeting_published          (đã ban hành)
+  - meeting_updated            (cập nhật thông tin)
+  - meeting_reminder_before    (nhắc trước)
+  - meeting_reminder_on        (đến giờ)
+  - meeting_reminder_after     (đã kết thúc)
+
+Tất cả ContentBuilders dùng chung trait `BuildsFrontendUrl::meetingFrontendUrl()`.
+URL: `{APP_FRONTEND_URL}/meeting/{id}` (singular path).
+
+Mail templates (Blade) bổ sung `@isset($url)` block — render anchor "Xem chi tiết"
+nếu builder pass `$url` xuống view.
+
+inAppContext của 3 builder cũ giờ trả `url` absolute (trước là `/meetings/{id}`
+relative), giúp FE click thẳng notification trong inbox.
+
+
+────────────────────────────────────────────────────────────────────────────────
+H. EDGE CASES
 ────────────────────────────────────────────────────────────────────────────────
 - Meeting status = draft → admin update → KHÔNG fire (vì chưa published).
 - Meeting status changes draft → published → FIRE meeting_published (event cũ),

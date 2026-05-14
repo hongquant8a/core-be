@@ -40,4 +40,7 @@
     </table>
 
     <p class="action-note">Đề nghị Quý vị sắp xếp, bố trí thời gian để tham dự đúng giờ.</p>
+    @isset($url)
+        <p class="action-note">Xem chi tiết: <a href="{{ $url }}">{{ $url }}</a></p>
+    @endisset
 @endsection

@@ -5,6 +5,7 @@ namespace App\Services\Notification\ContentBuilders;
 use App\Modules\Core\Models\User;
 use App\Modules\Meeting\Models\Meeting;
 use App\Services\Notification\Contracts\ContentBuilder;
+use App\Services\Notification\ContentBuilders\Concerns\BuildsFrontendUrl;
 use App\Services\Notification\DTOs\NotificationPayload;
 use App\Services\Notification\DTOs\Recipient;
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +13,8 @@ use Illuminate\Support\Str;
 
 class MeetingReminderContentBuilder implements ContentBuilder
 {
+    use BuildsFrontendUrl;
+
     /**
      * @param  string  $moment  one of: 'before', 'on', 'after'
      */
@@ -61,9 +64,10 @@ class MeetingReminderContentBuilder implements ContentBuilder
     {
         if ($notifiable instanceof Meeting) {
             return [
-                'url' => "/meetings/{$notifiable->id}",
+                'url' => $this->meetingFrontendUrl($notifiable),
                 'meeting_id' => $notifiable->id,
                 'moment' => $this->moment,
+                'event' => "meeting_reminder_{$this->moment}",
             ];
         }
 
@@ -76,11 +80,12 @@ class MeetingReminderContentBuilder implements ContentBuilder
             return null;
         }
         $start = $meeting->start_time?->format('d/m/Y H:i') ?? '';
+        $url = $this->meetingFrontendUrl($meeting);
         $text = match ($this->moment) {
-            'before' => "Sap hop: {$meeting->title} ({$start}).",
-            'on' => "Den gio hop: {$meeting->title}.",
-            'after' => "Cuoc hop {$meeting->title} da ket thuc.",
-            default => "Nhac hop: {$meeting->title}.",
+            'before' => "Sap hop: {$meeting->title} ({$start}). Xem: {$url}",
+            'on' => "Den gio hop: {$meeting->title}. Xem: {$url}",
+            'after' => "Cuoc hop {$meeting->title} da ket thuc. Xem: {$url}",
+            default => "Nhac hop: {$meeting->title}. Xem: {$url}",
         };
 
         return new NotificationPayload(
@@ -96,12 +101,13 @@ class MeetingReminderContentBuilder implements ContentBuilder
             return null;
         }
 
-        // Preload relations cho blade template tránh N+1 khi render trong vòng dispatch.
         $meeting->loadMissing(['meetingLocation', 'meetingType']);
+        $url = $this->meetingFrontendUrl($meeting);
 
         $html = view("notifications.meeting_reminder_{$this->moment}.email", [
             'recipient' => $recipient,
             'meeting' => $meeting,
+            'url' => $url,
         ])->render();
 
         $subject = match ($this->moment) {
@@ -126,13 +132,14 @@ class MeetingReminderContentBuilder implements ContentBuilder
         }
 
         $start = $meeting->start_time?->format('d/m/Y H:i') ?? '';
+        $url = $this->meetingFrontendUrl($meeting);
         $prefix = match ($this->moment) {
             'before' => 'Nhắc cuộc họp sắp diễn ra',
             'on' => 'Cuộc họp đã đến giờ',
             'after' => 'Cuộc họp đã kết thúc',
             default => 'Nhắc lịch họp',
         };
-        $text = "{$prefix}: {$meeting->title}.".($start ? " Thời gian: {$start}." : '');
+        $text = "{$prefix}: {$meeting->title}.".($start ? " Thời gian: {$start}." : '')." Xem chi tiết: {$url}";
 
         return new NotificationPayload(
             channels: ['zalo'],
@@ -141,6 +148,7 @@ class MeetingReminderContentBuilder implements ContentBuilder
             context: [
                 'customer_name' => $recipient->name,
                 'meeting_title' => $meeting->title,
+                'url' => $url,
                 'event' => "meeting_reminder_{$this->moment}",
             ],
         );
@@ -159,7 +167,7 @@ class MeetingReminderContentBuilder implements ContentBuilder
             content: $this->shortBody($recipient, $meeting),
             subject: $this->title($recipient, $meeting),
             context: [
-                'url' => "/meetings/{$meeting->id}",
+                'url' => $this->meetingFrontendUrl($meeting),
                 'type' => "meeting_reminder_{$this->moment}",
             ],
         );

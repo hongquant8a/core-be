@@ -5,6 +5,7 @@ namespace App\Services\Notification\ContentBuilders;
 use App\Modules\Core\Models\User;
 use App\Modules\Meeting\Models\Meeting;
 use App\Services\Notification\Contracts\ContentBuilder;
+use App\Services\Notification\ContentBuilders\Concerns\BuildsFrontendUrl;
 use App\Services\Notification\DTOs\NotificationPayload;
 use App\Services\Notification\DTOs\Recipient;
 use Illuminate\Database\Eloquent\Model;
@@ -18,6 +19,8 @@ use Illuminate\Support\Str;
  */
 class MeetingUpdatedContentBuilder implements ContentBuilder
 {
+    use BuildsFrontendUrl;
+
     public function build(string $channelKey, User $recipient, Model $notifiable, mixed ...$extraArgs): ?NotificationPayload
     {
         if (! $notifiable instanceof Meeting) {
@@ -51,7 +54,7 @@ class MeetingUpdatedContentBuilder implements ContentBuilder
     {
         if ($notifiable instanceof Meeting) {
             return [
-                'url' => $this->buildUrl($notifiable),
+                'url' => $this->meetingFrontendUrl($notifiable),
                 'meeting_id' => $notifiable->id,
                 'event' => 'meeting_updated',
             ];
@@ -65,7 +68,7 @@ class MeetingUpdatedContentBuilder implements ContentBuilder
         if (! $recipient->phone) {
             return null;
         }
-        $url = $this->buildUrl($meeting);
+        $url = $this->meetingFrontendUrl($meeting);
         $text = "Cuoc hop '{$meeting->title}' co thong tin cap nhat. Xem chi tiet: {$url}";
 
         return new NotificationPayload(
@@ -82,7 +85,7 @@ class MeetingUpdatedContentBuilder implements ContentBuilder
         }
 
         $meeting->loadMissing(['meetingLocation', 'meetingType']);
-        $url = $this->buildUrl($meeting);
+        $url = $this->meetingFrontendUrl($meeting);
 
         $html = view('notifications.meeting_updated.email', [
             'recipient' => $recipient,
@@ -103,7 +106,7 @@ class MeetingUpdatedContentBuilder implements ContentBuilder
         if (! $recipient->zalo_user_id) {
             return null;
         }
-        $url = $this->buildUrl($meeting);
+        $url = $this->meetingFrontendUrl($meeting);
         $text = "Cuộc họp '{$meeting->title}' có thông tin cập nhật. Xem chi tiết: {$url}";
 
         return new NotificationPayload(
@@ -125,7 +128,7 @@ class MeetingUpdatedContentBuilder implements ContentBuilder
         if (empty($tokens)) {
             return null;
         }
-        $url = $this->buildUrl($meeting);
+        $url = $this->meetingFrontendUrl($meeting);
 
         return new NotificationPayload(
             channels: ['fcm'],
@@ -139,14 +142,4 @@ class MeetingUpdatedContentBuilder implements ContentBuilder
         );
     }
 
-    /**
-     * URL FE chi tiết meeting — `{APP_FRONTEND_URL}/meeting/{id}`.
-     * Path FE singular (/meeting/, không /meetings/).
-     */
-    private function buildUrl(Meeting $meeting): string
-    {
-        $base = rtrim((string) config('app.frontend_url'), '/');
-
-        return $base."/meeting/{$meeting->id}";
-    }
 }
