@@ -1,0 +1,41 @@
+================================================================================
+BE CHANGELOG — 2026-05-14 — Meeting: soft delete
+================================================================================
+
+TÓM TẮT
+─────────
+Cuộc họp giờ xóa mềm (giữ `deleted_at` thay vì xóa cứng). Đã xóa = không xuất
+hiện ở mọi query mặc định. FE KHÔNG cần đổi gì — DELETE endpoint vẫn return
+204/200 như cũ.
+
+
+────────────────────────────────────────────────────────────────────────────────
+A. SCHEMA
+────────────────────────────────────────────────────────────────────────────────
+Migration: 2026_05_14_135317_add_soft_deletes_to_meetings_table
+Cột thêm: `meetings.deleted_at` (TIMESTAMP NULL).
+
+
+────────────────────────────────────────────────────────────────────────────────
+B. BEHAVIOR
+────────────────────────────────────────────────────────────────────────────────
+- DELETE /api/meetings/{meeting}            → set `deleted_at = now()`. Không
+                                              xóa data sub-resource (agendas,
+                                              documents, participants, ...).
+- GET    /api/meetings                       → bỏ qua meeting đã deleted.
+- GET    /api/meetings/{meeting}             → 404 nếu meeting đã deleted.
+- GET    /api/meetings/stats                 → counter không tính meeting deleted.
+- GET    /api/public/meetings                → cũng không trả meeting deleted.
+
+Sub-resources (meeting-agendas, meeting-documents, ...) tham chiếu qua
+`meeting_id` vẫn còn trong DB. Khi query qua relation `meeting()` → Laravel
+trả null nếu meeting đã deleted (vì global scope ẩn). FE tolerate null là OK.
+
+KHÔNG có endpoint restore. Lỡ xóa nhầm → admin restore bằng DB query trực tiếp.
+
+
+────────────────────────────────────────────────────────────────────────────────
+C. KHÔNG ẢNH HƯỞNG
+────────────────────────────────────────────────────────────────────────────────
+- Mọi endpoint hiện hành không đổi URL hay response format.
+- FE không cần cập nhật gì.

@@ -5,10 +5,12 @@ namespace App\Modules\Meeting\Models;
 use App\Modules\Core\Models\TenantModel;
 use App\Modules\Core\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Meeting extends TenantModel
 {
     use HasFactory;
+    use SoftDeletes;
 
     protected $fillable = [
         'organization_id',
