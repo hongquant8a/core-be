@@ -6,11 +6,16 @@ use App\Modules\Core\Models\TenantModel;
 use App\Modules\Core\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Meeting extends TenantModel
+class Meeting extends TenantModel implements HasMedia
 {
     use HasFactory;
+    use InteractsWithMedia;
     use SoftDeletes;
+
+    public const COLLECTION_PROJECTOR = 'meeting-projector';
 
     protected $fillable = [
         'organization_id',
@@ -32,6 +37,7 @@ class Meeting extends TenantModel
         'current_meeting_agenda_id',
         'current_meeting_discussion_registration_id',
         'qr_manager_user_id',
+        'projector_image_media_id',
         'created_by',
         'updated_by',
         'checkin_token',
@@ -103,6 +109,20 @@ class Meeting extends TenantModel
     public function qrManager()
     {
         return $this->belongsTo(User::class, 'qr_manager_user_id');
+    }
+
+    /**
+     * Background riêng cho cuộc họp (Tab 8 màn chiếu). Nếu null → FE fallback sang
+     * MeetingSetting.projector_image_media_id của tổ chức.
+     */
+    public function projectorImage()
+    {
+        return $this->belongsTo(\Spatie\MediaLibrary\MediaCollections\Models\Media::class, 'projector_image_media_id');
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection(self::COLLECTION_PROJECTOR)->singleFile();
     }
 
     public function participants()

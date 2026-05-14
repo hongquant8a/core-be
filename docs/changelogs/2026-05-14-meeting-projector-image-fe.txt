@@ -1,0 +1,66 @@
+================================================================================
+BE CHANGELOG — 2026-05-14 — Meeting: projector_image per meeting
+================================================================================
+
+TÓM TẮT
+─────────
+Mỗi cuộc họp có thể đăng tải ảnh nền màn chiếu riêng (Tab 8 Màn chiếu).
+Nếu meeting không cấu hình → FE fallback sang ảnh mặc định của tổ chức
+(`MeetingSetting.projector_image_media_id`).
+
+
+────────────────────────────────────────────────────────────────────────────────
+A. SCHEMA
+────────────────────────────────────────────────────────────────────────────────
+Migration: 2026_05_14_142501_add_projector_image_media_id_to_meetings_table
+Cột thêm: `meetings.projector_image_media_id` (BIGINT UNSIGNED NULL, INDEX).
+File ảnh lưu qua Spatie media library (collection `meeting-projector`, singleFile).
+
+
+────────────────────────────────────────────────────────────────────────────────
+B. REQUEST BODY — STORE + UPDATE (multipart)
+────────────────────────────────────────────────────────────────────────────────
+POST /api/meetings + PUT/PATCH /api/meetings/{meeting}
+
+  - `projector_image`  : file (multipart) — jpg/jpeg/png/webp, ≤10MB. Optional.
+  - `remove_projector_image` : boolean (chỉ Update) — true = xóa ảnh hiện tại
+                               (không upload mới).
+
+Upload mới khi có sẵn ảnh → BE auto remove ảnh cũ trước khi save (replace).
+FE re-submit body có `projector_image: "<url string>"` → BE auto strip (validate
+chỉ accept UploadedFile, không validate URL string).
+
+
+────────────────────────────────────────────────────────────────────────────────
+C. RESOURCE RESPONSE
+────────────────────────────────────────────────────────────────────────────────
+GET /api/meetings/{meeting} (và mọi endpoint trả MeetingResource):
+
+  {
+    ...
+    "projector_image_media_id": 42 | null,
+    "projector_image_url": "/storage/42/background.jpg" | null,
+    ...
+  }
+
+
+────────────────────────────────────────────────────────────────────────────────
+D. FALLBACK LOGIC (FE TỰ XỬ LÝ)
+────────────────────────────────────────────────────────────────────────────────
+FE logic Tab 8 Màn chiếu hoặc Tab Projector preview:
+
+  const projectorUrl =
+      meeting.projector_image_url
+      ?? meetingSetting.projector_image?.url          // GET /api/meeting-settings
+      ?? null;
+
+BE KHÔNG compute fallback. Nếu meeting không cấu hình, BE chỉ trả null →
+FE gọi MeetingSetting để lấy ảnh tổ chức.
+
+
+────────────────────────────────────────────────────────────────────────────────
+E. BACKWARD COMPAT
+────────────────────────────────────────────────────────────────────────────────
+- Meeting cũ → `projector_image_media_id` = null. Mọi meeting hiện hành dùng
+  ảnh mặc định của tổ chức như trước.
+- Endpoint URL không đổi. FE chỉ cần xử lý field mới khi cần upload ảnh riêng.

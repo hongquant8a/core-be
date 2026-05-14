@@ -2,6 +2,7 @@
 
 namespace App\Modules\Meeting\Services;
 
+use App\Modules\Core\Services\MediaService;
 use App\Modules\Meeting\Concerns\HasDocumentVisibility;
 use App\Modules\Meeting\Enums\MeetingStatusEnum;
 use App\Modules\Meeting\Exports\MeetingExport;
@@ -10,6 +11,7 @@ use App\Modules\Meeting\Models\MeetingInvitation;
 use App\Modules\Meeting\Models\MeetingParticipant;
 use App\Services\Notification\Events\MeetingPublished;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -19,6 +21,8 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 class MeetingService
 {
     use HasDocumentVisibility;
+
+    public function __construct(private MediaService $mediaService) {}
 
     /**
      * "Visible" index — endpoint dùng chung cho trang index FE:
@@ -234,21 +238,58 @@ class MeetingService
         ]);
     }
 
-    public function store(array $validated): Meeting
+    public function store(array $validated, ?UploadedFile $projectorImage = null): Meeting
     {
-        $payload = [
-            ...$validated,
-            'organization_id' => $this->resolveCurrentOrganizationId(),
-        ];
+        $storedFiles = [];
+        try {
+            return DB::transaction(function () use ($validated, $projectorImage, &$storedFiles) {
+                $payload = [
+                    ...$validated,
+                    'organization_id' => $this->resolveCurrentOrganizationId(),
+                ];
+                $meeting = Meeting::create($payload);
 
-        return Meeting::create($payload)->load(['meetingType', 'meetingLocation', 'chairperson.user', 'operator.user', 'creator.media', 'editor.media']);
+                if ($projectorImage) {
+                    $media = $this->mediaService->uploadOne($meeting, $projectorImage, Meeting::COLLECTION_PROJECTOR, ['disk' => 'public']);
+                    $storedFiles[] = ['disk' => $media->disk, 'path' => $media->getPathRelativeToRoot()];
+                    $meeting->update(['projector_image_media_id' => $media->id]);
+                }
+
+                return $meeting->load(['meetingType', 'meetingLocation', 'chairperson.user', 'operator.user', 'creator.media', 'editor.media', 'projectorImage']);
+            });
+        } catch (\Throwable $exception) {
+            $this->mediaService->cleanupStoredFiles($storedFiles);
+            throw $exception;
+        }
     }
 
-    public function update(Meeting $meeting, array $validated): Meeting
+    public function update(Meeting $meeting, array $validated, ?UploadedFile $projectorImage = null): Meeting
     {
-        $meeting->update($validated);
+        $storedFiles = [];
+        try {
+            return DB::transaction(function () use ($meeting, $validated, $projectorImage, &$storedFiles) {
+                $removeProjector = (bool) ($validated['remove_projector_image'] ?? false);
+                unset($validated['remove_projector_image']);
+                $meeting->update($validated);
 
-        return $meeting->load(['meetingType', 'meetingLocation', 'chairperson.user', 'operator.user', 'creator.media', 'editor.media']);
+                // Xóa ảnh cũ nếu remove flag bật hoặc upload mới (replace).
+                if (($removeProjector || $projectorImage) && $meeting->projector_image_media_id) {
+                    $this->mediaService->removeByIds($meeting, [$meeting->projector_image_media_id], Meeting::COLLECTION_PROJECTOR);
+                    $meeting->update(['projector_image_media_id' => null]);
+                }
+
+                if ($projectorImage) {
+                    $media = $this->mediaService->uploadOne($meeting, $projectorImage, Meeting::COLLECTION_PROJECTOR, ['disk' => 'public']);
+                    $storedFiles[] = ['disk' => $media->disk, 'path' => $media->getPathRelativeToRoot()];
+                    $meeting->update(['projector_image_media_id' => $media->id]);
+                }
+
+                return $meeting->load(['meetingType', 'meetingLocation', 'chairperson.user', 'operator.user', 'creator.media', 'editor.media', 'projectorImage']);
+            });
+        } catch (\Throwable $exception) {
+            $this->mediaService->cleanupStoredFiles($storedFiles);
+            throw $exception;
+        }
     }
 
     public function destroy(Meeting $meeting): void

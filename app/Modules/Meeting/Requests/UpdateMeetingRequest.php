@@ -12,6 +12,17 @@ class UpdateMeetingRequest extends FormRequest
         return true;
     }
 
+    /**
+     * Strip `projector_image` nếu FE gửi string URL (re-submit) thay vì UploadedFile,
+     * để validation `file` không fail.
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('projector_image') && ! $this->file('projector_image') instanceof \Illuminate\Http\UploadedFile) {
+            $this->offsetUnset('projector_image');
+        }
+    }
+
     public function rules(): array
     {
         return [
@@ -20,6 +31,8 @@ class UpdateMeetingRequest extends FormRequest
             'chairperson_meeting_attendee_id' => 'nullable|integer|exists:meeting_attendees,id',
             'operator_meeting_attendee_id' => 'nullable|integer|exists:meeting_attendees,id',
             'qr_manager_user_id' => ['nullable', 'integer', 'exists:users,id', $this->qrManagerSameOrgRule()],
+            'projector_image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:10240',
+            'remove_projector_image' => 'nullable|boolean',
             'title' => 'sometimes|string|max:255',
             'is_public' => 'sometimes|boolean',
             'content' => 'nullable|string',
@@ -79,6 +92,8 @@ class UpdateMeetingRequest extends FormRequest
             'meeting_type_id' => 'ID loại cuộc họp',
             'meeting_location_id' => 'ID địa điểm họp',
             'qr_manager_user_id' => 'Người quản lý QR điểm danh',
+            'projector_image' => 'Ảnh nền màn chiếu',
+            'remove_projector_image' => 'Xóa ảnh nền màn chiếu',
             'title' => 'Tiêu đề',
             'is_public' => 'Trạng thái công khai',
             'content' => 'Nội dung',
@@ -102,6 +117,13 @@ class UpdateMeetingRequest extends FormRequest
             'qr_manager_user_id' => [
                 'description' => 'User được giao quyền bật QR điểm danh. Phải cùng tổ chức với meeting. Null = bỏ.',
                 'example' => 5,
+            ],
+            'projector_image' => [
+                'description' => 'Ảnh nền màn chiếu mới (jpg/png/webp, ≤10MB). Sẽ thay ảnh cũ nếu có.',
+            ],
+            'remove_projector_image' => [
+                'description' => 'Xóa ảnh nền màn chiếu hiện tại (true = xóa, không upload mới).',
+                'example' => false,
             ],
             'title' => [
                 'description' => 'Tên cuộc họp.',

@@ -20,6 +20,7 @@ class StoreMeetingRequest extends FormRequest
             'chairperson_meeting_attendee_id' => 'nullable|integer|exists:meeting_attendees,id',
             'operator_meeting_attendee_id' => 'nullable|integer|exists:meeting_attendees,id',
             'qr_manager_user_id' => ['nullable', 'integer', 'exists:users,id', $this->qrManagerSameOrgRule()],
+            'projector_image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:10240',
             'title' => 'required|string|max:255',
             'is_public' => 'nullable|boolean',
             'content' => 'nullable|string',
@@ -82,6 +83,7 @@ class StoreMeetingRequest extends FormRequest
             'meeting_type_id' => 'ID loại cuộc họp',
             'meeting_location_id' => 'ID địa điểm họp',
             'qr_manager_user_id' => 'Người quản lý QR điểm danh',
+            'projector_image' => 'Ảnh nền màn chiếu',
             'title' => 'Tiêu đề',
             'is_public' => 'Trạng thái công khai',
             'content' => 'Nội dung',
@@ -107,6 +109,9 @@ class StoreMeetingRequest extends FormRequest
             'qr_manager_user_id' => [
                 'description' => 'User được giao quyền bật QR điểm danh. Phải cùng tổ chức với meeting. Nếu null → chỉ chair/op có quyền QR.',
                 'example' => 5,
+            ],
+            'projector_image' => [
+                'description' => 'Ảnh nền màn chiếu riêng cho meeting (jpg/png/webp, ≤10MB). Null = FE fallback MeetingSetting.projector_image của org.',
             ],
             'title' => [
                 'description' => 'Tên cuộc họp.',
