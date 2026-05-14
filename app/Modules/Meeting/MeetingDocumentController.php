@@ -4,6 +4,7 @@ namespace App\Modules\Meeting;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
+use App\Modules\Meeting\Models\Meeting;
 use App\Modules\Meeting\Models\MeetingDocument;
 use App\Modules\Meeting\Requests\BulkDestroyCatalogRequest;
 use App\Modules\Meeting\Requests\ReorderMeetingDocumentRequest;
@@ -12,6 +13,7 @@ use App\Modules\Meeting\Requests\UpdateMeetingDocumentRequest;
 use App\Modules\Meeting\Resources\MeetingDocumentCollection;
 use App\Modules\Meeting\Resources\MeetingDocumentResource;
 use App\Modules\Meeting\Services\MeetingDocumentService;
+use Illuminate\Support\Facades\Gate;
 
 /**
  * @group Meeting - Tài liệu họp
@@ -22,6 +24,31 @@ use App\Modules\Meeting\Services\MeetingDocumentService;
 class MeetingDocumentController extends Controller
 {
     public function __construct(private MeetingDocumentService $meetingDocumentService) {}
+
+    /**
+     * Danh sách tài liệu họp công khai của 1 cuộc họp (Tab 2 Tài liệu — guest cũng xem).
+     *
+     * Gate: MeetingPolicy::viewPublic. Chỉ trả document is_public=true.
+     *
+     * @unauthenticated
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     *
+     * @queryParam search string Từ khóa tìm kiếm theo tiêu đề tài liệu. Example: nghị quyết
+     * @queryParam limit integer Số bản ghi mỗi trang. Example: 50
+     */
+    public function publicListInMeeting(Meeting $meeting, FilterRequest $request)
+    {
+        Gate::authorize('viewPublic', $meeting);
+
+        $items = $meeting->documents()
+            ->with(['agenda', 'documentType', 'mediaFile'])
+            ->where('is_public', true)
+            ->when($request->input('search'), fn ($q, $search) => $q->where('title', 'like', '%'.$search.'%'))
+            ->paginate((int) ($request->limit ?? 50));
+
+        return $this->successCollection(new MeetingDocumentCollection($items));
+    }
 
     /**
      * Danh sách tài liệu họp công khai.

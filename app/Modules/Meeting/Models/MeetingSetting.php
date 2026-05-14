@@ -2,9 +2,9 @@
 
 namespace App\Modules\Meeting\Models;
 
+use App\Modules\Core\Models\TenantModel;
 use App\Modules\Core\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
@@ -17,7 +17,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  * Service auto find-or-create theo organization_id từ context Spatie team —
  * client không cần truyền organization_id.
  */
-class MeetingSetting extends Model implements HasMedia
+class MeetingSetting extends TenantModel implements HasMedia
 {
     use HasFactory;
     use InteractsWithMedia;

@@ -3,9 +3,9 @@
 namespace App\Modules\Meeting\Models;
 
 use App\Modules\Core\Models\NotificationSchedule;
-use Illuminate\Database\Eloquent\Model;
+use App\Modules\Core\Models\TenantModel;
 
-class MeetingReminder extends Model
+class MeetingReminder extends TenantModel
 {
     protected $table = 'meeting_reminders';
 

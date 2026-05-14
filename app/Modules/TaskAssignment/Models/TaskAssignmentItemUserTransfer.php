@@ -2,14 +2,11 @@
 
 namespace App\Modules\TaskAssignment\Models;
 
+use App\Modules\Core\Models\TenantModel;
 use App\Modules\Core\Models\User;
-use App\Modules\Core\Traits\HasOrganizationScope;
-use Illuminate\Database\Eloquent\Model;
 
-class TaskAssignmentItemUserTransfer extends Model
+class TaskAssignmentItemUserTransfer extends TenantModel
 {
-    use HasOrganizationScope;
-
     protected $table = 'task_assignment_item_user_transfers';
 
     protected $fillable = [

@@ -4,7 +4,9 @@ namespace App\Modules\Meeting;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
+use App\Modules\Meeting\Models\Meeting;
 use App\Modules\Meeting\Models\MeetingVoteResponse;
+use App\Modules\Meeting\Models\MeetingVoteTopic;
 use App\Modules\Meeting\Requests\BulkDestroyCatalogRequest;
 use App\Modules\Meeting\Requests\StoreMeetingVoteResponseRequest;
 use App\Modules\Meeting\Requests\UpdateMeetingVoteResponseRequest;
@@ -181,6 +183,89 @@ class MeetingVoteResponseController extends Controller
 
         return \Maatwebsite\Excel\Facades\Excel::download(
             new \App\Modules\Meeting\Exports\MeetingVoteResponseSummaryExport($meetingId, $topicId),
+            'export__tong-hop-bieu-quyet.xlsx',
+        );
+    }
+
+    /**
+     * Nested route `POST /api/meetings/{meeting}/vote-topics/{meetingVoteTopic}/responses`.
+     *
+     * Gate `cast,meetingVoteTopic`: participant OR chair, NOT operator (per spec).
+     * Service auto-derive participant từ auth user qua topic.meeting_id.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     * @urlParam meetingVoteTopic integer required ID chương trình biểu quyết. Example: 1
+     *
+     * @bodyParam option string required Lựa chọn (agree|disagree|approve|reject|abstain). Example: agree
+     */
+    public function castInTopic(Meeting $meeting, MeetingVoteTopic $meetingVoteTopic, StoreMeetingVoteResponseRequest $request)
+    {
+        $validated = $request->validated();
+        $validated['meeting_vote_topic_id'] = $meetingVoteTopic->id;
+        $item = $this->meetingVoteResponseService->store($validated);
+
+        return $this->successResource(new MeetingVoteResponseResource($item), 'Ghi nhận phiếu biểu quyết thành công!', 201);
+    }
+
+    /**
+     * Nested route `GET /api/meetings/{meeting}/vote-responses/stats` — gate operate (chair/op).
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     */
+    public function statsInMeeting(Meeting $meeting, FilterRequest $request)
+    {
+        $filters = array_merge($request->all(), ['meeting_id' => $meeting->id]);
+
+        return $this->success($this->meetingVoteResponseService->stats($filters));
+    }
+
+    /**
+     * Nested route `GET /api/meetings/{meeting}/vote-responses` — gate operate.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     *
+     * @queryParam meeting_vote_topic_id integer Lọc theo topic. Example: 1
+     */
+    public function indexInMeeting(Meeting $meeting, FilterRequest $request)
+    {
+        $filters = array_merge($request->all(), ['meeting_id' => $meeting->id]);
+        $items = $this->meetingVoteResponseService->index($filters, (int) ($request->limit ?? 50));
+
+        return $this->successCollection(MeetingVoteResponseResource::collection($items));
+    }
+
+    /**
+     * Nested export — `GET /api/meetings/{meeting}/vote-responses/export` — gate operate.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     *
+     * @queryParam meeting_vote_topic_id integer required ID topic. Example: 1
+     */
+    public function exportInMeeting(Meeting $meeting, FilterRequest $request)
+    {
+        $request->validate(['meeting_vote_topic_id' => 'required|integer|exists:meeting_vote_topics,id']);
+        $topicId = (int) $request->input('meeting_vote_topic_id');
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Modules\Meeting\Exports\MeetingVoteResponseDetailExport($topicId),
+            'export__chi-tiet-bieu-quyet.xlsx',
+        );
+    }
+
+    /**
+     * Nested export summary — `GET /api/meetings/{meeting}/vote-responses/export-summary` — gate operate.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     *
+     * @queryParam meeting_vote_topic_id integer ID topic (optional, nếu không thì tất cả của meeting). Example: 1
+     */
+    public function exportSummaryInMeeting(Meeting $meeting, FilterRequest $request)
+    {
+        $request->validate(['meeting_vote_topic_id' => 'nullable|integer|exists:meeting_vote_topics,id']);
+        $topicId = $request->filled('meeting_vote_topic_id') ? (int) $request->input('meeting_vote_topic_id') : null;
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Modules\Meeting\Exports\MeetingVoteResponseSummaryExport($meeting->id, $topicId),
             'export__tong-hop-bieu-quyet.xlsx',
         );
     }

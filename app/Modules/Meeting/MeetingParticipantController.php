@@ -4,6 +4,7 @@ namespace App\Modules\Meeting;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
+use App\Modules\Meeting\Models\Meeting;
 use App\Modules\Meeting\Models\MeetingParticipant;
 use App\Modules\Meeting\Requests\BulkDestroyCatalogRequest;
 use App\Modules\Meeting\Requests\RespondMeetingParticipantRequest;
@@ -132,5 +133,20 @@ class MeetingParticipantController extends Controller
         $item = $this->meetingParticipantService->respond($meetingParticipant, $request->validated());
 
         return $this->successResource(new MeetingParticipantResource($item), 'Đã ghi nhận phản hồi tham dự.');
+    }
+
+    /**
+     * Nested route `GET /api/meetings/{meeting}/participants` — gate viewParticipant.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     *
+     * @queryParam response_status string Lọc theo trạng thái phản hồi. Example: accepted
+     */
+    public function indexInMeeting(Meeting $meeting, FilterRequest $request)
+    {
+        $filters = array_merge($request->all(), ['meeting_id' => $meeting->id]);
+        $items = $this->meetingParticipantService->index($filters, (int) ($request->limit ?? 100));
+
+        return $this->successCollection(new MeetingParticipantCollection($items));
     }
 }

@@ -2,11 +2,11 @@
 
 namespace App\Modules\Meeting\Models;
 
+use App\Modules\Core\Models\TenantModel;
 use App\Modules\Core\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 
-class MeetingVoteTopic extends Model
+class MeetingVoteTopic extends TenantModel
 {
     use HasFactory;
 
@@ -103,10 +103,7 @@ class MeetingVoteTopic extends Model
 
     public function scopeFilter($query, array $filters)
     {
-        $organizationId = function_exists('getPermissionsTeamId') ? getPermissionsTeamId() : null;
-
-        $query->when($organizationId, fn ($q, $organizationId) => $q->where('organization_id', (int) $organizationId))
-            ->when($filters['meeting_id'] ?? null, fn ($q, $meetingId) => $q->where('meeting_id', $meetingId))
+        $query->when($filters['meeting_id'] ?? null, fn ($q, $meetingId) => $q->where('meeting_id', $meetingId))
             // Status đã bỏ field — derive từ opened_at + closed_at + duration_minutes (timeout):
             //  draft  = opened_at IS NULL
             //  opened = opened_at IS NOT NULL AND closed_at IS NULL AND chưa hết duration

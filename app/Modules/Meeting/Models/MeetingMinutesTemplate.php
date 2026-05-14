@@ -2,9 +2,9 @@
 
 namespace App\Modules\Meeting\Models;
 
+use App\Modules\Core\Models\TenantModel;
 use App\Modules\Core\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
@@ -12,12 +12,13 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  * Template biên bản họp (.docx upload bởi admin). Service phpword TemplateProcessor
  * replace ${variable} bằng data thật của meeting khi user "Xuất biên bản".
  */
-class MeetingMinutesTemplate extends Model implements HasMedia
+class MeetingMinutesTemplate extends TenantModel implements HasMedia
 {
     use HasFactory;
     use InteractsWithMedia;
 
     protected $fillable = [
+        'organization_id',
         'name',
         'description',
         'media_id',
@@ -59,7 +60,7 @@ class MeetingMinutesTemplate extends Model implements HasMedia
 
     public function scopeFilter($query, array $filters)
     {
-        // KHÔNG scope theo organization — template per module Meeting, dùng chung mọi org.
+        // Scope organization auto qua TenantModel/HasOrganizationScope global scope.
         $query->when($filters['search'] ?? null, fn ($q, $search) => $q->where('name', 'like', '%'.$search.'%'))
             ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
             ->when($filters['sort_by'] ?? 'updated_at', function ($q, $sortBy) use ($filters) {

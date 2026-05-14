@@ -2,13 +2,11 @@
 
 namespace App\Modules\TaskAssignment\Models;
 
+use App\Modules\Core\Models\TenantModel;
 use App\Modules\Core\Models\User;
-use App\Modules\Core\Traits\HasOrganizationScope;
-use Illuminate\Database\Eloquent\Model;
 
-class TaskAssignmentUser extends Model
+class TaskAssignmentUser extends TenantModel
 {
-    use HasOrganizationScope;
 
     protected $table = 'task_assignment_users';
 

@@ -130,6 +130,7 @@ class MeetingDocumentService
         DB::transaction(function () use ($meetingDocument, $request, $counterColumn, $logKind) {
             $meetingDocument->increment($counterColumn);
             MeetingView::create([
+                'organization_id' => $meetingDocument->organization_id,
                 'meeting_id' => $meetingDocument->meeting_id,
                 'meeting_document_id' => $meetingDocument->id,
                 'user_id' => auth()->id(),

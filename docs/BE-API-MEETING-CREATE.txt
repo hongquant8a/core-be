@@ -1,0 +1,265 @@
+================================================================================
+DANH SÁCH API — Flow TẠO / SỬA cuộc họp (Admin / Staff CRUD)
+File này liệt kê toàn bộ endpoint FE gọi khi user vào trang tạo cuộc họp,
+qua từng section (Thông tin / Đại biểu / Chương trình / Biểu quyết / Tài liệu)
+và khi publish / huỷ cuộc họp.
+================================================================================
+
+CHÚ THÍCH
+- Tất cả endpoint bắt đầu bằng "/api/...".
+- Response chuẩn: { success: bool, data: any, message?: string }.
+- Limit cap: BE reject limit > 100.
+- Form save chia theo section, mỗi section batch nhiều call (create/update/delete
+  song song) để giảm round-trip. Thứ tự save tổng:
+    Meeting (POST hoặc PATCH) → Participants → Agendas → Vote Topics → Documents
+- Edit mode: tải toàn bộ data hiện tại của meeting + các section khi onMounted.
+
+
+================================================================================
+A. LOAD INITIAL (DROPDOWN OPTIONS + DATA EDIT)
+================================================================================
+
+------------------------------------------------------------
+A1. Section "Thông tin chung" (MeetingInfoSection.vue)
+------------------------------------------------------------
+GET  /api/meeting-types/public-options
+     - Trigger: onMounted
+     - Mục đích: dropdown loại cuộc họp
+     - Response: { success, data: [{ id, name, code }] }
+
+GET  /api/meeting-locations/public-options
+     - Trigger: onMounted
+     - Mục đích: dropdown địa điểm
+     - Response: { success, data: [{ id, name, address? }] }
+
+------------------------------------------------------------
+A2. Section "Đại biểu" (MeetingParticipantsSection.vue)
+------------------------------------------------------------
+GET  /api/meeting-attendees?status=active&limit=100
+     - Trigger: onMounted (MeetingForm)
+     - Mục đích: dropdown chọn đại biểu (gồm cả chair/operator picker)
+     - Response: list { id, full_name, email, organization, department }
+
+GET  /api/meeting-attendee-groups?limit=100&status=active
+     - Trigger: lazy — khi mở popup "Chọn nhóm" (quick-pick)
+     - Mục đích: list nhóm đại biểu có sẵn
+
+GET  /api/meeting-attendee-groups/{groupId}/attendees?limit=100
+     - Trigger: chọn 1 group trong quick-pick
+     - Mục đích: import toàn bộ thành viên nhóm vào bảng đại biểu
+     - Response: list attendees
+
+------------------------------------------------------------
+A3. Section "Tài liệu" (MeetingDocumentsSection.vue)
+------------------------------------------------------------
+GET  /api/meeting-document-types/public-options
+     - Trigger: onMounted
+     - Mục đích: dropdown loại tài liệu (báo cáo / tờ trình / nghị quyết...)
+
+------------------------------------------------------------
+A4. Edit mode — tải data hiện tại
+------------------------------------------------------------
+GET  /api/meetings/{id}
+     - Trigger: onMounted (khi route param có id)
+     - Mục đích: lấy bản ghi meeting hiện tại để fill form
+
+GET  /api/meeting-agendas?meeting_id={id}&sort_by=sort_order&sort_order=asc&limit=100
+     - Trigger: onMounted (edit) — section Chương trình
+
+GET  /api/meeting-vote-topics?meeting_id={id}&sort_by=sort_order&sort_order=asc&limit=100
+     - Trigger: onMounted (edit) — section Biểu quyết
+
+GET  /api/meeting-documents?meeting_id={id}&sort_by=sort_order&sort_order=asc&limit=100
+     - Trigger: onMounted (edit) — section Tài liệu
+
+  (Participants không cần GET riêng vì /api/meetings/{id} trả kèm)
+
+
+================================================================================
+B. LƯU FORM (SUBMIT)
+================================================================================
+
+------------------------------------------------------------
+B1. Lưu Meeting (create hoặc update)
+------------------------------------------------------------
+POST /api/meetings                  (create)
+PATCH /api/meetings/{id}            (update)
+     - Trigger: bấm "Lưu" / "Lưu nháp"
+     - Body chính:
+         title                                  (string, required)
+         meeting_type_id                        (int, required)
+         meeting_location_id                    (int, nullable)
+         is_public                              (bool)
+         start_time                             (datetime "HH:mm:ss DD/MM/YYYY" hoặc ISO)
+         end_time                               (datetime)
+         attendance_open_at                     (datetime nullable)
+         attendance_close_at                    (datetime nullable)
+         content                                (text/html)
+         chairperson_meeting_attendee_id        (int → MeetingAttendee.id)
+         operator_meeting_attendee_id           (int → MeetingAttendee.id)
+     - Response: { success, data: { id, ... } } — FE dùng `data.id` cho các
+       call tiếp theo (participants, agendas, votes, docs).
+
+------------------------------------------------------------
+B2. Section Đại biểu — sau khi có meeting.id
+------------------------------------------------------------
+POST /api/meeting-participants
+     - Trigger: mỗi row mới được add trong UI
+     - Body: { meeting_id, meeting_attendee_id }
+     - Có thể batch (FE fire parallel cho nhiều row mới).
+
+DELETE /api/meeting-participants/{id}
+     - Trigger: mỗi row bị xoá trong UI
+     - Body: -
+
+(Không có endpoint sync 1-shot; FE diff & gọi từng row.)
+
+------------------------------------------------------------
+B3. Section Chương trình (agendas) — hierarchy + drag-drop
+------------------------------------------------------------
+POST /api/meeting-agendas
+     - Trigger: row mới được add
+     - Body:
+         meeting_id                              (int)
+         parent_id                               (int nullable — agenda cha)
+         content                                 (string)
+         start_time                              (datetime nullable)
+         end_time                                (datetime nullable)
+         person_in_charge                        (string)
+         allow_discussion_registration           (bool)
+         allow_question_registration             (bool)
+         discussion_duration_minutes             (int nullable)
+         question_duration_minutes               (int nullable)
+
+PATCH /api/meeting-agendas/{id}
+     - Trigger: row có dirty changes
+     - Body: cùng fields như POST (trừ meeting_id)
+
+DELETE /api/meeting-agendas/{id}
+     - Trigger: row bị xoá
+
+PATCH /api/meeting-agendas/reorder
+     - Trigger: kéo-thả thay đổi vị trí / parent
+     - Body: { items: [{ id, sort_order, parent_id? }] }
+
+------------------------------------------------------------
+B4. Section Biểu quyết (vote topics) — chỉ draft, không tạo response
+------------------------------------------------------------
+POST /api/meeting-vote-topics
+     - Trigger: row mới được add
+     - Body:
+         meeting_id
+         title                                   (string)
+         meeting_agenda_id                       (int nullable — gắn agenda)
+         vote_type                               (enum: yes_no | multi_choice | rating ...)
+         ballot_mode                             (enum: open | secret)
+         duration_minutes                        (int nullable)
+         show_result_on_projector                (bool)
+         show_result_on_personal_device          (bool)
+         options                                 (array hoặc nested call tuỳ design)
+
+PATCH /api/meeting-vote-topics/{id}
+     - Trigger: row có dirty changes (CHỈ khi topic chưa open)
+     - Body: cùng fields như POST
+
+DELETE /api/meeting-vote-topics/{id}
+     - Trigger: row bị xoá (chỉ topic draft)
+
+PATCH /api/meeting-vote-topics/reorder
+     - Trigger: drag-drop
+     - Body: { items: [{ id, sort_order }] }
+
+------------------------------------------------------------
+B5. Section Tài liệu (documents)
+------------------------------------------------------------
+POST /api/meeting-documents                       (multipart/form-data)
+     - Trigger: row mới được add
+     - Form fields:
+         meeting_id
+         title
+         document_number                         (string nullable)
+         meeting_agenda_id                       (int nullable)
+         meeting_document_type_id                (int)
+         is_public                               (bool)
+         file                                    (binary, max 10MB, 1 file)
+
+POST /api/meeting-documents/{id}                  (multipart/form-data)
+     - Trigger: row có dirty changes
+     - Form fields:
+         _method=PUT                             (Laravel form-method spoofing)
+         title, document_number, meeting_agenda_id, meeting_document_type_id, is_public
+         file                                    (nếu thay file)
+         remove_file=1                           (nếu xoá file mà không thay)
+
+DELETE /api/meeting-documents/{id}
+     - Trigger: row bị xoá
+
+PATCH /api/meeting-documents/reorder
+     - Trigger: drag-drop
+     - Body: { items: [{ id, sort_order }] }
+
+
+================================================================================
+C. PUBLISH / HUỶ CUỘC HỌP
+================================================================================
+PATCH /api/meetings/{id}/status
+     - Trigger: nút "Phát hành" (publish dialog confirm)
+     - Body: { status: "published" }
+     - BE: gửi notification cho đại biểu (nếu có config), broadcast event
+       meeting.published nếu cần.
+
+PATCH /api/meetings/{id}/status
+     - Trigger: nút "Huỷ cuộc họp" (cancel dialog confirm)
+     - Body: { status: "cancelled", reason?: string }
+
+
+================================================================================
+D. ENDPOINT PHỤ (KHÔNG THUỘC FLOW CREATE NHƯNG GẦN GŨI)
+================================================================================
+- PATCH /api/meetings/{id}/lock-attendance         (operator runtime)
+- PATCH /api/meetings/{id}/unlock-attendance       (operator runtime)
+- PATCH /api/meetings/{id}/export-minutes          (xuất biên bản sau họp)
+- GET   /api/meetings/{id}/qr-token                (QR điểm danh)
+- PATCH /api/meeting-participants/{id}/respond     (đại biểu RSVP — accept/decline)
+- POST  /api/meeting-vote-topics/{id}/open         (mở phiếu runtime — Tab Operator)
+- POST  /api/meeting-vote-topics/{id}/close        (đóng phiếu runtime — Tab Operator)
+
+
+================================================================================
+E. NOTES QUAN TRỌNG CHO BE
+================================================================================
+
+1. Chair / Operator dùng `meeting_attendee_id` (MeetingAttendee.id), KHÔNG phải
+   users.id. FE chọn từ dropdown list attendees. BE cần map ngược về user_id
+   để check quyền runtime (xem useMeetingCurrentUser composable).
+
+2. Order save (FE đảm bảo):
+     POST/PATCH /api/meetings
+     → POST/DELETE /api/meeting-participants (song song)
+     → POST/PATCH/DELETE /api/meeting-agendas (song song) + reorder cuối
+     → POST/PATCH/DELETE /api/meeting-vote-topics + reorder cuối
+     → POST/PATCH/DELETE /api/meeting-documents + reorder cuối
+   Vì agenda_id cần có trước khi vote/document gắn vào nó.
+
+3. Upload file dùng FormData + Laravel form-method spoofing (_method=PUT) cho
+   update. BE accept tối đa 10MB / file, 1 file / document.
+
+4. Reorder endpoint nhận MẢNG { id, sort_order } — BE update sort_order theo
+   lô, không cần update từng row. Với agendas cần kèm `parent_id` để hỗ trợ
+   chuyển cấp khi drag.
+
+5. Vote topic update CHỈ được phép khi status=draft (chưa open). BE nên reject
+   PATCH/DELETE nếu topic đã từng open / closed (đã có response).
+
+6. Status transitions:
+     draft → published → ongoing → completed
+     draft → cancelled
+     published → cancelled
+   FE chỉ gửi { status } qua endpoint /status; BE tự validate transition.
+
+7. Sau publish, mọi thay đổi cấu hình (chair/operator, agenda content, vote
+   topic) nên broadcast WS để client đang xem trang chi tiết tự reload.
+
+================================================================================
+HẾT
+================================================================================

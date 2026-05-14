@@ -2,10 +2,10 @@
 
 namespace App\Modules\Meeting\Models;
 
+use App\Modules\Core\Models\TenantModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 
-class MeetingPersonalNote extends Model
+class MeetingPersonalNote extends TenantModel
 {
     use HasFactory;
 
@@ -35,9 +35,7 @@ class MeetingPersonalNote extends Model
 
     public function scopeFilter($query, array $filters)
     {
-        $organizationId = function_exists('getPermissionsTeamId') ? getPermissionsTeamId() : null;
-        $query->when($organizationId, fn ($q, $organizationId) => $q->where('organization_id', (int) $organizationId))
-            ->when($filters['meeting_id'] ?? null, fn ($q, $meetingId) => $q->where('meeting_id', $meetingId))
+        $query->when($filters['meeting_id'] ?? null, fn ($q, $meetingId) => $q->where('meeting_id', $meetingId))
             ->when($filters['meeting_participant_id'] ?? null, fn ($q, $participantId) => $q->where('meeting_participant_id', $participantId))
             ->when($filters['search'] ?? null, fn ($q, $search) => $q->where('content', 'like', '%'.$search.'%'))
             ->orderBy('sort_order')

@@ -2,13 +2,13 @@
 
 namespace App\Modules\Meeting\Models;
 
+use App\Modules\Core\Models\TenantModel;
 use App\Modules\Core\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
-class MeetingDocument extends Model implements HasMedia
+class MeetingDocument extends TenantModel implements HasMedia
 {
     use HasFactory;
     use InteractsWithMedia;
@@ -80,9 +80,7 @@ class MeetingDocument extends Model implements HasMedia
 
     public function scopeFilter($query, array $filters)
     {
-        $organizationId = function_exists('getPermissionsTeamId') ? getPermissionsTeamId() : null;
-        $query->when($organizationId, fn ($q, $organizationId) => $q->where('organization_id', (int) $organizationId))
-            ->when($filters['meeting_id'] ?? null, fn ($q, $meetingId) => $q->where('meeting_id', $meetingId))
+        $query->when($filters['meeting_id'] ?? null, fn ($q, $meetingId) => $q->where('meeting_id', $meetingId))
             ->when($filters['meeting_agenda_id'] ?? null, fn ($q, $agendaId) => $q->where('meeting_agenda_id', $agendaId))
             ->when($filters['meeting_document_type_id'] ?? null, fn ($q, $typeId) => $q->where('meeting_document_type_id', $typeId))
             ->when($filters['search'] ?? null, function ($q, $search) {

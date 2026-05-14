@@ -2,14 +2,13 @@
 
 namespace App\Modules\TaskAssignment\Models;
 
+use App\Modules\Core\Models\TenantModel;
 use App\Modules\Core\Models\User;
-use App\Modules\Core\Traits\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 
-class TaskAssignmentType extends Model
+class TaskAssignmentType extends TenantModel
 {
-    use HasFactory, HasOrganizationScope;
+    use HasFactory;
 
     protected static function newFactory()
     {

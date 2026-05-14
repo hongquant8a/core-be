@@ -4,6 +4,7 @@ namespace App\Modules\Meeting;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
+use App\Modules\Meeting\Models\Meeting;
 use App\Modules\Meeting\Models\MeetingDiscussionRegistration;
 use App\Modules\Meeting\Requests\ReorderMeetingDiscussionRegistrationRequest;
 use App\Modules\Meeting\Requests\StoreMeetingDiscussionRegistrationRequest;
@@ -177,5 +178,91 @@ class MeetingDiscussionRegistrationController extends Controller
         $this->meetingDiscussionRegistrationService->reorder($request->validated('items'));
 
         return $this->success(null, 'Sắp xếp danh sách đăng ký thành công!');
+    }
+
+    /**
+     * Nested route `GET /api/meetings/{meeting}/discussion-registrations/stats` — gate viewParticipant.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     */
+    public function statsInMeeting(Meeting $meeting, FilterRequest $request)
+    {
+        $filters = array_merge($request->all(), ['meeting_id' => $meeting->id]);
+
+        return $this->success($this->meetingDiscussionRegistrationService->stats($filters));
+    }
+
+    /**
+     * Nested route `GET /api/meetings/{meeting}/discussion-registrations` — gate viewParticipant.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     *
+     * @queryParam type string Lọc theo loại đăng ký. Example: discussion
+     * @queryParam status string Lọc theo trạng thái đăng ký. Example: registered
+     * @queryParam my boolean Chỉ trả về đăng ký của user đang login. Example: true
+     * @queryParam limit integer Số bản ghi mỗi trang. Example: 100
+     */
+    public function indexInMeeting(Meeting $meeting, FilterRequest $request)
+    {
+        $filters = array_merge($request->all(), ['meeting_id' => $meeting->id]);
+        $items = $this->meetingDiscussionRegistrationService->index($filters, (int) ($request->limit ?? 100));
+
+        return $this->successCollection(MeetingDiscussionRegistrationResource::collection($items));
+    }
+
+    /**
+     * Nested route `POST /api/meetings/{meeting}/discussion-registrations` — gate participate.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     *
+     * @bodyParam meeting_agenda_id integer ID chương trình họp (optional). Example: 2
+     * @bodyParam type string required Loại đăng ký (discussion | question). Example: discussion
+     * @bodyParam content string required Nội dung đăng ký. Example: Đề xuất giải pháp
+     * @bodyParam attachment file Tệp đính kèm (≤10MB).
+     */
+    public function storeInMeeting(Meeting $meeting, StoreMeetingDiscussionRegistrationRequest $request)
+    {
+        $validated = $request->validated();
+        $validated['meeting_id'] = $meeting->id;
+        $item = $this->meetingDiscussionRegistrationService->store($validated, $request->file('attachment'));
+
+        return $this->successResource(new MeetingDiscussionRegistrationResource($item), 'Đăng ký thảo luận/chất vấn thành công!', 201);
+    }
+
+    /**
+     * Nested route `PATCH /api/meetings/{meeting}/discussion-registrations/reorder` — gate operate.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     *
+     * @bodyParam items object[] required [{"id":1,"sort_order":1}, ...]
+     */
+    public function reorderInMeeting(Meeting $meeting, ReorderMeetingDiscussionRegistrationRequest $request)
+    {
+        $this->meetingDiscussionRegistrationService->reorder($request->validated('items'));
+
+        return $this->success(null, 'Sắp xếp danh sách đăng ký thành công!');
+    }
+
+    /**
+     * Nested route `GET /api/meetings/{meeting}/discussion-registrations/export` — gate operate.
+     *
+     * Xuất ra các trường: STT, Chương trình, Người đăng ký, Thời gian đăng ký, Nội dung, Trạng thái.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     *
+     * @queryParam type string required Loại đăng ký (discussion|question). Example: discussion
+     */
+    public function exportInMeeting(Meeting $meeting, FilterRequest $request)
+    {
+        $request->validate([
+            'type' => 'required|in:discussion,question',
+        ]);
+        $type = (string) $request->input('type');
+        $fileName = $type === 'question' ? 'export__chat-van-hop.xlsx' : 'export__thao-luan-hop.xlsx';
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Modules\Meeting\Exports\MeetingDiscussionRegistrationExport($meeting->id, $type),
+            $fileName,
+        );
     }
 }

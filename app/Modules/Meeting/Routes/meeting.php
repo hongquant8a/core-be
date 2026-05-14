@@ -1,7 +1,36 @@
 <?php
 
+use App\Modules\Meeting\MeetingAttendanceController;
 use App\Modules\Meeting\MeetingController;
+use App\Modules\Meeting\MeetingDiscussionRegistrationController;
+use App\Modules\Meeting\MeetingParticipantController;
+use App\Modules\Meeting\MeetingVoteResponseController;
+use App\Modules\Meeting\MeetingVoteTopicController;
 use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Meeting routes — 2 layer phân quyền
+|--------------------------------------------------------------------------
+| 1. Catalog/CRUD admin (route phẳng): Spatie permission meetings.{action}.
+|    Dùng cho admin setup khi tạo meeting + dashboard.
+|
+| 2. In-meeting / participant actions (route nested /meetings/{meeting}/...):
+|    Gate Policy. Check qua FK của meeting (chairperson_meeting_attendee_id,
+|    operator_meeting_attendee_id) + list participants → user.id.
+|
+| Quy ước ability:
+|   - can:viewParticipant,meeting   — user có role (chair/op/participant)
+|   - can:participate,meeting       — alias self-action (checkin, mark-absent, đăng ký)
+|   - can:operate,meeting           — chair/op (export, manual checkin, reorder)
+|   - can:manageAttendance,meeting  — chair/op (lock/unlock attendance)
+|   - can:endEarly,meeting          — chair/op (end early)
+|   - can:highlight,meeting         — chair/op (highlight agenda/discussion)
+|
+| KHÔNG Super Admin bypass — admin hệ thống phải có role thật trên meeting.
+*/
+
+// ───────────────────────────── 1. Catalog/CRUD admin ─────────────────────────────
 
 // Export biên bản .docx từ template — auth-only, gate MeetingPolicy::operate (chair/operator).
 Route::post('/{meeting}/export-minutes', [\App\Modules\Meeting\MeetingMinutesTemplateController::class, 'exportMinutes']);
@@ -17,14 +46,68 @@ Route::put('/{meeting}', [MeetingController::class, 'update'])->middleware('perm
 Route::patch('/{meeting}', [MeetingController::class, 'update'])->middleware('permission:meetings.update,web');
 Route::delete('/{meeting}', [MeetingController::class, 'destroy'])->middleware('permission:meetings.destroy,web');
 Route::patch('/{meeting}/status', [MeetingController::class, 'changeStatus'])->middleware('permission:meetings.changeStatus,web');
-// In-meeting control — Policy gate: chair/operator của CHÍNH meeting đó (Spatie permission cho catalog vẫn giữ).
-// THAO TÁC NHANH (Tab 7 Điều hành) — chair + operator khoá / mở khoá danh sách điểm danh.
+
+// ───────────────────── 2. In-meeting control (chair/operator) ────────────────────
+
+// Tab 7 Điều hành — thao tác nhanh.
 Route::patch('/{meeting}/lock-attendance', [MeetingController::class, 'lockAttendance'])->middleware('can:manageAttendance,meeting');
 Route::patch('/{meeting}/unlock-attendance', [MeetingController::class, 'unlockAttendance'])->middleware('can:manageAttendance,meeting');
-// Lấy QR token điểm danh — Spatie permission (role-based, không gắn với meeting cụ thể).
-Route::get('/{meeting}/qr-token', [MeetingController::class, 'qrToken'])->middleware('permission:meetings.showQrCode,web');
-// Kết thúc cuộc họp sớm — chair + operator (thư ký là người điều hành thực tế).
 Route::patch('/{meeting}/end-early', [MeetingController::class, 'endEarly'])->middleware('can:endEarly,meeting');
-// Highlight pointers cho Tab 8 màn chiếu — chair + operator chỉ định chương trình + đăng ký đang chiếu.
 Route::patch('/{meeting}/highlight-agenda', [MeetingController::class, 'highlightAgenda'])->middleware('can:highlight,meeting');
 Route::patch('/{meeting}/highlight-discussion', [MeetingController::class, 'highlightDiscussion'])->middleware('can:highlight,meeting');
+
+// Tab 5 QR — Spatie permission (role-based, không gắn với meeting cụ thể).
+Route::get('/{meeting}/qr-token', [MeetingController::class, 'qrToken'])->middleware('permission:meetings.showQrCode,web');
+
+// ─────────────────── 3. Nested sub-resources (gate policy) ───────────────────────
+
+// Tab 3 Thảo luận & Chất vấn.
+Route::prefix('{meeting}/discussion-registrations')->group(function () {
+    Route::get('/stats', [MeetingDiscussionRegistrationController::class, 'statsInMeeting'])->middleware('can:viewParticipant,meeting');
+    Route::get('/export', [MeetingDiscussionRegistrationController::class, 'exportInMeeting'])->middleware('can:operate,meeting');
+    Route::get('/', [MeetingDiscussionRegistrationController::class, 'indexInMeeting'])->middleware('can:viewParticipant,meeting');
+    Route::post('/', [MeetingDiscussionRegistrationController::class, 'storeInMeeting'])->middleware('can:participate,meeting');
+    Route::patch('/reorder', [MeetingDiscussionRegistrationController::class, 'reorderInMeeting'])->middleware('can:operate,meeting');
+    Route::get('/{meetingDiscussionRegistration}', [MeetingDiscussionRegistrationController::class, 'show'])->middleware('can:view,meetingDiscussionRegistration');
+    Route::put('/{meetingDiscussionRegistration}', [MeetingDiscussionRegistrationController::class, 'update'])->middleware('can:update,meetingDiscussionRegistration');
+    Route::patch('/{meetingDiscussionRegistration}', [MeetingDiscussionRegistrationController::class, 'update'])->middleware('can:update,meetingDiscussionRegistration');
+    Route::delete('/{meetingDiscussionRegistration}', [MeetingDiscussionRegistrationController::class, 'destroy'])->middleware('can:delete,meetingDiscussionRegistration');
+    Route::patch('/{meetingDiscussionRegistration}/complete', [MeetingDiscussionRegistrationController::class, 'complete'])->middleware('can:complete,meetingDiscussionRegistration');
+});
+
+// Tab 4 Biểu quyết — view topics (participant+), cast vote, open/close (chair/op).
+Route::prefix('{meeting}/vote-topics')->group(function () {
+    Route::get('/', [MeetingVoteTopicController::class, 'indexInMeeting'])->middleware('can:viewParticipant,meeting');
+    Route::get('/{meetingVoteTopic}', [MeetingVoteTopicController::class, 'show'])->middleware('can:view,meetingVoteTopic');
+    Route::patch('/{meetingVoteTopic}/open', [MeetingVoteTopicController::class, 'open'])->middleware('can:open,meetingVoteTopic');
+    Route::patch('/{meetingVoteTopic}/close', [MeetingVoteTopicController::class, 'close'])->middleware('can:close,meetingVoteTopic');
+    // Cast vote — gate MeetingVoteTopicPolicy::cast (participant OR chair, NOT operator).
+    Route::post('/{meetingVoteTopic}/responses', [MeetingVoteResponseController::class, 'castInTopic'])->middleware('can:cast,meetingVoteTopic');
+});
+
+// Tab 4 Biểu quyết — view responses (chair/op dashboard).
+Route::prefix('{meeting}/vote-responses')->group(function () {
+    Route::get('/stats', [MeetingVoteResponseController::class, 'statsInMeeting'])->middleware('can:operate,meeting');
+    Route::get('/export', [MeetingVoteResponseController::class, 'exportInMeeting'])->middleware('can:operate,meeting');
+    Route::get('/export-summary', [MeetingVoteResponseController::class, 'exportSummaryInMeeting'])->middleware('can:operate,meeting');
+    Route::get('/', [MeetingVoteResponseController::class, 'indexInMeeting'])->middleware('can:operate,meeting');
+});
+
+// Tab 5 Điểm danh — self checkin/markAbsent (participant); chair/op manual/approve/reject.
+Route::prefix('{meeting}/attendances')->group(function () {
+    Route::get('/stats', [MeetingAttendanceController::class, 'statsInMeeting'])->middleware('can:operate,meeting');
+    Route::get('/export', [MeetingAttendanceController::class, 'exportInMeeting'])->middleware('can:operate,meeting');
+    Route::get('/', [MeetingAttendanceController::class, 'indexInMeeting'])->middleware('can:operate,meeting');
+    Route::post('/checkin', [MeetingAttendanceController::class, 'checkinInMeeting'])->middleware('can:participate,meeting');
+    Route::post('/checkin-by-token', [MeetingAttendanceController::class, 'checkinByTokenInMeeting'])->middleware('can:participate,meeting');
+    Route::post('/mark-absent', [MeetingAttendanceController::class, 'markAbsentInMeeting'])->middleware('can:participate,meeting');
+    Route::post('/manual-checkin', [MeetingAttendanceController::class, 'manualCheckinInMeeting'])->middleware('can:manageAttendance,meeting');
+    Route::patch('/{meetingAttendance}/approve', [MeetingAttendanceController::class, 'approve'])->middleware('can:approve,meetingAttendance');
+    Route::patch('/{meetingAttendance}/reject', [MeetingAttendanceController::class, 'reject'])->middleware('can:reject,meetingAttendance');
+});
+
+// Participants — list participant+ xem; self respond invitation.
+Route::prefix('{meeting}/participants')->group(function () {
+    Route::get('/', [MeetingParticipantController::class, 'indexInMeeting'])->middleware('can:viewParticipant,meeting');
+    Route::patch('/{meetingParticipant}/respond', [MeetingParticipantController::class, 'respond'])->middleware('can:respond,meetingParticipant');
+});

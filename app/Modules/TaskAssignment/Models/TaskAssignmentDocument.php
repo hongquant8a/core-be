@@ -2,16 +2,15 @@
 
 namespace App\Modules\TaskAssignment\Models;
 
+use App\Modules\Core\Models\TenantModel;
 use App\Modules\Core\Models\User;
-use App\Modules\Core\Traits\HasOrganizationScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
-class TaskAssignmentDocument extends Model implements HasMedia
+class TaskAssignmentDocument extends TenantModel implements HasMedia
 {
-    use HasFactory, HasOrganizationScope;
+    use HasFactory;
     use InteractsWithMedia;
 
     protected static function newFactory()

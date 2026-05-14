@@ -4,6 +4,7 @@ namespace App\Modules\Meeting;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
+use App\Modules\Meeting\Models\Meeting;
 use App\Modules\Meeting\Models\MeetingVoteTopic;
 use App\Modules\Meeting\Requests\BulkDestroyCatalogRequest;
 use App\Modules\Meeting\Requests\OpenMeetingVoteTopicRequest;
@@ -159,5 +160,21 @@ class MeetingVoteTopicController extends Controller
         $this->meetingVoteTopicService->reorder($request->validated('items'));
 
         return $this->success(null, 'Sắp xếp chương trình biểu quyết thành công!');
+    }
+
+    /**
+     * Nested route `GET /api/meetings/{meeting}/vote-topics` — gate viewParticipant.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     *
+     * @queryParam status string Lọc theo trạng thái topic. Example: opening
+     * @queryParam limit integer Số bản ghi mỗi trang. Example: 50
+     */
+    public function indexInMeeting(Meeting $meeting, FilterRequest $request)
+    {
+        $filters = array_merge($request->all(), ['meeting_id' => $meeting->id]);
+        $items = $this->meetingVoteTopicService->index($filters, (int) ($request->limit ?? 50));
+
+        return $this->successCollection(new MeetingVoteTopicCollection($items));
     }
 }

@@ -1,0 +1,402 @@
+================================================================================
+DANH SÁCH API — Trang công khai cuộc họp & các tab trong 1 cuộc họp
+File này liệt kê toàn bộ endpoint FE đang gọi, kèm trigger và payload chính.
+================================================================================
+
+CHÚ THÍCH
+- Tất cả endpoint bắt đầu bằng "/api/..." (Laravel API prefix).
+- WS channel: private-meeting.{meetingId} (Laravel Reverb / Pusher).
+- Response format chuẩn: { success: bool, data: any, message?: string }.
+- List endpoints nhận: meeting_id, page, limit (max 100), sort_by, sort_order,
+  type/status filter tuỳ resource.
+- Stats endpoints chỉ cần meeting_id (hoặc meeting_vote_topic_id).
+- WS reconnect: FE tự re-fetch state khi connect/reconnect (throttle 10s).
+
+
+================================================================================
+A. TRANG CÔNG KHAI (NGOÀI CHI TIẾT CUỘC HỌP)
+================================================================================
+
+------------------------------------------------------------
+A1. Trang chủ công khai — danh sách cuộc họp
+File FE: MeetingPublicOverview.vue
+------------------------------------------------------------
+GET  /api/meeting-types/public/options
+     - Trigger: onMounted
+     - Mục đích: dropdown loại cuộc họp
+     - Response: { success, data: [{ id, name, code }] }
+
+GET  /api/meetings/public/stats
+     - Trigger: onMounted + polling
+     - Mục đích: bộ đếm tổng quan (đang diễn ra, sắp tới, đã xong, tổng)
+     - Response: { success, data: { ongoing, upcoming, completed, total } }
+
+GET  /api/meetings/public
+     - Trigger: onMounted + watch (search/filter)
+     - Query: ?search=&type_id=&status=&from=&to=&page=&limit=
+     - Mục đích: list cuộc họp công khai
+     - Response: { success, data: { items, meta: { total, page, ... } } }
+
+
+------------------------------------------------------------
+A2. Trang tài liệu công khai
+File FE: MeetingPublicDocuments.vue
+------------------------------------------------------------
+GET  /api/meetings/public?limit=100
+     - Trigger: onMounted
+     - Mục đích: dropdown cuộc họp để filter tài liệu
+
+GET  /api/meeting-document-types/public/options
+     - Trigger: onMounted
+     - Mục đích: dropdown loại tài liệu
+
+GET  /api/meeting-documents/public
+     - Trigger: onMounted + watch filters
+     - Query: ?meeting_id=&type_id=&search=&page=&limit=
+     - Response: { success, data: { items, meta } }
+
+GET  /api/meeting-documents/public/{id}/download
+     - Trigger: on click "Tải về"
+     - Response: file binary stream (Content-Disposition: attachment)
+
+
+------------------------------------------------------------
+A3. Chi tiết cuộc họp (root)
+File FE: MeetingPublicDetail.vue
+------------------------------------------------------------
+GET  /api/meetings/public/{id}
+     - Trigger: onMounted + watch meetingId + WS reconnect throttle 10s
+     - Mục đích: lấy full meeting (agendas, vote_topics, participants,
+       current_agenda, current_discussion, chairperson_id, operator_id,
+       organization, status...)
+
+
+================================================================================
+B. TAB TRONG 1 CUỘC HỌP
+================================================================================
+
+------------------------------------------------------------
+B1. Tab Chương trình (TabAgenda.vue)
+------------------------------------------------------------
+POST /api/meeting-attendances/checkin
+     - Trigger: nút "Điểm danh"
+     - Body: { meeting_id }
+     - BE: tự derive user_id từ auth; tạo attendance status=pending|present
+       tuỳ flag meeting (auto-approve hay không).
+
+POST /api/meeting-attendances/mark-absent
+     - Trigger: nút "Báo vắng"
+     - Body: { meeting_id, reason?: string }
+
+WS   .attendance.checked-in / .attendance.approved / .attendance.rejected
+     - Subscriber: TabAgenda (refresh trạng thái cá nhân)
+
+
+------------------------------------------------------------
+B2. Tab Tài liệu (TabDocuments.vue)
+------------------------------------------------------------
+GET  /api/meeting-documents/public?meeting_id={id}
+     - Trigger: onMounted + watch page/search
+     - Query: ?meeting_id=&search=&page=&limit=
+
+GET  /api/meeting-documents/public/{id}
+     - Trigger: nút "Xem" (mở blob)
+     - Response: file binary để inline preview
+
+GET  /api/meeting-documents/public/{id}/download
+     - Trigger: nút "Tải về"
+     - Response: file binary attachment
+
+POST /api/meeting-personal-notes
+     - Trigger: lưu ghi chú cá nhân (participant)
+     - Body: { meeting_id, meeting_document_id?, content }
+     - BE: tự derive meeting_participant_id từ auth
+
+
+------------------------------------------------------------
+B3. Tab Thảo luận & Chất vấn — cá nhân (TabDiscussions.vue)
+------------------------------------------------------------
+GET  /api/meeting-discussion-registrations?meeting_id={id}&type=discussion&my=true
+GET  /api/meeting-discussion-registrations?meeting_id={id}&type=question&my=true
+     - Trigger: onMounted
+     - Quan trọng: ?my=true → BE filter chỉ trả đăng ký của user hiện tại
+     - Query: ?meeting_id=&type=discussion|question&my=true&sort_by=created_at
+              &sort_order=asc&limit=100
+
+POST /api/meeting-discussion-registrations  (multipart/form-data)
+     - Trigger: submit form đăng ký mới
+     - Fields: meeting_id, type, meeting_agenda_id?, content, attachment?
+     - BE: tự derive meeting_participant_id từ auth
+
+PATCH /api/meeting-discussion-registrations/{id}  (multipart/form-data)
+     - Trigger: sửa đăng ký
+     - Fields: content?, meeting_agenda_id?, attachment?
+
+DELETE /api/meeting-discussion-registrations/{id}
+     - Trigger: rút đăng ký
+
+WS   .discussion-registration.created / .updated / .completed / .deleted
+     - Subscriber: TabDiscussions (live update list của user)
+
+
+------------------------------------------------------------
+B4. Tab Biểu quyết (TabVoting.vue)
+------------------------------------------------------------
+GET  /api/meeting-vote-topics?meeting_id={id}
+     - Trigger: onMounted
+     - Response: list vote topics (kèm options, status open/closed/draft,
+       meeting_agenda_id nullable)
+
+GET  /api/meeting-vote-responses/stats?meeting_vote_topic_id={id}
+     - Trigger: onMounted per topic
+     - Response: { success, data: { total_voted, options: [{ option_id,
+       count, percent }] } }
+
+POST /api/meeting-vote-responses
+     - Trigger: cast vote
+     - Body: { meeting_vote_topic_id, option_id } hoặc multi-select tuỳ topic
+     - BE: tự derive voter từ auth; reject nếu topic chưa open hoặc đã đóng
+
+WS   .vote-topic.opened / .closed / .vote-response.added
+     - Subscriber: TabVoting (live count)
+
+
+------------------------------------------------------------
+B5. Tab QR Điểm danh (TabAttendanceQR.vue)
+------------------------------------------------------------
+GET  /api/meetings/{id}/qr-token
+     - Trigger: onMounted + watch meetingId (chỉ chair/operator/admin)
+     - Response: { success, data: { token, expires_at, qr_url } }
+
+
+------------------------------------------------------------
+B6. Tab Chủ trì (TabChair.vue)
+------------------------------------------------------------
+GET  /api/meeting-attendances/stats?meeting_id={id}
+     - Trigger: onMounted
+     - Response: { success, data: { total_invited, total, present, absent,
+       pending } }
+
+GET  /api/meeting-discussion-registrations/stats?meeting_id={id}
+     - Trigger: onMounted
+     - Response: { success, data: { total, registered, completed,
+       discussion: { total, registered, completed },
+       question:   { total, registered, completed } } }
+
+GET  /api/meeting-discussion-registrations?meeting_id={id}&type=discussion
+GET  /api/meeting-discussion-registrations?meeting_id={id}&type=question
+     - Trigger: onMounted
+     - Query: ?meeting_id=&type=&sort_by=created_at&sort_order=asc&limit=100
+     - Response: list FULL (không filter ?my=true)
+
+POST /api/meeting-discussion-registrations/{id}/complete
+     - Trigger: chủ trì xác nhận xong phát biểu
+     - Body: {} (BE đổi status=completed, có thể set completed_at = now)
+
+PATCH /api/meeting-discussion-registrations/{id}
+     - Trigger: chủ trì lưu ghi chú nội bộ (operator_note) — hiện ẩn cho
+       chair, nhưng method giữ lại cho operator (B7)
+
+GET  /api/meeting-discussion-registrations/export?meeting_id={id}&type=discussion
+GET  /api/meeting-discussion-registrations/export?meeting_id={id}&type=question
+GET  /api/meeting-attendances/export?meeting_id={id}
+GET  /api/meeting-vote-responses/export-summary?meeting_id={id}
+GET  /api/meeting-vote-responses/export?meeting_vote_topic_id={id}
+GET  /api/meeting-vote-responses/export-summary?meeting_vote_topic_id={id}
+     - Trigger: nút "Xuất ..." từng loại
+     - Response: file binary Excel (.xlsx), Content-Disposition: attachment
+
+WS   .attendance.* / .discussion-registration.*
+     - Subscriber: TabChair (debounce refetch stats 300ms)
+
+
+------------------------------------------------------------
+B7. Tab Điều hành (TabOperator.vue)
+------------------------------------------------------------
+GET  /api/meeting-attendances?meeting_id={id}&status=pending
+     - Trigger: onMounted
+     - Query: ?meeting_id=&status=pending&page=&limit=
+
+GET  /api/meeting-attendances/stats?meeting_id={id}
+     - Trigger: onMounted
+
+GET  /api/meeting-discussion-registrations?meeting_id={id}&type=discussion
+GET  /api/meeting-discussion-registrations?meeting_id={id}&type=question
+     - Trigger: onMounted (full list, bao gồm completed; FE tự ẩn completed)
+
+-- ACTIONS QUICK --
+PATCH /api/meetings/{id}/end-early
+     - Trigger: nút "Kết thúc sớm"
+     - Body: { reason?: string }
+     - BE: set status=completed + broadcast .meeting.ended-early
+
+PATCH /api/meetings/{id}/lock-attendance
+PATCH /api/meetings/{id}/unlock-attendance
+     - Trigger: nút khoá/mở khoá điểm danh
+     - BE: toggle flag attendance_locked
+
+-- ACTIONS HIGHLIGHT --
+PATCH /api/meetings/{id}/highlight-agenda?agenda_id={agendaId}
+     - Trigger: chọn chương trình đang chiếu
+     - Body: {} (agenda_id qua query)
+     - BE: set meeting.current_agenda_id + broadcast
+       .meeting.agenda-highlighted; nếu agenda_id=null → bỏ highlight
+
+PATCH /api/meetings/{id}/highlight-discussion?discussion_registration_id={id}
+     - Trigger: mời đại biểu lên trình bày
+     - Body: {} (id qua query)
+     - BE: set meeting.current_discussion_id + broadcast
+       .meeting.discussion-highlighted; null → bỏ highlight
+
+-- ACTIONS ATTENDANCE --
+PATCH /api/meeting-attendances/{id}/approve
+PATCH /api/meeting-attendances/{id}/reject
+     - Trigger: duyệt / từ chối điểm danh pending
+     - Body: { note?: string } cho reject
+
+POST /api/meeting-attendance/manual-checkin
+     - Trigger: operator điểm danh hộ
+     - Body: { meeting_id, user_id }  (CHÚ Ý: dùng user_id thật của users.id)
+
+-- ACTIONS VOTING --
+POST /api/meeting-vote-topics/{id}/open
+POST /api/meeting-vote-topics/{id}/close
+     - Trigger: operator mở / đóng phiếu
+     - BE: set status + broadcast .vote-topic.opened/.closed
+
+-- ACTIONS DISCUSSION --
+POST /api/meeting-discussion-registrations/{id}/complete
+     - Trigger: operator xác nhận xong phát biểu
+
+-- EXPORTS --  (giống B6, dùng chung composable useMeetingExports)
+
+WS   .attendance.* / .discussion-registration.*
+     - Subscriber: TabOperator (refetch danh sách pending + stats)
+
+
+------------------------------------------------------------
+B8. Tab Màn chiếu (TabProjector.vue)
+------------------------------------------------------------
+GET  /api/meetings/public/{id}
+     - Trigger: polling 30s (safety net khi WS rớt)
+
+GET  /api/meeting-discussion-registrations?meeting_id={id}
+     - Trigger: polling 30s
+
+GET  /api/meeting-vote-topics?meeting_id={id}
+     - Trigger: polling 30s
+
+WS (subscribe nhiều event):
+     .meeting.agenda-highlighted
+     .meeting.discussion-highlighted
+     .meeting.ended-early
+     .vote-topic.opened / .closed / .vote-response.added
+     .discussion-registration.created / .updated / .completed / .deleted
+
+  - Mục đích: cập nhật slide real-time (current agenda, current speaker,
+    vote results, danh sách đăng ký đang chờ vs đã xong)
+
+
+================================================================================
+C. DIALOG TOÀN CỤC (chạy nền trong context cuộc họp)
+================================================================================
+
+------------------------------------------------------------
+C1. GlobalInvitationDialog.vue — "Bạn được mời lên trình bày"
+------------------------------------------------------------
+WS   .meeting.discussion-highlighted
+     - Trigger: BE mời chính user này → dialog pop-up
+     - Payload cần có: { meeting_id, discussion_registration_id, user_id,
+       full_name, content, type, agenda_label? }
+
+WS   .discussion-registration.completed
+     - Trigger: tự đóng dialog nếu registration của user đó đã hoàn tất
+
+
+------------------------------------------------------------
+C2. GlobalVoteDialog.vue — "Phiên biểu quyết đang mở"
+------------------------------------------------------------
+GET  /api/meeting-vote-topics?meeting_id={id}
+     - Trigger: onMounted + fallback sync (khi WS lỡ event)
+
+GET  /api/meeting-vote-responses/stats?meeting_vote_topic_id={id}
+     - Trigger: khi topic opened
+
+POST /api/meeting-vote-responses
+     - Trigger: user cast vote
+     - Body: { meeting_vote_topic_id, option_id }
+
+WS   .vote-topic.opened / .closed / .vote-response.added
+
+
+------------------------------------------------------------
+C3. MeetingDocumentLookupDialog.vue — tra cứu nhanh tài liệu
+------------------------------------------------------------
+GET  /api/meeting-documents/public?meeting_id={id}
+     - Trigger: khi mở dialog
+
+
+================================================================================
+D. TỔNG HỢP WEBSOCKET EVENTS
+Channel: private-meeting.{meetingId}
+================================================================================
+
+EVENT                                  | PHÁT TỪ              | NGHE Ở
+---------------------------------------+---------------------+--------------------
+.attendance.checked-in                 | user điểm danh      | Agenda, Chair, Operator
+.attendance.approved                   | operator duyệt      | Agenda, Chair, Operator
+.attendance.rejected                   | operator từ chối    | Agenda, Chair, Operator
+.discussion-registration.created       | user đăng ký        | Chair, Operator, Discussions, Projector
+.discussion-registration.updated       | user sửa            | Chair, Operator, Discussions, Projector
+.discussion-registration.completed     | chair/operator      | Chair, Operator, Discussions, Projector, InvitationDialog
+.discussion-registration.deleted       | user rút            | Chair, Operator, Discussions, Projector
+.vote-topic.opened                     | operator mở phiếu   | Voting, Projector, VoteDialog
+.vote-topic.closed                     | operator đóng phiếu | Voting, Projector, VoteDialog
+.vote-response.added                   | user vote           | Voting, Projector, VoteDialog
+.meeting.agenda-highlighted            | operator highlight  | Detail (reload), Projector
+.meeting.discussion-highlighted        | operator mời        | Detail (reload), Projector, InvitationDialog
+.meeting.ended-early                   | operator kết thúc   | Detail (reload), Projector
+
+
+================================================================================
+E. PHÂN QUYỀN (FE đang kiểm tra)
+================================================================================
+
+- chair (chủ trì): so sánh user.id == meeting.chairperson_id
+- operator (điều hành): so sánh user.id == meeting.operator_id
+- admin override: CASL can('update', 'Meetings')
+- participant: có row trong meeting.participants (user.id match)
+- export: chair / operator / admin
+
+BE cần enforce ACL tương ứng ở tất cả endpoint write/export ở mục B6, B7, C.
+
+
+================================================================================
+F. NOTES QUAN TRỌNG CHO BE
+================================================================================
+
+1. BE đã auto-derive `meeting_participant_id` từ auth cho các POST/PATCH:
+   - /api/meeting-personal-notes
+   - /api/meeting-discussion-registrations
+   FE KHÔNG gửi field này trong body.
+
+2. Limit cap: BE đang reject limit > 100 ở các list endpoint. FE phân trang
+   khi cần lấy nhiều hơn.
+
+3. Endpoint /api/log-activities trả meta.total Ở TOP-LEVEL (khác với chuẩn).
+   Tất cả endpoint khác trong context meeting đều nest meta dưới data.
+
+4. Date format BE đang trả: "HH:mm:ss DD/MM/YYYY". FE parse regex để sort.
+   Nếu BE có thể đổi sang ISO 8601 sẽ tốt hơn.
+
+5. Filter ?my=true cho /api/meeting-discussion-registrations đang ĐANG ĐỢI BE
+   triển khai (xem file BE-REQUEST-discussion-registration-my-filter.md).
+   Hiện FE pass param này nhưng BE có thể chưa xử lý → trả toàn bộ list,
+   FE tự fallback filter theo user.
+
+6. Pivot id vs entity id (cho /api/task-assignment-departments/{id}/users):
+   field `user_id` là users.id thật, `id` là pivot row id. Xem CLAUDE.md.
+
+================================================================================
+HẾT
+================================================================================

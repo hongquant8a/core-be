@@ -6,15 +6,33 @@ use App\Modules\Core\Models\User;
 use App\Modules\Meeting\Models\Meeting;
 
 /**
- * Policy cho in-meeting control actions — check user là chair/operator/participant của
- * CHÍNH meeting đó (resource-based), không chỉ role-based qua Spatie.
+ * Policy cho các action gắn meeting cụ thể — check qua khóa ngoại của meeting
+ * (chairperson_meeting_attendee_id, operator_meeting_attendee_id) và list participants.
  *
- * Super Admin bypass qua Gate::before trong CoreServiceProvider.
+ * KHÔNG có Super Admin bypass — admin hệ thống phải có role thật trên meeting.
  *
- * Spatie permission vẫn dùng cho catalog/CRUD (index/show/store/update/destroy/dashboard).
+ * Spatie permission vẫn dùng cho catalog/CRUD admin setup (index/show/store/update/destroy/dashboard).
  */
 class MeetingPolicy
 {
+    /**
+     * Xem meeting ở route public — guest cũng được nếu meeting public + published.
+     * User auth không cần role: chỉ check is_public + status. Trang ngoài (citizen).
+     */
+    public function viewPublic(?User $user, Meeting $meeting): bool
+    {
+        return (bool) $meeting->is_public && $meeting->status === 'published';
+    }
+
+    /**
+     * Xem nội dung participant-only (Tab 3 Discussions, Tab 4 Voting...).
+     * User phải có role chair/operator/participant trong CHÍNH meeting đó.
+     */
+    public function viewParticipant(User $user, Meeting $meeting): bool
+    {
+        return $meeting->userMeetingRole($user) !== null;
+    }
+
     /**
      * Kết thúc cuộc họp sớm — chủ trì hoặc thư ký (thư ký là người điều hành thực tế).
      */

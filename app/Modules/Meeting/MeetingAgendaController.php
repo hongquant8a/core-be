@@ -4,6 +4,7 @@ namespace App\Modules\Meeting;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
+use App\Modules\Meeting\Models\Meeting;
 use App\Modules\Meeting\Models\MeetingAgenda;
 use App\Modules\Meeting\Requests\BulkDestroyCatalogRequest;
 use App\Modules\Meeting\Requests\ReorderMeetingAgendaRequest;
@@ -12,6 +13,7 @@ use App\Modules\Meeting\Requests\UpdateMeetingAgendaRequest;
 use App\Modules\Meeting\Resources\MeetingAgendaCollection;
 use App\Modules\Meeting\Resources\MeetingAgendaResource;
 use App\Modules\Meeting\Services\MeetingAgendaService;
+use Illuminate\Support\Facades\Gate;
 
 /**
  * @group Meeting - Chương trình họp
@@ -22,6 +24,26 @@ use App\Modules\Meeting\Services\MeetingAgendaService;
 class MeetingAgendaController extends Controller
 {
     public function __construct(private MeetingAgendaService $meetingAgendaService) {}
+
+    /**
+     * Danh sách chương trình họp công khai của 1 cuộc họp (Tab 1 Chương trình — guest cũng xem).
+     *
+     * Gate: MeetingPolicy::viewPublic — meeting phải public + status=published.
+     *
+     * @unauthenticated
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     *
+     * @queryParam limit integer Số bản ghi mỗi trang. Example: 100
+     */
+    public function publicListInMeeting(Meeting $meeting, FilterRequest $request)
+    {
+        Gate::authorize('viewPublic', $meeting);
+
+        $items = $meeting->agendas()->with(['parent'])->paginate((int) ($request->limit ?? 100));
+
+        return $this->successCollection(new MeetingAgendaCollection($items));
+    }
 
     /**
      * Danh sách chương trình họp.

@@ -2,9 +2,9 @@
 
 namespace App\Modules\Meeting\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Modules\Core\Models\TenantModel;
 
-class MeetingInvitation extends Model
+class MeetingInvitation extends TenantModel
 {
     protected $table = 'meeting_invitations';
 

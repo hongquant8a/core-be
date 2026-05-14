@@ -2,16 +2,17 @@
 
 namespace App\Modules\Meeting\Models;
 
+use App\Modules\Core\Models\TenantModel;
 use App\Modules\Core\Models\User;
-use Illuminate\Database\Eloquent\Model;
 
-class MeetingView extends Model
+class MeetingView extends TenantModel
 {
     protected $table = 'meeting_views';
 
     public $timestamps = false;
 
     protected $fillable = [
+        'organization_id',
         'meeting_id',
         'meeting_document_id',
         'user_id',

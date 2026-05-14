@@ -6,8 +6,16 @@ use App\Modules\Core\Models\User;
 use App\Modules\Core\Observers\UserObserver;
 use App\Modules\Core\Services\SettingService;
 use App\Modules\Meeting\Models\Meeting;
+use App\Modules\Meeting\Models\MeetingAttendance;
+use App\Modules\Meeting\Models\MeetingDiscussionRegistration;
+use App\Modules\Meeting\Models\MeetingParticipant;
+use App\Modules\Meeting\Models\MeetingVoteResponse;
 use App\Modules\Meeting\Models\MeetingVoteTopic;
+use App\Modules\Meeting\Policies\MeetingAttendancePolicy;
+use App\Modules\Meeting\Policies\MeetingDiscussionRegistrationPolicy;
+use App\Modules\Meeting\Policies\MeetingParticipantPolicy;
 use App\Modules\Meeting\Policies\MeetingPolicy;
+use App\Modules\Meeting\Policies\MeetingVoteResponsePolicy;
 use App\Modules\Meeting\Policies\MeetingVoteTopicPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
@@ -34,18 +42,16 @@ class AppServiceProvider extends ServiceProvider
         // Auto-create UserProfile mỗi khi tạo User.
         User::observe(UserObserver::class);
 
-        // Register policies cho in-meeting control actions (Spatie permission vẫn giữ cho catalog/CRUD).
+        // Register policies cho in-meeting control + public/participant view actions.
+        // Spatie permission vẫn giữ cho admin catalog/CRUD setup; Policy gate cho mọi action gắn meeting cụ thể.
+        // KHÔNG có Gate::before Super Admin bypass — admin hệ thống phải có role thật (chair/operator/participant)
+        // trên meeting mới làm được action gắn meeting. Đồng bộ FE matrix.
         Gate::policy(Meeting::class, MeetingPolicy::class);
         Gate::policy(MeetingVoteTopic::class, MeetingVoteTopicPolicy::class);
-
-        // Super Admin bypass tất cả policy — return non-null từ Gate::before.
-        Gate::before(function (User $user, string $ability) {
-            if ($user->hasRole('Super Admin')) {
-                return true;
-            }
-
-            return null; // Không quyết định, để policy xử lý.
-        });
+        Gate::policy(MeetingDiscussionRegistration::class, MeetingDiscussionRegistrationPolicy::class);
+        Gate::policy(MeetingVoteResponse::class, MeetingVoteResponsePolicy::class);
+        Gate::policy(MeetingAttendance::class, MeetingAttendancePolicy::class);
+        Gate::policy(MeetingParticipant::class, MeetingParticipantPolicy::class);
 
         // Giữ nguyên header Excel khi import (không lowercase/snake_case).
         // Cho phép import dùng header tiếng Việt giống hệt template export.

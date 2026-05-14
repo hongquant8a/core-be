@@ -24,12 +24,18 @@ trait HasOrganizationScope
             }
         });
 
-        // Áp dụng Global Scope để lọc theo organization_id
+        // Áp dụng Global Scope để lọc theo organization_id.
+        // Cho phép record có organization_id=NULL = shared global catalog (vd MeetingType
+        // dùng chung cho mọi org). Auth user thấy: record của org mình + record shared.
         static::addGlobalScope('organization', function (Builder $builder) {
             if (function_exists('getPermissionsTeamId')) {
                 $teamId = getPermissionsTeamId();
                 if ($teamId) {
-                    $builder->where($builder->getModel()->getTable() . '.organization_id', (int) $teamId);
+                    $table = $builder->getModel()->getTable();
+                    $builder->where(function ($q) use ($teamId, $table) {
+                        $q->where("{$table}.organization_id", (int) $teamId)
+                            ->orWhereNull("{$table}.organization_id");
+                    });
                 }
             }
         });

@@ -2,10 +2,10 @@
 
 namespace App\Modules\Meeting\Models;
 
+use App\Modules\Core\Models\TenantModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 
-class MeetingPersonalNoteAttachment extends Model
+class MeetingPersonalNoteAttachment extends TenantModel
 {
     use HasFactory;
 

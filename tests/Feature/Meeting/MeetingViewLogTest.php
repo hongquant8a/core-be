@@ -33,7 +33,7 @@ class MeetingViewLogTest extends TestCase
             'status' => 'published',
         ]);
 
-        $this->getJson('/api/meetings/public/'.$meeting->id)->assertOk();
+        $this->getJson('/api/public/meetings/'.$meeting->id)->assertOk();
 
         $this->assertSame(1, MeetingView::where('meeting_id', $meeting->id)->count());
         $log = MeetingView::where('meeting_id', $meeting->id)->first();
@@ -58,7 +58,7 @@ class MeetingViewLogTest extends TestCase
             'status' => 'published',
         ]);
 
-        $this->getJson('/api/meeting-documents/public/'.$doc->id)->assertOk();
+        $this->getJson('/api/public/meeting-documents/'.$doc->id)->assertOk();
 
         $this->assertSame(1, MeetingView::where('meeting_document_id', $doc->id)->count());
         $log = MeetingView::where('meeting_document_id', $doc->id)->first();

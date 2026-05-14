@@ -116,7 +116,7 @@ class MeetingApiTest extends TestCase
         $draft = $this->makeMeeting($this->orgA->id, ['is_public' => true, 'status' => 'draft', 'title' => 'Draft hidden']);
         $private = $this->makeMeeting($this->orgA->id, ['is_public' => false, 'status' => 'published', 'title' => 'Private hidden']);
 
-        $res = $this->getJson('/api/meetings/public');
+        $res = $this->getJson('/api/public/meetings');
 
         $res->assertOk();
         $titles = collect($res->json('data.items'))->pluck('title')->all();
@@ -132,9 +132,9 @@ class MeetingApiTest extends TestCase
         $public = $this->makeMeeting($this->orgA->id, ['is_public' => true, 'status' => 'published', 'view_count' => 0]);
         $private = $this->makeMeeting($this->orgA->id, ['is_public' => false, 'status' => 'published']);
 
-        $this->getJson('/api/meetings/public/'.$public->id)->assertOk();
+        $this->getJson('/api/public/meetings/'.$public->id)->assertOk();
         $this->assertSame(1, (int) $public->fresh()->view_count);
 
-        $this->getJson('/api/meetings/public/'.$private->id)->assertStatus(404);
+        $this->getJson('/api/public/meetings/'.$private->id)->assertStatus(404);
     }
 }

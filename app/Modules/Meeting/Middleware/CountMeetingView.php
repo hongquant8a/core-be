@@ -54,6 +54,7 @@ class CountMeetingView
             DB::transaction(function () use ($meeting, $request) {
                 $meeting->increment('view_count');
                 MeetingView::create([
+                    'organization_id' => $meeting->organization_id,
                     'meeting_id' => $meeting->id,
                     'meeting_document_id' => null,
                     'user_id' => auth()->id(),
@@ -74,6 +75,7 @@ class CountMeetingView
             // GET /meeting-documents/public/{id} = fetch metadata page, KHÔNG phải xem file.
             // File view/download đi qua endpoint /download?type=view|download riêng.
             MeetingView::create([
+                'organization_id' => $document->organization_id,
                 'meeting_id' => $document->meeting_id,
                 'meeting_document_id' => $document->id,
                 'user_id' => auth()->id(),

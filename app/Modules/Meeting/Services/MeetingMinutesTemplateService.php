@@ -32,6 +32,7 @@ class MeetingMinutesTemplateService
     {
         return DB::transaction(function () use ($validated, $file) {
             $template = MeetingMinutesTemplate::create([
+                'organization_id' => $this->resolveCurrentOrganizationId(),
                 'name' => $validated['name'],
                 'description' => $validated['description'] ?? null,
                 'is_default' => (bool) ($validated['is_default'] ?? false),
@@ -44,7 +45,7 @@ class MeetingMinutesTemplateService
             }
 
             if ($template->is_default) {
-                $this->unsetOtherDefaults($template->id);
+                $this->unsetOtherDefaults($template->id, (int) $template->organization_id);
             }
 
             return $template->load(['mediaFile']);
@@ -71,7 +72,7 @@ class MeetingMinutesTemplateService
             }
 
             if ($template->is_default) {
-                $this->unsetOtherDefaults($template->id);
+                $this->unsetOtherDefaults($template->id, (int) $template->organization_id);
             }
 
             return $template->load(['mediaFile']);
@@ -90,7 +91,9 @@ class MeetingMinutesTemplateService
 
     public function resolveDefault(): MeetingMinutesTemplate
     {
-        $template = MeetingMinutesTemplate::where('is_default', true)
+        $organizationId = $this->resolveCurrentOrganizationId();
+        $template = MeetingMinutesTemplate::where('organization_id', $organizationId)
+            ->where('is_default', true)
             ->where('status', 'active')
             ->first();
         if (! $template) {
@@ -100,10 +103,21 @@ class MeetingMinutesTemplateService
         return $template;
     }
 
-    private function unsetOtherDefaults(int $keepId): void
+    private function unsetOtherDefaults(int $keepId, int $organizationId): void
     {
-        MeetingMinutesTemplate::where('id', '!=', $keepId)
+        MeetingMinutesTemplate::where('organization_id', $organizationId)
+            ->where('id', '!=', $keepId)
             ->where('is_default', true)
             ->update(['is_default' => false]);
+    }
+
+    private function resolveCurrentOrganizationId(): int
+    {
+        $organizationId = function_exists('getPermissionsTeamId') ? getPermissionsTeamId() : null;
+        if (! is_numeric($organizationId) || (int) $organizationId <= 0) {
+            throw new ModelNotFoundException('Không xác định được tổ chức làm việc hiện tại.');
+        }
+
+        return (int) $organizationId;
     }
 }

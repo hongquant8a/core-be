@@ -150,15 +150,16 @@ class MeetingPolicyTest extends TestCase
         $res->assertForbidden();
     }
 
-    public function test_super_admin_bypasses_policy(): void
+    public function test_super_admin_does_not_bypass_in_meeting_policy(): void
     {
+        // Refactor 2026-05-14: Gate::before Super Admin bypass đã bị xóa.
+        // Admin hệ thống phải có role chair/operator/participant trên meeting mới control được.
         $admin = User::factory()->create();
         $admin->assignRole('Super Admin');
         Sanctum::actingAs($admin);
 
-        // Admin không phải chair/operator/participant nhưng vẫn pass policy.
         $this->meeting->update(['end_time' => now()->addHour()]);
-        $this->patchJson("/api/meetings/{$this->meeting->id}/end-early", [], ['X-Organization-Id' => $this->org->id])->assertOk();
-        $this->patchJson("/api/meeting-vote-topics/{$this->topic->id}/open", [], ['X-Organization-Id' => $this->org->id])->assertOk();
+        $this->patchJson("/api/meetings/{$this->meeting->id}/end-early", [], ['X-Organization-Id' => $this->org->id])->assertForbidden();
+        $this->patchJson("/api/meeting-vote-topics/{$this->topic->id}/open", [], ['X-Organization-Id' => $this->org->id])->assertForbidden();
     }
 }

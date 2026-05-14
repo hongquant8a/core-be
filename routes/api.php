@@ -12,28 +12,55 @@ Route::prefix('auth')->middleware('log.activity')->group(function () {
     require base_path('app/Modules/Auth/Routes/auth.php');
 });
 
-// Cấu hình công khai - không cần xác thực
-Route::get('/settings/public', [\App\Modules\Core\SettingController::class, 'public'])->middleware('log.activity');
-Route::get('/organizations/public', [\App\Modules\Core\OrganizationController::class, 'public'])->middleware('log.activity');
-Route::get('/organizations/public-options', [\App\Modules\Core\OrganizationController::class, 'publicOptions'])->middleware('log.activity');
-Route::get('/task-assignment-types/public', [\App\Modules\TaskAssignment\Controllers\TaskAssignmentTypeController::class, 'public'])->middleware('log.activity');
-Route::get('/task-assignment-types/public-options', [\App\Modules\TaskAssignment\Controllers\TaskAssignmentTypeController::class, 'publicOptions'])->middleware('log.activity');
-Route::get('/task-assignment-item-types/public', [\App\Modules\TaskAssignment\Controllers\TaskAssignmentItemTypeController::class, 'public'])->middleware('log.activity');
-Route::get('/task-assignment-item-types/public-options', [\App\Modules\TaskAssignment\Controllers\TaskAssignmentItemTypeController::class, 'publicOptions'])->middleware('log.activity');
-Route::get('/task-assignment-departments/public', [\App\Modules\TaskAssignment\Controllers\TaskAssignmentDepartmentController::class, 'public'])->middleware('log.activity');
-Route::get('/task-assignment-departments/public-options', [\App\Modules\TaskAssignment\Controllers\TaskAssignmentDepartmentController::class, 'publicOptions'])->middleware('log.activity');
-Route::get('/meeting-types/public', [\App\Modules\Meeting\MeetingTypeController::class, 'public'])->middleware('log.activity');
-Route::get('/meeting-types/public-options', [\App\Modules\Meeting\MeetingTypeController::class, 'publicOptions'])->middleware('log.activity');
-Route::get('/meeting-locations/public', [\App\Modules\Meeting\MeetingLocationController::class, 'public'])->middleware('log.activity');
-Route::get('/meeting-locations/public-options', [\App\Modules\Meeting\MeetingLocationController::class, 'publicOptions'])->middleware('log.activity');
-Route::get('/meeting-document-types/public', [\App\Modules\Meeting\MeetingDocumentTypeController::class, 'public'])->middleware('log.activity');
-Route::get('/meeting-document-types/public-options', [\App\Modules\Meeting\MeetingDocumentTypeController::class, 'publicOptions'])->middleware('log.activity');
-Route::get('/meetings/public', [\App\Modules\Meeting\MeetingController::class, 'public'])->middleware('log.activity');
-Route::get('/meetings/public/stats', [\App\Modules\Meeting\MeetingController::class, 'publicStats'])->middleware('log.activity');
-Route::get('/meetings/public/{meeting}', [\App\Modules\Meeting\MeetingController::class, 'publicShow'])->middleware(['log.activity', 'count.meeting.view']);
-Route::get('/meeting-documents/public', [\App\Modules\Meeting\MeetingDocumentController::class, 'public'])->middleware('log.activity');
-Route::get('/meeting-documents/public/{meetingDocument}', [\App\Modules\Meeting\MeetingDocumentController::class, 'publicShow'])->middleware(['log.activity', 'count.meeting.view']);
-Route::get('/meeting-documents/public/{meetingDocument}/download', [\App\Modules\Meeting\MeetingDocumentController::class, 'publicDownload'])->middleware('log.activity');
+/*
+|--------------------------------------------------------------------------
+| Public API — không yêu cầu xác thực
+|--------------------------------------------------------------------------
+| Toàn bộ endpoint phục vụ trang public (citizen) gom vào prefix /api/public/.
+| Quy ước URL:
+|   - GET /api/public/{resource}            : danh sách công khai
+|   - GET /api/public/{resource}/options    : dropdown (id/name/description)
+|   - GET /api/public/{resource}/{id}       : chi tiết
+|   - GET /api/public/meetings/{meeting}/{sub}: dữ liệu con của meeting (agendas, documents)
+| Phân quyền (nếu có) qua Gate Policy (vd MeetingPolicy::viewPublic), KHÔNG Spatie.
+*/
+Route::prefix('public')->middleware('log.activity')->group(function () {
+    // Hệ thống & tổ chức
+    Route::get('/settings', [\App\Modules\Core\SettingController::class, 'public']);
+    Route::get('/organizations', [\App\Modules\Core\OrganizationController::class, 'public']);
+    Route::get('/organizations/options', [\App\Modules\Core\OrganizationController::class, 'publicOptions']);
+
+    // TaskAssignment catalogs
+    Route::get('/task-assignment-types', [\App\Modules\TaskAssignment\Controllers\TaskAssignmentTypeController::class, 'public']);
+    Route::get('/task-assignment-types/options', [\App\Modules\TaskAssignment\Controllers\TaskAssignmentTypeController::class, 'publicOptions']);
+    Route::get('/task-assignment-item-types', [\App\Modules\TaskAssignment\Controllers\TaskAssignmentItemTypeController::class, 'public']);
+    Route::get('/task-assignment-item-types/options', [\App\Modules\TaskAssignment\Controllers\TaskAssignmentItemTypeController::class, 'publicOptions']);
+    Route::get('/task-assignment-departments', [\App\Modules\TaskAssignment\Controllers\TaskAssignmentDepartmentController::class, 'public']);
+    Route::get('/task-assignment-departments/options', [\App\Modules\TaskAssignment\Controllers\TaskAssignmentDepartmentController::class, 'publicOptions']);
+
+    // Meeting catalogs
+    Route::get('/meeting-types', [\App\Modules\Meeting\MeetingTypeController::class, 'public']);
+    Route::get('/meeting-types/options', [\App\Modules\Meeting\MeetingTypeController::class, 'publicOptions']);
+    Route::get('/meeting-locations', [\App\Modules\Meeting\MeetingLocationController::class, 'public']);
+    Route::get('/meeting-locations/options', [\App\Modules\Meeting\MeetingLocationController::class, 'publicOptions']);
+    Route::get('/meeting-document-types', [\App\Modules\Meeting\MeetingDocumentTypeController::class, 'public']);
+    Route::get('/meeting-document-types/options', [\App\Modules\Meeting\MeetingDocumentTypeController::class, 'publicOptions']);
+
+    // Meetings — list + stats + show
+    Route::get('/meetings', [\App\Modules\Meeting\MeetingController::class, 'public']);
+    Route::get('/meetings/stats', [\App\Modules\Meeting\MeetingController::class, 'publicStats']);
+    Route::get('/meetings/{meeting}', [\App\Modules\Meeting\MeetingController::class, 'publicShow'])->middleware('count.meeting.view');
+
+    // Meeting sub-resources cho guest (Tab 1 Chương trình, Tab 2 Tài liệu).
+    // Gate: MeetingPolicy::viewPublic (meeting is_public=true + status=published).
+    Route::get('/meetings/{meeting}/agendas', [\App\Modules\Meeting\MeetingAgendaController::class, 'publicListInMeeting']);
+    Route::get('/meetings/{meeting}/documents', [\App\Modules\Meeting\MeetingDocumentController::class, 'publicListInMeeting']);
+
+    // Meeting documents — list công khai (theo query meeting_id) + show + download (backward compat).
+    Route::get('/meeting-documents', [\App\Modules\Meeting\MeetingDocumentController::class, 'public']);
+    Route::get('/meeting-documents/{meetingDocument}', [\App\Modules\Meeting\MeetingDocumentController::class, 'publicShow'])->middleware('count.meeting.view');
+    Route::get('/meeting-documents/{meetingDocument}/download', [\App\Modules\Meeting\MeetingDocumentController::class, 'publicDownload']);
+});
 
 // Route yêu cầu đăng nhập (Bearer token) và đặt ngữ cảnh team cho Spatie Permission
 Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'log.activity'])->group(function () {
@@ -102,8 +129,8 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
         require base_path('app/Modules/Meeting/Routes/notification_config.php');
     });
 
-    // Meeting module
-        Route::prefix('meetings')->middleware('ensure.route.org')->group(function () {
+    // Meeting module — route phẳng cho admin catalog/CRUD setup (Spatie permission).
+    Route::prefix('meetings')->middleware('ensure.route.org')->group(function () {
         require base_path('app/Modules/Meeting/Routes/meeting.php');
     });
     Route::prefix('meeting-types')->group(function () {
@@ -148,8 +175,8 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
     Route::prefix('meeting-personal-note-attachments')->middleware('ensure.route.org')->group(function () {
         require base_path('app/Modules/Meeting/Routes/meeting_personal_note_attachment.php');
     });
-    // Template biên bản (.docx) — không scope theo org, per module Meeting.
-    Route::prefix('meeting-minutes-templates')->group(function () {
+    // Template biên bản (.docx) — mỗi tổ chức có template riêng (logo, layout).
+    Route::prefix('meeting-minutes-templates')->middleware('ensure.route.org')->group(function () {
         require base_path('app/Modules/Meeting/Routes/meeting_minutes_template.php');
     });
     // Cấu hình cuộc họp — singleton per org (auto find-or-create theo X-Organization-Id).

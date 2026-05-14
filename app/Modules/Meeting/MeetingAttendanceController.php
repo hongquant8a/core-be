@@ -4,6 +4,7 @@ namespace App\Modules\Meeting;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
+use App\Modules\Meeting\Models\Meeting;
 use App\Modules\Meeting\Models\MeetingAttendance;
 use App\Modules\Meeting\Requests\BulkDestroyCatalogRequest;
 use App\Modules\Meeting\Requests\CheckinMeetingAttendanceRequest;
@@ -238,6 +239,115 @@ class MeetingAttendanceController extends Controller
 
         return \Maatwebsite\Excel\Facades\Excel::download(
             new \App\Modules\Meeting\Exports\MeetingAttendanceExport($meetingId),
+            'export__diem-danh-hop.xlsx',
+        );
+    }
+
+    /**
+     * Nested route `GET /api/meetings/{meeting}/attendances/stats` — gate operate.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     */
+    public function statsInMeeting(Meeting $meeting, FilterRequest $request)
+    {
+        $filters = array_merge($request->all(), ['meeting_id' => $meeting->id]);
+
+        return $this->success($this->meetingAttendanceService->stats($filters));
+    }
+
+    /**
+     * Nested route `GET /api/meetings/{meeting}/attendances` — gate operate.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     */
+    public function indexInMeeting(Meeting $meeting, FilterRequest $request)
+    {
+        $filters = array_merge($request->all(), ['meeting_id' => $meeting->id]);
+        $items = $this->meetingAttendanceService->index($filters, (int) ($request->limit ?? 50));
+
+        return $this->successCollection(new MeetingAttendanceCollection($items));
+    }
+
+    /**
+     * Nested route `POST /api/meetings/{meeting}/attendances/checkin` — gate participate.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     */
+    public function checkinInMeeting(Meeting $meeting, \App\Modules\Meeting\Requests\CheckinMeetingAttendanceRequest $request)
+    {
+        $item = $this->meetingAttendanceService->checkin($meeting->id);
+
+        return $this->successResource(new MeetingAttendanceResource($item), 'Đã ghi nhận điểm danh, chờ duyệt.');
+    }
+
+    /**
+     * Nested route `POST /api/meetings/{meeting}/attendances/checkin-by-token` — gate participate.
+     *
+     * Token vẫn được dùng để BE map về meeting cụ thể (token là UUID của meeting nào).
+     * Mismatch token vs URL meeting → 422.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     *
+     * @bodyParam token string required UUID checkin của meeting. Example: 550e8400-e29b-41d4-a716-446655440000
+     */
+    public function checkinByTokenInMeeting(Meeting $meeting, \App\Modules\Meeting\Requests\CheckinByTokenRequest $request)
+    {
+        $token = $request->validated('token');
+        if ($token !== $meeting->checkin_token) {
+            return $this->error('Token điểm danh không khớp cuộc họp.', 422);
+        }
+        $item = $this->meetingAttendanceService->checkinByToken($token);
+
+        return $this->successResource(new MeetingAttendanceResource($item), 'Đã ghi nhận điểm danh qua QR, chờ duyệt.');
+    }
+
+    /**
+     * Nested route `POST /api/meetings/{meeting}/attendances/mark-absent` — gate participate.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     *
+     * @bodyParam note string Lý do vắng (optional). Example: Bị ốm
+     */
+    public function markAbsentInMeeting(Meeting $meeting, \App\Modules\Meeting\Requests\MarkAbsentMeetingAttendanceRequest $request)
+    {
+        $item = $this->meetingAttendanceService->markAbsent($meeting->id, $request->validated('note'));
+
+        return $this->successResource(new MeetingAttendanceResource($item), 'Đã ghi nhận báo vắng.');
+    }
+
+    /**
+     * Nested route `POST /api/meetings/{meeting}/attendances/manual-checkin` — gate manageAttendance (chair/op).
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     *
+     * @bodyParam meeting_participant_id integer required ID đại biểu. Example: 12
+     * @bodyParam status string required present | absent. Example: present
+     * @bodyParam note string Ghi chú lý do. Example: Bị ốm
+     */
+    public function manualCheckinInMeeting(Meeting $meeting, \App\Modules\Meeting\Requests\ManualCheckinRequest $request)
+    {
+        $item = $this->meetingAttendanceService->manualCheckin(
+            $meeting->id,
+            (int) $request->validated('meeting_participant_id'),
+            $request->validated('status'),
+            $request->validated('note'),
+        );
+
+        return $this->successResource(new MeetingAttendanceResource($item), 'Đã điểm danh hộ đại biểu.');
+    }
+
+    /**
+     * Nested route `GET /api/meetings/{meeting}/attendances/export` — gate operate.
+     *
+     * Xuất ra các trường: STT, Tên đại biểu, Chức vụ, Xác nhận tham gia, Đã điểm danh,
+     * Đã xác nhận điểm danh, Giờ điểm danh.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     */
+    public function exportInMeeting(Meeting $meeting, FilterRequest $request)
+    {
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Modules\Meeting\Exports\MeetingAttendanceExport($meeting->id),
             'export__diem-danh-hop.xlsx',
         );
     }
