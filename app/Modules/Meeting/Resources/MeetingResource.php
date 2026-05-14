@@ -64,7 +64,7 @@ class MeetingResource extends JsonResource
             'published_at' => $this->published_at?->format('H:i:s d/m/Y'),
             'attendance_locked' => (bool) $this->attendance_locked,
             // FE dùng field này để show/hide button điều hành (end-early, lock-attendance, highlight, vote open/close).
-            // Trả về vai trò của user đang request trong meeting này: 'chairperson' | 'operator' | 'participant' | null.
+            // Vai trò CHÍNH ưu tiên: FK chair > FK operator > participant entry. Chair có participant entry vẫn trả 'chairperson'.
             'current_user_meeting_role' => $request->user() ? $this->resource->userMeetingRole($request->user()) : null,
             // Người được gán làm quản lý QR điểm danh (qua Tab cấu hình meeting).
             // Khi set → user này có quyền GET /api/meetings/{id}/qr-token bất kể có role

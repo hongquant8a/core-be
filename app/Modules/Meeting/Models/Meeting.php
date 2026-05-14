@@ -165,8 +165,10 @@ class Meeting extends TenantModel implements HasMedia
     }
 
     /**
-     * Trả về vai trò của user trong meeting: 'chairperson' | 'operator' | 'participant' | null.
-     * Ưu tiên chair > operator > participant.
+     * Trả về vai trò CHÍNH của user trong meeting (single string).
+     * Ưu tiên KHÓA NGOẠI chair > FK operator > participant entry.
+     * Chair có thể đồng thời có participant entry (đại biểu) — vẫn trả 'chairperson'
+     * vì FK cao hơn. FE check `current_user_meeting_role` để show nút điều hành.
      */
     public function userMeetingRole(\App\Modules\Core\Models\User $user): ?string
     {
