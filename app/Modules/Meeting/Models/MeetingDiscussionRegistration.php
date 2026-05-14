@@ -20,6 +20,7 @@ class MeetingDiscussionRegistration extends TenantModel implements HasMedia
         'type',
         'content',
         'operator_note',
+        'answer_content',
         'media_id',
         'status',
         'completed_at',

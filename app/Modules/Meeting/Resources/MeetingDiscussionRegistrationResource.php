@@ -17,9 +17,11 @@ class MeetingDiscussionRegistrationResource extends JsonResource
             'participant_name' => $this->participant?->display_name,
             'type' => $this->type,
             'content' => $this->content,
-            // Operator/Chair fill sau khi đại biểu xong lượt. type=discussion -> ghi chú thảo luận;
-            // type=question -> nội dung trả lời chất vấn.
+            // Operator/Chair fill sau khi đại biểu xong lượt.
+            //   - operator_note    : ghi chú thảo luận (áp dụng type=discussion)
+            //   - answer_content   : nội dung trả lời chất vấn (áp dụng type=question)
             'operator_note' => $this->operator_note,
+            'answer_content' => $this->answer_content,
             'media_id' => $this->media_id,
             'file_url' => $this->mediaFile ? '/storage/'.$this->mediaFile->id.'/'.$this->mediaFile->file_name : null,
             'file_name' => $this->mediaFile?->file_name,

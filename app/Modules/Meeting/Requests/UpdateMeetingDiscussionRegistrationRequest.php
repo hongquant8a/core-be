@@ -13,6 +13,25 @@ class UpdateMeetingDiscussionRegistrationRequest extends FormRequest
         return true;
     }
 
+    /**
+     * Strip operator-only fields nếu caller không phải chair/op của meeting cha.
+     * Đại biểu chỉ sửa được content + attachment của đăng ký mình; operator_note +
+     * answer_content thuộc về chair/op.
+     */
+    protected function prepareForValidation(): void
+    {
+        $reg = $this->route('meetingDiscussionRegistration');
+        $meeting = $reg?->meeting;
+        $user = $this->user();
+        $isOperatorOrChair = $meeting && $user
+            && ($meeting->isChairperson($user) || $meeting->isOperator($user));
+
+        if (! $isOperatorOrChair) {
+            $this->offsetUnset('operator_note');
+            $this->offsetUnset('answer_content');
+        }
+    }
+
     public function rules(): array
     {
         return [
@@ -20,6 +39,7 @@ class UpdateMeetingDiscussionRegistrationRequest extends FormRequest
             'type' => ['sometimes', MeetingDiscussionTypeEnum::rule()],
             'content' => 'sometimes|string',
             'operator_note' => 'sometimes|nullable|string|max:5000',
+            'answer_content' => 'sometimes|nullable|string|max:10000',
             'attachment' => 'nullable|file|max:10240',
             'remove_attachment' => 'nullable|boolean',
             'status' => ['sometimes', MeetingDiscussionStatusEnum::rule()],
@@ -54,7 +74,8 @@ class UpdateMeetingDiscussionRegistrationRequest extends FormRequest
             'meeting_agenda_id' => 'ID chương trình họp',
             'type' => 'type',
             'content' => 'Nội dung',
-            'operator_note' => 'Ghi chú thảo luận / Nội dung trả lời',
+            'operator_note' => 'Ghi chú thảo luận',
+            'answer_content' => 'Nội dung trả lời chất vấn',
             'attachment' => 'Tệp đính kèm',
             'remove_attachment' => 'Xóa tệp đính kèm',
             'status' => 'Trạng thái',
@@ -68,7 +89,11 @@ class UpdateMeetingDiscussionRegistrationRequest extends FormRequest
             'type' => ['description' => 'Loại đăng ký.', 'example' => 'question'],
             'content' => ['description' => 'Nội dung đăng ký.', 'example' => 'Xin chất vấn nội dung tài liệu'],
             'operator_note' => [
-                'description' => 'Operator/Chair điền sau khi đại biểu xong lượt. Discussion -> ghi chú thảo luận; Question -> nội dung trả lời chất vấn. Đại biểu KHÔNG sửa được field này.',
+                'description' => 'Ghi chú thảo luận do operator/chair điền sau khi đại biểu xong lượt. Áp dụng cho type=discussion. Đại biểu KHÔNG sửa được.',
+                'example' => 'Đề xuất được tiếp thu, chuyển tổ thư ký tổng hợp.',
+            ],
+            'answer_content' => [
+                'description' => 'Nội dung trả lời chất vấn do operator/chair điền. Áp dụng cho type=question. Đại biểu KHÔNG sửa được.',
                 'example' => 'Đã trả lời: phân bổ ngân sách bổ sung 200 tỷ VND.',
             ],
             'attachment' => ['description' => 'Tệp đính kèm mới (sẽ thay tệp cũ qua MediaService).'],

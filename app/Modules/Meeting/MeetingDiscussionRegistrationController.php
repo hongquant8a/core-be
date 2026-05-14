@@ -92,13 +92,19 @@ class MeetingDiscussionRegistrationController extends Controller
     /**
      * Cập nhật đăng ký thảo luận/chất vấn.
      *
+     * Operator/Chair có thể bổ sung:
+     *   - operator_note (discussion): ghi chú thảo luận
+     *   - answer_content (question): nội dung trả lời chất vấn
+     * Đại biểu KHÔNG sửa được 2 field này (BE tự strip trong prepareForValidation).
+     *
      * @urlParam meetingDiscussionRegistration integer required ID đăng ký. Example: 1
-     * @bodyParam discussion_type string Loại đăng ký. Example: question
-     * @bodyParam topic string Chủ đề đăng ký. Example: Chất vấn tiến độ dự án
+     * @bodyParam type string Loại đăng ký (discussion | question). Example: question
      * @bodyParam content string Nội dung đăng ký. Example: Làm rõ nguyên nhân chậm tiến độ
+     * @bodyParam operator_note string Ghi chú thảo luận (operator/chair). Example: Đề xuất được tiếp thu.
+     * @bodyParam answer_content string Nội dung trả lời chất vấn (operator/chair). Example: Đã trả lời: phân bổ 200 tỷ.
      * @bodyParam attachment file Tệp đính kèm mới (thay tệp cũ). Example: (binary)
      * @bodyParam remove_attachment boolean Xóa tệp đính kèm hiện tại. Example: false
-     * @bodyParam status string Trạng thái đăng ký. Example: approved
+     * @bodyParam status string Trạng thái đăng ký. Example: completed
      * @bodyParam sort_order integer Thứ tự hiển thị. Example: 2
      */
     public function update(UpdateMeetingDiscussionRegistrationRequest $request, MeetingDiscussionRegistration $meetingDiscussionRegistration)
