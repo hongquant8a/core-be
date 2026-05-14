@@ -134,8 +134,8 @@ class MeetingDiscussionRegistrationService
     {
         // Phân quyền:
         //   - Owner đại biểu (auth = participant.attendee.user_id): update content/attachment/status/sort_order.
-        //   - Chair/Operator của meeting (MeetingPolicy::operate): update operator_note (ghi chú thảo luận
-        //     hoặc nội dung trả lời chất vấn).
+        //   - Chair/Operator của meeting (MeetingPolicy::operate): update operator_note (ghi chú thảo luận)
+        //     và answer_content (nội dung trả lời chất vấn).
         //   - Cả 2 vai trò có thể giao nhau (vd chair tự đăng ký phát biểu).
         $userId = $this->resolveCurrentUserId();
         $model->loadMissing(['participant.attendee', 'meeting.chairperson', 'meeting.operator']);
@@ -150,14 +150,17 @@ class MeetingDiscussionRegistrationService
         }
 
         // Filter field theo vai trò:
-        //   Non-owner -> chỉ cho update operator_note (strip các field khác).
-        //   Non-operator -> không được set operator_note (strip).
+        //   Non-owner       -> chỉ cho update operator_note + answer_content (operator-only fields).
+        //   Non-operator    -> không được set operator_note + answer_content (strip).
+        $operatorOnlyFields = ['operator_note', 'answer_content'];
         if (! $isOwner) {
-            $validated = array_intersect_key($validated, array_flip(['operator_note']));
+            $validated = array_intersect_key($validated, array_flip($operatorOnlyFields));
             $file = null;
         }
         if (! $canOperate) {
-            unset($validated['operator_note']);
+            foreach ($operatorOnlyFields as $f) {
+                unset($validated[$f]);
+            }
         }
 
         $storedFiles = [];
