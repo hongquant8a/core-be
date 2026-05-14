@@ -1,0 +1,132 @@
+================================================================================
+BE CHANGELOG — 2026-05-14 — Notification khi meeting đã ban hành bị cập nhật
+================================================================================
+
+TÓM TẮT
+─────────
+Khi cuộc họp đã ở trạng thái `published` (đã ban hành) bị admin cập nhật các
+trường quan trọng → BE tự động gửi thông báo "Cuộc họp đã cập nhật thông tin"
+qua Mail / Zalo OA / SMS / FCM cho TOÀN BỘ người trong list invitations
+(đại biểu + chủ trì + thư ký + khách mời).
+
+Notification trong mọi channel kèm URL deep-link tới trang chi tiết meeting:
+  {APP_FRONTEND_URL}/meeting/{id}
+
+
+────────────────────────────────────────────────────────────────────────────────
+A. CẤU HÌNH ENV — APP_FRONTEND_URL (BẮT BUỘC SETUP)
+────────────────────────────────────────────────────────────────────────────────
+.env.example bổ sung:
+  APP_FRONTEND_URL=http://localhost:5173
+
+config/app.php expose:
+  config('app.frontend_url')   // fallback về APP_URL nếu chưa set.
+
+Devops cần set giá trị production trong .env (vd https://qlcv.tinh-a.gov.vn).
+Nếu domain BE và FE trùng → set APP_FRONTEND_URL = APP_URL.
+
+
+────────────────────────────────────────────────────────────────────────────────
+B. TRIGGER LOGIC
+────────────────────────────────────────────────────────────────────────────────
+MeetingObserver::updated() fire event `MeetingUpdated` khi:
+  - `getOriginal('status') === 'published'` (TRƯỚC update đã ban hành)
+  - VÀ có ít nhất 1 field "quan trọng" thay đổi:
+      * title
+      * start_time
+      * end_time
+      * meeting_location_id
+      * content
+
+Không trùng với event `MeetingPublished` (chỉ fire khi status chuyển
+draft → published).
+
+Internal/admin fields (KHÔNG trigger): qr_manager_user_id, projector_image_media_id,
+attendance_open_at/close_at, attendance_locked, current_*_id, view_count,
+published_at, created_by, updated_by, deleted_at, etc.
+
+Mỗi update → 1 event (không debounce). Admin update 5 field cùng request →
+1 event duy nhất (vì observer fire sau khi save xong).
+
+
+────────────────────────────────────────────────────────────────────────────────
+C. EVENT KEY — meeting_updated
+────────────────────────────────────────────────────────────────────────────────
+NotificationEventEnum::MeetingUpdated = 'meeting_updated'.
+Label: "Cuộc họp đã cập nhật thông tin".
+Module: Meeting.
+
+→ Admin tổ chức có thể bật/tắt event này riêng trong Notification Config
+   (giống event meeting_published). Nếu org chưa cấu hình meeting_updated
+   → BE fallback reuse channels của meeting_published.
+
+
+────────────────────────────────────────────────────────────────────────────────
+D. NỘI DUNG THÔNG BÁO — TOÀN BỘ KÈM URL
+────────────────────────────────────────────────────────────────────────────────
+URL format trên mọi channel: `{APP_FRONTEND_URL}/meeting/{meeting_id}`
+(path FE singular `/meeting/`, không phải `/meetings/`).
+
+  • Mail (HTML, template `notifications.meeting_updated.email`):
+    - Subject: "Cập nhật cuộc họp: {title}"
+    - Body: table chi tiết meeting (title, start/end time, location, type, content)
+      + anchor URL ở action-note.
+
+  • SMS (ASCII):
+    "Cuoc hop '{title}' co thong tin cap nhat. Xem chi tiet: {url}"
+
+  • Zalo OA (free-form text):
+    "Cuộc họp '{title}' có thông tin cập nhật. Xem chi tiết: {url}"
+    + context: customer_name, meeting_title, url, event=meeting_updated.
+
+  • FCM (push notification):
+    - Title: "Cập nhật cuộc họp"
+    - Body: "Cuộc họp '{title}' có thông tin cập nhật."
+    - Data: { url, type: 'meeting_updated' }
+    - FE click → routerlink tới URL deep-link.
+
+
+────────────────────────────────────────────────────────────────────────────────
+E. RECIPIENT — TOÀN BỘ INVITATIONS HIỆN CÓ
+────────────────────────────────────────────────────────────────────────────────
+Listener iterate `meeting_invitations` của meeting (kể cả status='sent' đã gửi
+lần đầu, vì cần re-notify):
+
+  - Participant + chair/op (resolve qua user_id): dispatch qua NotificationDispatcher
+    → tạo Notification + Delivery → SendDeliveryJob theo channel.
+    Audit trail trong notifications table như bình thường.
+
+  - Guest (no user account): dispatch raw qua NotificationService::send() với
+    channels Mail / SMS / Zalo (skip FCM). KHÔNG tạo Notification entry.
+
+Dedup: `$sentUserIds[]` + `$sentGuestIds[]` đảm bảo 1 user/guest chỉ nhận 1 tin.
+
+
+────────────────────────────────────────────────────────────────────────────────
+F. TÁC ĐỘNG FE
+────────────────────────────────────────────────────────────────────────────────
+1. Không có endpoint mới — toàn bộ logic BE auto trigger qua observer.
+
+2. FCM payload có `data.type === 'meeting_updated'` + `data.url`:
+   - FE service worker / web push handler: click notification → navigate tới
+     `data.url` (đã là absolute URL từ APP_FRONTEND_URL).
+
+3. In-app notification (qua Notification entry table):
+   - context: `{ url, meeting_id, event: 'meeting_updated' }`.
+   - FE Inbox click → navigate tới URL (relative `/meeting/{id}` nếu FE muốn
+     dùng router internal, hoặc absolute URL).
+
+4. Notification Config UI: bổ sung row "Cuộc họp đã cập nhật thông tin" (key
+   `meeting_updated`, module Meeting) — admin tổ chức bật/tắt channels.
+   Có thể defer (BE đã fallback dùng config meeting_published nếu chưa setup).
+
+
+────────────────────────────────────────────────────────────────────────────────
+G. EDGE CASES
+────────────────────────────────────────────────────────────────────────────────
+- Meeting status = draft → admin update → KHÔNG fire (vì chưa published).
+- Meeting status changes draft → published → FIRE meeting_published (event cũ),
+  KHÔNG fire meeting_updated.
+- Meeting đã published, admin update KHÔNG có field quan trọng (vd chỉ
+  qr_manager_user_id) → KHÔNG fire.
+- Meeting đã published, admin update title → FIRE meeting_updated.

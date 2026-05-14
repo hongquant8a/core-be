@@ -56,6 +56,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Frontend URL
+    |--------------------------------------------------------------------------
+    |
+    | URL của ứng dụng FE (Vue/Vite). Dùng để build deep-link trong notification
+    | (email, SMS, Zalo OA, FCM) → user click mở thẳng vào trang chi tiết.
+    | Vd: https://qlcv.tinh-a.gov.vn
+    |
+    */
+
+    'frontend_url' => env('APP_FRONTEND_URL', env('APP_URL', 'http://localhost')),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |
