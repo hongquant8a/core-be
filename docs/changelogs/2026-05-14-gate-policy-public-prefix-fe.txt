@@ -193,3 +193,46 @@ File: app/Modules/Meeting/Policies/
 
 Quy ước check: KHÓA NGOẠI của meeting (chairperson_meeting_attendee_id,
 operator_meeting_attendee_id) + LIST participants(participant.attendee.user_id).
+
+
+────────────────────────────────────────────────────────────────────────────────
+G. BEHAVIOR CHANGE — MeetingMinutesTemplate scope theo organization
+────────────────────────────────────────────────────────────────────────────────
+Trước:
+  GET /api/meeting-minutes-templates → list template dùng chung toàn hệ thống.
+  Mọi admin (bất kể org đang chọn) đều thấy cùng 1 list.
+
+Sau (từ commit này):
+  GET /api/meeting-minutes-templates → list scope theo header X-Organization-Id.
+  Admin chỉ thấy template của TỔ CHỨC ĐANG LÀM VIỆC.
+
+Lý do: mỗi tổ chức có template biên bản riêng (logo, layout, mẫu chữ ký).
+Migration đã add `organization_id` cho bảng meeting_minutes_templates +
+tự gán org context khi create.
+
+Tác động FE:
+  - Trang admin "Mẫu biên bản" giờ thấy ít template hơn (chỉ của org mình).
+  - Khi đổi org context (X-Organization-Id), list refresh để lấy template org mới.
+  - Template hiện có sẽ có organization_id=NULL (legacy global) — admin có thể
+    thấy nhờ pattern "shared catalog" trong HasOrganizationScope (org_id=NULL
+    visible cho mọi org). Nếu cần gán cụ thể, admin xóa + tạo lại.
+
+Endpoint không đổi, không cần migrate URL.
+
+
+────────────────────────────────────────────────────────────────────────────────
+H. INTERNAL BE — KHÔNG ẢNH HƯỞNG FE
+────────────────────────────────────────────────────────────────────────────────
+Ghi chú để FE hiểu context, không cần action:
+
+1. Tạo `App\Modules\Core\Models\TenantModel` base class (extends Eloquent Model
+   + auto-apply HasOrganizationScope trait). 29 model thuộc Meeting/TaskAssignment
+   refactor sang extend TenantModel. Global Scope auto filter `organization_id`
+   theo team context — query thuộc tenant không cần manual `when($orgId, ...)`.
+
+2. `MeetingView` thêm cột `organization_id` để query stats nhanh không cần JOIN.
+   BE auto gán khi log view/download. FE không gọi endpoint này trực tiếp.
+
+3. Trait `HasOrganizationScope` cập nhật: scope `organization_id = X OR NULL`
+   (cho phép "shared catalog" có org_id=NULL hiển thị cho mọi org). Áp dụng
+   uniformly cho mọi TenantModel.
