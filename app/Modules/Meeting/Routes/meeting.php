@@ -68,19 +68,19 @@ Route::prefix('{meeting}/discussion-registrations')->group(function () {
     Route::get('/', [MeetingDiscussionRegistrationController::class, 'indexInMeeting'])->middleware('can:viewParticipant,meeting');
     Route::post('/', [MeetingDiscussionRegistrationController::class, 'storeInMeeting'])->middleware('can:participate,meeting');
     Route::patch('/reorder', [MeetingDiscussionRegistrationController::class, 'reorderInMeeting'])->middleware('can:operate,meeting');
-    Route::get('/{meetingDiscussionRegistration}', [MeetingDiscussionRegistrationController::class, 'show'])->middleware('can:view,meetingDiscussionRegistration');
-    Route::put('/{meetingDiscussionRegistration}', [MeetingDiscussionRegistrationController::class, 'update'])->middleware('can:update,meetingDiscussionRegistration');
-    Route::patch('/{meetingDiscussionRegistration}', [MeetingDiscussionRegistrationController::class, 'update'])->middleware('can:update,meetingDiscussionRegistration');
-    Route::delete('/{meetingDiscussionRegistration}', [MeetingDiscussionRegistrationController::class, 'destroy'])->middleware('can:delete,meetingDiscussionRegistration');
-    Route::patch('/{meetingDiscussionRegistration}/complete', [MeetingDiscussionRegistrationController::class, 'complete'])->middleware('can:complete,meetingDiscussionRegistration');
+    Route::get('/{meetingDiscussionRegistration}', [MeetingDiscussionRegistrationController::class, 'showInMeeting'])->middleware('can:view,meetingDiscussionRegistration');
+    Route::put('/{meetingDiscussionRegistration}', [MeetingDiscussionRegistrationController::class, 'updateInMeeting'])->middleware('can:update,meetingDiscussionRegistration');
+    Route::patch('/{meetingDiscussionRegistration}', [MeetingDiscussionRegistrationController::class, 'updateInMeeting'])->middleware('can:update,meetingDiscussionRegistration');
+    Route::delete('/{meetingDiscussionRegistration}', [MeetingDiscussionRegistrationController::class, 'destroyInMeeting'])->middleware('can:delete,meetingDiscussionRegistration');
+    Route::patch('/{meetingDiscussionRegistration}/complete', [MeetingDiscussionRegistrationController::class, 'completeInMeeting'])->middleware('can:complete,meetingDiscussionRegistration');
 });
 
 // Tab 4 Biểu quyết — view topics (participant+), cast vote, open/close (chair/op).
 Route::prefix('{meeting}/vote-topics')->group(function () {
     Route::get('/', [MeetingVoteTopicController::class, 'indexInMeeting'])->middleware('can:viewParticipant,meeting');
-    Route::get('/{meetingVoteTopic}', [MeetingVoteTopicController::class, 'show'])->middleware('can:view,meetingVoteTopic');
-    Route::patch('/{meetingVoteTopic}/open', [MeetingVoteTopicController::class, 'open'])->middleware('can:open,meetingVoteTopic');
-    Route::patch('/{meetingVoteTopic}/close', [MeetingVoteTopicController::class, 'close'])->middleware('can:close,meetingVoteTopic');
+    Route::get('/{meetingVoteTopic}', [MeetingVoteTopicController::class, 'showInMeeting'])->middleware('can:view,meetingVoteTopic');
+    Route::patch('/{meetingVoteTopic}/open', [MeetingVoteTopicController::class, 'openInMeeting'])->middleware('can:open,meetingVoteTopic');
+    Route::patch('/{meetingVoteTopic}/close', [MeetingVoteTopicController::class, 'closeInMeeting'])->middleware('can:close,meetingVoteTopic');
     // Cast vote — gate MeetingVoteTopicPolicy::cast (participant OR chair, NOT operator).
     Route::post('/{meetingVoteTopic}/responses', [MeetingVoteResponseController::class, 'castInTopic'])->middleware('can:cast,meetingVoteTopic');
 });
@@ -102,12 +102,12 @@ Route::prefix('{meeting}/attendances')->group(function () {
     Route::post('/checkin-by-token', [MeetingAttendanceController::class, 'checkinByTokenInMeeting'])->middleware('can:participate,meeting');
     Route::post('/mark-absent', [MeetingAttendanceController::class, 'markAbsentInMeeting'])->middleware('can:participate,meeting');
     Route::post('/manual-checkin', [MeetingAttendanceController::class, 'manualCheckinInMeeting'])->middleware('can:manageAttendance,meeting');
-    Route::patch('/{meetingAttendance}/approve', [MeetingAttendanceController::class, 'approve'])->middleware('can:approve,meetingAttendance');
-    Route::patch('/{meetingAttendance}/reject', [MeetingAttendanceController::class, 'reject'])->middleware('can:reject,meetingAttendance');
+    Route::patch('/{meetingAttendance}/approve', [MeetingAttendanceController::class, 'approveInMeeting'])->middleware('can:approve,meetingAttendance');
+    Route::patch('/{meetingAttendance}/reject', [MeetingAttendanceController::class, 'rejectInMeeting'])->middleware('can:reject,meetingAttendance');
 });
 
 // Participants — list participant+ xem; self respond invitation.
 Route::prefix('{meeting}/participants')->group(function () {
     Route::get('/', [MeetingParticipantController::class, 'indexInMeeting'])->middleware('can:viewParticipant,meeting');
-    Route::patch('/{meetingParticipant}/respond', [MeetingParticipantController::class, 'respond'])->middleware('can:respond,meetingParticipant');
+    Route::patch('/{meetingParticipant}/respond', [MeetingParticipantController::class, 'respondInMeeting'])->middleware('can:respond,meetingParticipant');
 });

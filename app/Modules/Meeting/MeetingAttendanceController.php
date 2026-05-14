@@ -244,6 +244,28 @@ class MeetingAttendanceController extends Controller
     }
 
     /**
+     * Nested route `PATCH /api/meetings/{meeting}/attendances/{att}/approve` — gate approve.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     * @urlParam meetingAttendance integer required ID điểm danh. Example: 1
+     */
+    public function approveInMeeting(Meeting $meeting, MeetingAttendance $meetingAttendance)
+    {
+        return $this->approve($meetingAttendance);
+    }
+
+    /**
+     * Nested route `PATCH /api/meetings/{meeting}/attendances/{att}/reject` — gate reject.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     * @urlParam meetingAttendance integer required ID điểm danh. Example: 1
+     */
+    public function rejectInMeeting(Meeting $meeting, MeetingAttendance $meetingAttendance)
+    {
+        return $this->reject($meetingAttendance);
+    }
+
+    /**
      * Nested route `GET /api/meetings/{meeting}/attendances/stats` — gate operate.
      *
      * @urlParam meeting integer required ID cuộc họp. Example: 1

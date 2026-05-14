@@ -187,6 +187,57 @@ class MeetingDiscussionRegistrationController extends Controller
     }
 
     /**
+     * Nested route `GET /api/meetings/{meeting}/discussion-registrations/{reg}` — gate view.
+     *
+     * Wrapper: nhận thêm `Meeting $meeting` từ URL (route param `{meeting}`) để
+     * Laravel controller dispatcher match positional đúng. Logic delegate sang show().
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     * @urlParam meetingDiscussionRegistration integer required ID đăng ký. Example: 1
+     */
+    public function showInMeeting(Meeting $meeting, MeetingDiscussionRegistration $meetingDiscussionRegistration)
+    {
+        return $this->show($meetingDiscussionRegistration);
+    }
+
+    /**
+     * Nested route `PUT/PATCH /api/meetings/{meeting}/discussion-registrations/{reg}` — gate update.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     * @urlParam meetingDiscussionRegistration integer required ID đăng ký. Example: 1
+     *
+     * @bodyParam content string Nội dung đăng ký. Example: Cập nhật nội dung
+     * @bodyParam operator_note string Ghi chú thảo luận (chỉ chair/op). Example: Đã ghi nhận
+     * @bodyParam answer_content string Nội dung trả lời chất vấn (chỉ chair/op). Example: Đã trả lời
+     */
+    public function updateInMeeting(UpdateMeetingDiscussionRegistrationRequest $request, Meeting $meeting, MeetingDiscussionRegistration $meetingDiscussionRegistration)
+    {
+        return $this->update($request, $meetingDiscussionRegistration);
+    }
+
+    /**
+     * Nested route `DELETE /api/meetings/{meeting}/discussion-registrations/{reg}` — gate delete.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     * @urlParam meetingDiscussionRegistration integer required ID đăng ký. Example: 1
+     */
+    public function destroyInMeeting(Meeting $meeting, MeetingDiscussionRegistration $meetingDiscussionRegistration)
+    {
+        return $this->destroy($meetingDiscussionRegistration);
+    }
+
+    /**
+     * Nested route `PATCH /api/meetings/{meeting}/discussion-registrations/{reg}/complete` — gate complete.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     * @urlParam meetingDiscussionRegistration integer required ID đăng ký. Example: 1
+     */
+    public function completeInMeeting(Meeting $meeting, MeetingDiscussionRegistration $meetingDiscussionRegistration)
+    {
+        return $this->complete($meetingDiscussionRegistration);
+    }
+
+    /**
      * Nested route `GET /api/meetings/{meeting}/discussion-registrations/stats` — gate viewParticipant.
      *
      * @urlParam meeting integer required ID cuộc họp. Example: 1

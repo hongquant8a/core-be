@@ -163,6 +163,39 @@ class MeetingVoteTopicController extends Controller
     }
 
     /**
+     * Nested route `GET /api/meetings/{meeting}/vote-topics/{topic}` — gate view.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     * @urlParam meetingVoteTopic integer required ID topic. Example: 1
+     */
+    public function showInMeeting(Meeting $meeting, MeetingVoteTopic $meetingVoteTopic)
+    {
+        return $this->show($meetingVoteTopic);
+    }
+
+    /**
+     * Nested route `PATCH /api/meetings/{meeting}/vote-topics/{topic}/open` — gate open.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     * @urlParam meetingVoteTopic integer required ID topic. Example: 1
+     */
+    public function openInMeeting(OpenMeetingVoteTopicRequest $request, Meeting $meeting, MeetingVoteTopic $meetingVoteTopic)
+    {
+        return $this->open($request, $meetingVoteTopic);
+    }
+
+    /**
+     * Nested route `PATCH /api/meetings/{meeting}/vote-topics/{topic}/close` — gate close.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     * @urlParam meetingVoteTopic integer required ID topic. Example: 1
+     */
+    public function closeInMeeting(Meeting $meeting, MeetingVoteTopic $meetingVoteTopic)
+    {
+        return $this->close($meetingVoteTopic);
+    }
+
+    /**
      * Nested route `GET /api/meetings/{meeting}/vote-topics` — gate viewParticipant.
      *
      * @urlParam meeting integer required ID cuộc họp. Example: 1

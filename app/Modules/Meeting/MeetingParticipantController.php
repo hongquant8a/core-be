@@ -136,6 +136,20 @@ class MeetingParticipantController extends Controller
     }
 
     /**
+     * Nested route `PATCH /api/meetings/{meeting}/participants/{participant}/respond` — gate respond.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     * @urlParam meetingParticipant integer required ID người tham dự. Example: 1
+     *
+     * @bodyParam response_status string required accepted | declined. Example: accepted
+     * @bodyParam absence_reason string Lý do (declined). Example: Có công tác đột xuất
+     */
+    public function respondInMeeting(RespondMeetingParticipantRequest $request, Meeting $meeting, MeetingParticipant $meetingParticipant)
+    {
+        return $this->respond($request, $meetingParticipant);
+    }
+
+    /**
      * Nested route `GET /api/meetings/{meeting}/participants` — gate viewParticipant.
      *
      * @urlParam meeting integer required ID cuộc họp. Example: 1
