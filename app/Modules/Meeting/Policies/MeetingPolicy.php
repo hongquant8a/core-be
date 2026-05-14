@@ -73,4 +73,17 @@ class MeetingPolicy
     {
         return $meeting->isChairperson($user) || $meeting->isOperator($user);
     }
+
+    /**
+     * Bật QR điểm danh — chủ trì OR thư ký OR user được gán làm qr_manager.
+     * KHÔNG fallback Spatie permission. Phân quyền dựa trên khóa ngoại meeting.
+     */
+    public function showQrCode(User $user, Meeting $meeting): bool
+    {
+        if ($meeting->isChairperson($user) || $meeting->isOperator($user)) {
+            return true;
+        }
+
+        return (int) ($meeting->qr_manager_user_id ?? 0) === (int) $user->id;
+    }
 }

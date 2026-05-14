@@ -19,6 +19,7 @@ class StoreMeetingRequest extends FormRequest
             'meeting_location_id' => 'nullable|integer|exists:meeting_locations,id',
             'chairperson_meeting_attendee_id' => 'nullable|integer|exists:meeting_attendees,id',
             'operator_meeting_attendee_id' => 'nullable|integer|exists:meeting_attendees,id',
+            'qr_manager_user_id' => ['nullable', 'integer', 'exists:users,id', $this->qrManagerSameOrgRule()],
             'title' => 'required|string|max:255',
             'is_public' => 'nullable|boolean',
             'content' => 'nullable|string',
@@ -51,11 +52,36 @@ class StoreMeetingRequest extends FormRequest
             'unique' => ':attribute đã tồn tại.',
         ];
     }
+    /**
+     * Custom rule: qr_manager_user_id phải thuộc cùng tổ chức hiện tại (qua model_has_roles).
+     */
+    protected function qrManagerSameOrgRule(): \Closure
+    {
+        return function (string $attribute, $value, \Closure $fail) {
+            if (! $value) {
+                return;
+            }
+            $orgId = function_exists('getPermissionsTeamId') ? getPermissionsTeamId() : null;
+            if (! $orgId) {
+                return;
+            }
+            $hasAccess = \Illuminate\Support\Facades\DB::table('model_has_roles')
+                ->where('model_id', $value)
+                ->where('model_type', \App\Modules\Core\Models\User::class)
+                ->where('organization_id', $orgId)
+                ->exists();
+            if (! $hasAccess) {
+                $fail('Người quản lý QR phải thuộc tổ chức hiện tại.');
+            }
+        };
+    }
+
     public function attributes(): array
     {
         return [
             'meeting_type_id' => 'ID loại cuộc họp',
             'meeting_location_id' => 'ID địa điểm họp',
+            'qr_manager_user_id' => 'Người quản lý QR điểm danh',
             'title' => 'Tiêu đề',
             'is_public' => 'Trạng thái công khai',
             'content' => 'Nội dung',
@@ -77,6 +103,10 @@ class StoreMeetingRequest extends FormRequest
             'meeting_location_id' => [
                 'description' => 'ID địa điểm họp.',
                 'example' => 1,
+            ],
+            'qr_manager_user_id' => [
+                'description' => 'User được giao quyền bật QR điểm danh. Phải cùng tổ chức với meeting. Nếu null → chỉ chair/op có quyền QR.',
+                'example' => 5,
             ],
             'title' => [
                 'description' => 'Tên cuộc họp.',

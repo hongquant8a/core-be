@@ -130,14 +130,14 @@ class PermissionSeeder extends Seeder
             'index',
         ],
         // Meeting - Cuộc họp
-        // In-meeting control actions (lockAttendance/unlockAttendance/endEarly/highlightAgenda/
-        // highlightDiscussion + vote-topics open/close) đã chuyển sang MeetingPolicy gate
-        // (chair/operator của meeting đó). showQrCode giữ Spatie role-based vì admin role được
-        // xem QR cho mọi meeting (không gắn với meeting cụ thể).
+        // Toàn bộ in-meeting control actions (lockAttendance/unlockAttendance/endEarly/
+        // highlightAgenda/highlightDiscussion + vote-topics open/close + showQrCode) đã
+        // chuyển sang MeetingPolicy gate (phân quyền theo khóa ngoại của meeting:
+        // chairperson_meeting_attendee_id / operator_meeting_attendee_id / qr_manager_user_id).
+        // KHÔNG còn dùng Spatie permission cho các action gắn meeting cụ thể.
         'meetings' => [
             'stats', 'index', 'show', 'store', 'update', 'destroy',
             'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
-            'showQrCode',
         ],
         // Meeting - Loại cuộc họp
         'meeting-types' => [

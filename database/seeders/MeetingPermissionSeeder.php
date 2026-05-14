@@ -10,7 +10,7 @@ use Illuminate\Database\Seeder;
  *
  * Triết lý role-removal sau refactor 2026-05-10:
  *  - Toàn bộ thao tác CRUD admin (catalog, tạo/xóa meeting, đổi trạng thái meeting,
- *    showQrCode, dashboard, notification config, ...) -> Super Admin / Admin / Quản trị.
+ *    dashboard, notification config, ...) -> Super Admin / Admin / Quản trị.
  *  - Thao tác trong meeting (agenda/document/participant/attendance/vote/discussion/note)
  *    -> role "Đại biểu" có ĐỦ permissions để call API. FE check render dựa vào
  *    chairperson_meeting_attendee_id / operator_meeting_attendee_id / participants list
@@ -49,7 +49,8 @@ class MeetingPermissionSeeder extends Seeder
      * KHÔNG có meetings.* permission nào — đại biểu list/show meeting qua endpoint public
      * (`/api/meetings/public[/stats|/{id}]`), không cần Spatie permission. Tránh phơi
      * `meetings.index` ra cho đại biểu khiến FE render màn quản trị meeting list dù không
-     * phải admin. Catalog CRUD + dashboard + notification config + showQrCode -> admin only.
+     * phải admin. Catalog CRUD + dashboard + notification config -> admin only.
+     * showQrCode đã chuyển sang Gate Policy (chair/operator/qr_manager_user_id), không qua Spatie.
      */
     private function getDaiBieuPermissionNames(): array
     {

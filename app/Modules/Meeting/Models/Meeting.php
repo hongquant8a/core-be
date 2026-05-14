@@ -31,6 +31,7 @@ class Meeting extends TenantModel
         'attendance_locked',
         'current_meeting_agenda_id',
         'current_meeting_discussion_registration_id',
+        'qr_manager_user_id',
         'created_by',
         'updated_by',
         'checkin_token',
@@ -93,6 +94,15 @@ class Meeting extends TenantModel
     public function operator()
     {
         return $this->belongsTo(MeetingAttendee::class, 'operator_meeting_attendee_id');
+    }
+
+    /**
+     * User được giao quyền bật QR điểm danh — set qua field qr_manager_user_id.
+     * Khi set → user này có quyền showQrCode (theo MeetingPolicy), không qua Spatie.
+     */
+    public function qrManager()
+    {
+        return $this->belongsTo(User::class, 'qr_manager_user_id');
     }
 
     public function participants()

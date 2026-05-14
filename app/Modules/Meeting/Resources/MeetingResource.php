@@ -66,9 +66,19 @@ class MeetingResource extends JsonResource
             // FE dùng field này để show/hide button điều hành (end-early, lock-attendance, highlight, vote open/close).
             // Trả về vai trò của user đang request trong meeting này: 'chairperson' | 'operator' | 'participant' | null.
             'current_user_meeting_role' => $request->user() ? $this->resource->userMeetingRole($request->user()) : null,
+            // Người được gán làm quản lý QR điểm danh (qua Tab cấu hình meeting).
+            // Khi set → user này có quyền GET /api/meetings/{id}/qr-token bất kể có role
+            // chair/op không. Gate qua MeetingPolicy::showQrCode (theo khóa ngoại, không Spatie).
+            'qr_manager_user_id' => $this->qr_manager_user_id,
+            'qr_manager' => $this->qr_manager_user_id && $this->qrManager ? [
+                'id' => $this->qrManager->id,
+                'name' => $this->qrManager->name,
+                'email' => $this->qrManager->email,
+                'user_name' => $this->qrManager->user_name,
+            ] : null,
             // Lưu ý: `checkin_token` (UUID dùng gen QR điểm danh) KHÔNG expose ở đây.
             // Token chỉ truy cập qua endpoint riêng `GET /api/meetings/{id}/qr-token`
-            // với permission `meetings.showQrCode` (chỉ chair/op/secretary lấy được).
+            // với gate showQrCode (chair OR operator OR qr_manager_user_id).
             'current_meeting_agenda_id' => $this->current_meeting_agenda_id,
             'current_meeting_discussion_registration_id' => $this->current_meeting_discussion_registration_id,
             'current_agenda' => $this->whenLoaded('currentAgenda', fn () => $this->currentAgenda ? new MeetingAgendaResource($this->currentAgenda) : null, null),
