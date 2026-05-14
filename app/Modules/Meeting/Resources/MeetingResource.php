@@ -99,6 +99,17 @@ class MeetingResource extends JsonResource
             'agendas' => MeetingAgendaResource::collection($this->whenLoaded('agendas')),
             'documents' => MeetingDocumentResource::collection($this->whenLoaded('documents')),
             'vote_topics' => MeetingVoteTopicResource::collection($this->whenLoaded('voteTopics')),
+            // Khách mời (input trực tiếp khi tạo meeting).
+            'guests' => $this->whenLoaded('guests', fn () => $this->guests->map(fn ($g) => [
+                'id' => $g->id,
+                'name' => $g->name,
+                'position_name' => $g->position_name,
+                'phone' => $g->phone,
+                'email' => $g->email,
+                'zalo_user_id' => $g->zalo_user_id,
+                'organization_name' => $g->organization_name,
+                'invited_at' => $g->invited_at?->format('H:i:s d/m/Y'),
+            ])),
         ];
     }
 }

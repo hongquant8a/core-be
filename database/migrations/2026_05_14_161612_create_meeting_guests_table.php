@@ -5,12 +5,10 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Danh bạ khách mời PER ORG — reusable contact (giống meeting_attendees).
- * Khách mời KHÔNG có user account — chỉ để gửi thư mời (email/SMS) khi meeting publish.
- * Quyền hạn xem meeting = giống guest công khai (chỉ meeting is_public + status=published).
- *
- * Khi tạo/sửa meeting, admin gửi list `guest_ids: int[]` → BE tạo
- * meeting_invitations entries với meeting_guest_id = từng id.
+ * Khách mời PER MEETING (KHÔNG phải catalog org-level). Mỗi meeting có list khách
+ * mời riêng — admin nhập thông tin trực tiếp ở form tạo/sửa meeting. Khách mời
+ * không có user account, không có chuyện đăng nhập, chỉ dùng để gửi thư mời
+ * (email/SMS) khi meeting publish.
  */
 return new class extends Migration
 {
@@ -19,18 +17,17 @@ return new class extends Migration
         Schema::create('meeting_guests', function (Blueprint $table) {
             $table->id();
             $table->foreignId('organization_id')->constrained('organizations')->cascadeOnDelete();
-            $table->string('name');
-            $table->string('email');
-            $table->string('phone', 30);
-            $table->text('note')->nullable();
-            $table->string('status', 20)->default('active');
-            $table->unsignedBigInteger('created_by')->nullable();
-            $table->unsignedBigInteger('updated_by')->nullable();
+            $table->foreignId('meeting_id')->constrained('meetings')->cascadeOnDelete();
+            $table->string('name');                    // Họ tên
+            $table->string('position_name')->nullable(); // Chức vụ
+            $table->string('phone', 30);                // Số điện thoại
+            $table->string('email');                    // Địa chỉ email
+            $table->string('organization_name')->nullable(); // Đơn vị (text tự nhập, khác organization_id)
+            $table->dateTime('invited_at')->nullable(); // Lần gần nhất gửi thư mời thành công
             $table->timestamps();
 
-            $table->index(['organization_id', 'status']);
-            $table->foreign('created_by')->references('id')->on('users')->nullOnDelete();
-            $table->foreign('updated_by')->references('id')->on('users')->nullOnDelete();
+            $table->index(['meeting_id']);
+            $table->index(['organization_id']);
         });
     }
 

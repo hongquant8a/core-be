@@ -1,147 +1,143 @@
 ================================================================================
-BE CHANGELOG — 2026-05-14 — Meeting: danh bạ khách mời + gửi thư mời
+BE CHANGELOG — 2026-05-14 — Meeting: khách mời nhập trực tiếp + gửi thư mời
 ================================================================================
 
 TÓM TẮT
 ─────────
-Thêm danh bạ khách mời (`meeting_guests`) — reusable contact PER ORG. Khách mời
-KHÔNG có tài khoản hệ thống, chỉ dùng để gửi thư mời (email/SMS) khi meeting
+Khách mời (`meeting_guests`) là LIST INLINE per meeting — admin nhập trực tiếp
+ở form tạo/sửa meeting. KHÔNG có catalog org-level, KHÔNG có CRUD endpoint riêng.
+Khách mời không có user account, chỉ dùng để gửi thư mời (email/SMS) khi meeting
 publish hoặc theo lịch reminder.
-
-FE flow:
-  1. Admin quản lý danh bạ khách mời qua trang /meeting-guests (CRUD).
-  2. Khi tạo/sửa meeting, FE attach `guest_ids: int[]` → BE tạo invitation cho
-     từng khách → gửi thư mời tự động khi meeting publish.
 
 
 ────────────────────────────────────────────────────────────────────────────────
 A. SCHEMA
 ────────────────────────────────────────────────────────────────────────────────
 Migration 1: 2026_05_14_161612_create_meeting_guests_table
-  - id, organization_id, name (req), email (req), phone (req), note (nullable),
-    status, created_by, updated_by, timestamps.
+  Cột:
+    id, organization_id (FK), meeting_id (FK cascadeOnDelete), name (req),
+    position_name (nullable), phone (req), email (req),
+    zalo_user_id (nullable, varchar 64 — bổ sung qua migration 3 cùng task),
+    organization_name (nullable), invited_at (nullable), timestamps.
 
 Migration 2: 2026_05_14_161613_add_meeting_guest_id_to_meeting_invitations
-  - meeting_invitations.meeting_guest_id (nullable FK) — link invitation tới guest.
+  Thêm meeting_invitations.meeting_guest_id (nullable FK).
 
-`meeting_invitations` giờ chứa 3 loại recipient (mutually exclusive):
+Migration 3: 2026_05_14_165121_add_zalo_user_id_to_meeting_guests_table
+  Thêm meeting_guests.zalo_user_id (nullable, varchar 64) — optional, dùng cho
+  Zalo OA channel nếu admin nhập được zalo_user_id của khách.
+
+meeting_invitations giờ phục vụ 3 loại recipient (mutually exclusive):
   - meeting_participant_id (đại biểu)
   - meeting_attendee_id    (chủ trì + thư ký gửi qua attendee)
-  - meeting_guest_id       (khách mời, raw email/SMS)
+  - meeting_guest_id       (khách mời)
 
 
 ────────────────────────────────────────────────────────────────────────────────
-B. CATALOG ADMIN — /api/meeting-guests
+B. KHÔNG CÓ CRUD ENDPOINT RIÊNG
 ────────────────────────────────────────────────────────────────────────────────
-Spatie permission group `meeting-guests.*` (cần seed). Endpoints chuẩn catalog:
-
-  GET    /api/meeting-guests                          permission:meeting-guests.index
-  GET    /api/meeting-guests/stats                    permission:meeting-guests.stats
-  GET    /api/meeting-guests/{guest}                  permission:meeting-guests.show
-  POST   /api/meeting-guests                          permission:meeting-guests.store
-  PUT/PATCH /api/meeting-guests/{guest}               permission:meeting-guests.update
-  DELETE /api/meeting-guests/{guest}                  permission:meeting-guests.destroy
-  DELETE /api/meeting-guests/bulk-delete              permission:meeting-guests.bulkDestroy
-  PATCH  /api/meeting-guests/bulk-status              permission:meeting-guests.bulkUpdateStatus
-  PATCH  /api/meeting-guests/{guest}/status           permission:meeting-guests.changeStatus
-  GET    /api/meeting-guests/export                   permission:meeting-guests.export
-  POST   /api/meeting-guests/import                   permission:meeting-guests.import
-  GET    /api/meeting-guests/import-template          permission:meeting-guests.import
-
-Request body Store/Update:
-  {
-    "name": "Nguyễn Văn A",       // required
-    "email": "a@example.com",      // required
-    "phone": "0901234567",         // required
-    "note": "Đại diện Sở Y tế",    // optional
-    "status": "active"             // optional, default active
-  }
-
-Resource response:
-  {
-    "id", "organization_id", "name", "email", "phone", "note", "status",
-    "created_by", "updated_by", "created_at", "updated_at"
-  }
+Không có route /api/meeting-guests. Khách mời CHỈ được tạo/sửa/xóa thông qua
+payload Meeting Store/Update — không thể chia sẻ giữa các meeting.
 
 
 ────────────────────────────────────────────────────────────────────────────────
-C. MEETING — ATTACH GUEST KHI TẠO/SỬA
+C. MEETING — PAYLOAD GUESTS INLINE
 ────────────────────────────────────────────────────────────────────────────────
-Endpoint POST + PUT/PATCH /api/meetings nhận thêm field:
+POST + PUT/PATCH /api/meetings nhận thêm field `guests` (array of objects):
 
   {
     ...
-    "guest_ids": [12, 15, 23]   // int[] (optional)
+    "guests": [
+      {
+        "name": "Nguyễn Văn A",            // required
+        "position_name": "Giám đốc",       // optional
+        "phone": "0901234567",             // required
+        "email": "a@example.com",          // required
+        "zalo_user_id": "1234567890",      // optional — nếu nhập, gửi cả Zalo OA
+        "organization_name": "Sở Y tế"     // optional
+      },
+      {
+        "id": 12,                          // optional — nếu có thì update existing
+        "name": "Trần Thị B",
+        "phone": "0907654321",
+        "email": "b@example.com"
+      }
+    ]
   }
 
-Logic BE:
-  - POST /meetings: tạo meeting + tạo invitation pending cho mỗi guest_id.
-  - PUT/PATCH /meetings/{id}:
-    * Field `guest_ids` KHÔNG gửi → giữ nguyên invitation hiện có.
-    * Field `guest_ids: [...]` → SYNC:
-      - Guest mới trong list (chưa có invitation) → tạo invitation pending.
-      - Guest cũ không còn trong list + invitation status='pending' → XÓA.
-      - Guest cũ không còn trong list + invitation status='sent' → GIỮ (audit).
-    * Field `guest_ids: []` → xóa toàn bộ invitation guest (chỉ những cái pending).
+Logic BE sync:
+  - Item có `id` thuộc meeting hiện tại → UPDATE record.
+  - Item không có `id` → CREATE record mới + tạo invitation pending.
+  - Existing guest không có trong list → DELETE record (cascade xóa invitation).
 
-Validation: mỗi guest_id phải `exists:meeting_guests,id`.
+POST: nếu omit field `guests` hoặc gửi `[]` → không tạo guest.
+PUT/PATCH:
+  - Omit field `guests` → giữ nguyên list hiện tại (không sync).
+  - Gửi `guests: []` → xóa toàn bộ guest của meeting.
 
 
 ────────────────────────────────────────────────────────────────────────────────
-D. GỬI THƯ MỜI — KHI MEETING PUBLISH
+D. RESOURCE RESPONSE
 ────────────────────────────────────────────────────────────────────────────────
-Event `MeetingPublished` → listener `SendMeetingPublishedNotifications` (ShouldQueue)
-iterate invitation pending, resolve recipient theo loại:
+GET /api/meetings/{meeting} trả thêm relation `guests`:
 
-  - participant / attendee:
-    Resolve user_id → dispatch qua NotificationDispatcher (channels theo config
-    module Meeting: mail/sms/zalo/fcm).
+  {
+    "data": {
+      ...
+      "guests": [
+        {
+          "id": 12,
+          "name": "Nguyễn Văn A",
+          "position_name": "Giám đốc",
+          "phone": "0901234567",
+          "email": "a@example.com",
+          "zalo_user_id": "1234567890",
+          "organization_name": "Sở Y tế",
+          "invited_at": "08:30:00 14/05/2026"
+        }
+      ]
+    }
+  }
 
-  - guest:
-    Build NotificationPayload inline (subject + body text/html với meeting.title
-    + start_time) → gửi qua NotificationService::send() trực tiếp:
-      * Mail channel: dùng guest.email.
-      * SMS channel: dùng guest.phone.
-      * Zalo OA + FCM: SKIP (guest không có zalo_user_id / device token).
-    Sau khi gửi: invitation.status = 'sent', sent_at = now().
-    Lỗi: status = 'failed', error_message lưu lỗi.
-
-Schedule reminder (MeetingReminderScheduler) cũng cover guest invitations theo
-config notification_event_configs.schedules (no extra FE action).
-
-
-────────────────────────────────────────────────────────────────────────────────
-E. DEDUP
-────────────────────────────────────────────────────────────────────────────────
-  - Listener track `$sentGuestIds[]` → 1 guest_id chỉ gửi 1 tin/event.
-  - Tương tự `$sentUserIds[]` cho user (đại biểu kiêm chair).
-  - Cẩn thận khi chair đồng thời có participant entry + guest entry trùng
-    contact: hiện BE coi như 2 recipient khác nhau (chair gửi qua user channels,
-    guest gửi qua raw email/SMS). FE warn admin nếu tạo guest trùng user.
+GET /api/meetings (index list) KHÔNG load `guests` (payload nhẹ).
 
 
 ────────────────────────────────────────────────────────────────────────────────
-F. IMPORT EXCEL
+E. GỬI THƯ MỜI — KHI MEETING PUBLISH
 ────────────────────────────────────────────────────────────────────────────────
-POST /api/meeting-guests/import (multipart file)
+Event `MeetingPublished` → listener `SendMeetingPublishedNotifications` (queued)
+iterate invitation pending. Cho mỗi invitation có `meeting_guest_id`:
 
-  Cột bắt buộc: name, email, phone
-  Cột không bắt buộc: note, status (mặc định active)
+  Build inline payload từ contact info của guest:
+    - subject: "Mời tham dự cuộc họp: {title}"
+    - body HTML/text: "Kính gửi {name}, Bạn được mời tham dự cuộc họp: {title}.
+                       Thời gian: {start_time}."
+  Channels (theo config notification module Meeting):
+    - Mail:    gửi nếu guest.email không null.
+    - SMS:     gửi nếu guest.phone không null.
+    - Zalo OA: gửi nếu guest.zalo_user_id không null (admin tự nhập).
+    - FCM:     SKIP (guest không có device token).
+  Sau gửi: invitation.status = 'sent', sent_at = now().
 
-Tải mẫu:
-  GET /api/meeting-guests/import-template → file Excel với heading sẵn.
+
+────────────────────────────────────────────────────────────────────────────────
+F. DEDUP
+────────────────────────────────────────────────────────────────────────────────
+Listener track `$sentGuestIds[]` → 1 guest_id chỉ gửi 1 tin/event.
+Tương tự `$sentUserIds[]` cho user (đại biểu kiêm chair).
+
+Nếu admin nhập trùng email/phone trong list guests → BE tạo 2 record riêng →
+gửi 2 tin riêng. FE nên warn admin tránh nhập trùng.
 
 
 ────────────────────────────────────────────────────────────────────────────────
 G. FE — VIỆC CẦN LÀM
 ────────────────────────────────────────────────────────────────────────────────
-1. Trang Quản trị > Khách mời: CRUD list (tương tự /meeting-attendees), kèm
-   import/export Excel.
+Form tạo/sửa meeting: bổ sung section "Khách mời" — multi-row input table với
+6 cột (Họ tên, Chức vụ, Số điện thoại, Email, Zalo user ID (optional), Đơn vị)
++ nút "Thêm khách mời" / "Xóa". Submit: array vào field `guests`.
 
-2. Form tạo/sửa meeting: bổ sung multi-select "Khách mời" → source dropdown từ
-   GET /api/meeting-guests?status=active. Submit attach `guest_ids: int[]`.
+Zalo user ID là optional — admin nhập nếu biết zalo_user_id của khách (vd
+khách đã quan tâm OA của tỉnh). Nếu null → BE chỉ gửi Mail + SMS, bỏ qua Zalo.
 
-3. UI hiển thị guest list trong chi tiết meeting (admin view):
-   - Có thể gọi GET /api/meetings/{id} → BE chưa expose `guests` relation trong
-     resource (chỉ qua `meeting_invitations` table). FE filter từ list invitations
-     nếu cần, hoặc đợi BE bổ sung field sau.
+Edit meeting: prefill từ `meeting.guests` (resource), giữ `id` để map row đã có.

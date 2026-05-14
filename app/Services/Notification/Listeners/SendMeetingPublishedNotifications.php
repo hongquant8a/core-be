@@ -114,8 +114,8 @@ class SendMeetingPublishedNotifications implements ShouldQueue
         $bodyHtml = '<p>Kính gửi '.e($guest->name).',</p><p>'.e($bodyText).'</p>';
 
         foreach ($channels as $channelKey) {
-            // Guest không có user account → skip FCM + Zalo OA.
-            if (in_array($channelKey, ['fcm', 'zalo'], true)) {
+            // Guest không có device token → skip FCM.
+            if ($channelKey === 'fcm') {
                 continue;
             }
             if ($channelKey === 'mail' && $guest->email) {
@@ -131,6 +131,19 @@ class SendMeetingPublishedNotifications implements ShouldQueue
                     channels: ['sms'],
                     recipient: new Recipient(phone: $guest->phone, name: $guest->name),
                     content: Str::ascii($bodyText),
+                ));
+            }
+            // Zalo OA chỉ gửi khi guest có zalo_user_id (admin nhập thủ công).
+            if ($channelKey === 'zalo' && $guest->zalo_user_id) {
+                $this->notificationService->send(new NotificationPayload(
+                    channels: ['zalo'],
+                    recipient: new Recipient(zaloId: $guest->zalo_user_id, name: $guest->name),
+                    content: $bodyText,
+                    context: [
+                        'customer_name' => $guest->name,
+                        'meeting_title' => $meeting->title,
+                        'event' => 'meeting_published',
+                    ],
                 ));
             }
         }

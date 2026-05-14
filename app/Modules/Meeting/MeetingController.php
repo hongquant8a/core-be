@@ -135,7 +135,7 @@ class MeetingController extends Controller
         $meeting = $this->meetingService->store(
             $request->validated(),
             $request->file('projector_image'),
-            $request->input('guest_ids', []),
+            $request->input('guests', []),
         );
 
         return $this->successResource(new MeetingResource($meeting), 'Tạo cuộc họp thành công!', 201);
@@ -160,7 +160,7 @@ class MeetingController extends Controller
             $meeting,
             $request->validated(),
             $request->file('projector_image'),
-            $request->has('guest_ids') ? $request->input('guest_ids', []) : null,
+            $request->has('guests') ? $request->input('guests', []) : null,
         );
 
         return $this->successResource(new MeetingResource($meeting), 'Cập nhật cuộc họp thành công!');

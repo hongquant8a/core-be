@@ -3,13 +3,15 @@
 namespace App\Modules\Meeting\Models;
 
 use App\Modules\Core\Models\TenantModel;
-use App\Modules\Core\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 /**
- * Danh bạ khách mời PER ORG. Khách mời KHÔNG có user account — chỉ dùng để gửi
- * thư mời (email/SMS) khi meeting publish. Liên kết với meeting qua bảng
- * `meeting_invitations` (column `meeting_guest_id`).
+ * Khách mời PER MEETING (KHÔNG phải catalog org-level). Mỗi meeting có list khách
+ * mời riêng — admin nhập thông tin trực tiếp ở form tạo/sửa meeting. Khách mời
+ * không có user account, chỉ dùng để gửi thư mời (email/SMS) khi meeting publish.
+ *
+ * Sync: payload Meeting::store/update có field `guests: [{ name, position_name, phone, email, organization_name, id? }]`.
+ * Item có `id` → update existing. Không có `id` → tạo mới. Existing không trong list → xóa.
  */
 class MeetingGuest extends TenantModel
 {
@@ -17,52 +19,27 @@ class MeetingGuest extends TenantModel
 
     protected $fillable = [
         'organization_id',
+        'meeting_id',
         'name',
-        'email',
+        'position_name',
         'phone',
-        'note',
-        'status',
-        'created_by',
-        'updated_by',
+        'email',
+        'zalo_user_id',
+        'organization_name',
+        'invited_at',
     ];
 
-    protected static function booted()
-    {
-        static::creating(fn (MeetingGuest $model) => $model->created_by = $model->updated_by = auth()->id());
-        static::updating(fn (MeetingGuest $model) => $model->updated_by = auth()->id());
-    }
+    protected $casts = [
+        'invited_at' => 'datetime',
+    ];
 
-    public function creator()
+    public function meeting()
     {
-        return $this->belongsTo(User::class, 'created_by');
-    }
-
-    public function editor()
-    {
-        return $this->belongsTo(User::class, 'updated_by');
+        return $this->belongsTo(Meeting::class, 'meeting_id');
     }
 
     public function invitations()
     {
         return $this->hasMany(MeetingInvitation::class, 'meeting_guest_id');
-    }
-
-    public function scopeFilter($query, array $filters)
-    {
-        $query->when($filters['search'] ?? null, function ($q, $search) {
-            $q->where(function ($sub) use ($search) {
-                $sub->where('name', 'like', '%'.$search.'%')
-                    ->orWhere('email', 'like', '%'.$search.'%')
-                    ->orWhere('phone', 'like', '%'.$search.'%');
-            });
-        })
-            ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
-            ->when($filters['from_date'] ?? null, fn ($q, $date) => $q->whereDate('created_at', '>=', $date))
-            ->when($filters['to_date'] ?? null, fn ($q, $date) => $q->whereDate('created_at', '<=', $date))
-            ->when($filters['sort_by'] ?? 'name', function ($q, $sortBy) use ($filters) {
-                $allowed = ['id', 'name', 'email', 'phone', 'status', 'created_at', 'updated_at'];
-                $column = in_array($sortBy, $allowed, true) ? $sortBy : 'name';
-                \App\Modules\Core\Support\VietnameseSort::apply($q, $column, $filters['sort_order'] ?? 'asc');
-            });
     }
 }

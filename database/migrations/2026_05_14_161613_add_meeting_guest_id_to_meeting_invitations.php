@@ -34,8 +34,10 @@ return new class extends Migration
     {
         Schema::table('meeting_invitations', function (Blueprint $table) {
             if (Schema::hasColumn('meeting_invitations', 'meeting_guest_id')) {
+                // Drop FK trước (vì FK đang dùng index) → sau đó drop index → sau đó drop column.
+                $table->dropForeign(['meeting_guest_id']);
                 $table->dropIndex('meeting_invitations_mtg_guest_idx');
-                $table->dropConstrainedForeignId('meeting_guest_id');
+                $table->dropColumn('meeting_guest_id');
             }
         });
     }

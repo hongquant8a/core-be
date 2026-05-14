@@ -120,6 +120,15 @@ class Meeting extends TenantModel implements HasMedia
         return $this->belongsTo(\Spatie\MediaLibrary\MediaCollections\Models\Media::class, 'projector_image_media_id');
     }
 
+    /**
+     * Khách mời của cuộc họp (nhập trực tiếp khi admin tạo/sửa meeting).
+     * Không có user account, chỉ dùng để gửi thư mời.
+     */
+    public function guests()
+    {
+        return $this->hasMany(MeetingGuest::class, 'meeting_id');
+    }
+
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection(self::COLLECTION_PROJECTOR)->singleFile();

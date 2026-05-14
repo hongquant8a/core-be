@@ -235,17 +235,18 @@ class MeetingService
             'voteTopics.userResponses' => \App\Modules\Meeting\Services\MeetingVoteTopicService::userResponsesEagerLoad(),
             'currentAgenda',
             'currentDiscussionRegistration',
+            'guests',
         ]);
     }
 
-    public function store(array $validated, ?UploadedFile $projectorImage = null, array $guestIds = []): Meeting
+    public function store(array $validated, ?UploadedFile $projectorImage = null, array $guests = []): Meeting
     {
-        // guest_ids không phải column trên meetings — strip để không lỗi mass assignment.
-        unset($validated['guest_ids']);
+        // guests không phải column trên meetings — strip để không lỗi mass assignment.
+        unset($validated['guests']);
 
         $storedFiles = [];
         try {
-            return DB::transaction(function () use ($validated, $projectorImage, $guestIds, &$storedFiles) {
+            return DB::transaction(function () use ($validated, $projectorImage, $guests, &$storedFiles) {
                 $payload = [
                     ...$validated,
                     'organization_id' => $this->resolveCurrentOrganizationId(),
@@ -258,11 +259,11 @@ class MeetingService
                     $meeting->update(['projector_image_media_id' => $media->id]);
                 }
 
-                if (! empty($guestIds)) {
-                    $this->syncGuestInvitations($meeting, $guestIds);
+                if (! empty($guests)) {
+                    $this->syncGuests($meeting, $guests);
                 }
 
-                return $meeting->load(['meetingType', 'meetingLocation', 'chairperson.user', 'operator.user', 'creator.media', 'editor.media', 'projectorImage']);
+                return $meeting->load(['meetingType', 'meetingLocation', 'chairperson.user', 'operator.user', 'creator.media', 'editor.media', 'projectorImage', 'guests']);
             });
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);
@@ -270,13 +271,13 @@ class MeetingService
         }
     }
 
-    public function update(Meeting $meeting, array $validated, ?UploadedFile $projectorImage = null, ?array $guestIds = null): Meeting
+    public function update(Meeting $meeting, array $validated, ?UploadedFile $projectorImage = null, ?array $guests = null): Meeting
     {
-        unset($validated['guest_ids']);
+        unset($validated['guests']);
 
         $storedFiles = [];
         try {
-            return DB::transaction(function () use ($meeting, $validated, $projectorImage, $guestIds, &$storedFiles) {
+            return DB::transaction(function () use ($meeting, $validated, $projectorImage, $guests, &$storedFiles) {
                 $removeProjector = (bool) ($validated['remove_projector_image'] ?? false);
                 unset($validated['remove_projector_image']);
                 $meeting->update($validated);
@@ -293,13 +294,13 @@ class MeetingService
                     $meeting->update(['projector_image_media_id' => $media->id]);
                 }
 
-                // guestIds null → FE không gửi field này → không sync (giữ nguyên).
-                // guestIds = [] → FE muốn xóa toàn bộ guest invitation.
-                if ($guestIds !== null) {
-                    $this->syncGuestInvitations($meeting, $guestIds);
+                // guests null → FE không gửi field này → không sync (giữ nguyên).
+                // guests = [] → FE muốn xóa toàn bộ guest.
+                if ($guests !== null) {
+                    $this->syncGuests($meeting, $guests);
                 }
 
-                return $meeting->load(['meetingType', 'meetingLocation', 'chairperson.user', 'operator.user', 'creator.media', 'editor.media', 'projectorImage']);
+                return $meeting->load(['meetingType', 'meetingLocation', 'chairperson.user', 'operator.user', 'creator.media', 'editor.media', 'projectorImage', 'guests']);
             });
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);
@@ -308,49 +309,58 @@ class MeetingService
     }
 
     /**
-     * Sync danh sách khách mời với invitations của meeting:
-     *   - guest_id mới (chưa có invitation) → tạo invitation status=pending.
-     *   - invitation cũ (guest không còn trong list) + chưa sent → xóa.
-     *   - invitation đã sent → giữ lại để audit (không xóa).
+     * Sync danh sách khách mời:
+     *   - Item có `id` → update MeetingGuest record (nếu id thuộc meeting này).
+     *   - Item không có `id` → tạo MeetingGuest + invitation pending.
+     *   - Existing guest KHÔNG có trong list → xóa MeetingGuest (cascade xóa invitation).
+     *   - Invitation đã `sent` của guest đã xóa: cascade xóa luôn (nghiệp vụ: nếu admin remove khách thì lịch sử cũng xóa).
      */
-    private function syncGuestInvitations(Meeting $meeting, array $guestIds): void
+    private function syncGuests(Meeting $meeting, array $guests): void
     {
-        $guestIds = array_unique(array_map('intval', array_filter($guestIds)));
-
-        // Verify guest thuộc tổ chức (defense in depth — đã có exists rule trong request).
-        $validGuestIds = \App\Modules\Meeting\Models\MeetingGuest::query()
-            ->where('organization_id', $meeting->organization_id)
-            ->whereIn('id', $guestIds)
-            ->pluck('id')
-            ->all();
-
-        $existingInvitations = MeetingInvitation::query()
+        $orgId = (int) $meeting->organization_id;
+        $existing = \App\Modules\Meeting\Models\MeetingGuest::query()
             ->where('meeting_id', $meeting->id)
-            ->whereNotNull('meeting_guest_id')
-            ->get(['id', 'meeting_guest_id', 'status']);
+            ->get();
+        $existingIds = $existing->pluck('id')->all();
+        $keepIds = [];
 
-        $existingGuestIds = $existingInvitations->pluck('meeting_guest_id')->map(fn ($v) => (int) $v)->all();
+        foreach ($guests as $guestData) {
+            $payload = [
+                'name' => $guestData['name'] ?? null,
+                'position_name' => $guestData['position_name'] ?? null,
+                'phone' => $guestData['phone'] ?? null,
+                'email' => $guestData['email'] ?? null,
+                'zalo_user_id' => $guestData['zalo_user_id'] ?? null,
+                'organization_name' => $guestData['organization_name'] ?? null,
+            ];
+            $id = (int) ($guestData['id'] ?? 0);
 
-        // Tạo invitation cho guest mới.
-        foreach ($validGuestIds as $guestId) {
-            if (in_array($guestId, $existingGuestIds, true)) {
-                continue;
+            if ($id > 0 && in_array($id, $existingIds, true)) {
+                // Update existing guest record.
+                $existing->firstWhere('id', $id)->update($payload);
+                $keepIds[] = $id;
+            } else {
+                // Create new guest + invitation.
+                $guest = \App\Modules\Meeting\Models\MeetingGuest::create([
+                    ...$payload,
+                    'meeting_id' => $meeting->id,
+                    'organization_id' => $orgId,
+                ]);
+                MeetingInvitation::create([
+                    'organization_id' => $orgId,
+                    'meeting_id' => $meeting->id,
+                    'meeting_guest_id' => $guest->id,
+                    'send_type' => 'now',
+                    'status' => 'pending',
+                ]);
+                $keepIds[] = $guest->id;
             }
-            MeetingInvitation::create([
-                'organization_id' => $meeting->organization_id,
-                'meeting_id' => $meeting->id,
-                'meeting_guest_id' => $guestId,
-                'send_type' => 'now',
-                'status' => 'pending',
-            ]);
         }
 
-        // Xóa invitation guest cũ không còn trong list (chỉ xóa nếu chưa sent).
-        $toRemove = $existingInvitations->filter(
-            fn ($inv) => ! in_array((int) $inv->meeting_guest_id, $validGuestIds, true) && $inv->status === 'pending'
-        );
-        if ($toRemove->isNotEmpty()) {
-            MeetingInvitation::whereIn('id', $toRemove->pluck('id')->all())->delete();
+        // Xóa guest không còn trong list (cascade xóa invitations).
+        $toDelete = array_diff($existingIds, $keepIds);
+        if (! empty($toDelete)) {
+            \App\Modules\Meeting\Models\MeetingGuest::whereIn('id', $toDelete)->delete();
         }
     }
 
