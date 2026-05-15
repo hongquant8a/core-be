@@ -539,6 +539,8 @@ class MeetingDataSeeder extends Seeder
                 'discussion_duration_minutes' => $i === 2 ? 5 : null,
                 'allow_question_registration' => $i === 2,
                 'question_duration_minutes' => $i === 2 ? 3 : null,
+                // Agenda "Biểu quyết nghị quyết" (index 3 ở full meeting) → allow vote.
+                'allow_vote_registration' => $i === 3,
                 'sort_order' => $i + 1,
             ]);
             $cursor->addMinutes($minutes);
