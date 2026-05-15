@@ -20,6 +20,7 @@ class MeetingAgenda extends TenantModel
         'discussion_duration_minutes',
         'allow_question_registration',
         'question_duration_minutes',
+        'allow_vote_registration',
         'parent_id',
         'sort_order',
     ];
@@ -27,6 +28,7 @@ class MeetingAgenda extends TenantModel
     protected $casts = [
         'allow_discussion_registration' => 'boolean',
         'allow_question_registration' => 'boolean',
+        'allow_vote_registration' => 'boolean',
         'discussion_duration_minutes' => 'integer',
         'question_duration_minutes' => 'integer',
     ];

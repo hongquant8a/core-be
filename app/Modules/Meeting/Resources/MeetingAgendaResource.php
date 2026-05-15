@@ -21,6 +21,7 @@ class MeetingAgendaResource extends JsonResource
             'discussion_duration_minutes' => $this->discussion_duration_minutes,
             'allow_question_registration' => $this->allow_question_registration,
             'question_duration_minutes' => $this->question_duration_minutes,
+            'allow_vote_registration' => $this->allow_vote_registration,
             'parent_id' => $this->parent_id,
             'sort_order' => $this->sort_order,
             'created_at' => $this->created_at?->format('H:i:s d/m/Y'),

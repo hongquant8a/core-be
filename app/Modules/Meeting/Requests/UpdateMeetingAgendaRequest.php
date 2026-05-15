@@ -22,6 +22,7 @@ class UpdateMeetingAgendaRequest extends FormRequest
             'discussion_duration_minutes' => 'nullable|integer|min:1|max:600',
             'allow_question_registration' => 'nullable|boolean',
             'question_duration_minutes' => 'nullable|integer|min:1|max:600',
+            'allow_vote_registration' => 'nullable|boolean',
             'parent_id' => 'nullable|integer|exists:meeting_agendas,id',
             'sort_order' => 'nullable|integer|min:0',
         ];
@@ -58,6 +59,7 @@ class UpdateMeetingAgendaRequest extends FormRequest
             'discussion_duration_minutes' => 'Thời lượng đăng ký thảo luận (phút)',
             'allow_question_registration' => 'Cho phép đăng ký chất vấn',
             'question_duration_minutes' => 'Thời lượng đăng ký chất vấn (phút)',
+            'allow_vote_registration' => 'Cho phép biểu quyết',
             'parent_id' => 'ID bản ghi cha',
             'sort_order' => 'Thứ tự sắp xếp',
         ];
@@ -71,6 +73,7 @@ class UpdateMeetingAgendaRequest extends FormRequest
             'discussion_duration_minutes' => ['description' => 'Thời lượng cho phép đăng ký thảo luận (phút).', 'example' => 30],
             'allow_question_registration' => ['description' => 'Cho phép đăng ký chất vấn.', 'example' => true],
             'question_duration_minutes' => ['description' => 'Thời lượng cho phép đăng ký chất vấn (phút).', 'example' => 15],
+            'allow_vote_registration' => ['description' => 'Cho phép biểu quyết. Vote topic gắn agenda qua meeting_vote_topics.meeting_agenda_id.', 'example' => false],
             'parent_id' => ['description' => 'ID mục cha.', 'example' => null],
             'sort_order' => ['description' => 'Thứ tự hiển thị.', 'example' => 3],
         ];

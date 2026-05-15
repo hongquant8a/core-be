@@ -23,6 +23,7 @@ class StoreMeetingAgendaRequest extends FormRequest
             'discussion_duration_minutes' => 'nullable|integer|min:1|max:600',
             'allow_question_registration' => 'nullable|boolean',
             'question_duration_minutes' => 'nullable|integer|min:1|max:600',
+            'allow_vote_registration' => 'nullable|boolean',
             'parent_id' => 'nullable|integer|exists:meeting_agendas,id',
             'sort_order' => 'nullable|integer|min:0',
         ];
@@ -60,6 +61,7 @@ class StoreMeetingAgendaRequest extends FormRequest
             'discussion_duration_minutes' => 'Thời lượng đăng ký thảo luận (phút)',
             'allow_question_registration' => 'Cho phép đăng ký chất vấn',
             'question_duration_minutes' => 'Thời lượng đăng ký chất vấn (phút)',
+            'allow_vote_registration' => 'Cho phép biểu quyết',
             'parent_id' => 'ID bản ghi cha',
             'sort_order' => 'Thứ tự sắp xếp',
         ];
@@ -102,6 +104,10 @@ class StoreMeetingAgendaRequest extends FormRequest
             'question_duration_minutes' => [
                 'description' => 'Thời lượng cho phép đăng ký chất vấn (phút). Áp dụng khi allow_question_registration=true.',
                 'example' => 15,
+            ],
+            'allow_vote_registration' => [
+                'description' => 'Cho phép biểu quyết trong chương trình. Khi true → FE bổ sung vote topic gắn meeting_agenda_id = agenda.id. Duration của từng topic ở `meeting_vote_topics.duration_minutes`.',
+                'example' => false,
             ],
             'parent_id' => [
                 'description' => 'ID chương trình cha nếu là mục con.',
