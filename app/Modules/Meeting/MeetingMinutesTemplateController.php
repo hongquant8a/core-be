@@ -96,6 +96,37 @@ class MeetingMinutesTemplateController extends Controller
     }
 
     /**
+     * Danh sách template biên bản — dùng cho dialog "Chọn template" trước khi gọi
+     * export-minutes. Gate `exportReports,meeting` (chair/op của meeting HOẶC admin
+     * có Spatie permission `meetings.exportReports`).
+     *
+     * Reuse cùng service như index admin nhưng auth qua Gate Policy thay vì
+     * permission `meeting-minutes-templates.index`.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     *
+     * @queryParam search string Tìm theo tên template. Example: HĐND
+     * @queryParam status string active|inactive. Example: active
+     * @queryParam sort_by string id, name, is_default, created_at, updated_at. Example: is_default
+     * @queryParam sort_order string asc|desc. Example: desc
+     * @queryParam limit integer Số bản ghi mỗi trang. Example: 100
+     */
+    public function indexInMeeting(Meeting $meeting, FilterRequest $request)
+    {
+        $items = $this->service->index($request->all(), (int) ($request->limit ?? 10));
+
+        return $this->success([
+            'items' => MeetingMinutesTemplateResource::collection($items->getCollection()),
+            'pagination' => [
+                'current_page' => $items->currentPage(),
+                'last_page' => $items->lastPage(),
+                'per_page' => $items->perPage(),
+                'total' => $items->total(),
+            ],
+        ]);
+    }
+
+    /**
      * Tạo template mới (upload file .docx).
      *
      * @bodyParam name string required Tên template. Example: Mẫu biên bản HĐND

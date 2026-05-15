@@ -32,8 +32,10 @@ use Illuminate\Support\Facades\Route;
 
 // ───────────────────────────── 1. Catalog/CRUD admin ─────────────────────────────
 
-// Export biên bản .docx từ template — auth-only, gate MeetingPolicy::operate (chair/operator).
+// Export biên bản .docx từ template — auth-only, gate MeetingPolicy::exportReports (chair/op OR admin có meetings.exportReports).
 Route::post('/{meeting}/export-minutes', [\App\Modules\Meeting\MeetingMinutesTemplateController::class, 'exportMinutes']);
+// List template biên bản cho dialog "Chọn template" trước export — gate exportReports.
+Route::get('/{meeting}/minutes-templates', [\App\Modules\Meeting\MeetingMinutesTemplateController::class, 'indexInMeeting'])->middleware('can:exportReports,meeting');
 
 Route::delete('/bulk-delete', [MeetingController::class, 'bulkDestroy'])->middleware('permission:meetings.bulkDestroy,web');
 Route::patch('/bulk-status', [MeetingController::class, 'bulkUpdateStatus'])->middleware('permission:meetings.bulkUpdateStatus,web');

@@ -64,6 +64,28 @@ dashboard admin truy cập đại trà:
 
 
 ────────────────────────────────────────────────────────────────────────────────
+C-bis. ENDPOINT LIST TEMPLATE BIÊN BẢN — CLONE NESTED CHO IN-MEETING
+────────────────────────────────────────────────────────────────────────────────
+Trước: chỉ có flat `GET /api/meeting-minutes-templates` với Spatie permission
+`meeting-minutes-templates.index` (chỉ Super Admin / Admin). Chair/op meeting
+muốn export biên bản → cần fetch list template để chọn → 403.
+
+Sau: thêm nested endpoint clone:
+  GET /api/meetings/{meeting}/minutes-templates?status=active&sort_by=is_default&sort_order=desc&limit=100
+
+  - Cùng response format với flat endpoint.
+  - Gate `exportReports,meeting`: chair/op của meeting HOẶC admin có
+    permission `meetings.exportReports`.
+
+FE flow:
+  1. User mở Tab Điều hành / Tab Chủ trì / Trang quản trị, bấm "Xuất biên bản".
+  2. FE gọi `GET /api/meetings/{m}/minutes-templates?status=active&limit=100`
+     để lấy danh sách template active.
+  3. User chọn template → FE gọi `POST /api/meetings/{m}/export-minutes` với
+     `{ template_id: X }` → trả file .docx.
+
+
+────────────────────────────────────────────────────────────────────────────────
 C. FE — UI DASHBOARD
 ────────────────────────────────────────────────────────────────────────────────
 FE có thể thêm khu "Báo cáo tổng hợp" trong trang admin chi tiết 1 cuộc họp
