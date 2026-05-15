@@ -13,6 +13,7 @@ use App\Modules\Meeting\Services\MeetingMinutesGenerator;
 use App\Modules\Meeting\Services\MeetingMinutesTemplateService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 
 /**
  * @group Meeting - Template biên bản
@@ -191,7 +192,9 @@ class MeetingMinutesTemplateController extends Controller
 
         $path = $this->generator->generate($meeting, $template);
 
-        $filename = 'bien-ban-'.preg_replace('/[^A-Za-z0-9_-]/', '_', (string) $meeting->title).'.docx';
+        // Slug tiếng Việt: bỏ dấu + lowercase + dash. Fallback theo ID nếu title rỗng.
+        $slug = Str::slug((string) $meeting->title) ?: ('meeting-'.$meeting->id);
+        $filename = "export__bien-ban-{$slug}.docx";
 
         return response()->download($path, $filename)->deleteFileAfterSend(true);
     }

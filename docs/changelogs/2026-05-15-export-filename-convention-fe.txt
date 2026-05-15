@@ -65,7 +65,7 @@ Quản lý công việc (6):
   export__loai-cong-viec.xlsx
   export__bao-cao-giao-ban-{YYYY-MM}.xlsx       (dynamic theo tháng)
 
-Quản lý họp không giấy (10):
+Quản lý họp không giấy (11):
   export__cuoc-hop.xlsx
   export__dai-bieu-hop.xlsx
   export__nhom-dai-bieu.xlsx
@@ -77,6 +77,7 @@ Quản lý họp không giấy (10):
   export__chat-van-hop.xlsx                     (type=question)
   export__chi-tiet-bieu-quyet.xlsx
   export__tong-hop-bieu-quyet.xlsx
+  export__bien-ban-{slug-cuoc-hop}.docx         (dynamic theo title meeting, slug bỏ dấu)
 
 
 ────────────────────────────────────────────────────────────────────────────────
@@ -88,12 +89,17 @@ D. NGOÀI PHẠM VI (giữ pattern riêng — KHÔNG dùng export__)
      ... (12 file)
    Lý do: semantic khác — "đây là template để import", không phải data export.
 
-2. Biên bản họp (.docx) — module Meeting:
+2. Template biên bản mẫu (.docx) — chỉ file template chứa placeholder, không data:
      meeting-minutes-template-sample.docx
-     bien-ban-{meeting-title}.docx
-   Lý do: file Word không phải data export Excel.
 
-FE giữ nguyên tên server trả về cho 2 loại này như bình thường.
+   Lý do: không phải data export, là template để user soạn template thật.
+
+FE giữ nguyên tên server trả về cho 2 loại trên (import template + sample) như
+bình thường.
+
+LƯU Ý: file biên bản từng cuộc họp (`export__bien-ban-{slug}.docx`) ĐÃ
+chuyển sang convention `export__` (commit fix sau khi phát hiện slug
+tiếng Việt bị regex phá nát thành dấu gạch dưới).
 
 
 ────────────────────────────────────────────────────────────────────────────────
