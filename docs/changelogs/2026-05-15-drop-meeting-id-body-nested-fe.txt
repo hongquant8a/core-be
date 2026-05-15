@@ -1,0 +1,86 @@
+================================================================================
+BE RESPONSE — 2026-05-15 — Drop meeting_id body validation trên nested routes
+================================================================================
+
+Trả lời file BE-REQUEST-drop-meeting-id-body-on-nested-routes.md từ FE.
+
+
+TÓM TẮT KẾT QUẢ AUDIT
+─────────────────────
+FE liệt kê 13 endpoint nghi ngờ. Audit thực tế:
+
+  - 4 endpoint THẬT SỰ có rule `meeting_id required` → đã clean.
+  - 9 endpoint FE đoán có rule → KHÔNG CÓ trong code BE (FE có thể chỉ
+    gặp 422 ở 4 cái, suy ra cả 13 nhưng thực ra 9 cái còn lại Request
+    đã không validate meeting_id rồi).
+
+
+────────────────────────────────────────────────────────────────────────────────
+A. ENDPOINT ĐÃ FIX
+────────────────────────────────────────────────────────────────────────────────
+
+1. POST /api/meetings/{meeting}/attendances/checkin
+   → CheckinMeetingAttendanceRequest
+
+2. POST /api/meetings/{meeting}/attendances/mark-absent
+   → MarkAbsentMeetingAttendanceRequest
+
+3. POST /api/meetings/{meeting}/attendances/manual-checkin
+   → ManualCheckinRequest
+
+4. POST /api/meetings/{meeting}/discussion-registrations
+   → StoreMeetingDiscussionRegistrationRequest
+
+
+Cách fix:
+  - 3 cái đầu chỉ dùng bởi nested route (flat actions đã drop ở Task 13
+    audit ngày 2026-05-15). DROP rule + attribute + bodyParameter cleanly.
+  - Cái thứ 4 (Discussion Store) shared giữa flat `POST /meeting-discussion-
+    registrations` (admin CRUD) và nested. KEEP rule + thêm
+    `prepareForValidation` auto-inject `meeting_id` từ URL `{meeting}` nếu
+    nested. Flat vẫn yêu cầu FE gửi body như cũ.
+
+
+────────────────────────────────────────────────────────────────────────────────
+B. ENDPOINT FE LIST NHƯNG KHÔNG CÓ RULE meeting_id
+────────────────────────────────────────────────────────────────────────────────
+9 endpoint dưới đây Request class HIỆN TẠI KHÔNG validate `meeting_id`,
+không cần fix:
+
+  POST  /api/meetings/{m}/attendances/checkin-by-token
+        → CheckinByTokenRequest chỉ validate `token`
+  PATCH /api/meetings/{m}/attendances/{att}/approve     → không có Request
+  PATCH /api/meetings/{m}/attendances/{att}/reject      → không có Request
+  PUT   /api/meetings/{m}/discussion-registrations/{r}  → UpdateMeeting...
+  PATCH /api/meetings/{m}/discussion-registrations/{r}/complete → no Req
+  PATCH /api/meetings/{m}/vote-topics/{t}/open          → OpenMeetingVote...
+  PATCH /api/meetings/{m}/vote-topics/{t}/close         → không có Request
+  POST  /api/meetings/{m}/vote-topics/{t}/responses     → StoreMeetingVote
+                                                          (auto-derive)
+  PATCH /api/meetings/{m}/participants/{p}/respond      → RespondMeeting...
+
+Nếu FE đang inject `meeting_id` body cho 9 endpoint này → Laravel
+$request->validated() chỉ trả field trong rules nên field thừa bị bỏ
+qua. Không 422. FE có thể bỏ inject defensive nếu muốn.
+
+
+────────────────────────────────────────────────────────────────────────────────
+C. ĐỀ XUẤT "DEFENSIVE Rule::in([URL_id])" — KHÔNG IMPLEMENT
+────────────────────────────────────────────────────────────────────────────────
+FE đề xuất thêm rule body `meeting_id` phải match URL `{meeting}` để chặn
+confused-deputy. KHÔNG implement vì:
+  - Controllers `*InMeeting` đã hardcoded dùng `$meeting->id` từ Route Model
+    Binding, KHÔNG đọc `$request->meeting_id`. Confused-deputy không xảy ra.
+  - Thêm `Rule::in()` cứng sẽ false-positive 422 khi FE quên gửi/gửi sai
+    → degrade UX không có lợi bảo mật thực tế.
+
+
+────────────────────────────────────────────────────────────────────────────────
+D. FE CHECKLIST
+────────────────────────────────────────────────────────────────────────────────
+[ ] Test lại `POST /meetings/{m}/attendances/manual-checkin` — KHÔNG còn 422
+    "ID cuộc họp là trường bắt buộc".
+[ ] Có thể bỏ inject `meeting_id` body cho 4 endpoint đã fix + 9 endpoint
+    không có rule (tổng 13). Hoặc giữ defensive inject — BE bỏ qua field
+    thừa.
+[ ] Tests BE: 15/15 pass (MeetingApiTest + MeetingPolicyTest).

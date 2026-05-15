@@ -15,8 +15,8 @@ class ManualCheckinRequest extends FormRequest
 
     public function rules(): array
     {
+        // meeting_id lấy từ URL {meeting} qua route binding — không cần body.
         return [
-            'meeting_id' => ['required', 'integer', 'exists:meetings,id'],
             'meeting_participant_id' => ['required', 'integer', 'exists:meeting_participants,id'],
             'status' => ['required', Rule::in([
                 MeetingAttendanceStatusEnum::Present->value,
@@ -41,7 +41,6 @@ class ManualCheckinRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'meeting_id' => 'ID cuộc họp',
             'meeting_participant_id' => 'ID đại biểu',
             'status' => 'Trạng thái điểm danh',
             'note' => 'Ghi chú',
@@ -51,7 +50,6 @@ class ManualCheckinRequest extends FormRequest
     public function bodyParameters(): array
     {
         return [
-            'meeting_id' => ['description' => 'ID cuộc họp.', 'example' => 1],
             'meeting_participant_id' => ['description' => 'ID đại biểu được điểm danh hộ.', 'example' => 12],
             'status' => ['description' => 'Trạng thái: present (có mặt) | absent (vắng).', 'example' => 'present'],
             'note' => ['description' => 'Ghi chú lý do (nếu vắng).', 'example' => 'Bị ốm đột xuất'],

@@ -13,6 +13,21 @@ class StoreMeetingDiscussionRegistrationRequest extends FormRequest
         return true;
     }
 
+    /**
+     * Nested route `/meetings/{meeting}/discussion-registrations` — auto-inject meeting_id từ URL
+     * để FE không cần gửi field thừa. Flat route vẫn yêu cầu FE gửi body (route('meeting') null).
+     */
+    protected function prepareForValidation(): void
+    {
+        $route = $this->route('meeting');
+        if ($route && ! $this->filled('meeting_id')) {
+            $meetingId = is_object($route) ? ($route->id ?? null) : $route;
+            if ($meetingId !== null) {
+                $this->merge(['meeting_id' => $meetingId]);
+            }
+        }
+    }
+
     public function rules(): array
     {
         // meeting_participant_id auto-derive từ auth user trong service (không nhận từ FE

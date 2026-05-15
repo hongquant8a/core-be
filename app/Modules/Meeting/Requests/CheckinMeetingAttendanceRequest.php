@@ -13,31 +13,22 @@ class CheckinMeetingAttendanceRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
-            'meeting_id' => 'required|integer|exists:meetings,id',
-        ];
+        // meeting_id lấy từ URL {meeting} qua route binding — không cần body.
+        return [];
     }
 
     public function messages(): array
     {
-        return [
-            'required' => ':attribute là trường bắt buộc.',
-            'integer' => ':attribute phải là số nguyên.',
-            'exists' => ':attribute không tồn tại trong hệ thống.',
-        ];
+        return [];
     }
 
     public function attributes(): array
     {
-        return [
-            'meeting_id' => 'ID cuộc họp',
-        ];
+        return [];
     }
 
     public function bodyParameters(): array
     {
-        return [
-            'meeting_id' => ['description' => 'ID cuộc họp đại biểu điểm danh.', 'example' => 1],
-        ];
+        return [];
     }
 }
