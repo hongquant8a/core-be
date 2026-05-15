@@ -1,0 +1,83 @@
+================================================================================
+BE CHANGELOG — 2026-05-14 — Auto-kết-thúc người phát biểu khi chuyển
+================================================================================
+
+TÓM TẮT
+─────────
+Khi operator/chair chuyển người phát biểu (qua highlight-discussion endpoint),
+BE tự động đánh dấu registration cũ là `completed` nếu nó còn `registered`.
+
+Trước: chỉ clear `highlighted_at = null` cho registration cũ. Status giữ
+nguyên → operator phải bấm thêm "Đánh dấu hoàn thành" cho từng người.
+Sau: BE tự completed luôn → 1 thao tác chuyển = kết thúc người cũ + gọi người mới.
+
+
+────────────────────────────────────────────────────────────────────────────────
+A. ENDPOINT KHÔNG ĐỔI
+────────────────────────────────────────────────────────────────────────────────
+PATCH /api/meetings/{meeting}/highlight-discussion
+
+  Body: { "discussion_registration_id": <id|null> }
+
+  - id != null → highlight registration đó.
+  - id = null  → bỏ highlight (registration cũ vẫn được auto-complete).
+
+
+────────────────────────────────────────────────────────────────────────────────
+B. LOGIC AUTO-END
+────────────────────────────────────────────────────────────────────────────────
+Trong MeetingService::highlightDiscussion(), khi `prevId` (registration đang
+highlight) khác `discussionRegistrationId` mới:
+
+  if (prev.status === 'registered') {
+      prev.status = 'completed';
+      prev.completed_at = now();
+  }
+  prev.highlighted_at = null;
+
+Trường hợp:
+  - prev.status đã là 'completed' rồi → KHÔNG đụng (giữ completed_at gốc).
+  - prevId === discussionRegistrationId → no-op (cùng người, chỉ re-highlight).
+  - prevId === null (lần đầu highlight) → no-op cho prev (không có prev).
+
+
+────────────────────────────────────────────────────────────────────────────────
+C. WEBSOCKET EVENT — `meeting.discussion-highlighted`
+────────────────────────────────────────────────────────────────────────────────
+Channel: `private-meeting.{meetingId}`
+
+Payload thêm field `auto_completed_previous_id`:
+
+  {
+    "meeting_id": 139,
+    "current_meeting_discussion_registration_id": 226,
+    "registration": { ... detail người mới ... } | null,
+    "auto_completed_previous_id": 225 | null    // ← NEW
+  }
+
+→ FE Tab Điều hành / Chủ trì / Màn chiếu listen event này:
+  - Update inline status của registration id `225` → `completed` mà không cần
+    re-fetch danh sách.
+  - Highlight UI cho registration `226` (current).
+
+Null nếu:
+  - Lần đầu highlight (chưa có người phát biểu trước).
+  - Registration cũ đã ở status `completed` từ trước (operator manually marked).
+
+
+────────────────────────────────────────────────────────────────────────────────
+D. TÁC ĐỘNG FE
+────────────────────────────────────────────────────────────────────────────────
+1. Tab Điều hành / Chủ trì:
+   - Nút "Chuyển sang người tiếp theo" (gọi `highlight-discussion` với id mới)
+     giờ tự complete người cũ → KHÔNG cần thêm nút "Kết thúc người hiện tại"
+     trước khi chuyển.
+   - Nếu cần thủ công complete mà không chuyển (vd hết giờ): vẫn dùng endpoint
+     `PATCH .../discussion-registrations/{reg}/complete` như cũ.
+
+2. Tab Màn chiếu: nhận WS event → highlight UI người mới + dim người cũ.
+
+3. Trường hợp operator gọi nhầm người:
+   - Highlight A → mất 10 giây → highlight B → A bị auto-completed.
+   - Nếu muốn revert: gọi endpoint `discussion-registrations/{A}` UPDATE
+     status = 'registered' + completed_at = null. (Chair/Op có quyền.)

@@ -561,12 +561,23 @@ class MeetingService
             }
         }
 
-        DB::transaction(function () use ($meeting, $discussionRegistrationId) {
-            // Clear highlighted_at của registration cũ (nếu có) — 1 highlight/meeting tại 1 thời điểm.
+        $autoCompletedPrevId = null;
+        DB::transaction(function () use ($meeting, $discussionRegistrationId, &$autoCompletedPrevId) {
+            // Khi chuyển người phát biểu, registration cũ (nếu vẫn `registered`)
+            // tự động đánh dấu hoàn thành — giả định lượt phát biểu đã kết thúc khi
+            // operator/chair chuyển sang người tiếp theo (hoặc bỏ highlight).
             $prevId = $meeting->current_meeting_discussion_registration_id;
             if ($prevId && $prevId !== $discussionRegistrationId) {
-                \App\Modules\Meeting\Models\MeetingDiscussionRegistration::where('id', $prevId)
-                    ->update(['highlighted_at' => null]);
+                $prev = \App\Modules\Meeting\Models\MeetingDiscussionRegistration::find($prevId);
+                if ($prev) {
+                    $updates = ['highlighted_at' => null];
+                    if ($prev->status === \App\Modules\Meeting\Enums\MeetingDiscussionStatusEnum::Registered->value) {
+                        $updates['status'] = \App\Modules\Meeting\Enums\MeetingDiscussionStatusEnum::Completed->value;
+                        $updates['completed_at'] = now();
+                        $autoCompletedPrevId = $prev->id;
+                    }
+                    $prev->update($updates);
+                }
             }
 
             // Set highlighted_at = now() cho registration mới.
@@ -578,7 +589,7 @@ class MeetingService
             $meeting->update(['current_meeting_discussion_registration_id' => $discussionRegistrationId]);
         });
 
-        broadcast(new \App\Modules\Meeting\Events\MeetingDiscussionHighlighted($meeting))->toOthers();
+        broadcast(new \App\Modules\Meeting\Events\MeetingDiscussionHighlighted($meeting, $autoCompletedPrevId))->toOthers();
 
         return $meeting->load([
             'meetingType', 'meetingLocation', 'chairperson.user', 'operator.user',

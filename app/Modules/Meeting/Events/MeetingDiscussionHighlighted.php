@@ -16,7 +16,15 @@ class MeetingDiscussionHighlighted implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public function __construct(public Meeting $meeting) {}
+    /**
+     * @param  int|null  $autoCompletedPreviousId  Registration cũ vừa được auto-mark completed khi
+     *                                              chuyển người phát biểu. Null nếu không có (lần
+     *                                              đầu highlight, hoặc registration cũ đã completed).
+     */
+    public function __construct(
+        public Meeting $meeting,
+        public ?int $autoCompletedPreviousId = null,
+    ) {}
 
     public function broadcastOn(): array
     {
@@ -51,6 +59,9 @@ class MeetingDiscussionHighlighted implements ShouldBroadcastNow
                 'content' => $registration->content,
                 'status' => $registration->status,
             ] : null,
+            // ID của registration cũ vừa được auto-completed khi chuyển người phát biểu.
+            // FE dùng để update inline status row trong list mà không cần refetch.
+            'auto_completed_previous_id' => $this->autoCompletedPreviousId,
         ];
     }
 }
