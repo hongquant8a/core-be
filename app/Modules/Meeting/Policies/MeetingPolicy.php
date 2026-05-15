@@ -86,4 +86,24 @@ class MeetingPolicy
 
         return (int) ($meeting->qr_manager_user_id ?? 0) === (int) $user->id;
     }
+
+    /**
+     * Xuất 4 báo cáo tổng hợp 1 cuộc họp (biên bản .docx, thảo luận/chất vấn .xlsx,
+     * biểu quyết .xlsx tổng hợp, điểm danh .xlsx).
+     *
+     * Cho phép 2 đối tượng:
+     *   - Chair / operator của meeting (thư ký xuất biên bản sau khi họp xong)
+     *   - Admin trang quản trị có Spatie permission `meetings.exportReports`
+     *     (không cần là chair/op meeting — thí dụ thư ký văn phòng tổng hợp báo cáo).
+     *
+     * KHÔNG dùng cho export chi tiết phiếu biểu quyết per-voter (vẫn `operate` only).
+     */
+    public function exportReports(User $user, Meeting $meeting): bool
+    {
+        if ($meeting->isChairperson($user) || $meeting->isOperator($user)) {
+            return true;
+        }
+
+        return $user->can('meetings.exportReports');
+    }
 }

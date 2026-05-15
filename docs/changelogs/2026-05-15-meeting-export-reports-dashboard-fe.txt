@@ -1,0 +1,93 @@
+================================================================================
+BE CHANGELOG — 2026-05-15 — 4 báo cáo tổng hợp cuộc họp + permission dashboard
+================================================================================
+
+TÓM TẮT
+─────────
+4 endpoint xuất báo cáo tổng hợp 1 cuộc họp đã có sẵn nhưng chỉ accessible
+qua Gate `operate` (chỉ chair/op meeting đó). Sau update: admin trang
+quản trị có Spatie permission `meetings.exportReports` cũng export được
+mà không cần là chair/op.
+
+
+────────────────────────────────────────────────────────────────────────────────
+A. 4 ENDPOINT BÁO CÁO TỔNG HỢP
+────────────────────────────────────────────────────────────────────────────────
+
+1. Xuất tổng hợp chung (biên bản .docx) — đã có MeetingMinutesGenerator
+   render đầy đủ: header thông tin / chương trình / đại biểu / vắng mặt /
+   thống kê điểm danh / phụ lục thảo luận / chất vấn / biểu quyết.
+     POST /api/meetings/{meeting}/export-minutes
+     Body: { template_id: number }
+     File: bien-ban-{title}.docx
+
+2. Xuất tổng hợp thảo luận (.xlsx)
+     GET  /api/meetings/{meeting}/discussion-registrations/export?type=discussion
+     GET  /api/meeting-discussion-registrations/export?meeting_id=X&type=discussion  (flat dashboard)
+     File: export__thao-luan-hop.xlsx
+
+3. Xuất tổng hợp chất vấn (.xlsx)
+     GET  /api/meetings/{meeting}/discussion-registrations/export?type=question
+     GET  /api/meeting-discussion-registrations/export?meeting_id=X&type=question  (flat)
+     File: export__chat-van-hop.xlsx
+
+4. Xuất tổng hợp biểu quyết (.xlsx)
+     GET  /api/meetings/{meeting}/vote-responses/export-summary
+     GET  /api/meeting-vote-responses/export-summary?meeting_id=X  (flat)
+     File: export__tong-hop-bieu-quyet.xlsx
+
+(Bonus: tổng hợp điểm danh):
+5. Tổng hợp điểm danh (.xlsx)
+     GET  /api/meetings/{meeting}/attendances/export
+     GET  /api/meeting-attendances/export?meeting_id=X  (flat)
+     File: export__diem-danh-hop.xlsx
+
+
+────────────────────────────────────────────────────────────────────────────────
+B. PHÂN QUYỀN MỚI
+────────────────────────────────────────────────────────────────────────────────
+Trước: cả 5 endpoint trên đều check Gate `operate` (chair OR op).
+
+Sau:
+  - Ability mới: `MeetingPolicy::exportReports`
+      => return true nếu user là chair/op của meeting
+                       HOẶC user.can('meetings.exportReports') (Spatie)
+  - 5 endpoint chuyển sang `exportReports`.
+  - Spatie permission `meetings.exportReports` đã seed (Super Admin + Admin
+    auto có; Quản trị/Trưởng phòng/Nhân viên cần admin gán nếu muốn).
+
+Lưu ý: xuất chi tiết phiếu biểu quyết per-voter (anonymize theo
+topic.ballot_mode) VẪN gate `operate` only — sensitive data, không cho
+dashboard admin truy cập đại trà:
+     GET /api/meetings/{m}/vote-responses/export
+     GET /api/meeting-vote-responses/export
+
+
+────────────────────────────────────────────────────────────────────────────────
+C. FE — UI DASHBOARD
+────────────────────────────────────────────────────────────────────────────────
+FE có thể thêm khu "Báo cáo tổng hợp" trong trang admin chi tiết 1 cuộc họp
+hoặc dashboard với 4 nút "Xuất ...". Gọi endpoint flat hoặc nested đều
+được tùy thiết kế UI.
+
+Permission check FE (nếu cần hide nút): check user có
+`meetings.exportReports` HOẶC kiểm tra response 200/403 sau khi click.
+
+
+────────────────────────────────────────────────────────────────────────────────
+D. CHẠY DEPLOY
+────────────────────────────────────────────────────────────────────────────────
+Cần chạy seed permission sau khi pull code:
+  sail artisan db:seed --class=PermissionSeeder
+
+Permission mới: `meetings.exportReports` — guard `web`.
+
+
+────────────────────────────────────────────────────────────────────────────────
+E. CHECKLIST FE
+────────────────────────────────────────────────────────────────────────────────
+[ ] Thêm 4 nút "Xuất ..." trên trang chi tiết cuộc họp (Tab Điều hành /
+    Tab Chủ trì / Trang quản trị dashboard).
+[ ] Confirm role admin được gán `meetings.exportReports` → click các nút
+    không bị 403.
+[ ] Vote detail (per-voter) vẫn chỉ visible cho chair/op (nếu UI có).

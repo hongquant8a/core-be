@@ -235,7 +235,7 @@ class MeetingAttendanceController extends Controller
 
         $meetingId = (int) $request->input('meeting_id');
         $meeting = \App\Modules\Meeting\Models\Meeting::findOrFail($meetingId);
-        \Illuminate\Support\Facades\Gate::authorize('operate', $meeting);
+        \Illuminate\Support\Facades\Gate::authorize('exportReports', $meeting);
 
         return \Maatwebsite\Excel\Facades\Excel::download(
             new \App\Modules\Meeting\Exports\MeetingAttendanceExport($meetingId),

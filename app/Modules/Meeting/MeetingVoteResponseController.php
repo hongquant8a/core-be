@@ -179,7 +179,7 @@ class MeetingVoteResponseController extends Controller
             ? \App\Modules\Meeting\Models\Meeting::findOrFail($meetingId)
             : \App\Modules\Meeting\Models\MeetingVoteTopic::with('meeting')->findOrFail($topicId)->meeting;
 
-        \Illuminate\Support\Facades\Gate::authorize('operate', $meeting);
+        \Illuminate\Support\Facades\Gate::authorize('exportReports', $meeting);
 
         return \Maatwebsite\Excel\Facades\Excel::download(
             new \App\Modules\Meeting\Exports\MeetingVoteResponseSummaryExport($meetingId, $topicId),

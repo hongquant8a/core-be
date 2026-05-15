@@ -138,6 +138,9 @@ class PermissionSeeder extends Seeder
         'meetings' => [
             'stats', 'index', 'show', 'store', 'update', 'destroy',
             'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
+            // Báo cáo tổng hợp 1 cuộc họp (docx biên bản + xlsx thảo luận/chất vấn/biểu quyết/điểm danh).
+            // Admin trang quản trị có quyền này → export bất kỳ meeting nào. Chair/op vẫn có sẵn qua Gate.
+            'exportReports',
         ],
         // Meeting - Loại cuộc họp
         'meeting-types' => [
@@ -300,6 +303,7 @@ class PermissionSeeder extends Seeder
         'statsByItemType' => 'Thống kê theo loại công việc',
         'statsByDocument' => 'Thống kê theo văn bản giao việc',
         'exportMonthlyReport' => 'Xuất báo cáo giao ban tháng',
+        'exportReports' => 'Xuất báo cáo tổng hợp cuộc họp',
         'users' => 'Danh sách người dùng',
         'syncUsers' => 'Đồng bộ người dùng',
         'removeUser' => 'Xóa người dùng',

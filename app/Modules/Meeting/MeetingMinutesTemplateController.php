@@ -142,7 +142,8 @@ class MeetingMinutesTemplateController extends Controller
     /**
      * Xuất biên bản .docx cho 1 meeting cụ thể, dùng template chỉ định.
      *
-     * Auth-only, không qua Spatie permission. Gate qua MeetingPolicy::operate (chair/operator).
+     * Auth-only. Gate `exportReports`: chair/op của meeting HOẶC admin có Spatie permission
+     * `meetings.exportReports` (cho phép admin trang quản trị export bất kỳ meeting nào).
      *
      * @urlParam meeting integer required ID cuộc họp. Example: 1
      * @bodyParam template_id integer required ID template biên bản. Example: 1
@@ -153,7 +154,7 @@ class MeetingMinutesTemplateController extends Controller
             'template_id' => 'required|integer|exists:meeting_minutes_templates,id',
         ]);
 
-        Gate::authorize('operate', $meeting);
+        Gate::authorize('exportReports', $meeting);
 
         $template = MeetingMinutesTemplate::findOrFail((int) $request->input('template_id'));
 

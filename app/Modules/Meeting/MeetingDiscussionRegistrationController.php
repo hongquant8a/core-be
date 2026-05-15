@@ -169,7 +169,7 @@ class MeetingDiscussionRegistrationController extends Controller
         $type = (string) $request->input('type');
 
         $meeting = \App\Modules\Meeting\Models\Meeting::findOrFail($meetingId);
-        \Illuminate\Support\Facades\Gate::authorize('operate', $meeting);
+        \Illuminate\Support\Facades\Gate::authorize('exportReports', $meeting);
 
         $fileName = $type === 'question' ? 'export__chat-van-hop.xlsx' : 'export__thao-luan-hop.xlsx';
 
