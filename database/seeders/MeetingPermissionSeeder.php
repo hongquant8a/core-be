@@ -65,24 +65,28 @@ class MeetingPermissionSeeder extends Seeder
             }
         }
 
-        // Participants
-        foreach (['stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy', 'respond'] as $action) {
+        // In-meeting actions (respond, checkin, markAbsent, approve, reject, complete,
+        // open/close vote-topic, cast vote) đã chuyển hoàn toàn sang nested route +
+        // Gate Policy → KHÔNG còn cần Spatie permission tương ứng.
+
+        // Participants — admin CRUD only.
+        foreach (['stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy'] as $action) {
             $names[] = "meeting-participants.{$action}";
         }
 
-        // Attendances
-        foreach (['stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy', 'checkin', 'markAbsent', 'approve', 'reject'] as $action) {
+        // Attendances — admin CRUD/báo cáo only.
+        foreach (['stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy'] as $action) {
             $names[] = "meeting-attendances.{$action}";
         }
 
-        // Vote
+        // Vote — admin CRUD/báo cáo only (cast vote qua nested).
         foreach (['stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy'] as $action) {
             $names[] = "meeting-vote-topics.{$action}";
             $names[] = "meeting-vote-responses.{$action}";
         }
 
-        // Đăng ký thảo luận / chất vấn
-        foreach (['stats', 'index', 'show', 'store', 'update', 'destroy', 'complete'] as $action) {
+        // Đăng ký thảo luận / chất vấn — admin CRUD/báo cáo (complete qua nested).
+        foreach (['stats', 'index', 'show', 'store', 'update', 'destroy'] as $action) {
             $names[] = "meeting-discussion-registrations.{$action}";
         }
 

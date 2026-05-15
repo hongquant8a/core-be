@@ -169,12 +169,13 @@ class PermissionSeeder extends Seeder
         'meeting-documents' => [
             'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
         ],
+        // In-meeting actions đã chuyển sang nested + Gate Policy → các permission
+        // `respond`/`checkin`/`markAbsent`/`approve`/`reject` không còn dùng → drop.
         'meeting-participants' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy', 'respond',
+            'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
         ],
         'meeting-attendances' => [
             'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
-            'checkin', 'markAbsent', 'approve', 'reject',
         ],
         'meeting-vote-topics' => [
             'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
@@ -183,7 +184,7 @@ class PermissionSeeder extends Seeder
             'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
         ],
         'meeting-discussion-registrations' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy', 'complete',
+            'stats', 'index', 'show', 'store', 'update', 'destroy',
         ],
         'meeting-personal-notes' => [
             'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',

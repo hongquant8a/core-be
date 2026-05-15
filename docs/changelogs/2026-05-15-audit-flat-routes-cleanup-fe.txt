@@ -1,0 +1,88 @@
+================================================================================
+BE CHANGELOG — 2026-05-15 — Audit cleanup: DROP 12 flat routes (Spatie sai)
+================================================================================
+
+TÓM TẮT
+─────────
+Dọn 12 flat URL có Spatie permission cho action in-meeting — vì action gắn
+meeting cụ thể (self-checkin, cast vote, complete speech, ...) nên check qua
+khóa ngoại meeting bằng Gate Policy, KHÔNG qua Spatie role-based.
+
+Tất cả 12 endpoint đã có **nested counterpart** từ refactor trước
+(`/api/meetings/{meeting}/...`) với Gate Policy đúng → BE chỉ giữ nested.
+
+→ **BREAKING CHANGE** — FE còn gọi flat URL cũ phải migrate sang nested URL.
+
+
+────────────────────────────────────────────────────────────────────────────────
+A. URL MAPPING — FE PHẢI MIGRATE
+────────────────────────────────────────────────────────────────────────────────
+
+  Flat URL (REMOVED)                                              Nested URL thay thế
+  ──────────────────                                              ───────────────────
+  POST   /api/meeting-attendances/checkin                         POST   /api/meetings/{m}/attendances/checkin
+  POST   /api/meeting-attendances/checkin-by-token                POST   /api/meetings/{m}/attendances/checkin-by-token
+  POST   /api/meeting-attendances/manual-checkin                  POST   /api/meetings/{m}/attendances/manual-checkin
+  POST   /api/meeting-attendances/mark-absent                     POST   /api/meetings/{m}/attendances/mark-absent
+  PATCH  /api/meeting-attendances/{att}/approve                   PATCH  /api/meetings/{m}/attendances/{att}/approve
+  PATCH  /api/meeting-attendances/{att}/reject                    PATCH  /api/meetings/{m}/attendances/{att}/reject
+  PATCH  /api/meeting-participants/{p}/respond                    PATCH  /api/meetings/{m}/participants/{p}/respond
+  PATCH  /api/meeting-discussion-registrations/reorder            PATCH  /api/meetings/{m}/discussion-registrations/reorder
+  PATCH  /api/meeting-discussion-registrations/{reg}/complete     PATCH  /api/meetings/{m}/discussion-registrations/{reg}/complete
+  PATCH  /api/meeting-vote-topics/{topic}/open                    PATCH  /api/meetings/{m}/vote-topics/{topic}/open
+  PATCH  /api/meeting-vote-topics/{topic}/close                   PATCH  /api/meetings/{m}/vote-topics/{topic}/close
+  POST   /api/meeting-vote-responses           (cast vote)        POST   /api/meetings/{m}/vote-topics/{topic}/responses
+
+Gọi flat URL cũ → 404 (route không còn).
+
+→ FE cần thêm `{meetingId}` vào path khi gọi. Trong các tab in-meeting, FE đã
+biết `meetingId` từ context (URL hoặc store) → migrate đơn giản.
+
+
+────────────────────────────────────────────────────────────────────────────────
+B. FLAT URL GIỮ NGUYÊN (admin CRUD/báo cáo)
+────────────────────────────────────────────────────────────────────────────────
+GET, POST, PUT, PATCH, DELETE (CRUD chuẩn) + stats + index + show + export +
+bulk-delete vẫn dùng flat URL với Spatie permission. Đây là endpoint cho trang
+QUẢN TRỊ (admin báo cáo, không phải action trong cuộc họp).
+
+VD vẫn dùng được:
+  GET    /api/meeting-attendances?meeting_id=X        // admin xem list điểm danh
+  GET    /api/meeting-attendances/stats?meeting_id=X  // dashboard
+  GET    /api/meeting-vote-responses?meeting_vote_topic_id=Y
+  POST   /api/meeting-discussion-registrations        // admin thêm đăng ký hộ (manual)
+  PATCH  /api/meeting-vote-topics/{topic}             // admin sửa tiêu đề topic
+  DELETE /api/meeting-vote-topics/bulk-delete         // admin xóa hàng loạt
+
+
+────────────────────────────────────────────────────────────────────────────────
+C. PERMISSION SEEDER — DROP DEAD PERMISSIONS
+────────────────────────────────────────────────────────────────────────────────
+Đã GỠ khỏi PermissionSeeder + MeetingPermissionSeeder:
+  - meeting-attendances.checkin
+  - meeting-attendances.markAbsent
+  - meeting-attendances.approve
+  - meeting-attendances.reject
+  - meeting-participants.respond
+  - meeting-discussion-registrations.complete
+
+Sau khi `db:seed --class=PermissionSeeder` và `permission:cache-reset` trên
+production, các Spatie role không còn có 6 permission này. FE/UI nào còn check
+CASL `meeting-attendances.checkin` sẽ luôn return false.
+
+→ FE migrate sang check `current_user_meeting_role` (từ MeetingResource) hoặc
+   gọi action qua nested URL và để BE Gate Policy quyết định.
+
+
+────────────────────────────────────────────────────────────────────────────────
+D. FE — VIỆC CẦN LÀM
+────────────────────────────────────────────────────────────────────────────────
+1. Grep codebase FE 12 flat URL ở section A → đổi sang nested URL.
+2. Bỏ check CASL ability cho 6 permission đã drop (section C).
+3. Test 3 flow chính:
+   - Đại biểu self-checkin (nút điểm danh trong Tab Điểm danh).
+   - Chair/op manual-checkin + approve/reject (Tab Điều hành).
+   - Đại biểu cast vote (Tab Biểu quyết).
+   - Operator open/close vote topic (Tab Điều hành).
+   - Đại biểu/chair complete speech (Tab Thảo luận).
+   - Đại biểu respond invitation (Inbox / notification click).

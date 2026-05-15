@@ -135,18 +135,18 @@ class MeetingPolicyTest extends TestCase
     public function test_chair_and_operator_can_open_vote_topic(): void
     {
         Sanctum::actingAs($this->chair);
-        $this->patchJson("/api/meeting-vote-topics/{$this->topic->id}/open", [], ['X-Organization-Id' => $this->org->id])->assertOk();
+        $this->patchJson("/api/meetings/{$this->meeting->id}/vote-topics/{$this->topic->id}/open", [], ['X-Organization-Id' => $this->org->id])->assertOk();
 
         // Đóng lại rồi test operator.
         $this->topic->update(['opened_at' => null, 'closed_at' => null]);
         Sanctum::actingAs($this->operator);
-        $this->patchJson("/api/meeting-vote-topics/{$this->topic->id}/open", [], ['X-Organization-Id' => $this->org->id])->assertOk();
+        $this->patchJson("/api/meetings/{$this->meeting->id}/vote-topics/{$this->topic->id}/open", [], ['X-Organization-Id' => $this->org->id])->assertOk();
     }
 
     public function test_participant_cannot_open_vote_topic(): void
     {
         Sanctum::actingAs($this->participant);
-        $res = $this->patchJson("/api/meeting-vote-topics/{$this->topic->id}/open", [], ['X-Organization-Id' => $this->org->id]);
+        $res = $this->patchJson("/api/meetings/{$this->meeting->id}/vote-topics/{$this->topic->id}/open", [], ['X-Organization-Id' => $this->org->id]);
         $res->assertForbidden();
     }
 
@@ -160,6 +160,6 @@ class MeetingPolicyTest extends TestCase
 
         $this->meeting->update(['end_time' => now()->addHour()]);
         $this->patchJson("/api/meetings/{$this->meeting->id}/end-early", [], ['X-Organization-Id' => $this->org->id])->assertForbidden();
-        $this->patchJson("/api/meeting-vote-topics/{$this->topic->id}/open", [], ['X-Organization-Id' => $this->org->id])->assertForbidden();
+        $this->patchJson("/api/meetings/{$this->meeting->id}/vote-topics/{$this->topic->id}/open", [], ['X-Organization-Id' => $this->org->id])->assertForbidden();
     }
 }

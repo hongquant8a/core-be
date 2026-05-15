@@ -5,9 +5,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::delete('/bulk-delete', [MeetingVoteTopicController::class, 'bulkDestroy'])->middleware('permission:meeting-vote-topics.bulkDestroy,web');
 Route::patch('/reorder', [MeetingVoteTopicController::class, 'reorder'])->middleware('permission:meeting-vote-topics.update,web');
-// Phase control — chỉ chủ trì meeting cha (Policy gate, không qua Spatie permission update).
-Route::patch('/{meetingVoteTopic}/open', [MeetingVoteTopicController::class, 'open'])->middleware('can:open,meetingVoteTopic');
-Route::patch('/{meetingVoteTopic}/close', [MeetingVoteTopicController::class, 'close'])->middleware('can:close,meetingVoteTopic');
+// Phase control (open/close) đã DROP — dùng nested route:
+//   PATCH /api/meetings/{meeting}/vote-topics/{topic}/open
+//   PATCH /api/meetings/{meeting}/vote-topics/{topic}/close
 Route::get('/stats', [MeetingVoteTopicController::class, 'stats'])->middleware('permission:meeting-vote-topics.stats,web');
 Route::get('/', [MeetingVoteTopicController::class, 'index'])->middleware('permission:meeting-vote-topics.index,web');
 Route::get('/{meetingVoteTopic}', [MeetingVoteTopicController::class, 'show'])->middleware('permission:meeting-vote-topics.show,web');
