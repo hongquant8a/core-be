@@ -246,6 +246,12 @@ class MeetingVoteResponseController extends Controller
         $request->validate(['meeting_vote_topic_id' => 'required|integer|exists:meeting_vote_topics,id']);
         $topicId = (int) $request->input('meeting_vote_topic_id');
 
+        // Tenant guard: chặn export topic của meeting khác qua nested URL của meeting hiện tại.
+        $topic = MeetingVoteTopic::findOrFail($topicId);
+        if ((int) $topic->meeting_id !== (int) $meeting->id) {
+            abort(404);
+        }
+
         return \Maatwebsite\Excel\Facades\Excel::download(
             new \App\Modules\Meeting\Exports\MeetingVoteResponseDetailExport($topicId),
             'export__chi-tiet-bieu-quyet.xlsx',
@@ -263,6 +269,14 @@ class MeetingVoteResponseController extends Controller
     {
         $request->validate(['meeting_vote_topic_id' => 'nullable|integer|exists:meeting_vote_topics,id']);
         $topicId = $request->filled('meeting_vote_topic_id') ? (int) $request->input('meeting_vote_topic_id') : null;
+
+        // Tenant guard: nếu truyền topic_id thì topic phải thuộc meeting trong URL.
+        if ($topicId !== null) {
+            $topic = MeetingVoteTopic::findOrFail($topicId);
+            if ((int) $topic->meeting_id !== (int) $meeting->id) {
+                abort(404);
+            }
+        }
 
         return \Maatwebsite\Excel\Facades\Excel::download(
             new \App\Modules\Meeting\Exports\MeetingVoteResponseSummaryExport($meeting->id, $topicId),
