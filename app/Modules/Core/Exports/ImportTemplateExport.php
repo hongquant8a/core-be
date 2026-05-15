@@ -3,7 +3,6 @@
 namespace App\Modules\Core\Exports;
 
 use Maatwebsite\Excel\Concerns\FromArray;
-use Maatwebsite\Excel\Concerns\WithHeadings;
 
 /**
  * Sinh file Excel template rỗng cho import.
@@ -12,7 +11,7 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
  * Import class tương ứng dịch ngược về field_key trong prepareForValidation
  * (xem trait TranslatesExcelHeadings).
  */
-class ImportTemplateExport implements FromArray, WithHeadings
+class ImportTemplateExport extends AbstractExcelExport implements FromArray
 {
     /**
      * @param  array<string, string>  $fieldLabels  [field_key => 'Nhãn tiếng Việt']

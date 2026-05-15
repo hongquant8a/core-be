@@ -4,9 +4,8 @@ namespace App\Modules\Core\Exports;
 
 use App\Modules\Core\Models\LogActivity;
 use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings;
 
-class LogActivitiesExport implements FromCollection, WithHeadings
+class LogActivitiesExport extends AbstractExcelExport implements FromCollection
 {
     public function __construct(
         protected array $filters = []

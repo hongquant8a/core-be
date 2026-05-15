@@ -2,15 +2,15 @@
 
 namespace App\Modules\TaskAssignment\Exports;
 
+use App\Modules\Core\Exports\AbstractExcelExport;
 use App\Modules\TaskAssignment\Enums\TaskDeadlineTypeEnum;
 use App\Modules\TaskAssignment\Enums\TaskPriorityEnum;
 use App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum;
 use App\Modules\TaskAssignment\Exports\Concerns\StripsHtml;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings;
 
-class ItemsExport implements FromCollection, WithHeadings
+class ItemsExport extends AbstractExcelExport implements FromCollection
 {
     use StripsHtml;
 

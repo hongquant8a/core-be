@@ -3,11 +3,34 @@
 namespace App\Modules\Core\Exports;
 
 use App\Modules\Core\Models\Notification;
+use App\Services\Notification\Enums\NotificationEventEnum;
 use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings;
 
-class NotificationLogsExport implements FromCollection, WithHeadings
+class NotificationLogsExport extends AbstractExcelExport implements FromCollection
 {
+    private const CHANNEL_LABELS = [
+        'email' => 'Email',
+        'sms' => 'SMS',
+        'zalo' => 'Zalo',
+        'fcm' => 'Thông báo đẩy',
+    ];
+
+    private const DELIVERY_STATUS_LABELS = [
+        'pending' => 'Chờ gửi',
+        'sent' => 'Đã gửi',
+        'failed' => 'Thất bại',
+    ];
+
+    /**
+     * Map basename của notifiable_type (FQN class) → nhãn tiếng Việt.
+     * Thiếu key → fallback class basename (vd "Meeting" thay vì full FQN).
+     */
+    private const NOTIFIABLE_TYPE_LABELS = [
+        'Meeting' => 'Cuộc họp',
+        'TaskAssignmentItem' => 'Công việc',
+        'TaskAssignmentDocument' => 'Văn bản',
+    ];
+
     public function __construct(
         protected array $eventKeys,
         protected int $organizationId,
@@ -27,24 +50,23 @@ class NotificationLogsExport implements FromCollection, WithHeadings
 
         return $notifications->values()->map(function (Notification $n, $i) {
             $deliveries = $n->deliveries;
-            $channels = $deliveries->pluck('channel')->unique()->implode(', ');
-            $statusLabels = [
-                'pending' => 'Chờ gửi',
-                'sent' => 'Đã gửi',
-                'failed' => 'Thất bại',
-            ];
+
+            $channels = $deliveries->pluck('channel')->unique()
+                ->map(fn ($c) => self::CHANNEL_LABELS[$c] ?? $c)
+                ->implode(', ');
+
             $statuses = $deliveries->pluck('status')->unique()
-                ->map(fn ($s) => $statusLabels[$s] ?? $s)
+                ->map(fn ($s) => self::DELIVERY_STATUS_LABELS[$s] ?? $s)
                 ->implode(', ');
 
             return [
                 'stt' => $i + 1,
-                'event_key' => $n->event_key,
+                'event_key' => NotificationEventEnum::tryFrom((string) $n->event_key)?->label() ?? $n->event_key,
                 'title' => $n->title,
                 'body' => $n->body,
                 'user_name' => $n->user?->name ?? 'Guest',
                 'user_email' => $n->user?->email,
-                'notifiable_type' => $n->notifiable_type,
+                'notifiable_type' => $this->notifiableTypeLabel($n->notifiable_type),
                 'notifiable_id' => $n->notifiable_id,
                 'channels' => $channels,
                 'statuses' => $statuses,
@@ -53,6 +75,16 @@ class NotificationLogsExport implements FromCollection, WithHeadings
                 'id' => $n->id,
             ];
         });
+    }
+
+    private function notifiableTypeLabel(?string $fqn): string
+    {
+        if (! $fqn) {
+            return '';
+        }
+        $basename = class_basename($fqn);
+
+        return self::NOTIFIABLE_TYPE_LABELS[$basename] ?? $basename;
     }
 
     public function headings(): array

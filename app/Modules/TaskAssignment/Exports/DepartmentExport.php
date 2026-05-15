@@ -3,11 +3,11 @@
 namespace App\Modules\TaskAssignment\Exports;
 
 use App\Modules\Core\Enums\StatusEnum;
+use App\Modules\Core\Exports\AbstractExcelExport;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDepartment;
 use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings;
 
-class DepartmentExport implements FromCollection, WithHeadings
+class DepartmentExport extends AbstractExcelExport implements FromCollection
 {
     public function __construct(private array $filters = []) {}
 

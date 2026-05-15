@@ -2,10 +2,10 @@
 
 namespace App\Modules\Meeting\Exports;
 
+use App\Modules\Core\Exports\AbstractExcelExport;
 use App\Modules\Meeting\Models\MeetingVoteResponse;
 use App\Modules\Meeting\Models\MeetingVoteTopic;
 use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings;
 
 /**
  * Xuất tổng hợp biểu quyết — mỗi row = 1 topic + đếm số phiếu theo option.
@@ -13,7 +13,7 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
  *
  * Columns: STT, Nội dung biểu quyết, Đồng ý, Không đồng ý, Ý kiến khác.
  */
-class MeetingVoteResponseSummaryExport implements FromCollection, WithHeadings
+class MeetingVoteResponseSummaryExport extends AbstractExcelExport implements FromCollection
 {
     /**
      * @param  ?int  $meetingId  filter mọi topic của meeting

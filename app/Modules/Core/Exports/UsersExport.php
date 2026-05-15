@@ -5,9 +5,8 @@ namespace App\Modules\Core\Exports;
 use App\Modules\Core\Enums\UserStatusEnum;
 use App\Modules\Core\Models\User;
 use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings;
 
-class UsersExport implements FromCollection, WithHeadings
+class UsersExport extends AbstractExcelExport implements FromCollection
 {
     public function __construct(
         protected array $filters = []

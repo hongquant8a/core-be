@@ -2,13 +2,13 @@
 
 namespace App\Modules\TaskAssignment\Exports;
 
+use App\Modules\Core\Exports\AbstractExcelExport;
 use App\Modules\TaskAssignment\Enums\TaskAssignmentDocumentStatusEnum;
 use App\Modules\TaskAssignment\Exports\Concerns\StripsHtml;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDocument;
 use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings;
 
-class DocumentsExport implements FromCollection, WithHeadings
+class DocumentsExport extends AbstractExcelExport implements FromCollection
 {
     use StripsHtml;
 

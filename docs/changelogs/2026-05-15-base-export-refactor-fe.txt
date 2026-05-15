@@ -1,0 +1,124 @@
+================================================================================
+BE CHANGELOG — 2026-05-15 — Chuẩn hóa style Excel export (BaseExport)
+================================================================================
+
+TÓM TẮT
+─────────
+Toàn bộ Excel export trong dự án giờ tuân theo 1 chuẩn style chung qua base
+class `App\Modules\Core\Exports\AbstractExcelExport`.
+
+Mục tiêu: file Excel xuất ra đồng nhất, đẹp, đúng tone công văn nhà nước
+(font Times New Roman, header tone xanh đậm, border, freeze pane).
+
+
+────────────────────────────────────────────────────────────────────────────────
+A. STYLE CHUẨN (mọi export đều áp dụng)
+────────────────────────────────────────────────────────────────────────────────
+- Font:        Times New Roman 11
+- Header row:  bold, fill #1F4E78 (xanh đậm), chữ trắng, center, wrap text,
+               row height 28
+- Data rows:   vertical center, wrap text
+- Border:      thin (#999999) full toàn vùng có data
+- Cột:         auto-size theo nội dung
+- Freeze:      row 1 (header pinned khi scroll)
+
+
+────────────────────────────────────────────────────────────────────────────────
+B. ENDPOINT KHÔNG ĐỔI
+────────────────────────────────────────────────────────────────────────────────
+Đây là refactor **internal** — KHÔNG có thay đổi:
+- API path (filter / query / response format)
+- Tên file xuất
+- Số lượng / thứ tự cột
+- Tên cột headings
+- Quyền truy cập
+
+FE không cần sửa code gọi API. Chỉ cần ghi nhận: file Excel mở lên trông đẹp
+và đồng nhất hơn.
+
+
+────────────────────────────────────────────────────────────────────────────────
+C. DANH SÁCH EXPORT ĐÃ CHUẨN HÓA (17 file)
+────────────────────────────────────────────────────────────────────────────────
+Module Core (7):
+  - LogActivitiesExport           (Nhật ký hoạt động)
+  - NotificationLogsExport        (Nhật ký thông báo)
+  - OrganizationsExport           (Tổ chức)
+  - PermissionsExport             (Quyền)
+  - RolesExport                   (Vai trò)
+  - UsersExport                   (Người dùng)
+  - ImportTemplateExport          (Mẫu file import — dùng chung mọi module)
+
+Module Meeting (7):
+  - CatalogExport                 (4 catalog: type/location/document/group)
+  - MeetingExport                 (Cuộc họp)
+  - MeetingAttendeeExport         (Danh bạ đại biểu)
+  - MeetingAttendanceExport       (Điểm danh cuộc họp)
+  - MeetingDiscussionRegistrationExport (Thảo luận + chất vấn)
+  - MeetingVoteResponseDetailExport     (Phiếu biểu quyết chi tiết)
+  - MeetingVoteResponseSummaryExport    (Tổng hợp biểu quyết)
+
+Module TaskAssignment (4):
+  - DepartmentExport              (Phòng ban)
+  - DocumentsExport               (Văn bản)
+  - ItemsExport                   (Công việc)
+  - LookupExport                  (Danh mục dùng chung)
+
+
+────────────────────────────────────────────────────────────────────────────────
+D. NGOÀI PHẠM VI (giữ nguyên layout custom)
+────────────────────────────────────────────────────────────────────────────────
+Báo cáo tháng UBND có layout custom (title gộp ô row 1, header row 2,
+romain numeral cột STT) — KHÔNG nằm trong scope chuẩn hóa lần này, giữ
+nguyên style hiện tại:
+  - MonthlyReportExport (multi-sheet)
+  - MonthlyReportSummarySheet
+  - MonthlyReportDepartmentSheet
+  - MonthlyReportNextMonthSheet
+
+
+────────────────────────────────────────────────────────────────────────────────
+E. FIX KÈM: NotificationLogsExport — human-readable cells
+────────────────────────────────────────────────────────────────────────────────
+3 cột trước đây xuất raw value → đã map sang tiếng Việt:
+
+  - event_key:
+    `meeting_published` → `Cuộc họp đã được phát hành`
+    `meeting_updated`   → `Cuộc họp đã cập nhật thông tin`
+    `task_assigned`     → `Được giao việc mới`
+    ... (qua NotificationEventEnum::label())
+
+  - channels:
+    `email` → `Email`
+    `sms`   → `SMS`
+    `zalo`  → `Zalo`
+    `fcm`   → `Thông báo đẩy`
+
+  - notifiable_type:
+    `App\Modules\Meeting\Models\Meeting` → `Cuộc họp`
+    `App\Modules\TaskAssignment\Models\TaskAssignmentItem` → `Công việc`
+    `App\Modules\TaskAssignment\Models\TaskAssignmentDocument` → `Văn bản`
+    (class không có map → fallback class basename)
+
+
+────────────────────────────────────────────────────────────────────────────────
+F. AUDIT TEST (BE internal)
+────────────────────────────────────────────────────────────────────────────────
+Test mới `tests/Feature/Exports/ExcelExportAuditTest.php` tự động chạy
+qua 22 instance export (17 class + 5 variant với modelClass/type khác nhau)
+để đảm bảo:
+  1. Heading 100% tiếng Việt (không snake_case English).
+  2. Cell data không chứa raw enum (active/pending/...) hay FQN class name.
+  3. AbstractExcelExport apply đúng style (font/màu/freeze).
+
+Chạy: `php artisan test --filter=ExcelExportAuditTest`
+
+
+────────────────────────────────────────────────────────────────────────────────
+G. CHECKLIST FE
+────────────────────────────────────────────────────────────────────────────────
+1. Test các nút "Xuất Excel" → file mở lên header xanh đậm chữ trắng, font
+   Times New Roman, có border và freeze row 1.
+2. Trang "Nhật ký thông báo": xuất file → kiểm tra 3 cột Sự kiện / Loại đối
+   tượng / Kênh gửi đã hiển thị tiếng Việt.
+3. Không cần thay đổi gì ở FE code.

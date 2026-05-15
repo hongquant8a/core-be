@@ -2,12 +2,12 @@
 
 namespace App\Modules\Meeting\Exports;
 
+use App\Modules\Core\Exports\AbstractExcelExport;
 use App\Modules\Meeting\Enums\MeetingStatusEnum;
 use App\Modules\Meeting\Models\Meeting;
 use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings;
 
-class MeetingExport implements FromCollection, WithHeadings
+class MeetingExport extends AbstractExcelExport implements FromCollection
 {
     public function __construct(private array $filters = []) {}
 

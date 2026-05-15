@@ -4,9 +4,8 @@ namespace App\Modules\Core\Exports;
 
 use App\Modules\Core\Models\Permission;
 use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings;
 
-class PermissionsExport implements FromCollection, WithHeadings
+class PermissionsExport extends AbstractExcelExport implements FromCollection
 {
     public function __construct(
         protected array $filters = []

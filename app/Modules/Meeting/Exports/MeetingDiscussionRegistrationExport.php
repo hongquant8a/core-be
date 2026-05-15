@@ -2,16 +2,16 @@
 
 namespace App\Modules\Meeting\Exports;
 
+use App\Modules\Core\Exports\AbstractExcelExport;
 use App\Modules\Meeting\Enums\MeetingDiscussionStatusEnum;
 use App\Modules\Meeting\Models\MeetingDiscussionRegistration;
 use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings;
 
 /**
  * Xuất danh sách thảo luận hoặc chất vấn — filter type=discussion|question + meeting_id.
  * Columns: STT, Chương trình (agenda.title), Người đăng ký, Thời gian đăng ký, Nội dung, Trạng thái.
  */
-class MeetingDiscussionRegistrationExport implements FromCollection, WithHeadings
+class MeetingDiscussionRegistrationExport extends AbstractExcelExport implements FromCollection
 {
     /**
      * @param  int  $meetingId

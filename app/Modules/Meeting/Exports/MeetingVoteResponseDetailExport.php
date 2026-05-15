@@ -2,11 +2,11 @@
 
 namespace App\Modules\Meeting\Exports;
 
+use App\Modules\Core\Exports\AbstractExcelExport;
 use App\Modules\Meeting\Enums\MeetingBallotModeEnum;
 use App\Modules\Meeting\Models\MeetingVoteResponse;
 use App\Modules\Meeting\Models\MeetingVoteTopic;
 use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings;
 
 /**
  * Xuất chi tiết biểu quyết của 1 topic — mỗi row = 1 phiếu của 1 user.
@@ -14,7 +14,7 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
  *
  * Columns: STT, Nội dung biểu quyết, Tên đại biểu, Biểu quyết.
  */
-class MeetingVoteResponseDetailExport implements FromCollection, WithHeadings
+class MeetingVoteResponseDetailExport extends AbstractExcelExport implements FromCollection
 {
     public function __construct(private int $topicId) {}
 

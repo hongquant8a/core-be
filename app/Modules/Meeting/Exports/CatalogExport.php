@@ -2,16 +2,16 @@
 
 namespace App\Modules\Meeting\Exports;
 
+use App\Modules\Core\Exports\AbstractExcelExport;
 use App\Modules\Meeting\Enums\MeetingCatalogStatusEnum;
 use Illuminate\Database\Eloquent\Model;
 use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings;
 
 /**
  * Export chung cho 4 catalog: MeetingType / MeetingLocation / MeetingDocumentType / MeetingAttendeeGroup.
  * Cột "Địa chỉ" + "Google Maps URL" chỉ render với MeetingLocation; 3 catalog còn lại bỏ luôn 2 cột này.
  */
-class CatalogExport implements FromCollection, WithHeadings
+class CatalogExport extends AbstractExcelExport implements FromCollection
 {
     private bool $hasLocation;
 

@@ -3,10 +3,10 @@
 namespace App\Modules\TaskAssignment\Exports;
 
 use App\Modules\Core\Enums\StatusEnum;
+use App\Modules\Core\Exports\AbstractExcelExport;
 use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings;
 
-class LookupExport implements FromCollection, WithHeadings
+class LookupExport extends AbstractExcelExport implements FromCollection
 {
     public function __construct(
         private string $modelClass,

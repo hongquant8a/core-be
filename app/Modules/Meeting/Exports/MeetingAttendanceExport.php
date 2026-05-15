@@ -2,10 +2,10 @@
 
 namespace App\Modules\Meeting\Exports;
 
+use App\Modules\Core\Exports\AbstractExcelExport;
 use App\Modules\Meeting\Enums\MeetingAttendanceStatusEnum;
 use App\Modules\Meeting\Models\MeetingParticipant;
 use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings;
 
 /**
  * Xuất danh sách đại biểu tham dự cuộc họp + trạng thái điểm danh.
@@ -20,7 +20,7 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
  *  - Đã xác nhận điểm danh (thư ký đã duyệt -> present: yes/no)
  *  - Giờ điểm danh
  */
-class MeetingAttendanceExport implements FromCollection, WithHeadings
+class MeetingAttendanceExport extends AbstractExcelExport implements FromCollection
 {
     public function __construct(private int $meetingId) {}
 

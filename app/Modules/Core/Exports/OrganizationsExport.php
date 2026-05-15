@@ -6,9 +6,8 @@ use App\Modules\Core\Enums\StatusEnum;
 use App\Modules\Core\Models\Organization;
 use App\Modules\Core\Services\OrganizationService;
 use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings;
 
-class OrganizationsExport implements FromCollection, WithHeadings
+class OrganizationsExport extends AbstractExcelExport implements FromCollection
 {
     public function __construct(
         protected array $filters = []

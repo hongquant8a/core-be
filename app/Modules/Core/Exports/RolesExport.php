@@ -4,9 +4,8 @@ namespace App\Modules\Core\Exports;
 
 use App\Modules\Core\Models\Role;
 use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings;
 
-class RolesExport implements FromCollection, WithHeadings
+class RolesExport extends AbstractExcelExport implements FromCollection
 {
     public function __construct(
         protected array $filters = []
