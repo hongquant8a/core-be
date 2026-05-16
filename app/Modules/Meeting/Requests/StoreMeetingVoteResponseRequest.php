@@ -12,6 +12,21 @@ class StoreMeetingVoteResponseRequest extends FormRequest
         return true;
     }
 
+    /**
+     * Nested route `/meetings/{meeting}/vote-topics/{meetingVoteTopic}/responses` — auto-inject
+     * meeting_vote_topic_id từ URL để FE không cần gửi field thừa. Flat route vẫn yêu cầu body.
+     */
+    protected function prepareForValidation(): void
+    {
+        $route = $this->route('meetingVoteTopic');
+        if ($route && ! $this->filled('meeting_vote_topic_id')) {
+            $topicId = is_object($route) ? ($route->id ?? null) : $route;
+            if ($topicId !== null) {
+                $this->merge(['meeting_vote_topic_id' => $topicId]);
+            }
+        }
+    }
+
     public function rules(): array
     {
         // meeting_participant_id auto-derive từ auth user trong service (qua topic.meeting_id).
