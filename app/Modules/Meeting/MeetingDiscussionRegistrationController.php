@@ -308,17 +308,20 @@ class MeetingDiscussionRegistrationController extends Controller
      * @urlParam meeting integer required ID cuộc họp. Example: 1
      *
      * @queryParam type string required Loại đăng ký (discussion|question). Example: discussion
+     * @queryParam meeting_agenda_id integer Lọc theo chương trình họp. Mặc định xuất toàn meeting. Example: 5
      */
     public function exportInMeeting(Meeting $meeting, FilterRequest $request)
     {
         $request->validate([
             'type' => 'required|in:discussion,question',
+            'meeting_agenda_id' => 'nullable|integer|exists:meeting_agendas,id',
         ]);
         $type = (string) $request->input('type');
+        $agendaId = $request->filled('meeting_agenda_id') ? (int) $request->input('meeting_agenda_id') : null;
         $fileName = $type === 'question' ? 'export__chat-van-hop.xlsx' : 'export__thao-luan-hop.xlsx';
 
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Modules\Meeting\Exports\MeetingDiscussionRegistrationExport($meeting->id, $type),
+            new \App\Modules\Meeting\Exports\MeetingDiscussionRegistrationExport($meeting->id, $type, $agendaId),
             $fileName,
         );
     }

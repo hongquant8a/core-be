@@ -16,8 +16,13 @@ class MeetingDiscussionRegistrationExport extends AbstractExcelExport implements
     /**
      * @param  int  $meetingId
      * @param  string  $type  discussion | question
+     * @param  ?int  $meetingAgendaId  Optional — lọc theo chương trình họp. Null = xuất toàn meeting.
      */
-    public function __construct(private int $meetingId, private string $type) {}
+    public function __construct(
+        private int $meetingId,
+        private string $type,
+        private ?int $meetingAgendaId = null,
+    ) {}
 
     public function collection()
     {
@@ -25,6 +30,7 @@ class MeetingDiscussionRegistrationExport extends AbstractExcelExport implements
             ->with(['agenda', 'participant.attendee.user', 'participant'])
             ->where('meeting_id', $this->meetingId)
             ->where('type', $this->type)
+            ->when($this->meetingAgendaId, fn ($q, $id) => $q->where('meeting_agenda_id', $id))
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get()
