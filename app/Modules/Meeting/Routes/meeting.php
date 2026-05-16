@@ -4,6 +4,8 @@ use App\Modules\Meeting\MeetingAttendanceController;
 use App\Modules\Meeting\MeetingController;
 use App\Modules\Meeting\MeetingDiscussionRegistrationController;
 use App\Modules\Meeting\MeetingParticipantController;
+use App\Modules\Meeting\MeetingPersonalNoteAttachmentController;
+use App\Modules\Meeting\MeetingPersonalNoteController;
 use App\Modules\Meeting\MeetingVoteResponseController;
 use App\Modules\Meeting\MeetingVoteTopicController;
 use Illuminate\Support\Facades\Route;
@@ -114,4 +116,23 @@ Route::prefix('{meeting}/attendances')->group(function () {
 Route::prefix('{meeting}/participants')->group(function () {
     Route::get('/', [MeetingParticipantController::class, 'indexInMeeting'])->middleware('can:viewParticipant,meeting');
     Route::patch('/{meetingParticipant}/respond', [MeetingParticipantController::class, 'respondInMeeting'])->middleware('can:respond,meetingParticipant');
+});
+
+// Tab 6 Ghi chú cá nhân — đại biểu/chair/op CRUD note của chính mình. Service auto-filter
+// theo user_id; Policy owner-only cho show/update/delete (chair/op KHÔNG xem note người khác).
+Route::prefix('{meeting}/personal-notes')->group(function () {
+    Route::get('/', [MeetingPersonalNoteController::class, 'indexInMeeting'])->middleware('can:viewParticipant,meeting');
+    Route::post('/', [MeetingPersonalNoteController::class, 'storeInMeeting'])->middleware('can:participate,meeting');
+    Route::patch('/reorder', [MeetingPersonalNoteController::class, 'reorderInMeeting'])->middleware('can:participate,meeting');
+    Route::get('/{meetingPersonalNote}', [MeetingPersonalNoteController::class, 'showInMeeting'])->middleware('can:view,meetingPersonalNote');
+    Route::put('/{meetingPersonalNote}', [MeetingPersonalNoteController::class, 'updateInMeeting'])->middleware('can:update,meetingPersonalNote');
+    Route::patch('/{meetingPersonalNote}', [MeetingPersonalNoteController::class, 'updateInMeeting'])->middleware('can:update,meetingPersonalNote');
+    Route::delete('/{meetingPersonalNote}', [MeetingPersonalNoteController::class, 'destroyInMeeting'])->middleware('can:delete,meetingPersonalNote');
+});
+
+// Attachments nested 2 cấp: meeting → note → attachments. Owner of note gate cho mọi action.
+Route::prefix('{meeting}/personal-notes/{meetingPersonalNote}/attachments')->group(function () {
+    Route::post('/', [MeetingPersonalNoteAttachmentController::class, 'storeInNote'])->middleware('can:update,meetingPersonalNote');
+    Route::patch('/reorder', [MeetingPersonalNoteAttachmentController::class, 'reorderInNote'])->middleware('can:update,meetingPersonalNote');
+    Route::delete('/{meetingPersonalNoteAttachment}', [MeetingPersonalNoteAttachmentController::class, 'destroyInNote'])->middleware('can:delete,meetingPersonalNoteAttachment');
 });

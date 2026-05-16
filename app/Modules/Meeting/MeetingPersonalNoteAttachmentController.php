@@ -4,6 +4,8 @@ namespace App\Modules\Meeting;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
+use App\Modules\Meeting\Models\Meeting;
+use App\Modules\Meeting\Models\MeetingPersonalNote;
 use App\Modules\Meeting\Models\MeetingPersonalNoteAttachment;
 use App\Modules\Meeting\Requests\ReorderMeetingPersonalNoteAttachmentRequest;
 use App\Modules\Meeting\Requests\StoreMeetingPersonalNoteAttachmentRequest;
@@ -67,6 +69,57 @@ class MeetingPersonalNoteAttachmentController extends Controller
      * @bodyParam items object[] required Danh sách tệp cần sắp xếp. Example: [{"id":1,"sort_order":1},{"id":2,"sort_order":2}]
      */
     public function reorder(ReorderMeetingPersonalNoteAttachmentRequest $request)
+    {
+        $this->meetingPersonalNoteAttachmentService->reorder($request->validated('items'));
+
+        return $this->success(null, 'Sắp xếp file đính kèm thành công!');
+    }
+
+    /**
+     * In-note: thêm file đính kèm cho ghi chú cá nhân (nested theo URL meeting + note).
+     *
+     * Gate `update,meetingPersonalNote` (owner only). meeting_personal_note_id auto-inject từ URL.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     * @urlParam meetingPersonalNote integer required ID ghi chú. Example: 1
+     *
+     * @bodyParam file file required Tệp đính kèm. Example: (binary)
+     * @bodyParam sort_order integer Thứ tự hiển thị tệp. Example: 1
+     */
+    public function storeInNote(Meeting $meeting, MeetingPersonalNote $meetingPersonalNote, StoreMeetingPersonalNoteAttachmentRequest $request)
+    {
+        $item = $this->meetingPersonalNoteAttachmentService->store($request->validated(), $request->file('file'));
+
+        return $this->successResource(new MeetingPersonalNoteAttachmentResource($item), 'Thêm file đính kèm ghi chú thành công!', 201);
+    }
+
+    /**
+     * In-note: xóa file đính kèm ghi chú cá nhân.
+     *
+     * Gate `delete,meetingPersonalNoteAttachment` (owner of parent note).
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     * @urlParam meetingPersonalNote integer required ID ghi chú. Example: 1
+     * @urlParam meetingPersonalNoteAttachment integer required ID file. Example: 1
+     */
+    public function destroyInNote(Meeting $meeting, MeetingPersonalNote $meetingPersonalNote, MeetingPersonalNoteAttachment $meetingPersonalNoteAttachment)
+    {
+        $this->meetingPersonalNoteAttachmentService->destroy($meetingPersonalNoteAttachment);
+
+        return $this->success(null, 'Xóa file đính kèm thành công!');
+    }
+
+    /**
+     * In-note: sắp xếp thứ tự file đính kèm.
+     *
+     * Gate `update,meetingPersonalNote` (owner only).
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     * @urlParam meetingPersonalNote integer required ID ghi chú. Example: 1
+     *
+     * @bodyParam items object[] required Danh sách tệp cần sắp xếp. Example: [{"id":1,"sort_order":1},{"id":2,"sort_order":2}]
+     */
+    public function reorderInNote(Meeting $meeting, MeetingPersonalNote $meetingPersonalNote, ReorderMeetingPersonalNoteAttachmentRequest $request)
     {
         $this->meetingPersonalNoteAttachmentService->reorder($request->validated('items'));
 

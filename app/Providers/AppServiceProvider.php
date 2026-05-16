@@ -9,11 +9,15 @@ use App\Modules\Meeting\Models\Meeting;
 use App\Modules\Meeting\Models\MeetingAttendance;
 use App\Modules\Meeting\Models\MeetingDiscussionRegistration;
 use App\Modules\Meeting\Models\MeetingParticipant;
+use App\Modules\Meeting\Models\MeetingPersonalNote;
+use App\Modules\Meeting\Models\MeetingPersonalNoteAttachment;
 use App\Modules\Meeting\Models\MeetingVoteResponse;
 use App\Modules\Meeting\Models\MeetingVoteTopic;
 use App\Modules\Meeting\Policies\MeetingAttendancePolicy;
 use App\Modules\Meeting\Policies\MeetingDiscussionRegistrationPolicy;
 use App\Modules\Meeting\Policies\MeetingParticipantPolicy;
+use App\Modules\Meeting\Policies\MeetingPersonalNoteAttachmentPolicy;
+use App\Modules\Meeting\Policies\MeetingPersonalNotePolicy;
 use App\Modules\Meeting\Policies\MeetingPolicy;
 use App\Modules\Meeting\Policies\MeetingVoteResponsePolicy;
 use App\Modules\Meeting\Policies\MeetingVoteTopicPolicy;
@@ -52,6 +56,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(MeetingVoteResponse::class, MeetingVoteResponsePolicy::class);
         Gate::policy(MeetingAttendance::class, MeetingAttendancePolicy::class);
         Gate::policy(MeetingParticipant::class, MeetingParticipantPolicy::class);
+        Gate::policy(MeetingPersonalNote::class, MeetingPersonalNotePolicy::class);
+        Gate::policy(MeetingPersonalNoteAttachment::class, MeetingPersonalNoteAttachmentPolicy::class);
 
         // Giữ nguyên header Excel khi import (không lowercase/snake_case).
         // Cho phép import dùng header tiếng Việt giống hệt template export.

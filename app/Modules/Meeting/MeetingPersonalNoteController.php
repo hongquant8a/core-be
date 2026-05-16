@@ -4,6 +4,7 @@ namespace App\Modules\Meeting;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
+use App\Modules\Meeting\Models\Meeting;
 use App\Modules\Meeting\Models\MeetingPersonalNote;
 use App\Modules\Meeting\Requests\BulkDestroyCatalogRequest;
 use App\Modules\Meeting\Requests\ReorderMeetingPersonalNoteRequest;
@@ -112,6 +113,106 @@ class MeetingPersonalNoteController extends Controller
      * @bodyParam items object[] required Danh sách ghi chú cần sắp xếp. Example: [{"id":1,"sort_order":1},{"id":2,"sort_order":2}]
      */
     public function reorder(ReorderMeetingPersonalNoteRequest $request)
+    {
+        $this->meetingPersonalNoteService->reorder($request->validated('items'));
+
+        return $this->success(null, 'Sắp xếp ghi chú cá nhân thành công!');
+    }
+
+    /**
+     * In-meeting: danh sách ghi chú cá nhân của auth user trong cuộc họp cụ thể.
+     *
+     * Gate `viewParticipant,meeting` (chair/operator/participant). Service auto-filter
+     * theo user_id nên đại biểu chỉ thấy note của mình; tham gia meeting là điều kiện đủ.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     *
+     * @queryParam sort_by string Sắp xếp theo trường. Example: sort_order
+     * @queryParam sort_order string Thứ tự sắp xếp (asc/desc). Example: asc
+     * @queryParam limit integer Số bản ghi mỗi trang. Example: 100
+     */
+    public function indexInMeeting(Meeting $meeting, FilterRequest $request)
+    {
+        // Force filter theo meeting URL — bỏ qua meeting_id FE có thể gửi nhầm.
+        $filters = array_merge($request->all(), ['meeting_id' => $meeting->id]);
+        $items = $this->meetingPersonalNoteService->index($filters, (int) ($request->limit ?? 100));
+
+        return $this->successCollection(MeetingPersonalNoteResource::collection($items));
+    }
+
+    /**
+     * In-meeting: tạo ghi chú cá nhân cho cuộc họp cụ thể.
+     *
+     * Gate `participate,meeting`. meeting_id auto-inject từ URL — FE chỉ cần gửi content.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     *
+     * @bodyParam content string required Nội dung ghi chú. Example: Đề xuất bổ sung chỉ tiêu đào tạo
+     * @bodyParam sort_order integer Thứ tự hiển thị. Example: 1
+     */
+    public function storeInMeeting(Meeting $meeting, StoreMeetingPersonalNoteRequest $request)
+    {
+        $item = $this->meetingPersonalNoteService->store($request->validated());
+
+        return $this->successResource(new MeetingPersonalNoteResource($item), 'Tạo ghi chú cá nhân thành công!', 201);
+    }
+
+    /**
+     * In-meeting: chi tiết ghi chú cá nhân.
+     *
+     * Gate `view,meetingPersonalNote` (owner only).
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     * @urlParam meetingPersonalNote integer required ID ghi chú. Example: 1
+     */
+    public function showInMeeting(Meeting $meeting, MeetingPersonalNote $meetingPersonalNote)
+    {
+        return $this->successResource(new MeetingPersonalNoteResource($this->meetingPersonalNoteService->show($meetingPersonalNote)));
+    }
+
+    /**
+     * In-meeting: cập nhật ghi chú cá nhân.
+     *
+     * Gate `update,meetingPersonalNote` (owner only).
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     * @urlParam meetingPersonalNote integer required ID ghi chú. Example: 1
+     *
+     * @bodyParam content string Nội dung ghi chú. Example: Cập nhật đề xuất sau phiên giải trình
+     * @bodyParam sort_order integer Thứ tự hiển thị. Example: 2
+     */
+    public function updateInMeeting(UpdateMeetingPersonalNoteRequest $request, Meeting $meeting, MeetingPersonalNote $meetingPersonalNote)
+    {
+        $item = $this->meetingPersonalNoteService->update($meetingPersonalNote, $request->validated());
+
+        return $this->successResource(new MeetingPersonalNoteResource($item), 'Cập nhật ghi chú cá nhân thành công!');
+    }
+
+    /**
+     * In-meeting: xóa ghi chú cá nhân.
+     *
+     * Gate `delete,meetingPersonalNote` (owner only).
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     * @urlParam meetingPersonalNote integer required ID ghi chú. Example: 1
+     */
+    public function destroyInMeeting(Meeting $meeting, MeetingPersonalNote $meetingPersonalNote)
+    {
+        $this->meetingPersonalNoteService->destroy($meetingPersonalNote);
+
+        return $this->success(null, 'Xóa ghi chú cá nhân thành công!');
+    }
+
+    /**
+     * In-meeting: sắp xếp lại thứ tự ghi chú cá nhân.
+     *
+     * Gate `participate,meeting`. Service auto-filter theo user_id — chỉ sắp xếp note của user.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     *
+     * @bodyParam items object[] required Danh sách ghi chú cần sắp xếp. Example: [{"id":1,"sort_order":1},{"id":2,"sort_order":2}]
+     */
+    public function reorderInMeeting(Meeting $meeting, ReorderMeetingPersonalNoteRequest $request)
     {
         $this->meetingPersonalNoteService->reorder($request->validated('items'));
 

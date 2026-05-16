@@ -1,0 +1,185 @@
+================================================================================
+BE CHANGELOG — 2026-05-16 — Meeting fixes + Personal Notes in-meeting clone
+================================================================================
+
+Tổng hợp 3 thay đổi BE module Meeting trong ngày. FE đọc từng phần để biết tác
+động cụ thể.
+
+
+────────────────────────────────────────────────────────────────────────────────
+1. CAST VOTE — drop meeting_vote_topic_id body validation
+────────────────────────────────────────────────────────────────────────────────
+
+Endpoint: POST /api/meetings/{meeting}/vote-topics/{topic}/responses
+
+Trước: 422 nếu FE không gửi `meeting_vote_topic_id` body.
+Sau:    FE chỉ cần gửi `{ "option": "agree" }`. Topic id auto-inject từ URL.
+
+Cách fix:
+  StoreMeetingVoteResponseRequest::prepareForValidation() — nếu route có
+  param `meetingVoteTopic` thì merge id vào body trước khi validator chạy.
+  Flat route `/meeting-vote-responses` (admin store) vẫn yêu cầu body như cũ.
+
+Không confused-deputy: controller `castInTopic` đã hardcoded
+  $validated['meeting_vote_topic_id'] = $meetingVoteTopic->id
+override sau validation, không đọc body.
+
+FE action: không bắt buộc. Có thể bỏ inject defensive nếu muốn.
+
+
+────────────────────────────────────────────────────────────────────────────────
+2. DOC DOWNLOAD — fix 404 khi auth bằng cookie
+────────────────────────────────────────────────────────────────────────────────
+
+Endpoint: GET /api/public/meeting-documents/{id}/download?type=view|download
+
+Bug: FE SPA dùng cookie `accessToken`, gọi download tài liệu của meeting
+riêng tư (is_public=false) → trả 404 dù user là đại biểu của meeting.
+
+Root cause:
+  - MeetingDocumentService::publicShow gọi shouldSeeAllDocs() TRƯỚC khi
+    resolve cookie token.
+  - shouldSeeAllDocs() chỉ đọc Auth guard web/sanctum, không tự đọc cookie.
+  - Cookie chưa được setUser vào guard → shouldSeeAllDocs return false →
+    meeting riêng tư fail visibility check → 404.
+
+Fix:
+  Reorder — resolve cookie token TRƯỚC, gọi Auth::guard('sanctum')
+  ->setUser($authUser), rồi mới check participant. Guard sanctum giờ có
+  user → shouldSeeAllDocs đọc đúng.
+
+FE action: không cần đổi gì. Sau deploy BE, FE tải được tài liệu meeting
+riêng tư khi đã login (Bearer header hoặc cookie accessToken đều ok).
+
+Lưu ý: cùng pattern bug có ở publicIndex (list docs/list meetings) nhưng
+chưa fix vì FE hiện set is_public=true cho mọi doc — list không bị tác
+động. Nếu sau này có meeting/doc riêng tư mà list hiện sai → BE sẽ fix
+tương tự, FE không cần làm gì.
+
+
+────────────────────────────────────────────────────────────────────────────────
+3. PERSONAL NOTES + ATTACHMENTS — clone in-meeting endpoints
+────────────────────────────────────────────────────────────────────────────────
+
+Lý do: FE dashboard đại biểu fetch /api/meeting-personal-notes bị 403 vì
+đại biểu role không có Spatie permission meeting-personal-notes.*.
+
+Pattern fix: clone in-meeting (nested theo /meetings/{m}/...) — gate bằng
+Policy thay vì Spatie, đại biểu chỉ cần là chair/operator/participant của
+meeting là dùng được. Service tự lọc ownership theo user_id.
+
+Flat routes cũ GIỮ NGUYÊN cho admin dashboard nếu có dùng (không có 403
+phía admin vì admin có permission).
+
+──────────────────────────────────────
+3.1 Notes — 7 endpoint
+──────────────────────────────────────
+
+GET    /api/meetings/{meeting}/personal-notes
+  Gate: viewParticipant,meeting  (user là chair/op/participant)
+  Query: search, sort_by, sort_order, limit (default 100)
+  Service auto-filter user_id → chỉ trả note của auth user
+  meeting_id filter override theo URL (FE không cần gửi)
+
+POST   /api/meetings/{meeting}/personal-notes
+  Gate: participate,meeting
+  Body: { content (required), sort_order? }
+  meeting_id auto-inject từ URL (FE không cần gửi)
+
+PATCH  /api/meetings/{meeting}/personal-notes/reorder
+  Gate: participate,meeting
+  Body: { items: [{id, sort_order}, ...] }
+  Service auto-filter user_id — chỉ sắp xếp note của user
+
+GET    /api/meetings/{meeting}/personal-notes/{meetingPersonalNote}
+  Gate: view,meetingPersonalNote  (owner-only)
+
+PUT    /api/meetings/{meeting}/personal-notes/{meetingPersonalNote}
+PATCH  /api/meetings/{meeting}/personal-notes/{meetingPersonalNote}
+  Gate: update,meetingPersonalNote  (owner-only)
+  Body: { content?, sort_order? }
+
+DELETE /api/meetings/{meeting}/personal-notes/{meetingPersonalNote}
+  Gate: delete,meetingPersonalNote  (owner-only)
+
+──────────────────────────────────────
+3.2 Attachments — 3 endpoint
+──────────────────────────────────────
+
+POST   /api/meetings/{meeting}/personal-notes/{meetingPersonalNote}/attachments
+  Gate: update,meetingPersonalNote  (owner-of-parent-note)
+  Body (multipart): { file (required, max 10MB), sort_order? }
+  meeting_personal_note_id auto-inject từ URL
+
+PATCH  /api/meetings/{meeting}/personal-notes/{meetingPersonalNote}/attachments/reorder
+  Gate: update,meetingPersonalNote
+  Body: { items: [{id, sort_order}, ...] }
+
+DELETE /api/meetings/{meeting}/personal-notes/{meetingPersonalNote}/attachments/{meetingPersonalNoteAttachment}
+  Gate: delete,meetingPersonalNoteAttachment
+
+──────────────────────────────────────
+3.3 Migration FE
+──────────────────────────────────────
+
+URL pattern thay đổi:
+
+  Cũ (flat, 403 cho đại biểu)              Mới (nested, đại biểu ok)
+  ──────────────────────────────────────── ─────────────────────────────────────
+  GET    /meeting-personal-notes           GET    /meetings/{m}/personal-notes
+         ?meeting_id={m}                          (meeting_id force theo URL)
+
+  POST   /meeting-personal-notes           POST   /meetings/{m}/personal-notes
+         { meeting_id, content }                  { content }
+                                                  (meeting_id auto-inject)
+
+  GET    /meeting-personal-notes/{n}       GET    /meetings/{m}/personal-notes/{n}
+  PUT    /meeting-personal-notes/{n}       PUT    /meetings/{m}/personal-notes/{n}
+  PATCH  /meeting-personal-notes/{n}       PATCH  /meetings/{m}/personal-notes/{n}
+  DELETE /meeting-personal-notes/{n}       DELETE /meetings/{m}/personal-notes/{n}
+  PATCH  /meeting-personal-notes/reorder   PATCH  /meetings/{m}/personal-notes/reorder
+
+  POST   /meeting-personal-note-attachments
+         { meeting_personal_note_id, file }
+                                           POST   /meetings/{m}/personal-notes/{n}/attachments
+                                                  { file }
+                                                  (note_id auto-inject)
+
+  DELETE /meeting-personal-note-            DELETE /meetings/{m}/personal-notes/{n}/
+         attachments/{a}                           attachments/{a}
+
+  PATCH  /meeting-personal-note-            PATCH  /meetings/{m}/personal-notes/{n}/
+         attachments/reorder                       attachments/reorder
+
+Behavior unchanged:
+  - Resource shape, response format giữ nguyên (cùng MeetingPersonalNoteResource
+    + MeetingPersonalNoteAttachmentResource).
+  - Service vẫn auto-derive participant từ auth user khi store; FE không cần
+    gửi meeting_participant_id.
+  - Ownership scope: chỉ owner xem/sửa/xóa note của chính mình. Chair/op
+    KHÔNG xem note đại biểu khác (note là dữ liệu cá nhân).
+
+Bulk delete: chỉ có ở flat route (không clone nested). Đại biểu UX dùng
+delete-one-by-one. Nếu FE cần bulk trong meeting, báo lại để mở ticket.
+
+
+────────────────────────────────────────────────────────────────────────────────
+FE CHECKLIST
+────────────────────────────────────────────────────────────────────────────────
+
+Cast vote:
+[ ] Bỏ inject `meeting_vote_topic_id` body khi gọi nested cast vote.
+    Optional — body thừa BE bỏ qua, không 422.
+
+Doc download cookie:
+[ ] Test lại tải tài liệu của meeting riêng tư khi login bằng cookie.
+    Phải trả 302 redirect tới file (không còn 404).
+
+Personal notes:
+[ ] Chuyển 7 endpoint notes sang nested URL `/meetings/{m}/personal-notes/...`.
+[ ] Bỏ gửi `meeting_id` trong body store (auto-inject từ URL).
+[ ] Chuyển 3 endpoint attachments sang nested URL
+    `/meetings/{m}/personal-notes/{n}/attachments/...`.
+[ ] Bỏ gửi `meeting_personal_note_id` trong body store attachment.
+[ ] Verify ownership behavior: đại biểu A KHÔNG thấy note của đại biểu B
+    (kể cả trong cùng meeting). Chair/op cũng KHÔNG thấy note đại biểu.

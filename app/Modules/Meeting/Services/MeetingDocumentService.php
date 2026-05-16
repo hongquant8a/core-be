@@ -44,18 +44,24 @@ class MeetingDocumentService
     public function publicShow(MeetingDocument $meetingDocument): MeetingDocument
     {
         $meeting = $meetingDocument->meeting;
-        $isParticipant = $this->shouldSeeAllDocs($meeting);
 
-        // Public route không có middleware auth:sanctum + set.permissions.team. Tự resolve thủ công:
+        // Resolve auth TRƯỚC khi check participant. shouldSeeAllDocs() chỉ đọc guard web/sanctum,
+        // không tự đọc cookie. FE SPA dùng cookie `accessToken` → nếu không setUser vào guard
+        // trước, shouldSeeAllDocs return false → meeting riêng tư trả 404 dù user là đại biểu.
         //  - Ưu tiên Authorization Bearer header (cách chuẩn)
         //  - Fallback: cookie `accessToken` (FE SPA của project dùng cookie thay vì header)
         $authUser = auth()->user() ?? \Illuminate\Support\Facades\Auth::guard('sanctum')->user();
         if (! $authUser) {
             $authUser = $this->resolveUserFromCookieToken();
+            if ($authUser) {
+                \Illuminate\Support\Facades\Auth::guard('sanctum')->setUser($authUser);
+            }
         }
         if ($authUser && function_exists('setPermissionsTeamId') && $meeting) {
             setPermissionsTeamId((int) $meeting->organization_id);
         }
+
+        $isParticipant = $this->shouldSeeAllDocs($meeting);
         $hasViewPermission = $authUser?->can('meeting-documents.show') ?? false;
 
         // Guest hoặc auth-không-có-quyền: yêu cầu doc + meeting đều public + published.

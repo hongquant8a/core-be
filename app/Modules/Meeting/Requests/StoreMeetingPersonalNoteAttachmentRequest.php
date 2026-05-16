@@ -11,6 +11,22 @@ class StoreMeetingPersonalNoteAttachmentRequest extends FormRequest
         return true;
     }
 
+    /**
+     * Nested route `/meetings/{meeting}/personal-notes/{meetingPersonalNote}/attachments` —
+     * auto-inject meeting_personal_note_id từ URL để FE không cần gửi field thừa.
+     * Flat route vẫn yêu cầu FE gửi body (route('meetingPersonalNote') null).
+     */
+    protected function prepareForValidation(): void
+    {
+        $route = $this->route('meetingPersonalNote');
+        if ($route && ! $this->filled('meeting_personal_note_id')) {
+            $noteId = is_object($route) ? ($route->id ?? null) : $route;
+            if ($noteId !== null) {
+                $this->merge(['meeting_personal_note_id' => $noteId]);
+            }
+        }
+    }
+
     public function rules(): array
     {
         return [
