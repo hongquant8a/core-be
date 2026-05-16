@@ -1,0 +1,97 @@
+================================================================================
+BE CHANGELOG — 2026-05-16 — Vote-responses stats + Export filter agenda
+================================================================================
+
+2 thay đổi nhỏ module Meeting trong session chiều, bổ sung sau bundle
+2026-05-16-meeting-fixes-and-personal-notes-fe.txt.
+
+
+────────────────────────────────────────────────────────────────────────────────
+1. VOTE-RESPONSES STATS — đại biểu xem được aggregate theo flag topic
+────────────────────────────────────────────────────────────────────────────────
+
+Endpoint: GET /api/meetings/{meeting}/vote-responses/stats
+         ?meeting_vote_topic_id={topic}
+
+Trước: route gate cứng `can:operate,meeting` (chair/op only) → đại biểu luôn 403.
+
+Sau:   route gate `can:viewParticipant,meeting` (user có role nào đó).
+       Service tự kiểm tra flag topic.show_result_on_personal_device:
+         - flag=true  → 200 + aggregate stats (đại biểu xem được)
+         - flag=false → 403 + message "Phiên biểu quyết này không cho phép
+                        xem kết quả tổng hợp ngoài quản lý/chủ trì."
+       Chair/op luôn xem được mọi topic (bypass flag).
+
+Response shape KHÔNG đổi:
+  {
+    "success": true,
+    "data": {
+      "total":    integer,
+      "agree":    integer,
+      "disagree": integer,
+      "approve":  integer,
+      "reject":   integer,
+      "abstain":  integer
+    }
+  }
+
+Privacy: chỉ trả số đếm aggregate, KHÔNG lộ phiếu cá nhân.
+
+FE action:
+  - Không đổi URL / query / response parser.
+  - Có thể giữ defensive: check `topic.show_result_on_personal_device` từ
+    vote topic resource trước khi gọi endpoint, để tránh hit 403 không
+    cần thiết cho đại biểu.
+  - Handle 403: ẩn panel stats hoặc show error message.
+
+
+────────────────────────────────────────────────────────────────────────────────
+2. EXPORT THẢO LUẬN / CHẤT VẤN — filter theo agenda
+────────────────────────────────────────────────────────────────────────────────
+
+Endpoint: GET /api/meetings/{meeting}/discussion-registrations/export
+
+Trước: chỉ filter theo `meeting_id + type`. FE có dropdown agenda nhưng
+       export luôn xuất toàn meeting.
+
+Sau:   thêm query optional `meeting_agenda_id`.
+         - Bỏ ra → xuất toàn meeting (backward compat).
+         - Truyền id → chỉ xuất đăng ký thuộc agenda đó.
+
+Query params:
+  type              string   required   discussion | question
+  meeting_agenda_id integer  optional   ID chương trình họp (exists check)
+
+Ví dụ:
+  GET /api/meetings/48/discussion-registrations/export?type=discussion
+  GET /api/meetings/48/discussion-registrations/export?type=discussion&meeting_agenda_id=5
+  GET /api/meetings/48/discussion-registrations/export?type=question&meeting_agenda_id=5
+
+Validation:
+  meeting_agenda_id phải tồn tại trong meeting_agendas (validate exists).
+  Sai id → 422 với message "ID chương trình họp không tồn tại trong hệ thống."
+
+Filename Content-Disposition giữ nguyên:
+  - type=discussion → export__thao-luan-hop.xlsx
+  - type=question   → export__chat-van-hop.xlsx
+  (Filename không thêm agenda suffix — FE đọc tên file từ Content-Disposition
+   nếu cần show, hoặc FE tự ghép tên hiển thị từ agenda đang lọc.)
+
+FE action:
+  - Optional. Truyền `meeting_agenda_id` khi user đang lọc theo agenda
+    cụ thể trong UI để export khớp dữ liệu hiển thị.
+
+
+────────────────────────────────────────────────────────────────────────────────
+FE CHECKLIST
+────────────────────────────────────────────────────────────────────────────────
+
+Vote-responses stats:
+[ ] Test endpoint stats với role đại biểu — khi topic
+    show_result_on_personal_device=true phải trả 200 + data.
+[ ] Khi flag=false, đại biểu nhận 403 với message rõ ràng; UI ẩn panel.
+[ ] Chair/op vẫn xem được mọi topic.
+
+Export thảo luận/chất vấn:
+[ ] (Optional) Truyền meeting_agenda_id khi user filter agenda trong UI.
+[ ] Test export không truyền agenda — xuất toàn meeting như cũ.
