@@ -112,7 +112,8 @@ class MeetingAttendeeService
                 });
             })
             ->orderBy('name')
-            ->limit((int) ($filters['limit'] ?? 50))
+            // Endpoint dropdown — FE truyền limit thì cap, không truyền thì trả all.
+            ->when($filters['limit'] ?? null, fn ($q, $limit) => $q->limit((int) $limit))
             ->get()
             ->map(fn (User $u) => [
                 'id' => $u->id,
