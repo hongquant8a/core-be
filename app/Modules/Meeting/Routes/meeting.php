@@ -91,7 +91,10 @@ Route::prefix('{meeting}/vote-topics')->group(function () {
 
 // Tab 4 Biểu quyết — view responses (chair/op dashboard).
 Route::prefix('{meeting}/vote-responses')->group(function () {
-    Route::get('/stats', [MeetingVoteResponseController::class, 'statsInMeeting'])->middleware('can:operate,meeting');
+    // Stats aggregate — service tự gate theo topic.show_result_on_personal_device:
+    // flag=true cho phép đại biểu xem tổng hợp (không lộ phiếu cá nhân);
+    // flag=false service throw 403 với message rõ ràng. Route gate chỉ check là role nào đó.
+    Route::get('/stats', [MeetingVoteResponseController::class, 'statsInMeeting'])->middleware('can:viewParticipant,meeting');
     // Detail (mỗi row 1 phiếu, có thể anonymize) — sensitive, giữ operate only.
     Route::get('/export', [MeetingVoteResponseController::class, 'exportInMeeting'])->middleware('can:operate,meeting');
     // Summary (đếm theo option) — báo cáo tổng hợp, cho admin có permission xuất được.
