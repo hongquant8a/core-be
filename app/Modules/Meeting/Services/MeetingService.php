@@ -122,10 +122,60 @@ class MeetingService
      * Resolve auth user id — ép guard sanctum để pick up Bearer token kể cả khi route
      * không có middleware auth:sanctum (vd /meetings/public). auth()->id() default guard
      * không resolve được token vì Sanctum chỉ activate khi middleware chạy.
+     *
+     * Thứ tự fallback:
+     *  1. auth()->id() — session/default guard
+     *  2. Auth::guard('sanctum')->id() — Bearer header
+     *  3. Cookie `accessToken` — FE SPA dùng cookie thay vì header. Không có cookie auth
+     *     thì auth user qua cookie bị coi như guest → không thấy meeting riêng tư
+     *     cross-org mà user có role.
      */
     private function resolveUserId(): ?int
     {
-        return auth()->id() ?? Auth::guard('sanctum')->id();
+        $id = auth()->id() ?? Auth::guard('sanctum')->id();
+        if ($id) {
+            return (int) $id;
+        }
+
+        $user = $this->resolveUserFromCookieToken();
+        if ($user) {
+            // setUser vào guard sanctum để các call sau (vd shouldSeeAllDocs trong trait
+            // HasDocumentVisibility) cũng pick up đúng user.
+            Auth::guard('sanctum')->setUser($user);
+
+            return (int) $user->id;
+        }
+
+        return null;
+    }
+
+    /**
+     * FE SPA dùng cookie `accessToken` (format Sanctum: `id|plain_text`) thay vì Bearer.
+     * Resolve thủ công thành User instance. Same logic với MeetingDocumentService —
+     * duplicated cho đơn giản, sẽ refactor thành trait nếu xuất hiện call site thứ 3.
+     */
+    private function resolveUserFromCookieToken(): ?\App\Modules\Core\Models\User
+    {
+        $request = request();
+        if (! $request) {
+            return null;
+        }
+        $token = $request->cookie('accessToken');
+        if (! $token || ! str_contains($token, '|')) {
+            return null;
+        }
+        [$id, $plain] = explode('|', $token, 2);
+        $accessToken = \Laravel\Sanctum\PersonalAccessToken::find($id);
+        if (! $accessToken) {
+            return null;
+        }
+        if (! hash_equals($accessToken->token, hash('sha256', $plain))) {
+            return null;
+        }
+
+        return $accessToken->tokenable instanceof \App\Modules\Core\Models\User
+            ? $accessToken->tokenable
+            : null;
     }
 
     /**
