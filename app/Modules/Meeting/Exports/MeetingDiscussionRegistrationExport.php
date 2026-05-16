@@ -37,7 +37,8 @@ class MeetingDiscussionRegistrationExport extends AbstractExcelExport implements
                     ?? '',
                 'registered_at' => $item->created_at?->format('H:i:s d/m/Y'),
                 'content' => $item->content,
-                'operator_note' => $item->operator_note ?? '',
+                // Chất vấn → answer_content (Nội dung trả lời). Thảo luận → operator_note (Ghi chú thảo luận).
+                'extra' => ($this->type === 'question' ? $item->answer_content : $item->operator_note) ?? '',
                 'status' => $this->statusLabel($item->status),
             ]);
     }
