@@ -3,6 +3,7 @@
 namespace App\Modules\Core\Exports;
 
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithDefaultStyles;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
@@ -10,6 +11,7 @@ use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Style;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 /**
@@ -27,12 +29,27 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
  *  - Override `collection()` hoặc `array()` (FromCollection / FromArray)
  *  - Có thể override `customStyles()` / `customEvents()` để mở rộng style riêng
  */
-abstract class AbstractExcelExport implements WithHeadings, WithStyles, ShouldAutoSize, WithEvents
+abstract class AbstractExcelExport implements WithHeadings, WithStyles, ShouldAutoSize, WithEvents, WithDefaultStyles
 {
     protected const HEADER_FILL_COLOR = '1F4E78';
     protected const HEADER_TEXT_COLOR = 'FFFFFF';
     protected const FONT_NAME = 'Times New Roman';
     protected const FONT_SIZE = 11;
+
+    /**
+     * Set default font TRƯỚC khi data ghi để PhpSpreadsheet auto-size tính theo đúng font.
+     * Nếu set qua AfterSheet, auto-size đã tính theo Calibri (default) → Times New Roman rộng
+     * hơn ~10% → text overflow → wrapText kích hoạt → cột ngắn (status) chỉ thấy 1 dòng đầu.
+     */
+    public function defaultStyles(Style $defaultStyle)
+    {
+        return [
+            'font' => [
+                'name' => self::FONT_NAME,
+                'size' => self::FONT_SIZE,
+            ],
+        ];
+    }
 
     public function styles(Worksheet $sheet): array
     {
