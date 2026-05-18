@@ -144,6 +144,9 @@ class MeetingMinutesGenerator
         $headerRow = ['bgColor' => 'CCCCCC'];
 
         $phpWord->addTableStyle('MainTable', $tableStyle);
+        // Signature table cần style riêng (no border) — nhưng PHẢI có style để PhpWord
+        // emit <w:tblPr>. Word strict mode reject <w:tbl> không có <w:tblPr>.
+        $phpWord->addTableStyle('SignatureTable', ['borderSize' => 0, 'cellMargin' => 0]);
 
         $section = $phpWord->addSection();
 
@@ -293,7 +296,7 @@ class MeetingMinutesGenerator
         $section->addTextBreak(3);
 
         // Chữ ký
-        $signTable = $section->addTable();
+        $signTable = $section->addTable('SignatureTable');
         $sr = $signTable->addRow();
         $c1 = $sr->addCell(5000);
         $c1->addText('THƯ KÝ', ['bold' => true], $center);
@@ -352,7 +355,42 @@ class MeetingMinutesGenerator
         $outPath = storage_path('app/'.uniqid('minutes_').'.docx');
         $tp->saveAs($outPath);
 
+        // Word strict mode reject <w:tbl> không có <w:tblPr>. Một số template (sample cũ)
+        // bị thiếu element này ở signature table → file mở trong Word báo lỗi corrupt.
+        // Inject <w:tblPr/> rỗng cho mọi <w:tbl> bị thiếu để cứu output.
+        $this->repairDocxTables($outPath);
+
         return $outPath;
+    }
+
+    /**
+     * Inject `<w:tblPr/>` vào những `<w:tbl>` thiếu — fix Word strict mode "corrupt" error.
+     * Idempotent: bảng đã có tblPr giữ nguyên.
+     */
+    private function repairDocxTables(string $path): void
+    {
+        $zip = new \ZipArchive();
+        if ($zip->open($path) !== true) {
+            return;
+        }
+        $xml = $zip->getFromName('word/document.xml');
+        if ($xml === false) {
+            $zip->close();
+            return;
+        }
+
+        // Match `<w:tbl>` (open tag) NOT immediately followed by `<w:tblPr` — inject `<w:tblPr/>`.
+        $fixed = preg_replace_callback(
+            '/<w:tbl>(?!\s*<w:tblPr)/u',
+            fn () => '<w:tbl><w:tblPr/>',
+            $xml
+        );
+
+        if ($fixed !== null && $fixed !== $xml) {
+            $zip->deleteName('word/document.xml');
+            $zip->addFromString('word/document.xml', $fixed);
+        }
+        $zip->close();
     }
 
     private function fillScalar(TemplateProcessor $tp, Meeting $m): void
