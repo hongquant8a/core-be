@@ -4,6 +4,7 @@ namespace App\Modules\Meeting;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
+use App\Modules\Core\Support\ExportFilename;
 use App\Modules\Meeting\Models\MeetingAttendeeGroup;
 use App\Modules\Meeting\Requests\BulkDestroyCatalogRequest;
 use App\Modules\Meeting\Requests\BulkUpdateStatusCatalogRequest;
@@ -156,7 +157,7 @@ class MeetingAttendeeGroupController extends Controller
      */
     public function export(FilterRequest $request)
     {
-        return $this->catalogService->export(MeetingAttendeeGroup::class, $request->all(), 'export__nhom-dai-bieu.xlsx');
+        return $this->catalogService->export(MeetingAttendeeGroup::class, $request->all(), ExportFilename::make('nhom-dai-bieu'));
     }
 
     /**

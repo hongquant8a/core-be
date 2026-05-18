@@ -5,6 +5,7 @@ namespace App\Modules\Core\Services;
 use App\Modules\Core\Exports\PermissionsExport;
 use App\Modules\Core\Imports\PermissionsImport;
 use App\Modules\Core\Models\Permission;
+use App\Modules\Core\Support\ExportFilename;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -75,7 +76,7 @@ class PermissionService
 
     public function export(array $filters): BinaryFileResponse
     {
-        return Excel::download(new PermissionsExport($filters), 'export__quyen-han.xlsx');
+        return Excel::download(new PermissionsExport($filters), ExportFilename::make('quyen-han'));
     }
 
     public function import($file): void

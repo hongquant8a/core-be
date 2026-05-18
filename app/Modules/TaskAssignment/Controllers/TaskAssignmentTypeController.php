@@ -4,6 +4,7 @@ namespace App\Modules\TaskAssignment\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
+use App\Modules\Core\Support\ExportFilename;
 use App\Modules\TaskAssignment\Models\TaskAssignmentType;
 use App\Modules\TaskAssignment\Requests\BulkDestroyLookupRequest;
 use App\Modules\TaskAssignment\Requests\BulkUpdateStatusLookupRequest;
@@ -238,7 +239,7 @@ class TaskAssignmentTypeController extends Controller
      */
     public function export(FilterRequest $request)
     {
-        return $this->lookupService->export(TaskAssignmentType::class, $request->all(), 'export__loai-van-ban-giao-viec.xlsx');
+        return $this->lookupService->export(TaskAssignmentType::class, $request->all(), ExportFilename::make('loai-van-ban-giao-viec'));
     }
 
     /**

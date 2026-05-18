@@ -55,10 +55,10 @@ class UpdateMeetingAttendanceRequest extends FormRequest
     public function bodyParameters(): array
     {
         return [
-            'status' => ['description' => 'Trạng thái điểm danh.', 'example' => 'late'],
+            'status' => ['description' => 'Trạng thái điểm danh (pending | present | absent).', 'example' => 'present'],
             'checkin_method' => ['description' => 'Phương thức điểm danh.', 'example' => 'manual'],
             'checked_in_at' => ['description' => 'Thời điểm điểm danh.', 'example' => '2026-05-01 08:20:00'],
-            'note' => ['description' => 'Ghi chú bổ sung.', 'example' => 'Đến muộn 20 phút'],
+            'note' => ['description' => 'Ghi chú bổ sung.', 'example' => 'Đại biểu có mặt đúng giờ'],
         ];
     }
 }

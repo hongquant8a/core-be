@@ -3,6 +3,7 @@
 namespace App\Modules\TaskAssignment\Services;
 
 use App\Modules\Core\Services\MediaService;
+use App\Modules\Core\Support\ExportFilename;
 use App\Modules\TaskAssignment\Enums\TaskDeadlineTypeEnum;
 use App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum;
 use App\Modules\TaskAssignment\Exports\ItemsExport;
@@ -185,14 +186,15 @@ class TaskAssignmentItemService
 
     public function export(array $filters): BinaryFileResponse
     {
-        return Excel::download(new ItemsExport($filters), 'export__cong-viec-giao.xlsx');
+        return Excel::download(new ItemsExport($filters), ExportFilename::make('cong-viec-giao'));
     }
 
     public function exportMonthlyReport(string $month): BinaryFileResponse
     {
-        $filename = "export__bao-cao-giao-ban-{$month}.xlsx";
-
-        return Excel::download(new \App\Modules\TaskAssignment\Exports\MonthlyReportExport($month), $filename);
+        return Excel::download(
+            new \App\Modules\TaskAssignment\Exports\MonthlyReportExport($month),
+            ExportFilename::make("bao-cao-giao-ban-{$month}"),
+        );
     }
 
     public function updateProgress(TaskAssignmentItem $item, array $validated): TaskAssignmentItem

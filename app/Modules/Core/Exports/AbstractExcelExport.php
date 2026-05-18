@@ -37,6 +37,15 @@ abstract class AbstractExcelExport implements WithHeadings, WithStyles, ShouldAu
     protected const FONT_SIZE = 11;
 
     /**
+     * Keyword (lower-case, mb_strtolower) — cột có header chứa BẤT KỲ keyword nào sẽ được
+     * căn giữa cả header + data rows. Match contains, không phải exact.
+     *
+     * Default: STT, Trạng thái, Thời gian (theo yêu cầu chung dự án).
+     * Subclass override `centerAlignedHeaderKeywords()` để thêm/đổi list.
+     */
+    protected const DEFAULT_CENTER_KEYWORDS = ['stt', 'trạng thái', 'thời gian'];
+
+    /**
      * Set default font TRƯỚC khi data ghi để PhpSpreadsheet auto-size tính theo đúng font.
      * Nếu set qua AfterSheet, auto-size đã tính theo Calibri (default) → Times New Roman rộng
      * hơn ~10% → text overflow → wrapText kích hoạt → cột ngắn (status) chỉ thấy 1 dòng đầu.
@@ -113,6 +122,9 @@ abstract class AbstractExcelExport implements WithHeadings, WithStyles, ShouldAu
                 $sheet->getRowDimension(1)->setRowHeight(28);
                 $sheet->freezePane('A2');
 
+                // Căn giữa cột theo keyword header (STT / Trạng thái / Thời gian + subclass override).
+                $this->applyCenterAlignmentByHeaderKeywords($sheet, $lastColumn, $lastRow);
+
                 // Hook cho subclass mở rộng (vd format số tiền cột E, format ngày cột G, ...).
                 $this->customEvents($event);
             },
@@ -126,5 +138,52 @@ abstract class AbstractExcelExport implements WithHeadings, WithStyles, ShouldAu
     protected function customEvents(AfterSheet $event): void
     {
         // no-op
+    }
+
+    /**
+     * Override để thêm/đổi keyword căn giữa. Trả về mảng string lower-case.
+     */
+    protected function centerAlignedHeaderKeywords(): array
+    {
+        return self::DEFAULT_CENTER_KEYWORDS;
+    }
+
+    /**
+     * Scan row 1 headers, match keyword (contains, case/diacritic-insensitive)
+     * → căn giữa toàn column (header + data rows).
+     */
+    private function applyCenterAlignmentByHeaderKeywords(Worksheet $sheet, string $lastColumn, int $lastRow): void
+    {
+        $keywords = $this->centerAlignedHeaderKeywords();
+        if (empty($keywords)) {
+            return;
+        }
+
+        foreach ($this->iterateColumns('A', $lastColumn) as $col) {
+            $header = (string) $sheet->getCell($col.'1')->getValue();
+            $headerLower = mb_strtolower(trim($header));
+            foreach ($keywords as $kw) {
+                if ($headerLower !== '' && mb_strpos($headerLower, $kw) !== false) {
+                    $sheet->getStyle("{$col}1:{$col}{$lastRow}")->getAlignment()
+                        ->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
+     * Generator yield column letters A..lastColumn (handle vượt Z: AA, AB...).
+     */
+    private function iterateColumns(string $start, string $end): \Generator
+    {
+        $current = $start;
+        while (true) {
+            yield $current;
+            if ($current === $end) {
+                break;
+            }
+            $current++;
+        }
     }
 }

@@ -4,6 +4,7 @@ namespace App\Modules\Meeting;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
+use App\Modules\Core\Support\ExportFilename;
 use App\Modules\Meeting\Models\Meeting;
 use App\Modules\Meeting\Models\MeetingAttendance;
 use App\Modules\Meeting\Requests\BulkDestroyCatalogRequest;
@@ -239,7 +240,7 @@ class MeetingAttendanceController extends Controller
 
         return \Maatwebsite\Excel\Facades\Excel::download(
             new \App\Modules\Meeting\Exports\MeetingAttendanceExport($meetingId),
-            'export__diem-danh-hop.xlsx',
+            ExportFilename::make('diem-danh-hop'),
         );
     }
 
@@ -370,7 +371,7 @@ class MeetingAttendanceController extends Controller
     {
         return \Maatwebsite\Excel\Facades\Excel::download(
             new \App\Modules\Meeting\Exports\MeetingAttendanceExport($meeting->id),
-            'export__diem-danh-hop.xlsx',
+            ExportFilename::make('diem-danh-hop'),
         );
     }
 }

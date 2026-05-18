@@ -4,6 +4,7 @@ namespace App\Modules\Meeting;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
+use App\Modules\Core\Support\ExportFilename;
 use App\Modules\Meeting\Models\Meeting;
 use App\Modules\Meeting\Models\MeetingVoteResponse;
 use App\Modules\Meeting\Models\MeetingVoteTopic;
@@ -149,7 +150,7 @@ class MeetingVoteResponseController extends Controller
 
         return \Maatwebsite\Excel\Facades\Excel::download(
             new \App\Modules\Meeting\Exports\MeetingVoteResponseDetailExport($topicId),
-            'export__chi-tiet-bieu-quyet.xlsx',
+            ExportFilename::make('chi-tiet-bieu-quyet'),
         );
     }
 
@@ -183,7 +184,7 @@ class MeetingVoteResponseController extends Controller
 
         return \Maatwebsite\Excel\Facades\Excel::download(
             new \App\Modules\Meeting\Exports\MeetingVoteResponseSummaryExport($meetingId, $topicId),
-            'export__tong-hop-bieu-quyet.xlsx',
+            ExportFilename::make('tong-hop-bieu-quyet'),
         );
     }
 
@@ -254,7 +255,7 @@ class MeetingVoteResponseController extends Controller
 
         return \Maatwebsite\Excel\Facades\Excel::download(
             new \App\Modules\Meeting\Exports\MeetingVoteResponseDetailExport($topicId),
-            'export__chi-tiet-bieu-quyet.xlsx',
+            ExportFilename::make('chi-tiet-bieu-quyet'),
         );
     }
 
@@ -280,7 +281,7 @@ class MeetingVoteResponseController extends Controller
 
         return \Maatwebsite\Excel\Facades\Excel::download(
             new \App\Modules\Meeting\Exports\MeetingVoteResponseSummaryExport($meeting->id, $topicId),
-            'export__tong-hop-bieu-quyet.xlsx',
+            ExportFilename::make('tong-hop-bieu-quyet'),
         );
     }
 }

@@ -4,6 +4,7 @@ namespace App\Modules\Core\Services;
 
 use App\Modules\Core\Exports\LogActivitiesExport;
 use App\Modules\Core\Models\LogActivity;
+use App\Modules\Core\Support\ExportFilename;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
@@ -217,6 +218,6 @@ class LogActivityService
 
     public function export(array $filters): BinaryFileResponse
     {
-        return Excel::download(new LogActivitiesExport($filters), 'export__nhat-ky-hoat-dong.xlsx');
+        return Excel::download(new LogActivitiesExport($filters), ExportFilename::make('nhat-ky-hoat-dong'));
     }
 }

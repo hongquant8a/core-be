@@ -2,13 +2,17 @@
 
 namespace App\Modules\Meeting\Enums;
 
+/**
+ * 3 trạng thái theo spec phòng họp không giấy:
+ *  - Pending  → "Chờ xác nhận" (mới gửi mời / chưa thao tác)
+ *  - Present  → "Có mặt"
+ *  - Absent   → "Vắng mặt" (đại biểu báo vắng, kèm lý do)
+ */
 enum MeetingAttendanceStatusEnum: string
 {
     case Pending = 'pending';
     case Present = 'present';
     case Absent = 'absent';
-    case Late = 'late';
-    case Excused = 'excused';
 
     public static function values(): array
     {

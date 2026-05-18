@@ -7,6 +7,7 @@ use App\Modules\Core\Exports\UsersExport;
 use App\Modules\Core\Imports\UsersImport;
 use App\Modules\Core\Models\Role;
 use App\Modules\Core\Models\User;
+use App\Modules\Core\Support\ExportFilename;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -196,7 +197,7 @@ class UserService
 
     public function export(array $filters): BinaryFileResponse
     {
-        return Excel::download(new UsersExport($filters), 'export__nguoi-dung.xlsx');
+        return Excel::download(new UsersExport($filters), ExportFilename::make('nguoi-dung'));
     }
 
     public function import($file): void

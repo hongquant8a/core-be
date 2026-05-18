@@ -7,6 +7,7 @@ use App\Modules\Core\Exports\NotificationLogsExport;
 use App\Modules\Core\Models\Notification;
 use App\Modules\Core\Models\NotificationDelivery;
 use App\Modules\Core\Requests\BulkDestroyNotificationLogRequest;
+use App\Modules\Core\Support\ExportFilename;
 use App\Services\Notification\Enums\NotificationEventEnum;
 use App\Services\Notification\Enums\NotificationModuleEnum;
 use Illuminate\Http\Request;
@@ -93,7 +94,7 @@ class NotificationLogController extends Controller
                 $this->currentOrganizationId(),
                 $request->all()
             ),
-            'export__nhat-ky-thong-bao.xlsx'
+            ExportFilename::make('nhat-ky-thong-bao')
         );
     }
 

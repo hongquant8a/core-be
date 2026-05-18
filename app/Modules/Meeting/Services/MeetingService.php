@@ -3,6 +3,7 @@
 namespace App\Modules\Meeting\Services;
 
 use App\Modules\Core\Services\MediaService;
+use App\Modules\Core\Support\ExportFilename;
 use App\Modules\Meeting\Concerns\HasDocumentVisibility;
 use App\Modules\Meeting\Enums\MeetingStatusEnum;
 use App\Modules\Meeting\Exports\MeetingExport;
@@ -647,9 +648,9 @@ class MeetingService
         ]);
     }
 
-    public function export(array $filters, string $fileName = 'export__cuoc-hop.xlsx'): BinaryFileResponse
+    public function export(array $filters, ?string $fileName = null): BinaryFileResponse
     {
-        return Excel::download(new MeetingExport($filters), $fileName);
+        return Excel::download(new MeetingExport($filters), $fileName ?? ExportFilename::make('cuoc-hop'));
     }
 
     private function resolveCurrentOrganizationId(): int

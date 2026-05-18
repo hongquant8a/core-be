@@ -5,6 +5,7 @@ namespace App\Modules\Core\Services;
 use App\Modules\Core\Exports\RolesExport;
 use App\Modules\Core\Imports\RolesImport;
 use App\Modules\Core\Models\Role;
+use App\Modules\Core\Support\ExportFilename;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -78,7 +79,7 @@ class RoleService
 
     public function export(array $filters): BinaryFileResponse
     {
-        return Excel::download(new RolesExport($filters), 'export__vai-tro.xlsx');
+        return Excel::download(new RolesExport($filters), ExportFilename::make('vai-tro'));
     }
 
     public function import($file): void

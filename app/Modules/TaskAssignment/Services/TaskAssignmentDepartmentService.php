@@ -3,6 +3,7 @@
 namespace App\Modules\TaskAssignment\Services;
 
 use App\Modules\Core\Enums\StatusEnum;
+use App\Modules\Core\Support\ExportFilename;
 use App\Modules\TaskAssignment\Exports\DepartmentExport;
 use App\Modules\TaskAssignment\Imports\DepartmentImport;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDepartment;
@@ -96,7 +97,7 @@ class TaskAssignmentDepartmentService
 
     public function export(array $filters): BinaryFileResponse
     {
-        return Excel::download(new DepartmentExport($filters), 'export__phong-ban-giao-viec.xlsx');
+        return Excel::download(new DepartmentExport($filters), ExportFilename::make('phong-ban-giao-viec'));
     }
 
     public function import($file): void

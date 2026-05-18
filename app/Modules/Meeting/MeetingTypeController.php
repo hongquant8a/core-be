@@ -5,6 +5,7 @@ namespace App\Modules\Meeting;
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
 use App\Modules\Core\Resources\PublicOptionResource;
+use App\Modules\Core\Support\ExportFilename;
 use App\Modules\Meeting\Models\MeetingType;
 use App\Modules\Meeting\Requests\BulkDestroyCatalogRequest;
 use App\Modules\Meeting\Requests\BulkUpdateStatusCatalogRequest;
@@ -178,7 +179,7 @@ class MeetingTypeController extends Controller
      */
     public function export(FilterRequest $request)
     {
-        return $this->catalogService->export(MeetingType::class, $request->all(), 'export__loai-cuoc-hop.xlsx');
+        return $this->catalogService->export(MeetingType::class, $request->all(), ExportFilename::make('loai-cuoc-hop'));
     }
 
     /**

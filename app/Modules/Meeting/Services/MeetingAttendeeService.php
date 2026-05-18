@@ -3,6 +3,7 @@
 namespace App\Modules\Meeting\Services;
 
 use App\Modules\Core\Models\User;
+use App\Modules\Core\Support\ExportFilename;
 use App\Modules\Meeting\Enums\MeetingCatalogStatusEnum;
 use App\Modules\Meeting\Exports\MeetingAttendeeExport;
 use App\Modules\Meeting\Imports\MeetingAttendeeImport;
@@ -124,9 +125,9 @@ class MeetingAttendeeService
             ->all();
     }
 
-    public function export(array $filters, string $fileName = 'export__dai-bieu-hop.xlsx'): BinaryFileResponse
+    public function export(array $filters, ?string $fileName = null): BinaryFileResponse
     {
-        return Excel::download(new MeetingAttendeeExport($filters), $fileName);
+        return Excel::download(new MeetingAttendeeExport($filters), $fileName ?? ExportFilename::make('dai-bieu-hop'));
     }
 
     public function import($file): void

@@ -5,6 +5,7 @@ namespace App\Modules\TaskAssignment\Services;
 use App\Modules\Core\Models\Notification;
 use App\Modules\Core\Models\NotificationDelivery;
 use App\Modules\Core\Services\MediaService;
+use App\Modules\Core\Support\ExportFilename;
 use App\Modules\TaskAssignment\Enums\TaskAssignmentDocumentStatusEnum;
 use App\Modules\TaskAssignment\Exports\DocumentsExport;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDocument;
@@ -301,7 +302,7 @@ class TaskAssignmentDocumentService
 
     public function export(array $filters): BinaryFileResponse
     {
-        return Excel::download(new DocumentsExport($filters), 'export__van-ban-giao-viec.xlsx');
+        return Excel::download(new DocumentsExport($filters), ExportFilename::make('van-ban-giao-viec'));
     }
 
     private function removeAttachments(TaskAssignmentDocument $document, array $attachmentIds): void

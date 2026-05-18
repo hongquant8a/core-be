@@ -4,6 +4,7 @@ namespace App\Modules\Meeting;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
+use App\Modules\Core\Support\ExportFilename;
 use App\Modules\Meeting\Models\Meeting;
 use App\Modules\Meeting\Models\MeetingDiscussionRegistration;
 use App\Modules\Meeting\Requests\ReorderMeetingDiscussionRegistrationRequest;
@@ -171,7 +172,7 @@ class MeetingDiscussionRegistrationController extends Controller
         $meeting = \App\Modules\Meeting\Models\Meeting::findOrFail($meetingId);
         \Illuminate\Support\Facades\Gate::authorize('exportReports', $meeting);
 
-        $fileName = $type === 'question' ? 'export__chat-van-hop.xlsx' : 'export__thao-luan-hop.xlsx';
+        $fileName = $type === 'question' ? ExportFilename::make('chat-van-hop') : ExportFilename::make('thao-luan-hop');
 
         return \Maatwebsite\Excel\Facades\Excel::download(
             new \App\Modules\Meeting\Exports\MeetingDiscussionRegistrationExport($meetingId, $type),
@@ -301,14 +302,20 @@ class MeetingDiscussionRegistrationController extends Controller
     }
 
     /**
-     * Nested route `GET /api/meetings/{meeting}/discussion-registrations/export` — gate operate.
+     * Nested route `GET /api/meetings/{meeting}/discussion-registrations/export`.
      *
-     * Xuất ra các trường: STT, Chương trình, Người đăng ký, Thời gian đăng ký, Nội dung, Trạng thái.
+     * Gate logic:
+     *  - `?my=true` → đại biểu xuất đăng ký của mình (route gate `viewParticipant` đủ).
+     *  - không có flag → bắt buộc chair/op (kiểm tra Gate `exportReports`).
+     *
+     * Xuất ra các trường: STT, Chương trình, Người đăng ký, Thời gian đăng ký, Nội dung,
+     * Ghi chú/Nội dung trả lời, Trạng thái, Đính kèm.
      *
      * @urlParam meeting integer required ID cuộc họp. Example: 1
      *
      * @queryParam type string required Loại đăng ký (discussion|question). Example: discussion
      * @queryParam meeting_agenda_id integer Lọc theo chương trình họp. Mặc định xuất toàn meeting. Example: 5
+     * @queryParam my boolean Chỉ xuất đăng ký của auth user (đại biểu tự xuất của mình). Example: true
      */
     public function exportInMeeting(Meeting $meeting, FilterRequest $request)
     {
@@ -318,10 +325,21 @@ class MeetingDiscussionRegistrationController extends Controller
         ]);
         $type = (string) $request->input('type');
         $agendaId = $request->filled('meeting_agenda_id') ? (int) $request->input('meeting_agenda_id') : null;
-        $fileName = $type === 'question' ? 'export__chat-van-hop.xlsx' : 'export__thao-luan-hop.xlsx';
+        $onlyMine = filter_var($request->input('my'), FILTER_VALIDATE_BOOLEAN);
+
+        // Nếu không phải self-export → phải có quyền exportReports (chair/op hoặc admin).
+        if (! $onlyMine) {
+            \Illuminate\Support\Facades\Gate::authorize('exportReports', $meeting);
+        }
+
+        $slug = $type === 'question' ? 'chat-van-hop' : 'thao-luan-hop';
+        if ($onlyMine) {
+            $slug .= '-cua-toi';
+        }
+        $fileName = ExportFilename::make($slug);
 
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Modules\Meeting\Exports\MeetingDiscussionRegistrationExport($meeting->id, $type, $agendaId),
+            new \App\Modules\Meeting\Exports\MeetingDiscussionRegistrationExport($meeting->id, $type, $agendaId, $onlyMine),
             $fileName,
         );
     }

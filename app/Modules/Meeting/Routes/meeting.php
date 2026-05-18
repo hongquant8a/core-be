@@ -68,7 +68,9 @@ Route::get('/{meeting}/qr-token', [MeetingController::class, 'qrToken'])->middle
 // Tab 3 Thảo luận & Chất vấn.
 Route::prefix('{meeting}/discussion-registrations')->group(function () {
     Route::get('/stats', [MeetingDiscussionRegistrationController::class, 'statsInMeeting'])->middleware('can:viewParticipant,meeting');
-    Route::get('/export', [MeetingDiscussionRegistrationController::class, 'exportInMeeting'])->middleware('can:exportReports,meeting');
+    // Export — gate `viewParticipant` (bất kỳ role meeting). Controller tự enforce:
+    // `?my=true` cho đại biểu xuất đăng ký của mình; không có flag → bắt buộc chair/op (exportReports).
+    Route::get('/export', [MeetingDiscussionRegistrationController::class, 'exportInMeeting'])->middleware('can:viewParticipant,meeting');
     Route::get('/', [MeetingDiscussionRegistrationController::class, 'indexInMeeting'])->middleware('can:viewParticipant,meeting');
     Route::post('/', [MeetingDiscussionRegistrationController::class, 'storeInMeeting'])->middleware('can:participate,meeting');
     Route::patch('/reorder', [MeetingDiscussionRegistrationController::class, 'reorderInMeeting'])->middleware('can:operate,meeting');

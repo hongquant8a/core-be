@@ -6,6 +6,7 @@ use App\Modules\Core\Enums\StatusEnum;
 use App\Modules\Core\Exports\OrganizationsExport;
 use App\Modules\Core\Imports\OrganizationsImport;
 use App\Modules\Core\Models\Organization;
+use App\Modules\Core\Support\ExportFilename;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -127,7 +128,7 @@ class OrganizationService
 
     public function export(array $filters): BinaryFileResponse
     {
-        return Excel::download(new OrganizationsExport($filters), 'export__to-chuc.xlsx');
+        return Excel::download(new OrganizationsExport($filters), ExportFilename::make('to-chuc'));
     }
 
     public function import($file): void
