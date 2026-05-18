@@ -30,7 +30,7 @@ Không trả 403 cho bất kỳ ai — luôn 200 với data filter theo vai trò
 
 
 ────────────────────────────────────────────────────────────────────────────────
-1. EXPORT TỔNG HỢP TÀI LIỆU — 1 row = 1 tài liệu
+1. EXPORT DANH SÁCH TÀI LIỆU — 1 row = 1 tài liệu
 ────────────────────────────────────────────────────────────────────────────────
 
 Endpoint:
@@ -42,22 +42,23 @@ Filename Content-Disposition:
   export__tai-lieu-cuoc-hop_HH-mm-ss_dd-MM-yyyy.xlsx
 
 Cột Excel:
-  STT | Tên tài liệu | Lượt xem | Người xem
+  STT | Tên tài liệu | Loại tài liệu | Thuộc chương trình
 
-  - "Lượt xem": tổng số lượt xem từ MeetingView log (mọi kind).
-  - "Người xem": list tên user unique đã xem tài liệu, join dấu phẩy.
-                 Guest gộp:
-                   * Có 1 lượt guest: hiển thị "Khách"
-                   * Có N lượt guest (N>1): hiển thị "Khách (xN)"
-  - Tài liệu chưa ai xem: Lượt xem = 0, Người xem = trống.
+  - "Loại tài liệu": tên loại tài liệu từ MeetingDocumentType (vd: Báo cáo,
+    Phụ lục, Tờ trình, Tài liệu chính, ...). Trống nếu doc chưa gán loại.
+  - "Thuộc chương trình": nội dung agenda mà doc gắn vào. Trống nếu doc
+    không thuộc agenda cụ thể (gắn meeting tổng).
+
+Stats "Lượt xem / Người xem" KHÔNG còn ở endpoint này — chuyển sang endpoint
+chi tiết riêng (mục 2 bên dưới) để chair/op xem audit trail.
 
 Ví dụ:
-  STT | Tên tài liệu             | Lượt xem | Người xem
-  ----+--------------------------+----------+-----------------------------------
-    1 | Nghị quyết 01            |       25 | Nguyễn Văn A, Trần Thị B, Khách (x3)
-    2 | Báo cáo tài chính        |       12 | Lê Văn C, Khách (x8)
-    3 | Tờ trình                 |        0 |
-    4 | Phụ lục                  |        5 | Khách (x5)
+  STT | Tên tài liệu             | Loại tài liệu      | Thuộc chương trình
+  ----+--------------------------+--------------------+----------------------------
+    1 | Báo cáo KT-XH            | Báo cáo            | Báo cáo tình hình KT-XH
+    2 | Dự thảo Nghị quyết       | Tài liệu chính     | Biểu quyết nghị quyết
+    3 | Phụ lục số liệu          | Phụ lục            | Báo cáo tình hình KT-XH
+    4 | Kết luận cuộc họp        | Tài liệu kết luận  | Bế mạc
 
 
 ────────────────────────────────────────────────────────────────────────────────
