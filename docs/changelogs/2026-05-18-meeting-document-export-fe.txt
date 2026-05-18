@@ -1,0 +1,119 @@
+================================================================================
+BE CHANGELOG — 2026-05-18 — Export tài liệu in-meeting (tổng hợp + chi tiết)
+================================================================================
+
+2 endpoint mới cho tab Tài liệu (in-meeting). Theo requirement.txt task #8.
+
+
+────────────────────────────────────────────────────────────────────────────────
+1. EXPORT TỔNG HỢP TÀI LIỆU — 1 row = 1 tài liệu
+────────────────────────────────────────────────────────────────────────────────
+
+Endpoint:
+  GET /api/meetings/{meeting}/documents/export
+  Gate: can:operate,meeting  (chair/op pure FK, không Spatie admin fallback)
+
+Không có query param (tự lọc theo meeting URL).
+
+Filename Content-Disposition:
+  export__tai-lieu-cuoc-hop_HH-mm-ss_dd-MM-yyyy.xlsx
+
+Cột Excel:
+  STT | Tên tài liệu | Lượt xem | Người xem
+
+  - "Lượt xem": tổng số lượt xem từ MeetingView log (mọi kind).
+  - "Người xem": list tên user unique đã xem tài liệu, join dấu phẩy.
+                 Guest gộp:
+                   * Có 1 lượt guest: hiển thị "Khách"
+                   * Có N lượt guest (N>1): hiển thị "Khách (xN)"
+  - Tài liệu chưa ai xem: Lượt xem = 0, Người xem = trống.
+
+Ví dụ:
+  STT | Tên tài liệu             | Lượt xem | Người xem
+  ----+--------------------------+----------+-----------------------------------
+    1 | Nghị quyết 01            |       25 | Nguyễn Văn A, Trần Thị B, Khách (x3)
+    2 | Báo cáo tài chính        |       12 | Lê Văn C, Khách (x8)
+    3 | Tờ trình                 |        0 |
+    4 | Phụ lục                  |        5 | Khách (x5)
+
+
+────────────────────────────────────────────────────────────────────────────────
+2. EXPORT CHI TIẾT LƯỢT XEM — 1 row = 1 lượt xem
+────────────────────────────────────────────────────────────────────────────────
+
+Endpoint:
+  GET /api/meetings/{meeting}/documents/export-views
+  Gate: can:operate,meeting
+
+Không có query param.
+
+Filename Content-Disposition:
+  export__luot-xem-tai-lieu_HH-mm-ss_dd-MM-yyyy.xlsx
+
+Cột Excel:
+  STT | Tên tài liệu | Người xem | Loại | Thời gian xem | IP
+
+  - "Người xem": tên user; nếu user_id NULL (guest) → "Khách".
+  - "Loại" map từ MeetingView.kind:
+      * document_meta_view → "Mở trang tài liệu"
+      * document_view      → "Xem nội dung"
+      * document_download  → "Tải xuống"
+  - "Thời gian xem": format H:i:s d/m/Y.
+  - "IP": địa chỉ IP client log lúc xem.
+
+Sort: thời gian xem mới nhất trước (DESC).
+
+Ví dụ:
+  STT | Tên tài liệu     | Người xem    | Loại              | Thời gian xem        | IP
+  ----+------------------+--------------+-------------------+----------------------+----------
+    1 | Nghị quyết 01    | Nguyễn Văn A | Xem nội dung      | 14:00:00 18/05/2026  | 1.2.3.4
+    2 | Nghị quyết 01    | Trần Thị B   | Tải xuống         | 13:30:00 18/05/2026  | 1.2.3.5
+    3 | Báo cáo tài chính| Khách        | Mở trang tài liệu | 13:00:00 18/05/2026  | 5.6.7.8
+
+
+────────────────────────────────────────────────────────────────────────────────
+GATE & PHÂN QUYỀN
+────────────────────────────────────────────────────────────────────────────────
+
+Cả 2 endpoint dùng gate `can:operate,meeting` — pure FK Policy, KHÔNG có Spatie
+admin bypass. Chỉ chủ trì (chairperson) hoặc thư ký/điều hành (operator) của
+chính meeting đó mới gọi được. Đại biểu thường, admin hệ thống không có role
+trong meeting → 403.
+
+Nhất quán với các export nội dung sensitive khác trong meeting (vd
+/vote-responses/export, /discussion-registrations/export).
+
+
+────────────────────────────────────────────────────────────────────────────────
+BONUS — Fix int 0 bị Maatwebsite ghi thành NULL
+────────────────────────────────────────────────────────────────────────────────
+
+AbstractExcelExport (toàn dự án) thêm interface WithStrictNullComparison.
+
+Trước: cột số đếm có value = 0 → Maatwebsite default treat as null → Excel cell
+       hiển thị rỗng (gây nhầm "không có data" thay vì "có 0").
+Sau:   value = 0 ghi đúng dạng numeric 0 → Excel hiển thị "0".
+
+Tác động: mọi export trong dự án — "Lượt xem", "Đồng ý", "Không đồng ý",
+"Ý kiến khác", "Số phiếu", v.v. — giờ hiển thị "0" thay vì cell rỗng.
+
+Empty string '' vẫn ghi thành cell rỗng (giữ behavior cũ).
+
+
+────────────────────────────────────────────────────────────────────────────────
+FE ACTION
+────────────────────────────────────────────────────────────────────────────────
+
+Tab Tài liệu in-meeting:
+[ ] Thêm 2 nút export trong toolbar (chỉ hiển thị cho chair/operator):
+    * "Xuất danh sách tài liệu" → GET /documents/export
+    * "Xuất chi tiết lượt xem"  → GET /documents/export-views
+[ ] Đại biểu thường không thấy 2 nút này (gate operate,meeting BE chặn 403).
+[ ] Tải file qua window.location.href hoặc fetch + blob — tên file đọc từ
+    Content-Disposition header (không hardcode FE).
+
+Verify:
+[ ] Tài liệu chưa ai xem → tổng hợp hiện "Lượt xem = 0", "Người xem" trống.
+[ ] Guest views → tổng hợp gộp "Khách (xN)"; chi tiết hiển thị "Khách".
+[ ] User login views → tổng hợp join tên unique; chi tiết hiển thị tên đầy đủ.
+[ ] Đại biểu thường gọi endpoint → 403.
