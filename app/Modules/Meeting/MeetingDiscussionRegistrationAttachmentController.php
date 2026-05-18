@@ -41,6 +41,7 @@ class MeetingDiscussionRegistrationAttachmentController extends Controller
         StoreMeetingDiscussionRegistrationAttachmentRequest $request,
     ) {
         $item = $this->service->store($request->validated(), $request->file('file'));
+        $this->broadcastRegistrationUpdated($meetingDiscussionRegistration);
 
         return $this->successResource(
             new MeetingDiscussionRegistrationAttachmentResource($item),
@@ -64,6 +65,7 @@ class MeetingDiscussionRegistrationAttachmentController extends Controller
         MeetingDiscussionRegistrationAttachment $meetingDiscussionRegistrationAttachment,
     ) {
         $this->service->destroy($meetingDiscussionRegistrationAttachment);
+        $this->broadcastRegistrationUpdated($meetingDiscussionRegistration);
 
         return $this->success(null, 'Xóa tệp đính kèm thành công!');
     }
@@ -84,7 +86,19 @@ class MeetingDiscussionRegistrationAttachmentController extends Controller
         ReorderMeetingDiscussionRegistrationAttachmentRequest $request,
     ) {
         $this->service->reorder($request->validated('items'));
+        $this->broadcastRegistrationUpdated($meetingDiscussionRegistration);
 
         return $this->success(null, 'Sắp xếp tệp đính kèm thành công!');
+    }
+
+    /**
+     * Sau mỗi action trên attachment, re-emit `discussion-registration.updated` với
+     * full payload registration (kèm attachments[]) để FE Tab 7/Chair/Operator sync
+     * realtime. Tránh stale chip "0 tệp" khi user A upload xong, user B chưa fetch lại.
+     */
+    private function broadcastRegistrationUpdated(MeetingDiscussionRegistration $registration): void
+    {
+        $registration->refresh()->load(['participant', 'agenda', 'mediaFile', 'attachments.mediaFile']);
+        broadcast(new \App\Modules\Meeting\Events\MeetingDiscussionRegistrationUpdated($registration))->toOthers();
     }
 }

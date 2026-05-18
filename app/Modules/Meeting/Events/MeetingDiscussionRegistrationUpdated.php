@@ -31,19 +31,11 @@ class MeetingDiscussionRegistrationUpdated implements ShouldBroadcastNow
 
     public function broadcastWith(): array
     {
-        $this->registration->loadMissing('participant');
+        // Load đầy đủ relations để payload WS = shape Resource cho FE upsert-by-id.
+        // Bao gồm attachments (multi-file) — quan trọng cho FE Tab 7 hiển thị chip count.
+        $this->registration->loadMissing(['participant', 'agenda', 'mediaFile', 'attachments.mediaFile']);
 
-        return [
-            'id' => $this->registration->id,
-            'meeting_id' => $this->registration->meeting_id,
-            'meeting_agenda_id' => $this->registration->meeting_agenda_id,
-            'meeting_participant_id' => $this->registration->meeting_participant_id,
-            'participant_name' => $this->registration->participant?->display_name,
-            'type' => $this->registration->type,
-            'content' => $this->registration->content,
-            'media_id' => $this->registration->media_id,
-            'status' => $this->registration->status,
-            'sort_order' => $this->registration->sort_order,
-        ];
+        return (new \App\Modules\Meeting\Resources\MeetingDiscussionRegistrationResource($this->registration))
+            ->toArray(request() ?? new \Illuminate\Http\Request);
     }
 }
