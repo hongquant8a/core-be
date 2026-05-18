@@ -40,10 +40,30 @@ abstract class AbstractExcelExport implements WithHeadings, WithStyles, ShouldAu
      * Keyword (lower-case, mb_strtolower) — cột có header chứa BẤT KỲ keyword nào sẽ được
      * căn giữa cả header + data rows. Match contains, không phải exact.
      *
-     * Default: STT, Trạng thái, Thời gian (theo yêu cầu chung dự án).
-     * Subclass override `centerAlignedHeaderKeywords()` để thêm/đổi list.
+     * Nguyên tắc chọn keyword: cột có data fixed-length (enum / boolean / số / date / datetime)
+     * nên căn giữa; cột text dài (tên, nội dung, mô tả) giữ left-align.
+     *
+     * Subclass override `centerAlignedHeaderKeywords()` để thêm/đổi list cho riêng export đó.
      */
-    protected const DEFAULT_CENTER_KEYWORDS = ['stt', 'trạng thái', 'thời gian'];
+    protected const DEFAULT_CENTER_KEYWORDS = [
+        'stt',
+        'trạng thái',
+        'thời gian',     // Thời gian bắt đầu, Thời gian đăng ký, ...
+        'ngày',          // Ngày tạo, Ngày cập nhật, Ngày sinh, ...
+        'giờ',           // Giờ điểm danh, ...
+        'lượt',          // Lượt xem, Lượt tải, ...
+        'công khai',     // boolean Có/Không
+        'đính kèm',      // boolean Có/Không
+        'phương thức',   // enum
+        'loại',          // Loại cuộc họp, Loại tài liệu, ...
+        'vai trò',       // enum role
+        'đã ',           // Đã điểm danh, Đã xác nhận, ... (boolean Rồi/Chưa)
+        'xác nhận',      // Xác nhận tham gia, ...
+        'đồng ý',        // count cột phiếu biểu quyết: "Đồng ý", "Không đồng ý"
+        'ý kiến',        // "Ý kiến khác" (vote summary)
+        'số ',           // Số phiếu, Số lượng, Số người, ...
+        'tổng',          // Tổng cộng, Tổng số, ...
+    ];
 
     /**
      * Set default font TRƯỚC khi data ghi để PhpSpreadsheet auto-size tính theo đúng font.

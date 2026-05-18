@@ -75,12 +75,4 @@ class MeetingDiscussionRegistrationExport extends AbstractExcelExport implements
             default => (string) $status,
         };
     }
-
-    /**
-     * Cột "Đính kèm" chỉ chứa "Có"/"Không" — center align cho gọn.
-     */
-    protected function centerAlignedHeaderKeywords(): array
-    {
-        return [...self::DEFAULT_CENTER_KEYWORDS, 'đính kèm'];
-    }
 }

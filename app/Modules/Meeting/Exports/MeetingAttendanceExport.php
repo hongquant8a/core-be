@@ -42,8 +42,9 @@ class MeetingAttendanceExport extends AbstractExcelExport implements FromCollect
                     'name' => $p->display_name ?? $p->attendee?->name ?? '',
                     'position' => $p->position_name ?? '',
                     'response' => $this->responseLabel($p->response_status),
-                    'checked_in' => $hasCheckin ? 'Có' : 'Không',
-                    'approved' => $approved ? 'Có' : 'Không',
+                    // "Rồi/Chưa" thay vì "Có/Không" — đúng ngữ cảnh hành động đã/chưa xảy ra.
+                    'checked_in' => $hasCheckin ? 'Rồi' : 'Chưa',
+                    'approved' => $approved ? 'Rồi' : 'Chưa',
                     'checked_in_at' => $att?->checked_in_at?->format('H:i:s d/m/Y') ?? '',
                 ];
             });

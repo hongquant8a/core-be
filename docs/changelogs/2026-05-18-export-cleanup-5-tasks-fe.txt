@@ -7,17 +7,28 @@ dưới mỗi task, full FE checklist cuối file.
 
 
 ────────────────────────────────────────────────────────────────────────────────
-1. EXCEL — CĂN GIỮA CỘT STT / TRẠNG THÁI / THỜI GIAN
+1. EXCEL — CĂN GIỮA CỘT FIXED-LENGTH (KEYWORD GLOBAL)
 ────────────────────────────────────────────────────────────────────────────────
 
-Toàn dự án: 13 export class kế thừa AbstractExcelExport tự động hưởng. Cột
-nào có header chứa keyword "STT", "Trạng thái", "Thời gian" (case-insensitive,
-contains) → cell trong cả column (header + data rows) căn giữa ngang.
+Toàn dự án: 13 export class kế thừa AbstractExcelExport tự động hưởng.
 
-Ví dụ trong file Excel xuất ra:
-  - Cột "STT", "Thời gian đăng ký", "Trạng thái" → center
-  - Cột "Đính kèm" (thêm ở task 3) → center (override keyword riêng)
-  - Cột "Chương trình", "Nội dung", "Người đăng ký" → left (default)
+Nguyên tắc: cột data fixed-length (enum / boolean / số / date / datetime) center;
+cột text dài (tên, nội dung, mô tả) giữ left.
+
+Keyword global trigger center (match contains, case-insensitive):
+  stt, trạng thái, thời gian, ngày, giờ, lượt, công khai, đính kèm,
+  phương thức, loại, vai trò, đã, xác nhận
+
+Ví dụ cột center trong các export:
+  - MeetingExport: STT, Loại cuộc họp, Công khai, Thời gian bắt đầu, Trạng thái,
+    Lượt xem, Ngày tạo, Ngày cập nhật.
+  - MeetingAttendanceExport: STT, Xác nhận tham gia, Đã điểm danh,
+    Đã xác nhận điểm danh, Giờ điểm danh.
+  - MeetingDiscussionRegistrationExport: STT, Thời gian đăng ký, Trạng thái,
+    Đính kèm.
+
+Cột vẫn left-align (text dài, không match keyword):
+  Tiêu đề, Tên đại biểu, Chức vụ, Địa điểm, Nội dung, Ghi chú, Người tạo, ...
 
 FE action:
   Không có. Visual change Excel only.
@@ -48,18 +59,31 @@ FE action:
 
 
 ────────────────────────────────────────────────────────────────────────────────
-3. EXPORT THẢO LUẬN / CHẤT VẤN — THÊM CỘT "ĐÍNH KÈM"
+3. EXPORT THẢO LUẬN / CHẤT VẤN — THÊM CỘT "ĐÍNH KÈM" + EXPORT ĐIỂM DANH LABEL
 ────────────────────────────────────────────────────────────────────────────────
 
-Endpoint: GET /api/meetings/{meeting}/discussion-registrations/export
+3.1 Cột "Đính kèm" trong export thảo luận/chất vấn:
+  Endpoint: GET /api/meetings/{meeting}/discussion-registrations/export
 
-Excel xuất ra thêm 1 cột cuối (column H):
-  - Header: "Đính kèm" (center align)
-  - Value: "Có" nếu registration có media_id, "Không" nếu không.
+  Thêm 1 cột cuối (column H):
+    - Header: "Đính kèm" (center align via keyword global)
+    - Value: "Có" nếu có media_id, "Không" nếu không.
 
-Column order mới:
-  STT | Chương trình | Người đăng ký | Thời gian đăng ký | Nội dung |
-  Ghi chú thảo luận (hoặc Nội dung trả lời) | Trạng thái | Đính kèm
+  Column order:
+    STT | Chương trình | Người đăng ký | Thời gian đăng ký | Nội dung |
+    Ghi chú thảo luận (hoặc Nội dung trả lời) | Trạng thái | Đính kèm
+
+3.2 Export điểm danh — label "Rồi/Chưa" thay "Có/Không":
+  Endpoint: GET /api/meetings/{meeting}/attendances/export
+
+  2 cột boolean trước hiện "Có/Không" — sai ngữ cảnh (đây là hành động đã/chưa
+  xảy ra). Đổi sang "Rồi/Chưa":
+    - Đã điểm danh:           Có → Rồi, Không → Chưa
+    - Đã xác nhận điểm danh:  Có → Rồi, Không → Chưa
+
+  Các cột Có/Không khác giữ nguyên (vì semantic "có/không" đúng cho chúng):
+    - MeetingExport "Công khai" — Có/Không (có công khai hay không).
+    - MeetingDiscussionRegistrationExport "Đính kèm" — Có/Không (có file hay không).
 
 FE action:
   Không có. Excel-only.
