@@ -302,11 +302,8 @@ class MeetingDiscussionRegistrationController extends Controller
     }
 
     /**
-     * Nested route `GET /api/meetings/{meeting}/discussion-registrations/export`.
-     *
-     * Gate logic:
-     *  - `?my=true` → đại biểu xuất đăng ký của mình (route gate `viewParticipant` đủ).
-     *  - không có flag → bắt buộc chair/op (kiểm tra Gate `exportReports`).
+     * Nested route `GET /api/meetings/{meeting}/discussion-registrations/export` — chair/op
+     * xuất full list (gate `operate,meeting`, FK pure, không Spatie admin fallback).
      *
      * Xuất ra các trường: STT, Chương trình, Người đăng ký, Thời gian đăng ký, Nội dung,
      * Ghi chú/Nội dung trả lời, Trạng thái, Đính kèm.
@@ -315,7 +312,6 @@ class MeetingDiscussionRegistrationController extends Controller
      *
      * @queryParam type string required Loại đăng ký (discussion|question). Example: discussion
      * @queryParam meeting_agenda_id integer Lọc theo chương trình họp. Mặc định xuất toàn meeting. Example: 5
-     * @queryParam my boolean Chỉ xuất đăng ký của auth user (đại biểu tự xuất của mình). Example: true
      */
     public function exportInMeeting(Meeting $meeting, FilterRequest $request)
     {
@@ -325,21 +321,39 @@ class MeetingDiscussionRegistrationController extends Controller
         ]);
         $type = (string) $request->input('type');
         $agendaId = $request->filled('meeting_agenda_id') ? (int) $request->input('meeting_agenda_id') : null;
-        $onlyMine = filter_var($request->input('my'), FILTER_VALIDATE_BOOLEAN);
+        $fileName = ExportFilename::make($type === 'question' ? 'chat-van-hop' : 'thao-luan-hop');
 
-        // Nếu không phải self-export → phải có quyền exportReports (chair/op hoặc admin).
-        if (! $onlyMine) {
-            \Illuminate\Support\Facades\Gate::authorize('exportReports', $meeting);
-        }
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Modules\Meeting\Exports\MeetingDiscussionRegistrationExport($meeting->id, $type, $agendaId, false),
+            $fileName,
+        );
+    }
 
-        $slug = $type === 'question' ? 'chat-van-hop' : 'thao-luan-hop';
-        if ($onlyMine) {
-            $slug .= '-cua-toi';
-        }
+    /**
+     * Nested route `GET /api/meetings/{meeting}/discussion-registrations/export-mine`.
+     *
+     * Đại biểu (bao gồm chair/op) tự xuất đăng ký của chính họ. Gate `participate,meeting`
+     * (user có role nào đó trong meeting). Service filter theo participant.attendee.user_id
+     * = auth user.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     *
+     * @queryParam type string required Loại đăng ký (discussion|question). Example: discussion
+     * @queryParam meeting_agenda_id integer Lọc theo chương trình họp. Mặc định xuất toàn meeting. Example: 5
+     */
+    public function exportMineInMeeting(Meeting $meeting, FilterRequest $request)
+    {
+        $request->validate([
+            'type' => 'required|in:discussion,question',
+            'meeting_agenda_id' => 'nullable|integer|exists:meeting_agendas,id',
+        ]);
+        $type = (string) $request->input('type');
+        $agendaId = $request->filled('meeting_agenda_id') ? (int) $request->input('meeting_agenda_id') : null;
+        $slug = $type === 'question' ? 'chat-van-hop-cua-toi' : 'thao-luan-hop-cua-toi';
         $fileName = ExportFilename::make($slug);
 
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Modules\Meeting\Exports\MeetingDiscussionRegistrationExport($meeting->id, $type, $agendaId, $onlyMine),
+            new \App\Modules\Meeting\Exports\MeetingDiscussionRegistrationExport($meeting->id, $type, $agendaId, true),
             $fileName,
         );
     }

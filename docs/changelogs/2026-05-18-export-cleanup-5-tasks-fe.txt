@@ -1,0 +1,178 @@
+================================================================================
+BE CHANGELOG — 2026-05-18 — Excel + filename + attendance enum + self-export
+================================================================================
+
+5 thay đổi BE bundle theo requirement.txt 2026-05-18. Tóm tắt FE action ngay
+dưới mỗi task, full FE checklist cuối file.
+
+
+────────────────────────────────────────────────────────────────────────────────
+1. EXCEL — CĂN GIỮA CỘT STT / TRẠNG THÁI / THỜI GIAN
+────────────────────────────────────────────────────────────────────────────────
+
+Toàn dự án: 13 export class kế thừa AbstractExcelExport tự động hưởng. Cột
+nào có header chứa keyword "STT", "Trạng thái", "Thời gian" (case-insensitive,
+contains) → cell trong cả column (header + data rows) căn giữa ngang.
+
+Ví dụ trong file Excel xuất ra:
+  - Cột "STT", "Thời gian đăng ký", "Trạng thái" → center
+  - Cột "Đính kèm" (thêm ở task 3) → center (override keyword riêng)
+  - Cột "Chương trình", "Nội dung", "Người đăng ký" → left (default)
+
+FE action:
+  Không có. Visual change Excel only.
+
+
+────────────────────────────────────────────────────────────────────────────────
+2. FILENAME EXCEL — THÊM TIMESTAMP HH-mm-ss_dd-MM-yyyy
+────────────────────────────────────────────────────────────────────────────────
+
+Convention mới:
+  export__{slug}_HH-mm-ss_dd-MM-yyyy.xlsx
+
+Ví dụ:
+  export__thao-luan-hop_15-30-45_18-05-2026.xlsx
+  export__dai-bieu-hop_15-30-45_18-05-2026.xlsx
+  export__nguoi-dung_15-30-45_18-05-2026.xlsx
+
+Mục đích: tránh đè file khi tải nhiều lần + audit dễ.
+
+Phạm vi đổi: TOÀN BỘ endpoint export Excel của dự án (Core 6 + TaskAssignment 5
++ Meeting 7 = 18 endpoint). Filename trả qua header Content-Disposition.
+
+FE action:
+  - Nếu FE đọc filename từ response header Content-Disposition (cách chuẩn) →
+    không cần đổi gì, browser tự tải đúng tên mới.
+  - Nếu FE hardcode filename mong đợi (vd kiểm tra response chứa "export__
+    thao-luan-hop.xlsx") → CẦN sửa. Format giờ luôn có timestamp.
+
+
+────────────────────────────────────────────────────────────────────────────────
+3. EXPORT THẢO LUẬN / CHẤT VẤN — THÊM CỘT "ĐÍNH KÈM"
+────────────────────────────────────────────────────────────────────────────────
+
+Endpoint: GET /api/meetings/{meeting}/discussion-registrations/export
+
+Excel xuất ra thêm 1 cột cuối (column H):
+  - Header: "Đính kèm" (center align)
+  - Value: "Có" nếu registration có media_id, "Không" nếu không.
+
+Column order mới:
+  STT | Chương trình | Người đăng ký | Thời gian đăng ký | Nội dung |
+  Ghi chú thảo luận (hoặc Nội dung trả lời) | Trạng thái | Đính kèm
+
+FE action:
+  Không có. Excel-only.
+
+
+────────────────────────────────────────────────────────────────────────────────
+4. ĐIỂM DANH — CHỈ CÒN 3 TRẠNG THÁI
+────────────────────────────────────────────────────────────────────────────────
+
+MeetingAttendanceStatusEnum:
+  Trước:  pending | present | absent | late | excused  (5 case)
+  Sau:    pending | present | absent                   (3 case)
+
+Mapping nhãn FE:
+  pending → "Chờ xác nhận"
+  present → "Có mặt"
+  absent  → "Vắng mặt" (kèm lý do — sẽ implement ở task tiếp theo, hiện
+                       chưa enforce required)
+
+Drop "late" và "excused" vì:
+  - DB không có row nào dùng 2 giá trị này (0 rows).
+  - Spec yêu cầu chỉ 3 trạng thái rõ ràng.
+
+FE action:
+  - REMOVE 2 option "Đến muộn" (late) và "Có lý do" (excused) khỏi:
+    * Dropdown chọn status trong form điều hành / chủ trì điểm danh.
+    * Bộ lọc status ở danh sách điểm danh.
+    * Card stats nếu có hiển thị riêng late/excused.
+  - Nếu FE chuyển đổi label/icon theo status → bỏ branch cho late/excused.
+  - Verify không còn nơi nào FE gửi POST/PATCH với status=late|excused →
+    BE sẽ reject 422 "Trạng thái không hợp lệ".
+
+
+────────────────────────────────────────────────────────────────────────────────
+5. EXPORT THẢO LUẬN / CHẤT VẤN — TÁCH 2 ROUTE (full / mine)
+────────────────────────────────────────────────────────────────────────────────
+
+In-meeting endpoint nên gate qua Policy (FK pure), KHÔNG Spatie permission.
+Tách 2 endpoint riêng cho 2 ngữ cảnh:
+
+5.1 EXPORT FULL (chair/op):
+  GET /api/meetings/{meeting}/discussion-registrations/export
+  Gate: can:operate,meeting  (chair/op của meeting, FK pure, KHÔNG admin
+                              Spatie fallback)
+
+  Query params:
+    type              string   required   discussion | question
+    meeting_agenda_id integer  optional   ID chương trình họp
+
+  Filename: export__thao-luan-hop_HH-mm-ss_dd-MM-yyyy.xlsx
+            export__chat-van-hop_HH-mm-ss_dd-MM-yyyy.xlsx
+
+  Trả về toàn bộ đăng ký trong meeting (theo type + agenda filter).
+
+5.2 EXPORT-MINE (đại biểu / chair / op tự xuất của mình):
+  GET /api/meetings/{meeting}/discussion-registrations/export-mine
+  Gate: can:participate,meeting  (user có role bất kỳ trong meeting)
+
+  Query params:
+    type              string   required   discussion | question
+    meeting_agenda_id integer  optional   ID chương trình họp
+
+  Filename: export__thao-luan-hop-cua-toi_HH-mm-ss_dd-MM-yyyy.xlsx
+            export__chat-van-hop-cua-toi_HH-mm-ss_dd-MM-yyyy.xlsx
+
+  Service filter `participant.attendee.user_id = auth user.id` — chỉ trả đăng ký
+  của user đang login. Chair/op gọi endpoint này cũng chỉ thấy đăng ký riêng họ
+  (chair/op có thể có đăng ký với vai trò đại biểu).
+
+DROP:
+  - Cũ route gate `exportReports` với Spatie fallback admin.
+  - Đề xuất `?my=true` query trên cùng endpoint (đổi sang 2 route riêng cho
+    minh bạch).
+
+Tại sao tách 2 route:
+  - Gate clear cho mỗi route, không cần controller conditional.
+  - FE hiển thị 2 nút riêng (Xuất tất cả vs Xuất của tôi) → call 2 URL khác.
+  - Pure Policy gate, không lẫn Spatie permission.
+
+FE action:
+  - Tab Thảo luận / Chất vấn:
+    * Nút "Xuất tất cả" (chỉ chair/op thấy/click được — gọi /export). Đại biểu
+      KHÔNG thấy nút này (BE 403).
+    * Nút "Xuất đăng ký của tôi" (đại biểu / chair / op đều thấy — gọi
+      /export-mine).
+  - URL gốc /export không còn nhận ?my=true; xóa logic cũ nếu có.
+
+
+────────────────────────────────────────────────────────────────────────────────
+FE CHECKLIST
+────────────────────────────────────────────────────────────────────────────────
+
+Excel căn giữa (task 1):
+[ ] Verify file xuất: cột STT/Trạng thái/Thời gian căn giữa.
+[ ] Verify cột khác (Tên, Nội dung) giữ left-align.
+
+Filename timestamp (task 2):
+[ ] Verify file tải về có tên dạng export__<slug>_HH-mm-ss_dd-MM-yyyy.xlsx.
+[ ] Nếu FE hardcode tên file ở chỗ nào (test, assert) → đổi.
+
+Cột Đính kèm (task 3):
+[ ] Verify Excel discussion/question có cột "Đính kèm" cuối với Có/Không.
+
+Điểm danh 3 trạng thái (task 4):
+[ ] Remove option "late" và "excused" khỏi mọi dropdown / filter / display.
+[ ] Test status update với pending/present/absent — 200.
+[ ] Verify FE không POST status=late hoặc excused (sẽ 422 từ BE).
+
+Export thảo luận/chất vấn (task 5):
+[ ] 2 nút riêng trong tab Thảo luận / Chất vấn:
+    * "Xuất tất cả" (chỉ chair/op) → GET /export?type=discussion (hoặc question).
+    * "Xuất đăng ký của tôi" (đại biểu + chair + op) → GET /export-mine?type=...
+[ ] Verify /export-mine: file chỉ chứa đăng ký của user đang login.
+[ ] Verify đại biểu gọi /export → 403 (gate operate,meeting chỉ chair/op).
+[ ] Verify đại biểu gọi /export-mine → 200 + file của họ.
+[ ] Xóa logic ?my=true cũ nếu FE đã thử implement.
