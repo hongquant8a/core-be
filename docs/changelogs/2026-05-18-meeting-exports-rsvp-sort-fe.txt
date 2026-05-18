@@ -169,6 +169,33 @@ Tab Thảo luận / Chất vấn + Tab slide:
 
 
 ────────────────────────────────────────────────────────────────────────────────
+6. DROP SPATIE FALLBACK CHO 4 IN-MEETING EXPORT ENDPOINT
+────────────────────────────────────────────────────────────────────────────────
+
+Triết lý in-meeting: "KHÔNG Super Admin bypass — admin hệ thống phải có role
+thật trên meeting" (per routes/meeting.php header). Gate `exportReports` cũ có
+Spatie fallback `meetings.exportReports` cho admin → trái với triết lý này.
+
+4 endpoint chuyển từ `can:exportReports,meeting` → `can:operate,meeting`
+(chair/op pure FK, không Spatie):
+
+  POST /api/meetings/{m}/export-minutes
+  GET  /api/meetings/{m}/minutes-templates
+  GET  /api/meetings/{m}/vote-responses/export-summary
+  GET  /api/meetings/{m}/attendances/export
+
+Đại biểu / admin không có role chair/op trên meeting đó → 403.
+
+Flat admin endpoints (KHÔNG đổi, vẫn dùng exportReports gate):
+  GET /api/meeting-vote-responses/export-summary  (?meeting_id={m})
+  GET /api/meeting-attendances/export             (?meeting_id={m})
+  GET /api/meeting-discussion-registrations/export
+
+Admin trang quản trị tổng hợp cross-meeting vẫn dùng flat endpoints. In-meeting
+tab thì pure FK.
+
+
+────────────────────────────────────────────────────────────────────────────────
 HOTFIX route DELETE attachment
 ────────────────────────────────────────────────────────────────────────────────
 

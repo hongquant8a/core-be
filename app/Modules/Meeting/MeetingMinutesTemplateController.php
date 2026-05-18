@@ -99,8 +99,7 @@ class MeetingMinutesTemplateController extends Controller
 
     /**
      * Danh sách template biên bản — dùng cho dialog "Chọn template" trước khi gọi
-     * export-minutes. Gate `exportReports,meeting` (chair/op của meeting HOẶC admin
-     * có Spatie permission `meetings.exportReports`).
+     * export-minutes. Gate `operate,meeting` (chair/op của meeting — pure FK, không Spatie).
      *
      * Reuse cùng service như index admin nhưng auth qua Gate Policy thay vì
      * permission `meeting-minutes-templates.index`.
@@ -175,8 +174,7 @@ class MeetingMinutesTemplateController extends Controller
     /**
      * Xuất biên bản .docx cho 1 meeting cụ thể, dùng template chỉ định.
      *
-     * Auth-only. Gate `exportReports`: chair/op của meeting HOẶC admin có Spatie permission
-     * `meetings.exportReports` (cho phép admin trang quản trị export bất kỳ meeting nào).
+     * Auth-only. Gate `operate` pure FK — chỉ chair/operator của meeting đó. Không Spatie bypass.
      *
      * @urlParam meeting integer required ID cuộc họp. Example: 1
      * @bodyParam template_id integer required ID template biên bản. Example: 1
@@ -187,7 +185,7 @@ class MeetingMinutesTemplateController extends Controller
             'template_id' => 'required|integer|exists:meeting_minutes_templates,id',
         ]);
 
-        Gate::authorize('exportReports', $meeting);
+        Gate::authorize('operate', $meeting);
 
         $template = MeetingMinutesTemplate::findOrFail((int) $request->input('template_id'));
 

@@ -34,10 +34,10 @@ use Illuminate\Support\Facades\Route;
 
 // ───────────────────────────── 1. Catalog/CRUD admin ─────────────────────────────
 
-// Export biên bản .docx từ template — auth-only, gate MeetingPolicy::exportReports (chair/op OR admin có meetings.exportReports).
+// Export biên bản .docx từ template — auth-only, gate operate pure FK (chair/op của meeting).
 Route::post('/{meeting}/export-minutes', [\App\Modules\Meeting\MeetingMinutesTemplateController::class, 'exportMinutes']);
-// List template biên bản cho dialog "Chọn template" trước export — gate exportReports.
-Route::get('/{meeting}/minutes-templates', [\App\Modules\Meeting\MeetingMinutesTemplateController::class, 'indexInMeeting'])->middleware('can:exportReports,meeting');
+// List template biên bản cho dialog "Chọn template" trước export.
+Route::get('/{meeting}/minutes-templates', [\App\Modules\Meeting\MeetingMinutesTemplateController::class, 'indexInMeeting'])->middleware('can:operate,meeting');
 
 Route::delete('/bulk-delete', [MeetingController::class, 'bulkDestroy'])->middleware('permission:meetings.bulkDestroy,web');
 Route::patch('/bulk-status', [MeetingController::class, 'bulkUpdateStatus'])->middleware('permission:meetings.bulkUpdateStatus,web');
@@ -114,15 +114,15 @@ Route::prefix('{meeting}/vote-responses')->group(function () {
     Route::get('/stats', [MeetingVoteResponseController::class, 'statsInMeeting'])->middleware('can:viewParticipant,meeting');
     // Detail (mỗi row 1 phiếu, có thể anonymize) — sensitive, giữ operate only.
     Route::get('/export', [MeetingVoteResponseController::class, 'exportInMeeting'])->middleware('can:operate,meeting');
-    // Summary (đếm theo option) — báo cáo tổng hợp, cho admin có permission xuất được.
-    Route::get('/export-summary', [MeetingVoteResponseController::class, 'exportSummaryInMeeting'])->middleware('can:exportReports,meeting');
+    // Summary (đếm theo option) — chair/op pure FK, đồng bộ triết lý in-meeting.
+    Route::get('/export-summary', [MeetingVoteResponseController::class, 'exportSummaryInMeeting'])->middleware('can:operate,meeting');
     Route::get('/', [MeetingVoteResponseController::class, 'indexInMeeting'])->middleware('can:operate,meeting');
 });
 
 // Tab 5 Điểm danh — self checkin/markAbsent (participant); chair/op manual/approve/reject.
 Route::prefix('{meeting}/attendances')->group(function () {
     Route::get('/stats', [MeetingAttendanceController::class, 'statsInMeeting'])->middleware('can:operate,meeting');
-    Route::get('/export', [MeetingAttendanceController::class, 'exportInMeeting'])->middleware('can:exportReports,meeting');
+    Route::get('/export', [MeetingAttendanceController::class, 'exportInMeeting'])->middleware('can:operate,meeting');
     Route::get('/', [MeetingAttendanceController::class, 'indexInMeeting'])->middleware('can:operate,meeting');
     Route::post('/checkin', [MeetingAttendanceController::class, 'checkinInMeeting'])->middleware('can:participate,meeting');
     Route::post('/checkin-by-token', [MeetingAttendanceController::class, 'checkinByTokenInMeeting'])->middleware('can:participate,meeting');
