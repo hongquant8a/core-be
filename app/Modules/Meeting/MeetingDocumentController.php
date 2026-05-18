@@ -230,9 +230,13 @@ class MeetingDocumentController extends Controller
     }
 
     /**
-     * In-meeting: xuất tổng hợp tài liệu của cuộc họp.
+     * Public: xuất tổng hợp tài liệu cuộc họp.
      *
-     * Gate `operate,meeting` (chair/op pure FK). Mỗi row = 1 tài liệu.
+     * @unauthenticated
+     *
+     * Auth-optional. Guest (chưa login) chỉ xuất tài liệu is_public=true. Chair/op
+     * /participant của meeting xuất đầy đủ (cả tài liệu private). Tự resolve auth qua
+     * Bearer header / cookie accessToken (FE SPA pattern).
      *
      * Xuất ra các trường: STT, Tên tài liệu, Lượt xem, Người xem.
      * "Người xem" join tên user unique, guest gộp "Khách (xN)".
@@ -241,17 +245,22 @@ class MeetingDocumentController extends Controller
      */
     public function exportInMeeting(Meeting $meeting)
     {
+        $isPrivileged = $this->meetingDocumentService->resolveIsPrivileged($meeting);
+
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new MeetingDocumentExport($meeting->id),
+            new MeetingDocumentExport($meeting->id, $isPrivileged),
             ExportFilename::make('tai-lieu-cuoc-hop'),
         );
     }
 
     /**
-     * In-meeting: xuất chi tiết lượt xem tài liệu — mỗi row = 1 lượt xem.
+     * Public: xuất chi tiết lượt xem tài liệu — mỗi row = 1 lượt xem.
      *
-     * Gate `operate,meeting`. Bao gồm cả document_meta_view / document_view /
-     * document_download. Guest hiển thị "Khách".
+     * @unauthenticated
+     *
+     * Auth-optional. Guest chỉ thấy view log của tài liệu is_public=true. Chair/op/
+     * participant thấy đầy đủ. Bao gồm document_meta_view / document_view /
+     * document_download. Guest viewer hiển thị "Khách".
      *
      * Xuất ra các trường: STT, Tên tài liệu, Người xem, Loại, Thời gian xem, IP.
      *
@@ -259,8 +268,10 @@ class MeetingDocumentController extends Controller
      */
     public function exportViewsInMeeting(Meeting $meeting)
     {
+        $isPrivileged = $this->meetingDocumentService->resolveIsPrivileged($meeting);
+
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new MeetingDocumentViewExport($meeting->id),
+            new MeetingDocumentViewExport($meeting->id, $isPrivileged),
             ExportFilename::make('luot-xem-tai-lieu'),
         );
     }

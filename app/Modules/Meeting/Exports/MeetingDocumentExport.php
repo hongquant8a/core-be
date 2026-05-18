@@ -15,15 +15,19 @@ use Maatwebsite\Excel\Concerns\FromCollection;
  * "Người xem" join list tên user unique đã xem tài liệu (theo MeetingView log,
  * kind IN document_view/document_download/document_meta_view). Guest views gộp
  * thành "Khách (xN)" ở cuối list nếu N>1, hoặc "Khách" nếu N=1.
+ *
+ * $isPrivileged=false (guest hoặc auth-không-vai-trò) chỉ xuất doc is_public=true.
+ * $isPrivileged=true (chair/op/participant) xuất đầy đủ.
  */
 class MeetingDocumentExport extends AbstractExcelExport implements FromCollection
 {
-    public function __construct(private int $meetingId) {}
+    public function __construct(private int $meetingId, private bool $isPrivileged = false) {}
 
     public function collection()
     {
         $documents = MeetingDocument::query()
             ->where('meeting_id', $this->meetingId)
+            ->when(! $this->isPrivileged, fn ($q) => $q->where('is_public', true))
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get();

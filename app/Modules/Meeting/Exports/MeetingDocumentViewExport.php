@@ -14,6 +14,9 @@ use Maatwebsite\Excel\Concerns\FromCollection;
  * "Người xem" hiển thị name của user; nếu user_id null (guest) thì hiển thị "Khách".
  * "Loại" map kind từ DB: document_meta_view → "Mở trang tài liệu",
  * document_view → "Xem nội dung", document_download → "Tải xuống".
+ *
+ * $isPrivileged=false (guest hoặc auth-không-vai-trò) chỉ xuất view của doc is_public=true.
+ * $isPrivileged=true (chair/op/participant) xuất view của mọi doc trong meeting.
  */
 class MeetingDocumentViewExport extends AbstractExcelExport implements FromCollection
 {
@@ -23,14 +26,18 @@ class MeetingDocumentViewExport extends AbstractExcelExport implements FromColle
         'document_download' => 'Tải xuống',
     ];
 
-    public function __construct(private int $meetingId) {}
+    public function __construct(private int $meetingId, private bool $isPrivileged = false) {}
 
     public function collection()
     {
         return MeetingView::query()
-            ->with(['user:id,name', 'meetingDocument:id,title'])
+            ->with(['user:id,name', 'meetingDocument:id,title,is_public'])
             ->where('meeting_id', $this->meetingId)
             ->whereNotNull('meeting_document_id')
+            ->when(! $this->isPrivileged, fn ($q) => $q->whereHas(
+                'meetingDocument',
+                fn ($mq) => $mq->where('is_public', true),
+            ))
             ->orderByDesc('viewed_at')
             ->get()
             ->values()

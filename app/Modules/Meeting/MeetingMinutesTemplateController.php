@@ -4,6 +4,7 @@ namespace App\Modules\Meeting;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
+use App\Modules\Core\Support\ExportFilename;
 use App\Modules\Meeting\Models\Meeting;
 use App\Modules\Meeting\Models\MeetingMinutesTemplate;
 use App\Modules\Meeting\Requests\StoreMeetingMinutesTemplateRequest;
@@ -194,7 +195,7 @@ class MeetingMinutesTemplateController extends Controller
 
         // Slug tiếng Việt: bỏ dấu + lowercase + dash. Fallback theo ID nếu title rỗng.
         $slug = Str::slug((string) $meeting->title) ?: ('meeting-'.$meeting->id);
-        $filename = "export__bien-ban-{$slug}.docx";
+        $filename = ExportFilename::make('bien-ban-'.$slug, 'docx');
 
         return response()->download($path, $filename)->deleteFileAfterSend(true);
     }

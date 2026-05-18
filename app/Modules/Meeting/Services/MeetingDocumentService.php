@@ -44,22 +44,7 @@ class MeetingDocumentService
     public function publicShow(MeetingDocument $meetingDocument): MeetingDocument
     {
         $meeting = $meetingDocument->meeting;
-
-        // Resolve auth TRƯỚC khi check participant. shouldSeeAllDocs() chỉ đọc guard web/sanctum,
-        // không tự đọc cookie. FE SPA dùng cookie `accessToken` → nếu không setUser vào guard
-        // trước, shouldSeeAllDocs return false → meeting riêng tư trả 404 dù user là đại biểu.
-        //  - Ưu tiên Authorization Bearer header (cách chuẩn)
-        //  - Fallback: cookie `accessToken` (FE SPA của project dùng cookie thay vì header)
-        $authUser = auth()->user() ?? \Illuminate\Support\Facades\Auth::guard('sanctum')->user();
-        if (! $authUser) {
-            $authUser = $this->resolveUserFromCookieToken();
-            if ($authUser) {
-                \Illuminate\Support\Facades\Auth::guard('sanctum')->setUser($authUser);
-            }
-        }
-        if ($authUser && function_exists('setPermissionsTeamId') && $meeting) {
-            setPermissionsTeamId((int) $meeting->organization_id);
-        }
+        $authUser = $this->ensureAuthResolved($meeting);
 
         $isParticipant = $this->shouldSeeAllDocs($meeting);
         $hasViewPermission = $authUser?->can('meeting-documents.show') ?? false;
@@ -77,6 +62,41 @@ class MeetingDocumentService
         }
 
         return $meetingDocument->load(['agenda', 'documentType', 'mediaFile']);
+    }
+
+    /**
+     * Public export helper: resolve auth (Bearer/cookie/sanctum) + trả về user có vai trò
+     * chair/op/participant trong meeting hay không. Guest → false → caller filter chỉ doc
+     * is_public=true.
+     */
+    public function resolveIsPrivileged(?\App\Modules\Meeting\Models\Meeting $meeting): bool
+    {
+        $this->ensureAuthResolved($meeting);
+
+        return $this->shouldSeeAllDocs($meeting);
+    }
+
+    /**
+     * Resolve auth user TRƯỚC khi check role. shouldSeeAllDocs() chỉ đọc guard web/sanctum,
+     * không tự đọc cookie. FE SPA dùng cookie `accessToken`. Side-effect: setUser vào guard
+     * sanctum + setPermissionsTeamId nếu resolve được.
+     *  - Ưu tiên Authorization Bearer header (cách chuẩn)
+     *  - Fallback: cookie `accessToken` (FE SPA của project dùng cookie thay vì header)
+     */
+    private function ensureAuthResolved(?\App\Modules\Meeting\Models\Meeting $meeting): ?\App\Modules\Core\Models\User
+    {
+        $authUser = auth()->user() ?? \Illuminate\Support\Facades\Auth::guard('sanctum')->user();
+        if (! $authUser) {
+            $authUser = $this->resolveUserFromCookieToken();
+            if ($authUser) {
+                \Illuminate\Support\Facades\Auth::guard('sanctum')->setUser($authUser);
+            }
+        }
+        if ($authUser && function_exists('setPermissionsTeamId') && $meeting) {
+            setPermissionsTeamId((int) $meeting->organization_id);
+        }
+
+        return $authUser;
     }
 
     /**

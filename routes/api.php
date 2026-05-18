@@ -55,6 +55,10 @@ Route::prefix('public')->middleware('log.activity')->group(function () {
     // Gate: MeetingPolicy::viewPublic (meeting is_public=true + status=published).
     Route::get('/meetings/{meeting}/agendas', [\App\Modules\Meeting\MeetingAgendaController::class, 'publicListInMeeting']);
     Route::get('/meetings/{meeting}/documents', [\App\Modules\Meeting\MeetingDocumentController::class, 'publicListInMeeting']);
+    // Export tài liệu — auth-optional. Guest chỉ thấy doc is_public=true; chair/op/participant
+    // thấy đầy đủ. Controller tự resolve auth qua Bearer/cookie + shouldSeeAllDocs.
+    Route::get('/meetings/{meeting}/documents/export', [\App\Modules\Meeting\MeetingDocumentController::class, 'exportInMeeting']);
+    Route::get('/meetings/{meeting}/documents/export-views', [\App\Modules\Meeting\MeetingDocumentController::class, 'exportViewsInMeeting']);
 
     // Meeting documents — list công khai (theo query meeting_id) + show + download (backward compat).
     Route::get('/meeting-documents', [\App\Modules\Meeting\MeetingDocumentController::class, 'public']);
