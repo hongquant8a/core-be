@@ -4,6 +4,9 @@ namespace App\Modules\Meeting;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
+use App\Modules\Core\Support\ExportFilename;
+use App\Modules\Meeting\Exports\MeetingDocumentExport;
+use App\Modules\Meeting\Exports\MeetingDocumentViewExport;
 use App\Modules\Meeting\Models\Meeting;
 use App\Modules\Meeting\Models\MeetingDocument;
 use App\Modules\Meeting\Requests\BulkDestroyCatalogRequest;
@@ -224,5 +227,41 @@ class MeetingDocumentController extends Controller
         $this->meetingDocumentService->reorder($request->validated('items'));
 
         return $this->success(null, 'Sắp xếp tài liệu họp thành công!');
+    }
+
+    /**
+     * In-meeting: xuất tổng hợp tài liệu của cuộc họp.
+     *
+     * Gate `operate,meeting` (chair/op pure FK). Mỗi row = 1 tài liệu.
+     *
+     * Xuất ra các trường: STT, Tên tài liệu, Lượt xem, Người xem.
+     * "Người xem" join tên user unique, guest gộp "Khách (xN)".
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     */
+    public function exportInMeeting(Meeting $meeting)
+    {
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new MeetingDocumentExport($meeting->id),
+            ExportFilename::make('tai-lieu-cuoc-hop'),
+        );
+    }
+
+    /**
+     * In-meeting: xuất chi tiết lượt xem tài liệu — mỗi row = 1 lượt xem.
+     *
+     * Gate `operate,meeting`. Bao gồm cả document_meta_view / document_view /
+     * document_download. Guest hiển thị "Khách".
+     *
+     * Xuất ra các trường: STT, Tên tài liệu, Người xem, Loại, Thời gian xem, IP.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     */
+    public function exportViewsInMeeting(Meeting $meeting)
+    {
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new MeetingDocumentViewExport($meeting->id),
+            ExportFilename::make('luot-xem-tai-lieu'),
+        );
     }
 }

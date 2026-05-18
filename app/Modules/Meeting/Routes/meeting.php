@@ -118,6 +118,12 @@ Route::prefix('{meeting}/attendances')->group(function () {
     Route::patch('/{meetingAttendance}/reject', [MeetingAttendanceController::class, 'rejectInMeeting'])->middleware('can:reject,meetingAttendance');
 });
 
+// Tab 2 Tài liệu — export tổng hợp + chi tiết lượt xem. Chair/op pure FK (operate).
+Route::prefix('{meeting}/documents')->group(function () {
+    Route::get('/export', [\App\Modules\Meeting\MeetingDocumentController::class, 'exportInMeeting'])->middleware('can:operate,meeting');
+    Route::get('/export-views', [\App\Modules\Meeting\MeetingDocumentController::class, 'exportViewsInMeeting'])->middleware('can:operate,meeting');
+});
+
 // Participants — list participant+ xem; self respond invitation.
 Route::prefix('{meeting}/participants')->group(function () {
     Route::get('/', [MeetingParticipantController::class, 'indexInMeeting'])->middleware('can:viewParticipant,meeting');

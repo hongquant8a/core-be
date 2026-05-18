@@ -6,6 +6,7 @@ use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithDefaultStyles;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithStrictNullComparison;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
@@ -29,7 +30,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
  *  - Override `collection()` hoặc `array()` (FromCollection / FromArray)
  *  - Có thể override `customStyles()` / `customEvents()` để mở rộng style riêng
  */
-abstract class AbstractExcelExport implements WithHeadings, WithStyles, ShouldAutoSize, WithEvents, WithDefaultStyles
+abstract class AbstractExcelExport implements WithHeadings, WithStyles, ShouldAutoSize, WithEvents, WithDefaultStyles, WithStrictNullComparison
 {
     protected const HEADER_FILL_COLOR = '1F4E78';
     protected const HEADER_TEXT_COLOR = 'FFFFFF';
