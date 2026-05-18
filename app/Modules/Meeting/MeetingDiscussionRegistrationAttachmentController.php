@@ -57,14 +57,14 @@ class MeetingDiscussionRegistrationAttachmentController extends Controller
      *
      * @urlParam meeting integer required ID cuộc họp. Example: 1
      * @urlParam meetingDiscussionRegistration integer required ID đăng ký. Example: 1
-     * @urlParam meetingDiscussionRegistrationAttachment integer required ID file. Example: 1
+     * @urlParam discAttachment integer required ID file đính kèm. Example: 1
      */
     public function destroyInRegistration(
         Meeting $meeting,
         MeetingDiscussionRegistration $meetingDiscussionRegistration,
-        MeetingDiscussionRegistrationAttachment $meetingDiscussionRegistrationAttachment,
+        MeetingDiscussionRegistrationAttachment $discAttachment,
     ) {
-        $this->service->destroy($meetingDiscussionRegistrationAttachment);
+        $this->service->destroy($discAttachment);
         $this->broadcastRegistrationUpdated($meetingDiscussionRegistration);
 
         return $this->success(null, 'Xóa tệp đính kèm thành công!');

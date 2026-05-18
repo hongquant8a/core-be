@@ -84,13 +84,16 @@ Route::prefix('{meeting}/discussion-registrations')->group(function () {
 
 // Attachments nested 2 cấp: meeting → registration → attachments. Multi-file đính kèm đăng ký.
 // Gate update/delete trên Policy của attachment item (owner đăng ký HOẶC chair/op meeting).
+// LƯU Ý: Symfony route variable max 32 ký tự. `meetingDiscussionRegistrationAttachment` (39) quá dài →
+// dùng tên ngắn `discAttachment` + explicit Route::model binding để Route Model Binding vẫn resolve.
+Route::model('discAttachment', \App\Modules\Meeting\Models\MeetingDiscussionRegistrationAttachment::class);
 Route::prefix('{meeting}/discussion-registrations/{meetingDiscussionRegistration}/attachments')->group(function () {
     Route::post('/', [\App\Modules\Meeting\MeetingDiscussionRegistrationAttachmentController::class, 'storeInRegistration'])
         ->middleware('can:update,meetingDiscussionRegistration');
     Route::patch('/reorder', [\App\Modules\Meeting\MeetingDiscussionRegistrationAttachmentController::class, 'reorderInRegistration'])
         ->middleware('can:update,meetingDiscussionRegistration');
-    Route::delete('/{meetingDiscussionRegistrationAttachment}', [\App\Modules\Meeting\MeetingDiscussionRegistrationAttachmentController::class, 'destroyInRegistration'])
-        ->middleware('can:delete,meetingDiscussionRegistrationAttachment');
+    Route::delete('/{discAttachment}', [\App\Modules\Meeting\MeetingDiscussionRegistrationAttachmentController::class, 'destroyInRegistration'])
+        ->middleware('can:delete,discAttachment');
 });
 
 // Tab 4 Biểu quyết — view topics (participant+), cast vote, open/close (chair/op).
@@ -131,7 +134,9 @@ Route::prefix('{meeting}/attendances')->group(function () {
 
 // Participants — list participant+ xem; self respond invitation.
 Route::prefix('{meeting}/participants')->group(function () {
+    Route::get('/stats', [MeetingParticipantController::class, 'statsInMeeting'])->middleware('can:viewParticipant,meeting');
     Route::get('/', [MeetingParticipantController::class, 'indexInMeeting'])->middleware('can:viewParticipant,meeting');
+    Route::get('/export-rsvp', [MeetingParticipantController::class, 'exportRsvpInMeeting'])->middleware('can:operate,meeting');
     Route::patch('/{meetingParticipant}/respond', [MeetingParticipantController::class, 'respondInMeeting'])->middleware('can:respond,meetingParticipant');
 });
 

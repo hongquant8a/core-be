@@ -23,7 +23,8 @@ class RespondMeetingParticipantRequest extends FormRequest
                     MeetingParticipantResponseStatusEnum::Declined->value,
                 ]),
             ],
-            'absence_reason' => 'nullable|string|max:1000',
+            // Theo spec: báo vắng (declined) PHẢI kèm lý do.
+            'absence_reason' => 'required_if:response_status,declined|nullable|string|max:1000',
         ];
     }
 
@@ -31,6 +32,7 @@ class RespondMeetingParticipantRequest extends FormRequest
     {
         return [
             'required' => ':attribute là trường bắt buộc.',
+            'required_if' => ':attribute là trường bắt buộc khi báo vắng.',
             'string' => ':attribute phải là chuỗi.',
             'in' => ':attribute không hợp lệ (chỉ accepted hoặc declined).',
             'max' => ':attribute không được vượt quá :max ký tự.',

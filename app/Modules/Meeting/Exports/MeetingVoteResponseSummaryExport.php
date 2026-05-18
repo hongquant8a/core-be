@@ -26,8 +26,12 @@ class MeetingVoteResponseSummaryExport extends AbstractExcelExport implements Fr
         $topics = MeetingVoteTopic::query()
             ->when($this->meetingId, fn ($q) => $q->where('meeting_id', $this->meetingId))
             ->when($this->topicId, fn ($q) => $q->where('id', $this->topicId))
+            // Sort ưu tiên (spec #18): theo chương trình (agenda) → sort_order trong agenda → created_at.
+            // Topic không gắn agenda đẩy xuống cuối.
+            ->orderByRaw('meeting_agenda_id IS NULL ASC')
+            ->orderBy('meeting_agenda_id')
             ->orderBy('sort_order')
-            ->orderBy('id')
+            ->orderBy('created_at')
             ->get();
 
         return $topics->values()->map(function ($topic, $i) {

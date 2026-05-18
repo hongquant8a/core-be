@@ -4,6 +4,8 @@ namespace App\Modules\Meeting;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
+use App\Modules\Core\Support\ExportFilename;
+use App\Modules\Meeting\Exports\MeetingParticipantRsvpExport;
 use App\Modules\Meeting\Models\Meeting;
 use App\Modules\Meeting\Models\MeetingParticipant;
 use App\Modules\Meeting\Requests\BulkDestroyCatalogRequest;
@@ -162,5 +164,38 @@ class MeetingParticipantController extends Controller
         $items = $this->meetingParticipantService->index($filters, (int) ($request->limit ?? 100));
 
         return $this->successCollection(new MeetingParticipantCollection($items));
+    }
+
+    /**
+     * Nested route `GET /api/meetings/{meeting}/participants/stats` — gate viewParticipant.
+     *
+     * Stats cho card thống kê tham dự: total + accepted (Tham gia) + declined (Báo vắng)
+     * + pending (Chưa xác nhận).
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     */
+    public function statsInMeeting(Meeting $meeting, FilterRequest $request)
+    {
+        $filters = array_merge($request->all(), ['meeting_id' => $meeting->id]);
+
+        return $this->success($this->meetingParticipantService->stats($filters));
+    }
+
+    /**
+     * In-meeting: xuất xác nhận tham gia của đại biểu (RSVP).
+     *
+     * Gate `operate,meeting` (chair/op pure FK). Tách riêng khỏi /attendances/export
+     * — đây focus RSVP (Đồng ý / Từ chối / Chưa phản hồi + lý do), không gồm điểm danh.
+     *
+     * Xuất ra các trường: STT, Tên đại biểu, Chức vụ, Xác nhận tham gia, Lý do, Thời gian phản hồi.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     */
+    public function exportRsvpInMeeting(Meeting $meeting)
+    {
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new MeetingParticipantRsvpExport($meeting->id),
+            ExportFilename::make('xac-nhan-tham-gia'),
+        );
     }
 }

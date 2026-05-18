@@ -15,8 +15,10 @@ class MeetingParticipantService
 
         return [
             'total' => (clone $base)->count(),
+            // Theo card thống kê FE: Tham gia / Báo vắng / Chưa xác nhận.
             'accepted' => (clone $base)->where('response_status', MeetingParticipantResponseStatusEnum::Accepted->value)->count(),
             'declined' => (clone $base)->where('response_status', MeetingParticipantResponseStatusEnum::Declined->value)->count(),
+            'pending' => (clone $base)->where('response_status', MeetingParticipantResponseStatusEnum::Pending->value)->count(),
         ];
     }
 

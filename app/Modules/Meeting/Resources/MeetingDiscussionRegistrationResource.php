@@ -31,6 +31,10 @@ class MeetingDiscussionRegistrationResource extends JsonResource
             'attachments' => MeetingDiscussionRegistrationAttachmentResource::collection(
                 $this->whenLoaded('attachments')
             ),
+            // Count gọn cho FE hiển thị icon đính kèm + badge số file (Tab thảo luận/chất vấn,
+            // tab slide). Tính qua relation nếu đã eager-load, fallback withCount nếu cần.
+            'attachments_count' => $this->whenLoaded('attachments', fn () => $this->attachments->count())
+                ?? ($this->attachments_count ?? 0),
             'status' => $this->status,
             'completed_at' => $this->completed_at?->format('H:i:s d/m/Y'),
             // ISO timestamp (UTC) — FE compute countdown: agenda.duration_minutes - (now - highlighted_at).

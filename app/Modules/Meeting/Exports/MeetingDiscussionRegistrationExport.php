@@ -31,7 +31,7 @@ class MeetingDiscussionRegistrationExport extends AbstractExcelExport implements
         $authUserId = auth()->id() ?? \Illuminate\Support\Facades\Auth::guard('sanctum')->id();
 
         return MeetingDiscussionRegistration::query()
-            ->with(['agenda', 'participant.attendee.user', 'participant'])
+            ->with(['agenda', 'participant.attendee.user', 'participant', 'attachments'])
             ->where('meeting_id', $this->meetingId)
             ->where('type', $this->type)
             ->when($this->meetingAgendaId, fn ($q, $id) => $q->where('meeting_agenda_id', $id))
@@ -39,8 +39,11 @@ class MeetingDiscussionRegistrationExport extends AbstractExcelExport implements
                 $q->whereHas('participant.attendee', fn ($q2) => $q2->where('user_id', $authUserId));
             })
             ->when($this->onlyMine && ! $authUserId, fn ($q) => $q->whereRaw('1 = 0'))
-            ->orderBy('sort_order')
-            ->orderBy('id')
+            // Sort ưu tiên theo spec: chương trình (agenda) trước, sau đó thời gian đăng ký.
+            // Null agenda đẩy về cuối (NULL last).
+            ->orderByRaw('meeting_agenda_id IS NULL ASC')
+            ->orderBy('meeting_agenda_id')
+            ->orderBy('created_at')
             ->get()
             ->values()
             ->map(fn ($item, $i) => [
@@ -54,8 +57,9 @@ class MeetingDiscussionRegistrationExport extends AbstractExcelExport implements
                 // Chất vấn → answer_content (Nội dung trả lời). Thảo luận → operator_note (Ghi chú thảo luận).
                 'extra' => ($this->type === 'question' ? $item->answer_content : $item->operator_note) ?? '',
                 'status' => $this->statusLabel($item->status),
-                // "Có" nếu có tệp đính kèm (media_id != null), "Không" nếu không.
-                'has_attachment' => $item->media_id ? 'Có' : 'Không',
+                // "Có" nếu có file đính kèm — ưu tiên multi-attachment (sau task #11);
+                // fallback media_id legacy cho data cũ chưa migrate.
+                'has_attachment' => ($item->attachments->isNotEmpty() || $item->media_id) ? 'Có' : 'Không',
             ]);
     }
 
