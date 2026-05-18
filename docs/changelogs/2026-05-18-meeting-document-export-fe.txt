@@ -1,8 +1,32 @@
 ================================================================================
-BE CHANGELOG — 2026-05-18 — Export tài liệu in-meeting (tổng hợp + chi tiết)
+BE CHANGELOG — 2026-05-18 — Export tài liệu (public, auth-optional + filter)
 ================================================================================
 
-2 endpoint mới cho tab Tài liệu (in-meeting). Theo requirement.txt task #8.
+2 endpoint mới cho tab Tài liệu. Theo requirement.txt task #8.
+
+CẬP NHẬT (sau commit gốc): chuyển sang public prefix + auth-optional. Guest
+gọi được, BE tự filter theo flag is_public; user có vai trò trong meeting
+thấy đầy đủ.
+
+
+────────────────────────────────────────────────────────────────────────────────
+QUY TẮC PHÂN QUYỀN CHUNG (CẢ 2 ENDPOINT)
+────────────────────────────────────────────────────────────────────────────────
+
+Auth-optional — BE resolve theo thứ tự:
+  1. Authorization Bearer header (cách chuẩn)
+  2. Cookie `accessToken` format Sanctum (FE SPA của project dùng cookie)
+  3. Guest (không có 2 cái trên)
+
+Sau resolve, xác định "privileged" = user có vai trò trong meeting (chair /
+operator / participant).
+
+Filter data theo $isPrivileged:
+  - Privileged (chair/op/participant) → thấy ĐẦY ĐỦ (cả doc is_public=false).
+  - Guest hoặc auth-không-vai-trò → CHỈ thấy doc is_public=true (và view log
+    của doc đó).
+
+Không trả 403 cho bất kỳ ai — luôn 200 với data filter theo vai trò.
 
 
 ────────────────────────────────────────────────────────────────────────────────
@@ -10,10 +34,9 @@ BE CHANGELOG — 2026-05-18 — Export tài liệu in-meeting (tổng hợp + ch
 ────────────────────────────────────────────────────────────────────────────────
 
 Endpoint:
-  GET /api/meetings/{meeting}/documents/export
-  Gate: can:operate,meeting  (chair/op pure FK, không Spatie admin fallback)
+  GET /api/public/meetings/{meeting}/documents/export
 
-Không có query param (tự lọc theo meeting URL).
+Không có query param (tự lọc theo meeting URL + privileged).
 
 Filename Content-Disposition:
   export__tai-lieu-cuoc-hop_HH-mm-ss_dd-MM-yyyy.xlsx
@@ -42,8 +65,7 @@ Ví dụ:
 ────────────────────────────────────────────────────────────────────────────────
 
 Endpoint:
-  GET /api/meetings/{meeting}/documents/export-views
-  Gate: can:operate,meeting
+  GET /api/public/meetings/{meeting}/documents/export-views
 
 Không có query param.
 
@@ -63,6 +85,9 @@ Cột Excel:
 
 Sort: thời gian xem mới nhất trước (DESC).
 
+Filter is_public: chỉ trả view log của những doc thỏa visibility (xem mục
+phân quyền chung ở đầu doc).
+
 Ví dụ:
   STT | Tên tài liệu     | Người xem    | Loại              | Thời gian xem        | IP
   ----+------------------+--------------+-------------------+----------------------+----------
@@ -72,23 +97,39 @@ Ví dụ:
 
 
 ────────────────────────────────────────────────────────────────────────────────
-GATE & PHÂN QUYỀN
+URL — TRƯỚC vs SAU
 ────────────────────────────────────────────────────────────────────────────────
 
-Cả 2 endpoint dùng gate `can:operate,meeting` — pure FK Policy, KHÔNG có Spatie
-admin bypass. Chỉ chủ trì (chairperson) hoặc thư ký/điều hành (operator) của
-chính meeting đó mới gọi được. Đại biểu thường, admin hệ thống không có role
-trong meeting → 403.
+Phiên bản đầu (đã commit nhưng REVOKED, FE không dùng):
+  GET /api/meetings/{m}/documents/export        (gate operate, 403 cho đại biểu/guest)
+  GET /api/meetings/{m}/documents/export-views  (gate operate)
 
-Nhất quán với các export nội dung sensitive khác trong meeting (vd
-/vote-responses/export, /discussion-registrations/export).
+Phiên bản hiện tại (FE dùng):
+  GET /api/public/meetings/{m}/documents/export        (auth-optional + filter)
+  GET /api/public/meetings/{m}/documents/export-views  (auth-optional + filter)
+
+Khác biệt:
+  - Prefix /public (không cần Bearer/cookie cũng gọi được).
+  - Không còn 403 — luôn 200 với data filter theo vai trò.
 
 
 ────────────────────────────────────────────────────────────────────────────────
-BONUS — Fix int 0 bị Maatwebsite ghi thành NULL
+BONUS — Filename biên bản /export-minutes có timestamp
 ────────────────────────────────────────────────────────────────────────────────
 
-AbstractExcelExport (toàn dự án) thêm interface WithStrictNullComparison.
+Endpoint: POST /api/meetings/{m}/export-minutes
+
+Trước: export__bien-ban-{slug}.docx (không có timestamp).
+Sau:   export__bien-ban-{slug}_HH-mm-ss_dd-MM-yyyy.docx (nhất quán convention).
+
+FE không phải đổi gì — vẫn đọc filename từ Content-Disposition header.
+
+
+────────────────────────────────────────────────────────────────────────────────
+BONUS — Fix int 0 bị Maatwebsite ghi thành NULL (TOÀN DỰ ÁN)
+────────────────────────────────────────────────────────────────────────────────
+
+AbstractExcelExport thêm interface WithStrictNullComparison.
 
 Trước: cột số đếm có value = 0 → Maatwebsite default treat as null → Excel cell
        hiển thị rỗng (gây nhầm "không có data" thay vì "có 0").
@@ -97,23 +138,28 @@ Sau:   value = 0 ghi đúng dạng numeric 0 → Excel hiển thị "0".
 Tác động: mọi export trong dự án — "Lượt xem", "Đồng ý", "Không đồng ý",
 "Ý kiến khác", "Số phiếu", v.v. — giờ hiển thị "0" thay vì cell rỗng.
 
-Empty string '' vẫn ghi thành cell rỗng (giữ behavior cũ).
-
 
 ────────────────────────────────────────────────────────────────────────────────
 FE ACTION
 ────────────────────────────────────────────────────────────────────────────────
 
-Tab Tài liệu in-meeting:
-[ ] Thêm 2 nút export trong toolbar (chỉ hiển thị cho chair/operator):
-    * "Xuất danh sách tài liệu" → GET /documents/export
-    * "Xuất chi tiết lượt xem"  → GET /documents/export-views
-[ ] Đại biểu thường không thấy 2 nút này (gate operate,meeting BE chặn 403).
+Tab Tài liệu (in-meeting):
+[ ] Thêm 2 nút export trong toolbar — HIỂN THỊ CHO MỌI USER (kể cả guest).
+    BE tự filter theo vai trò; không cần FE check role để ẩn/hiện nút.
+    * "Xuất danh sách tài liệu" → GET /api/public/meetings/{m}/documents/export
+    * "Xuất chi tiết lượt xem"  → GET /api/public/meetings/{m}/documents/export-views
+[ ] Đảm bảo gửi auth khi user đã login (Bearer header hoặc cookie accessToken)
+    để BE detect role và xuất đầy đủ. Guest không gửi auth → BE lọc is_public.
 [ ] Tải file qua window.location.href hoặc fetch + blob — tên file đọc từ
     Content-Disposition header (không hardcode FE).
 
 Verify:
+[ ] Guest call → file chỉ chứa doc is_public=true và view log của doc đó.
+[ ] User là chair/op/participant call → file chứa đầy đủ (cả doc private).
+[ ] User auth nhưng KHÔNG có vai trò trong meeting → behave như guest.
 [ ] Tài liệu chưa ai xem → tổng hợp hiện "Lượt xem = 0", "Người xem" trống.
 [ ] Guest views → tổng hợp gộp "Khách (xN)"; chi tiết hiển thị "Khách".
 [ ] User login views → tổng hợp join tên unique; chi tiết hiển thị tên đầy đủ.
-[ ] Đại biểu thường gọi endpoint → 403.
+
+Biên bản .docx (/export-minutes):
+[ ] Verify filename tải về có dạng export__bien-ban-{slug}_HH-mm-ss_dd-MM-yyyy.docx.
