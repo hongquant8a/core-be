@@ -153,13 +153,18 @@ class MeetingDocumentService
         $counterColumn = $type === 'view' ? 'view_count' : 'download_count';
         $logKind = $type === 'view' ? 'document_view' : 'document_download';
 
-        DB::transaction(function () use ($meetingDocument, $request, $counterColumn, $logKind) {
+        // Public route không có middleware auth:sanctum nên auth()->id() (guard web) null.
+        // publicShow trước đó đã setUser vào sanctum guard (qua ensureAuthResolved). Đọc
+        // sanctum làm fallback để log đúng user_id thay vì coi user đã login là "Khách".
+        $userId = auth()->id() ?? \Illuminate\Support\Facades\Auth::guard('sanctum')->id();
+
+        DB::transaction(function () use ($meetingDocument, $request, $counterColumn, $logKind, $userId) {
             $meetingDocument->increment($counterColumn);
             MeetingView::create([
                 'organization_id' => $meetingDocument->organization_id,
                 'meeting_id' => $meetingDocument->meeting_id,
                 'meeting_document_id' => $meetingDocument->id,
-                'user_id' => auth()->id(),
+                'user_id' => $userId,
                 'ip_address' => $request?->ip(),
                 'user_agent' => $request?->userAgent(),
                 'viewed_at' => now(),
