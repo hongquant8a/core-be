@@ -50,14 +50,14 @@ class MeetingDiscussionRegistrationService
 
     public function index(array $filters, int $limit)
     {
-        return MeetingDiscussionRegistration::with(['participant', 'agenda', 'mediaFile'])
+        return MeetingDiscussionRegistration::with(['participant', 'agenda', 'mediaFile', 'attachments.mediaFile'])
             ->filter($filters)
             ->paginate($limit);
     }
 
     public function show(MeetingDiscussionRegistration $meetingDiscussionRegistration): MeetingDiscussionRegistration
     {
-        return $meetingDiscussionRegistration->load(['participant', 'agenda', 'mediaFile']);
+        return $meetingDiscussionRegistration->load(['participant', 'agenda', 'mediaFile', 'attachments.mediaFile']);
     }
 
     public function store(array $validated, $file = null): MeetingDiscussionRegistration
@@ -117,7 +117,7 @@ class MeetingDiscussionRegistrationService
                     $created->update(['media_id' => $media->id]);
                 }
 
-                return $created->load(['participant', 'agenda', 'mediaFile']);
+                return $created->load(['participant', 'agenda', 'mediaFile', 'attachments.mediaFile']);
             });
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);
@@ -184,7 +184,7 @@ class MeetingDiscussionRegistrationService
                     $model->update(['media_id' => $media->id]);
                 }
 
-                return $model->load(['participant', 'agenda', 'mediaFile']);
+                return $model->load(['participant', 'agenda', 'mediaFile', 'attachments.mediaFile']);
             });
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);
@@ -246,7 +246,7 @@ class MeetingDiscussionRegistrationService
             }
         }
 
-        return $model->load(['participant', 'agenda', 'mediaFile']);
+        return $model->load(['participant', 'agenda', 'mediaFile', 'attachments.mediaFile']);
     }
 
     public function reorder(array $items): void

@@ -53,6 +53,12 @@ class MeetingDiscussionRegistration extends TenantModel implements HasMedia
         return $this->belongsTo(\Spatie\MediaLibrary\MediaCollections\Models\Media::class, 'media_id');
     }
 
+    public function attachments()
+    {
+        return $this->hasMany(MeetingDiscussionRegistrationAttachment::class, 'meeting_discussion_registration_id')
+            ->orderBy('sort_order');
+    }
+
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('meeting-discussion-attachments');
