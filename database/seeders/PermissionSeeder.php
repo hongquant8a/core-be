@@ -58,6 +58,11 @@ class PermissionSeeder extends Seeder
             'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
             'users', 'syncUsers', 'removeUser',
         ],
+        // TaskAssignment - Nhân viên giao việc
+        'task-assignment-employees' => [
+            'stats', 'index', 'show', 'store', 'update', 'destroy',
+            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
+        ],
         // TaskAssignment - Loại văn bản giao việc
         'task-assignment-types' => [
             'stats', 'index', 'show', 'store', 'update', 'destroy',
@@ -244,6 +249,7 @@ class PermissionSeeder extends Seeder
         'settings' => 'Cấu hình hệ thống',
         'sso-settings' => 'Cấu hình SSO',
         'task-assignment-departments' => 'Phòng ban giao việc',
+        'task-assignment-employees' => 'Nhân viên giao việc',
         'task-assignment-types' => 'Loại văn bản giao việc',
         'task-assignment-item-types' => 'Loại công việc',
         'task-assignment-documents' => 'Văn bản giao việc',
@@ -515,7 +521,7 @@ class PermissionSeeder extends Seeder
         $names = [];
 
         // Full quyền trên danh mục
-        foreach (['task-assignment-departments', 'task-assignment-types', 'task-assignment-item-types'] as $resource) {
+        foreach (['task-assignment-departments', 'task-assignment-employees', 'task-assignment-types', 'task-assignment-item-types'] as $resource) {
             foreach (self::$PERMISSIONS[$resource] as $action) {
                 $names[] = "{$resource}.{$action}";
             }

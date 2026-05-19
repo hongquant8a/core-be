@@ -440,6 +440,25 @@ Phòng ban nội bộ phục vụ nghiệp vụ giao việc.
 | created_at | timestamp | Yes | null | |
 | updated_at | timestamp | Yes | null | |
 
+### `task_assignment_employees`
+Nhân viên module Task — lớp gate giữa `users` tổng và pivot phòng ban. Chỉ user nằm trong bảng này (status=active) mới được gán vào dept/task.
+
+| Cột | Kiểu | Nullable | Mặc định | Ràng buộc / Ghi chú |
+|-----|------|----------|----------|---------------------|
+| id | bigint unsigned | No | — | PK |
+| user_id | bigint unsigned | No | — | FK → users.id CASCADE |
+| organization_id | bigint unsigned | Yes | null | FK → organizations.id nullOnDelete, INDEX |
+| status | varchar(255) | No | 'active' | active, inactive. INDEX |
+| note | text | Yes | null | Ghi chú nội bộ |
+| created_by | bigint unsigned | Yes | null | FK → users.id nullOnDelete |
+| updated_by | bigint unsigned | Yes | null | FK → users.id nullOnDelete |
+| created_at | timestamp | Yes | null | |
+| updated_at | timestamp | Yes | null | |
+
+Ràng buộc: UNIQUE(user_id, organization_id) → `ta_employees_user_org_unique`.
+
+Backfill: migration insert DISTINCT (user_id, organization_id) từ `task_assignment_users` hiện có → mọi thành viên dept đang có tự động thành nhân viên active.
+
 ### `task_assignment_types`
 Loại văn bản giao việc.
 

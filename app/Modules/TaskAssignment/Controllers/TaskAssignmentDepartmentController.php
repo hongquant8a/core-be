@@ -67,6 +67,29 @@ class TaskAssignmentDepartmentController extends Controller
     }
 
     /**
+     * Dropdown phòng ban (authenticated, không qua Spatie)
+     *
+     * Dành cho form admin chọn phòng ban (giao task, gán nhân viên, ...). Khác `/public-options`:
+     * endpoint này yêu cầu Bearer token nhưng KHÔNG yêu cầu permission `task-assignment-departments.index`.
+     *
+     * @header X-Organization-Id integer required ID tổ chức. Example: 1
+     *
+     * @queryParam search string Từ khóa tìm kiếm theo tên/mã. Example: KT
+     * @queryParam sort_by string Sắp xếp theo: id, name, code, created_at, updated_at. Example: name
+     * @queryParam sort_order string Thứ tự: asc, desc. Example: asc
+     *
+     * @apiResourceCollection App\Modules\Core\Resources\PublicOptionResource
+     * @apiResourceModel App\Modules\TaskAssignment\Models\TaskAssignmentDepartment
+     * @apiResourceAdditional success=true
+     */
+    public function options(FilterRequest $request)
+    {
+        $items = $this->departmentService->publicOptions($request->all());
+
+        return $this->successCollection(\App\Modules\Core\Resources\PublicOptionResource::collection($items));
+    }
+
+    /**
      * Thống kê phòng ban giao việc
      *
      * @queryParam search string Từ khóa tìm kiếm theo tên.

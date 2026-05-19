@@ -99,6 +99,9 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
     Route::prefix('task-assignment-departments')->group(function () {
         require base_path('app/Modules/TaskAssignment/Routes/task_assignment_department.php');
     });
+    Route::prefix('task-assignment-employees')->group(function () {
+        require base_path('app/Modules/TaskAssignment/Routes/task_assignment_employee.php');
+    });
     Route::prefix('task-assignment-types')->group(function () {
         require base_path('app/Modules/TaskAssignment/Routes/task_assignment_type.php');
     });

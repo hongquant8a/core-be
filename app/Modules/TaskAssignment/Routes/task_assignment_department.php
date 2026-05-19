@@ -9,6 +9,9 @@ Route::get('/import-template', [TaskAssignmentDepartmentController::class, 'impo
 Route::delete('/bulk-delete', [TaskAssignmentDepartmentController::class, 'bulkDestroy'])->middleware('permission:task-assignment-departments.bulkDestroy,web');
 Route::patch('/bulk-status', [TaskAssignmentDepartmentController::class, 'bulkUpdateStatus'])->middleware('permission:task-assignment-departments.bulkUpdateStatus,web');
 Route::get('/stats', [TaskAssignmentDepartmentController::class, 'stats'])->middleware('permission:task-assignment-departments.stats,web');
+// Dropdown phòng ban — authenticated, KHÔNG qua Spatie permission, dành riêng cho form
+// (giao task, gán nhân viên, ...). Tách khỏi `/public-options` (guest) và `/` (admin có Spatie).
+Route::get('/options', [TaskAssignmentDepartmentController::class, 'options']);
 Route::get('/', [TaskAssignmentDepartmentController::class, 'index'])->middleware('permission:task-assignment-departments.index,web');
 Route::get('/{taskAssignmentDepartment}', [TaskAssignmentDepartmentController::class, 'show'])->middleware('permission:task-assignment-departments.show,web');
 Route::post('/', [TaskAssignmentDepartmentController::class, 'store'])->middleware('permission:task-assignment-departments.store,web');

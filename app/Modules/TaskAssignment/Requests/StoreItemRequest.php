@@ -28,13 +28,13 @@ class StoreItemRequest extends BaseRequest
                     return;
                 }
                 $orgId = getPermissionsTeamId();
-                $exists = \Illuminate\Support\Facades\DB::table('task_assignment_users')
+                $exists = \Illuminate\Support\Facades\DB::table('task_assignment_employees')
                     ->where('user_id', $value)
                     ->where('organization_id', $orgId)
                     ->where('status', 'active')
                     ->exists();
                 if (! $exists) {
-                    $fail("Người giao việc (ID {$value}) không thuộc module giao việc của tổ chức này.");
+                    $fail("Người giao việc (ID {$value}) không phải nhân viên module giao việc của tổ chức này.");
                 }
             }],
             'users' => 'required|array|min:1',
@@ -47,13 +47,26 @@ class StoreItemRequest extends BaseRequest
                     return;
                 }
                 $orgId = getPermissionsTeamId();
-                $exists = \Illuminate\Support\Facades\DB::table('task_assignment_users')
+
+                // Gate 1: phải là nhân viên module Task đang active (đăng ký qua task-assignment-employees).
+                $isEmployee = \Illuminate\Support\Facades\DB::table('task_assignment_employees')
+                    ->where('user_id', $value['user_id'])
+                    ->where('organization_id', $orgId)
+                    ->where('status', 'active')
+                    ->exists();
+                if (! $isEmployee) {
+                    $fail("User ID {$value['user_id']} không phải nhân viên module Task hoặc đã bị vô hiệu hóa. Vui lòng đăng ký nhân viên trước.");
+                    return;
+                }
+
+                // Gate 2: phải thuộc đúng dept đang gán.
+                $inDept = \Illuminate\Support\Facades\DB::table('task_assignment_users')
                     ->where('user_id', $value['user_id'])
                     ->where('task_assignment_department_id', $value['department_id'])
                     ->where('organization_id', $orgId)
                     ->where('status', 'active')
                     ->exists();
-                if (! $exists) {
+                if (! $inDept) {
                     $fail("User ID {$value['user_id']} không thuộc phòng ban ID {$value['department_id']} trong tổ chức này.");
                 }
             }],

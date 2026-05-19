@@ -27,9 +27,23 @@ Quản lý phòng ban trong hệ thống giao việc liên phòng ban: thống k
 | | |
 |---|---|
 | **Method** | GET |
-| **Path** | `/api/task-assignment-departments/public-options` |
-| **Auth** | Không yêu cầu. |
+| **Path** | `/api/public/task-assignment-departments/options` |
+| **Auth** | Không yêu cầu (dành cho citizen/guest). |
 | **Response** | Mảng `[{ "id": 1, "name": "Phòng Kỹ thuật", "code": "KT" }]` — dùng cho dropdown/select. |
+
+---
+
+## Dropdown options (authenticated, không Spatie)
+
+Dành cho form admin (giao task, gán nhân viên, ...). Khác `/public/...options`: cần Bearer token nhưng KHÔNG cần permission `task-assignment-departments.index`.
+
+| | |
+|---|---|
+| **Method** | GET |
+| **Path** | `/api/task-assignment-departments/options` |
+| **Auth** | Bắt buộc (Bearer + `X-Organization-Id`). KHÔNG qua Spatie. |
+| **Query** | `search` (tên/mã), `sort_by`, `sort_order`. |
+| **Response** | Mảng `[{ "id": 1, "name": "Phòng Kỹ thuật", "code": "KT", "description": "..." }]`. |
 
 ---
 

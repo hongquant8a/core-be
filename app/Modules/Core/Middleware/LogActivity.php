@@ -248,6 +248,7 @@ class LogActivity
             'document-fields' => 'lĩnh vực',
             'settings' => 'cấu hình hệ thống',
             'task-assignment-departments' => 'Phòng ban giao việc',
+            'task-assignment-employees' => 'Nhân viên giao việc',
             'task-assignment-types' => 'Loại văn bản giao việc',
             'task-assignment-item-types' => 'Loại công việc',
             'task-assignment-documents' => 'Văn bản giao việc',
