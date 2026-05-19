@@ -390,13 +390,28 @@ class MeetingMinutesGenerator
 
         $original = $xml;
 
-        // Issue 1: order tblPr trước tblGrid + dedupe. Dùng DOMDocument cho đúng tree.
+        // Issue 1+5: order tblPr trước tblGrid + dedupe + reorder rPr children canonical.
         $dom = new \DOMDocument();
         $dom->preserveWhiteSpace = false;
         $dom->formatOutput = false;
         // Suppress warning từ XML potentially malformed; nếu fail thì skip fix #1.
         if (@$dom->loadXML($xml)) {
             $ns = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+
+            // Reorder mọi <w:rPr> children theo CT_RPr canonical sequence.
+            // PhpWord output sai: <w:sz/><w:szCs/><w:b/><w:bCs/> — phải <w:b/><w:bCs/><w:sz/><w:szCs/>.
+            $rPrOrder = [
+                'rStyle', 'rFonts', 'b', 'bCs', 'i', 'iCs', 'caps', 'smallCaps',
+                'strike', 'dstrike', 'outline', 'shadow', 'emboss', 'imprint',
+                'noProof', 'snapToGrid', 'vanish', 'webHidden', 'color', 'spacing',
+                'w', 'kern', 'position', 'sz', 'szCs', 'highlight', 'u', 'effect',
+                'bdr', 'shd', 'fitText', 'vertAlign', 'rtl', 'cs', 'em', 'lang',
+                'eastAsianLayout', 'specVanish', 'oMath',
+            ];
+            foreach (iterator_to_array($dom->getElementsByTagNameNS($ns, 'rPr')) as $rPr) {
+                $this->sortChildrenByLocalName($rPr, $rPrOrder);
+            }
+
             $tbls = $dom->getElementsByTagNameNS($ns, 'tbl');
             // Snapshot vì NodeList sẽ thay đổi khi move/remove node.
             $tblNodes = [];
@@ -501,38 +516,56 @@ class MeetingMinutesGenerator
             return null;
         }
         $ns = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
-        $tblPrs = $dom->getElementsByTagNameNS($ns, 'tblPr');
-        $list = [];
-        foreach ($tblPrs as $n) {
-            $list[] = $n;
-        }
-        foreach ($list as $tblPr) {
-            $children = [];
-            foreach (iterator_to_array($tblPr->childNodes) as $child) {
-                if (! ($child instanceof \DOMElement)) {
-                    continue;
-                }
-                $children[] = $child;
-                $tblPr->removeChild($child);
-            }
-            usort($children, function ($a, $b) use ($order) {
-                $ia = array_search($a->localName, $order, true);
-                $ib = array_search($b->localName, $order, true);
-                if ($ia === false) {
-                    $ia = PHP_INT_MAX;
-                }
-                if ($ib === false) {
-                    $ib = PHP_INT_MAX;
-                }
-
-                return $ia <=> $ib;
-            });
-            foreach ($children as $child) {
-                $tblPr->appendChild($child);
-            }
+        foreach (iterator_to_array($dom->getElementsByTagNameNS($ns, 'tblPr')) as $tblPr) {
+            $this->sortChildrenByLocalName($tblPr, $order);
         }
 
         return $dom->saveXML();
+    }
+
+    /**
+     * Sort children của 1 DOMElement theo array tên local — element không có trong list
+     * sẽ đẩy về cuối, giữ relative order.
+     */
+    private function sortChildrenByLocalName(\DOMElement $parent, array $order): void
+    {
+        $children = [];
+        foreach (iterator_to_array($parent->childNodes) as $child) {
+            if (! ($child instanceof \DOMElement)) {
+                continue;
+            }
+            $children[] = $child;
+            $parent->removeChild($child);
+        }
+        usort($children, function ($a, $b) use ($order) {
+            $ia = array_search($a->localName, $order, true);
+            $ib = array_search($b->localName, $order, true);
+            if ($ia === false) {
+                $ia = PHP_INT_MAX;
+            }
+            if ($ib === false) {
+                $ib = PHP_INT_MAX;
+            }
+
+            return $ia <=> $ib;
+        });
+        foreach ($children as $child) {
+            $parent->appendChild($child);
+        }
+    }
+
+    /**
+     * Strip HTML tags + decode entities — dùng cho text fields nhập từ rich-text editor
+     * (meeting.content, registration.content, ...). PhpWord setValue KHÔNG escape XML
+     * → nếu để HTML tags raw, chúng thành child element của <w:t> → OOXML schema reject.
+     */
+    private function cleanText(?string $s): string
+    {
+        if ($s === null || $s === '') {
+            return '';
+        }
+
+        return trim(html_entity_decode(strip_tags((string) $s), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
     }
 
     private function fillScalar(TemplateProcessor $tp, Meeting $m): void
@@ -547,25 +580,28 @@ class MeetingMinutesGenerator
         $rate = $totalParticipants > 0 ? round(($presentCount / $totalParticipants) * 100, 1) : 0;
         $hasQuorum = $rate >= 50;
 
+        // Text fields có thể chứa HTML (rich-text editor) → strip qua cleanText() trước khi
+        // setValue. PhpWord setValue KHÔNG escape XML → tag HTML literal phá schema OOXML.
         $scalars = [
-            'meeting_title' => (string) $m->title,
+            'meeting_title' => $this->cleanText($m->title),
             'so_bien_ban' => (string) $m->id,
-            'dia_diem_hop' => (string) ($m->meetingLocation?->name ?? ''),
+            'dia_diem_hop' => $this->cleanText($m->meetingLocation?->name),
             'thoi_gian_bat_dau' => $start?->format('H:i') ?? '',
             'thoi_gian_ket_thuc' => $end?->format('H:i') ?? '',
             'ngay_hop' => $start?->format('d/m/Y') ?? '',
             'ngay_hop_so' => $start?->format('d') ?? '',
             'thang_hop' => $start?->format('m') ?? '',
             'nam_hop' => $start?->format('Y') ?? '',
-            'chu_toa' => (string) ($m->chairperson?->user?->name ?? $m->chairperson?->name ?? ''),
-            'thu_ky' => (string) ($m->operator?->user?->name ?? $m->operator?->name ?? ''),
+            'chu_toa' => $this->cleanText($m->chairperson?->user?->name ?? $m->chairperson?->name),
+            'thu_ky' => $this->cleanText($m->operator?->user?->name ?? $m->operator?->name),
             'tong_dai_bieu' => (string) $totalParticipants,
             'dai_bieu_co_mat' => (string) $presentCount,
             'dai_bieu_vang_mat' => (string) $absentCount,
             'ty_le_co_mat' => (string) $rate,
             'du_dieu_kien' => $hasQuorum ? 'X' : '',
             'chua_du_dieu_kien' => $hasQuorum ? '' : 'X',
-            'noi_dung_ket_luan' => (string) ($m->content ?? ''),
+            // meeting.content thường chứa HTML (rich-text) → strip mạnh nhất ở đây.
+            'noi_dung_ket_luan' => $this->cleanText($m->content),
             'gio_ket_thuc' => $end?->format('H') ?? '',
             'phut_ket_thuc' => $end?->format('i') ?? '',
             'ngay_ket_thuc_so' => $end?->format('d') ?? '',
@@ -591,8 +627,8 @@ class MeetingMinutesGenerator
         foreach ($rows->values() as $i => $a) {
             $idx = $i + 1;
             $tp->setValue("stt#{$idx}", (string) $idx);
-            $tp->setValue("agenda_content#{$idx}", (string) ($a->content ?? ''));
-            $tp->setValue("agenda_person#{$idx}", (string) ($a->person_in_charge ?? ''));
+            $tp->setValue("agenda_content#{$idx}", $this->cleanText($a->content));
+            $tp->setValue("agenda_person#{$idx}", $this->cleanText($a->person_in_charge));
             // start_time/end_time là column TIME (string "HH:mm:ss"), không phải Carbon.
             $duration = '';
             if ($a->start_time && $a->end_time) {
@@ -615,8 +651,8 @@ class MeetingMinutesGenerator
         foreach ($rows->values() as $i => $p) {
             $idx = $i + 1;
             $tp->setValue("p_stt#{$idx}", (string) $idx);
-            $tp->setValue("p_name#{$idx}", (string) ($p->display_name ?? ''));
-            $tp->setValue("p_position#{$idx}", trim(($p->position_name ?? '').' / '.($p->department_name ?? ''), ' /'));
+            $tp->setValue("p_name#{$idx}", $this->cleanText($p->display_name));
+            $tp->setValue("p_position#{$idx}", $this->cleanText(trim(($p->position_name ?? '').' / '.($p->department_name ?? ''), ' /')));
         }
     }
 
@@ -629,9 +665,9 @@ class MeetingMinutesGenerator
         foreach ($rows as $i => $p) {
             $idx = $i + 1;
             $tp->setValue("a_stt#{$idx}", (string) $idx);
-            $tp->setValue("a_name#{$idx}", (string) ($p->display_name ?? ''));
-            $tp->setValue("a_dept#{$idx}", (string) ($p->department_name ?? ''));
-            $tp->setValue("a_reason#{$idx}", (string) ($p->attendance?->note ?? ''));
+            $tp->setValue("a_name#{$idx}", $this->cleanText($p->display_name));
+            $tp->setValue("a_dept#{$idx}", $this->cleanText($p->department_name));
+            $tp->setValue("a_reason#{$idx}", $this->cleanText($p->attendance?->note));
         }
     }
 
@@ -650,9 +686,9 @@ class MeetingMinutesGenerator
         foreach ($rows->values() as $i => $r) {
             $idx = $i + 1;
             $tp->setValue("d_stt#{$idx}", (string) $idx);
-            $tp->setValue("d_speaker#{$idx}", (string) ($r->participant?->display_name ?? ''));
-            $tp->setValue("d_content#{$idx}", (string) ($r->content ?? ''));
-            $tp->setValue("d_note#{$idx}", (string) ($r->operator_note ?? ''));
+            $tp->setValue("d_speaker#{$idx}", $this->cleanText($r->participant?->display_name));
+            $tp->setValue("d_content#{$idx}", $this->cleanText($r->content));
+            $tp->setValue("d_note#{$idx}", $this->cleanText($r->operator_note));
         }
     }
 
@@ -671,9 +707,9 @@ class MeetingMinutesGenerator
         foreach ($rows->values() as $i => $r) {
             $idx = $i + 1;
             $tp->setValue("q_stt#{$idx}", (string) $idx);
-            $tp->setValue("q_speaker#{$idx}", (string) ($r->participant?->display_name ?? ''));
-            $tp->setValue("q_content#{$idx}", (string) ($r->content ?? ''));
-            $tp->setValue("q_answer#{$idx}", (string) ($r->operator_note ?? ''));
+            $tp->setValue("q_speaker#{$idx}", $this->cleanText($r->participant?->display_name));
+            $tp->setValue("q_content#{$idx}", $this->cleanText($r->content));
+            $tp->setValue("q_answer#{$idx}", $this->cleanText($r->operator_note));
         }
     }
 
@@ -698,7 +734,7 @@ class MeetingMinutesGenerator
             $rate = $total > 0 ? round(($agree / $total) * 100, 1) : 0;
 
             $tp->setValue("v_stt#{$idx}", (string) $idx);
-            $tp->setValue("v_topic#{$idx}", (string) $t->title);
+            $tp->setValue("v_topic#{$idx}", $this->cleanText($t->title));
             $tp->setValue("v_agree#{$idx}", (string) $agree);
             $tp->setValue("v_disagree#{$idx}", (string) $disagree);
             $tp->setValue("v_abstain#{$idx}", (string) $abstain);
