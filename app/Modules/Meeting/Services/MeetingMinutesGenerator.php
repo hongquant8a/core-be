@@ -366,7 +366,10 @@ class MeetingMinutesGenerator
     /**
      * Post-process docx output để fix các issue làm Word strict mode báo "corrupt":
      *
-     *   1. `<w:tbl>` thiếu `<w:tblPr>` → inject `<w:tblPr/>` rỗng (sample template cũ).
+     *   1. PhpWord output `<w:tblPr>` SAU `<w:tblGrid>` trong khi OOXML schema CT_Tbl
+     *      yêu cầu sequence (tblPr, tblGrid, tr+) — tblPr PHẢI trước tblGrid → swap.
+     *      Trường hợp tbl thiếu tblPr → insert empty trước tblGrid.
+     *      Duplicate tblPr → giữ cái có nội dung (style), bỏ cái rỗng.
      *   2. `<w:pgSz>` / `<w:pgMar>` có giá trị thập phân (PhpWord convert mm → twips
      *      ra decimal, vd "11905.511811023622") → Word schema yêu cầu integer twips
      *      → round về int.
@@ -387,15 +390,64 @@ class MeetingMinutesGenerator
 
         $original = $xml;
 
-        // Issue 1: tbl thiếu tblPr.
-        $xml = preg_replace_callback(
-            '/<w:tbl>(?!\s*<w:tblPr)/u',
-            fn () => '<w:tbl><w:tblPr/>',
-            $xml
-        );
+        // Issue 1: order tblPr trước tblGrid + dedupe. Dùng DOMDocument cho đúng tree.
+        $dom = new \DOMDocument();
+        $dom->preserveWhiteSpace = false;
+        $dom->formatOutput = false;
+        // Suppress warning từ XML potentially malformed; nếu fail thì skip fix #1.
+        if (@$dom->loadXML($xml)) {
+            $ns = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+            $tbls = $dom->getElementsByTagNameNS($ns, 'tbl');
+            // Snapshot vì NodeList sẽ thay đổi khi move/remove node.
+            $tblNodes = [];
+            foreach ($tbls as $tbl) {
+                $tblNodes[] = $tbl;
+            }
+            foreach ($tblNodes as $tbl) {
+                $tblPrs = [];
+                $tblGrid = null;
+                foreach (iterator_to_array($tbl->childNodes) as $child) {
+                    if (! ($child instanceof \DOMElement)) {
+                        continue;
+                    }
+                    if ($child->localName === 'tblPr') {
+                        $tblPrs[] = $child;
+                    } elseif ($child->localName === 'tblGrid' && $tblGrid === null) {
+                        $tblGrid = $child;
+                    }
+                }
+
+                // Chọn 1 tblPr "chính" — ưu tiên cái có nội dung (style/borders), fallback tblPr rỗng.
+                $primary = null;
+                foreach ($tblPrs as $pr) {
+                    if ($pr->hasChildNodes()) {
+                        $primary = $pr;
+                        break;
+                    }
+                }
+                if ($primary === null && ! empty($tblPrs)) {
+                    $primary = $tblPrs[0];
+                }
+                if ($primary === null) {
+                    $primary = $dom->createElementNS($ns, 'w:tblPr');
+                }
+
+                // Remove ALL tblPr children rồi insert primary trước tblGrid (hoặc đầu tbl).
+                foreach ($tblPrs as $pr) {
+                    if ($pr->parentNode === $tbl) {
+                        $tbl->removeChild($pr);
+                    }
+                }
+                if ($tblGrid !== null) {
+                    $tbl->insertBefore($primary, $tblGrid);
+                } else {
+                    $tbl->insertBefore($primary, $tbl->firstChild);
+                }
+            }
+            $xml = $dom->saveXML();
+        }
 
         // Issue 2: pgSz/pgMar attributes có decimal → round về integer.
-        // Match attributes như w="11905.5" hoặc h="16837.79527559055" trong w:pgSz/w:pgMar.
         $xml = preg_replace_callback(
             '/<w:(pgSz|pgMar)\b[^>]*>/u',
             function ($m) {
