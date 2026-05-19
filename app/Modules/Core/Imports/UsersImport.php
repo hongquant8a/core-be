@@ -21,6 +21,7 @@ class UsersImport implements ToModel, WithHeadingRow, WithValidation
         'name' => 'Họ và tên',
         'email' => 'Email',
         'user_name' => 'Tên đăng nhập',
+        'phone' => 'Số điện thoại',
         'password' => 'Mật khẩu',
         'status' => 'Trạng thái',
         'organization' => 'Tổ chức',
@@ -36,6 +37,8 @@ class UsersImport implements ToModel, WithHeadingRow, WithValidation
     public const TEMPLATE_LABELS = [
         'name' => 'Họ và tên',
         'email' => 'Email',
+        'user_name' => 'Tên đăng nhập',
+        'phone' => 'Số điện thoại',
         'password' => 'Mật khẩu',
         'organization' => 'Tổ chức',
         'role' => 'Vai trò',
@@ -44,6 +47,8 @@ class UsersImport implements ToModel, WithHeadingRow, WithValidation
     public const TEMPLATE_EXAMPLES = [
         'name' => 'Nguyễn Văn A (xóa hàng này)',
         'email' => 'nguyenvana@example.com',
+        'user_name' => 'nguyenvana',
+        'phone' => '0901234567',
         'password' => 'password',
         'organization' => 'Tên tổ chức',
         'role' => 'Đại biểu',
@@ -59,6 +64,7 @@ class UsersImport implements ToModel, WithHeadingRow, WithValidation
                 [
                     'name' => trim($row['name'] ?? $row['name_'] ?? ''),
                     'user_name' => trim($row['user_name'] ?? $row['user_name_'] ?? '') ?: null,
+                    'phone' => trim($row['phone'] ?? '') ?: null,
                     'password' => Hash::make($password),
                     'status' => trim($row['status'] ?? '') ?: UserStatusEnum::Active->value,
                     'updated_by' => auth()->id(),
@@ -117,6 +123,7 @@ class UsersImport implements ToModel, WithHeadingRow, WithValidation
 
         $data['name'] = isset($data['name']) ? (string) $data['name'] : null;
         $data['user_name'] = isset($data['user_name']) ? (string) $data['user_name'] : null;
+        $data['phone'] = isset($data['phone']) ? (string) $data['phone'] : null;
         $data['email'] = isset($data['email']) ? (string) $data['email'] : null;
         $data['password'] = isset($data['password']) ? (string) $data['password'] : null;
         $data['organization'] = isset($data['organization']) ? (string) $data['organization'] : null;
@@ -131,6 +138,7 @@ class UsersImport implements ToModel, WithHeadingRow, WithValidation
             'name' => 'required|string|max:255',
             'email' => 'required|email',
             'user_name' => 'nullable|string|max:100|regex:/^[a-zA-Z0-9._-]*$/',
+            'phone' => 'nullable|string|max:20',
             'password' => 'nullable|string|min:6',
             'organization' => 'nullable|string|exists:organizations,name',
             'role' => 'nullable|string',
@@ -150,6 +158,8 @@ class UsersImport implements ToModel, WithHeadingRow, WithValidation
             'user_name.max' => 'Tên đăng nhập không được vượt quá 100 ký tự.',
             'user_name.unique' => 'Tên đăng nhập :input đã tồn tại.',
             'user_name.regex' => 'Tên đăng nhập chỉ chấp nhận chữ, số, dấu chấm, gạch dưới, gạch ngang.',
+            'phone.string' => 'Số điện thoại phải là một chuỗi ký tự.',
+            'phone.max' => 'Số điện thoại không được vượt quá 20 ký tự.',
             'password.string' => 'Mật khẩu phải là một chuỗi ký tự.',
             'password.min' => 'Mật khẩu phải có ít nhất 6 ký tự.',
             'organization.exists' => 'Tổ chức :input không tồn tại trên hệ thống.',
@@ -162,6 +172,7 @@ class UsersImport implements ToModel, WithHeadingRow, WithValidation
             'name' => 'Tên người dùng',
             'email' => 'Email',
             'user_name' => 'Tên đăng nhập',
+            'phone' => 'Số điện thoại',
             'password' => 'Mật khẩu',
             'organization' => 'Tổ chức',
             'role' => 'Vai trò',
