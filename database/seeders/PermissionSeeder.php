@@ -601,7 +601,6 @@ class PermissionSeeder extends Seeder
             'task-assignment-item-notes.store',
 
             // Dashboard + 2 màn công việc cá nhân
-            'dashboard.systemOverview',
             'my-assigned-tasks.index',
             'my-received-tasks.index',
         ];
