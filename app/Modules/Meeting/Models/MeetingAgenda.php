@@ -50,7 +50,9 @@ class MeetingAgenda extends TenantModel
 
     /**
      * Trả về collection agenda của 1 meeting theo DFS order (parent → children → next parent).
-     * Mỗi agenda thêm field `_tree_index` (1-based) để sort cross-table (discussion/vote/...).
+     * Mỗi agenda thêm:
+     *   - `_tree_index` (1-based int) — vị trí tuyến tính DFS để sort cross-table.
+     *   - `_tree_path` (string) — STT phân cấp "1", "1.1", "1.2", "2", "2.1" cho hiển thị.
      */
     public static function flattenedByMeeting(int $meetingId): \Illuminate\Support\Collection
     {
@@ -58,14 +60,18 @@ class MeetingAgenda extends TenantModel
         $byParent = $all->groupBy(fn ($a) => $a->parent_id ?? 'root');
         $flat = collect();
         $index = 0;
-        $walk = function ($parentKey) use (&$walk, $byParent, $flat, &$index) {
+        $walk = function ($parentKey, array $parentPath) use (&$walk, $byParent, $flat, &$index) {
+            $counter = 0;
             foreach ($byParent->get($parentKey, collect()) as $node) {
+                $counter++;
+                $path = [...$parentPath, $counter];
                 $node->_tree_index = ++$index;
+                $node->_tree_path = implode('.', $path);
                 $flat->push($node);
-                $walk($node->id);
+                $walk($node->id, $path);
             }
         };
-        $walk('root');
+        $walk('root', []);
 
         return $flat;
     }

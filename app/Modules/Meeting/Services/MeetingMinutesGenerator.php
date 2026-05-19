@@ -627,7 +627,8 @@ class MeetingMinutesGenerator
         $tp->cloneRow('stt', $rows->count());
         foreach ($rows->values() as $i => $a) {
             $idx = $i + 1;
-            $tp->setValue("stt#{$idx}", (string) $idx);
+            // STT theo path tree (1, 1.1, 1.2, 2, ...) — agenda có phân cấp cha-con.
+            $tp->setValue("stt#{$idx}", $a->_tree_path ?? (string) $idx);
             $tp->setValue("agenda_content#{$idx}", $this->cleanText($a->content));
             $tp->setValue("agenda_person#{$idx}", $this->cleanText($a->person_in_charge));
             // start_time/end_time là column TIME (string "HH:mm:ss"), không phải Carbon.

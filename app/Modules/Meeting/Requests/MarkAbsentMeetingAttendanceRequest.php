@@ -11,6 +11,17 @@ class MarkAbsentMeetingAttendanceRequest extends FormRequest
         return true;
     }
 
+    /**
+     * FE có thể gửi tên field `absence_reason` (đồng bộ với endpoint /respond cho RSVP) HOẶC
+     * `note` (chuẩn cũ của attendance). Alias absence_reason → note để cả 2 đều lưu DB.
+     */
+    protected function prepareForValidation(): void
+    {
+        if (! $this->filled('note') && $this->filled('absence_reason')) {
+            $this->merge(['note' => $this->input('absence_reason')]);
+        }
+    }
+
     public function rules(): array
     {
         // meeting_id lấy từ URL {meeting} qua route binding — không cần body.
@@ -37,7 +48,7 @@ class MarkAbsentMeetingAttendanceRequest extends FormRequest
     public function bodyParameters(): array
     {
         return [
-            'note' => ['description' => 'Lý do vắng (optional).', 'example' => 'Bị ốm đột xuất'],
+            'note' => ['description' => 'Lý do vắng (optional). FE cũng có thể gửi field `absence_reason` cùng ý nghĩa — BE alias về note.', 'example' => 'Bị ốm đột xuất'],
         ];
     }
 }
