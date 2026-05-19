@@ -716,7 +716,9 @@ class MeetingMinutesGenerator
             $tp->setValue("q_stt#{$idx}", (string) $idx);
             $tp->setValue("q_speaker#{$idx}", $this->cleanText($r->participant?->display_name));
             $tp->setValue("q_content#{$idx}", $this->cleanText($r->content));
-            $tp->setValue("q_answer#{$idx}", $this->cleanText($r->operator_note));
+            // Chất vấn → answer_content (Nội dung trả lời chất vấn) — KHÔNG dùng operator_note
+            // (operator_note dành cho thảo luận = ghi chú thảo luận).
+            $tp->setValue("q_answer#{$idx}", $this->cleanText($r->answer_content));
         }
     }
 
