@@ -62,6 +62,14 @@ class LogActivity extends Model
         });
         $query->when(isset($filters['organization_id']) && $filters['organization_id'] !== '', fn ($q) => $q->where('organization_id', $filters['organization_id']));
         $query->when(isset($filters['user_id']) && $filters['user_id'] !== '', fn ($q) => $q->where('user_id', $filters['user_id']));
+        // Filter tên người dùng (LIKE) — search theo name từ relation user.
+        $query->when(isset($filters['user_name']) && $filters['user_name'] !== '', function ($q) use ($filters) {
+            $q->whereHas('user', fn ($u) => $u->where('name', 'like', '%'.$filters['user_name'].'%'));
+        });
+        // Filter IP address (LIKE) — hỗ trợ subnet ngắn vd "192.168" match nhiều IP cùng dải.
+        $query->when(isset($filters['ip_address']) && $filters['ip_address'] !== '', function ($q) use ($filters) {
+            $q->where('ip_address', 'like', '%'.$filters['ip_address'].'%');
+        });
         $query->when(isset($filters['from_date']) && $filters['from_date'], fn ($q) => $q->whereDate('created_at', '>=', $filters['from_date']));
         $query->when(isset($filters['to_date']) && $filters['to_date'], fn ($q) => $q->whereDate('created_at', '<=', $filters['to_date']));
         $query->when(isset($filters['method_type']) && $filters['method_type'], function ($q) use ($filters) {

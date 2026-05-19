@@ -7,7 +7,11 @@ use App\Modules\Core\Exports\NotificationLogsExport;
 use App\Modules\Core\Models\Notification;
 use App\Modules\Core\Models\NotificationDelivery;
 use App\Modules\Core\Requests\BulkDestroyNotificationLogRequest;
+use App\Modules\Core\Resources\NotificationLogCollection;
+use App\Modules\Core\Resources\NotificationLogResource;
 use App\Modules\Core\Support\ExportFilename;
+use App\Services\Notification\Enums\NotificationDeliveryChannelEnum;
+use App\Services\Notification\Enums\NotificationDeliveryStatusEnum;
 use App\Services\Notification\Enums\NotificationEventEnum;
 use App\Services\Notification\Enums\NotificationModuleEnum;
 use Illuminate\Http\Request;
@@ -34,7 +38,7 @@ class NotificationLogController extends Controller
 
         $limit = (int) $request->input('limit', 20);
 
-        return $this->success($query->paginate($limit));
+        return $this->successCollection(new NotificationLogCollection($query->paginate($limit)));
     }
 
     public function show(Request $request, int $id)
@@ -44,7 +48,7 @@ class NotificationLogController extends Controller
             ->where('id', $id)
             ->firstOrFail();
 
-        return $this->success($notification);
+        return $this->successResource(new NotificationLogResource($notification));
     }
 
     /**
@@ -125,13 +129,32 @@ class NotificationLogController extends Controller
             ->groupBy('channel')
             ->pluck('count', 'channel');
 
+        // Đính kèm label tiếng Việt cho mỗi nhóm để FE render thẳng, không cần map client-side.
+        $byEventLabeled = $byEvent->map(fn ($count, $key) => [
+            'key' => $key,
+            'label' => NotificationEventEnum::tryFrom((string) $key)?->label() ?? $key,
+            'count' => $count,
+        ])->values();
+
+        $byStatusLabeled = $byStatus->map(fn ($count, $key) => [
+            'key' => $key,
+            'label' => NotificationDeliveryStatusEnum::labelOf((string) $key),
+            'count' => $count,
+        ])->values();
+
+        $byChannelLabeled = $byChannel->map(fn ($count, $key) => [
+            'key' => $key,
+            'label' => NotificationDeliveryChannelEnum::labelOf((string) $key),
+            'count' => $count,
+        ])->values();
+
         return $this->success([
             'total' => $total,
             'today' => $today,
             'this_week' => $thisWeek,
-            'by_event' => $byEvent,
-            'by_status' => $byStatus,
-            'by_channel' => $byChannel,
+            'by_event' => $byEventLabeled,
+            'by_status' => $byStatusLabeled,
+            'by_channel' => $byChannelLabeled,
         ]);
     }
 
@@ -180,6 +203,9 @@ class NotificationLogController extends Controller
     private function applyFilters($query, Request $request): void
     {
         $query->when($request->filled('user_id'), fn ($q) => $q->where('user_id', $request->input('user_id')))
+            ->when($request->filled('user_name'), function ($q) use ($request) {
+                $q->whereHas('user', fn ($u) => $u->where('name', 'like', '%'.$request->input('user_name').'%'));
+            })
             ->when($request->filled('event_key'), fn ($q) => $q->where('event_key', $request->input('event_key')))
             ->when($request->filled('notifiable_type'), fn ($q) => $q->where('notifiable_type', $request->input('notifiable_type')))
             ->when($request->filled('notifiable_id'), fn ($q) => $q->where('notifiable_id', $request->input('notifiable_id')))
