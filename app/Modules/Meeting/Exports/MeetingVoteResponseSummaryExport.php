@@ -23,16 +23,22 @@ class MeetingVoteResponseSummaryExport extends AbstractExcelExport implements Fr
 
     public function collection()
     {
+        // Agenda có phân cấp parent-child → sort theo tree_index thay vì flat agenda_id.
+        // Cần meetingId để build tree map; nếu chỉ có topicId thì derive meetingId từ topic.
+        $resolvedMeetingId = $this->meetingId
+            ?? MeetingVoteTopic::find($this->topicId)?->meeting_id;
+        $treeIndex = $resolvedMeetingId
+            ? \App\Modules\Meeting\Models\MeetingAgenda::treeIndexMap($resolvedMeetingId)
+            : [];
         $topics = MeetingVoteTopic::query()
             ->when($this->meetingId, fn ($q) => $q->where('meeting_id', $this->meetingId))
             ->when($this->topicId, fn ($q) => $q->where('id', $this->topicId))
-            // Sort ưu tiên (spec #18): theo chương trình (agenda) → sort_order trong agenda → created_at.
-            // Topic không gắn agenda đẩy xuống cuối.
-            ->orderByRaw('meeting_agenda_id IS NULL ASC')
-            ->orderBy('meeting_agenda_id')
-            ->orderBy('sort_order')
-            ->orderBy('created_at')
-            ->get();
+            ->get()
+            ->sortBy(fn ($t) => sprintf('%010d|%010d',
+                $treeIndex[$t->meeting_agenda_id] ?? PHP_INT_MAX,
+                $t->sort_order ?? 0
+            ))
+            ->values();
 
         return $topics->values()->map(function ($topic, $i) {
             $base = MeetingVoteResponse::query()->where('meeting_vote_topic_id', $topic->id);

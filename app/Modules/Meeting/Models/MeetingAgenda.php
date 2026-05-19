@@ -48,6 +48,42 @@ class MeetingAgenda extends TenantModel
         return $this->hasMany(self::class, 'parent_id')->orderBy('sort_order');
     }
 
+    /**
+     * Trả về collection agenda của 1 meeting theo DFS order (parent → children → next parent).
+     * Mỗi agenda thêm field `_tree_index` (1-based) để sort cross-table (discussion/vote/...).
+     */
+    public static function flattenedByMeeting(int $meetingId): \Illuminate\Support\Collection
+    {
+        $all = self::where('meeting_id', $meetingId)->orderBy('sort_order')->orderBy('id')->get();
+        $byParent = $all->groupBy(fn ($a) => $a->parent_id ?? 'root');
+        $flat = collect();
+        $index = 0;
+        $walk = function ($parentKey) use (&$walk, $byParent, $flat, &$index) {
+            foreach ($byParent->get($parentKey, collect()) as $node) {
+                $node->_tree_index = ++$index;
+                $flat->push($node);
+                $walk($node->id);
+            }
+        };
+        $walk('root');
+
+        return $flat;
+    }
+
+    /**
+     * Map agenda_id → tree_index để sort các bảng khác (discussion/vote) theo agenda tree.
+     * Agenda id không tồn tại → trả PHP_INT_MAX (đẩy về cuối).
+     */
+    public static function treeIndexMap(int $meetingId): array
+    {
+        $map = [];
+        foreach (self::flattenedByMeeting($meetingId) as $agenda) {
+            $map[$agenda->id] = $agenda->_tree_index;
+        }
+
+        return $map;
+    }
+
     public function scopeFilter($query, array $filters)
     {
         $query->when($filters['meeting_id'] ?? null, fn ($q, $meetingId) => $q->where('meeting_id', $meetingId))

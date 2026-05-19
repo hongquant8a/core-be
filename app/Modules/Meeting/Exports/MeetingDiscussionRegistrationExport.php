@@ -30,6 +30,9 @@ class MeetingDiscussionRegistrationExport extends AbstractExcelExport implements
     {
         $authUserId = auth()->id() ?? \Illuminate\Support\Facades\Auth::guard('sanctum')->id();
 
+        // Agenda có phân cấp cha-con (parent_id) → sort theo DFS tree_index, không phải flat agenda_id.
+        $treeIndex = \App\Modules\Meeting\Models\MeetingAgenda::treeIndexMap($this->meetingId);
+
         return MeetingDiscussionRegistration::query()
             ->with(['agenda', 'participant.attendee.user', 'participant', 'attachments'])
             ->where('meeting_id', $this->meetingId)
@@ -39,12 +42,11 @@ class MeetingDiscussionRegistrationExport extends AbstractExcelExport implements
                 $q->whereHas('participant.attendee', fn ($q2) => $q2->where('user_id', $authUserId));
             })
             ->when($this->onlyMine && ! $authUserId, fn ($q) => $q->whereRaw('1 = 0'))
-            // Sort ưu tiên theo spec: chương trình (agenda) trước, sau đó thời gian đăng ký.
-            // Null agenda đẩy về cuối (NULL last).
-            ->orderByRaw('meeting_agenda_id IS NULL ASC')
-            ->orderBy('meeting_agenda_id')
-            ->orderBy('created_at')
             ->get()
+            ->sortBy(fn ($item) => sprintf('%010d|%s',
+                $treeIndex[$item->meeting_agenda_id] ?? PHP_INT_MAX,
+                $item->created_at?->toIso8601String() ?? '~'
+            ))
             ->values()
             ->map(fn ($item, $i) => [
                 'stt' => $i + 1,

@@ -617,7 +617,8 @@ class MeetingMinutesGenerator
 
     private function fillAgendaTable(TemplateProcessor $tp, Meeting $m): void
     {
-        $rows = $m->agendas ?? collect();
+        // Agenda có phân cấp cha-con (parent_id) → flatten DFS order, không phải flat sort_order.
+        $rows = \App\Modules\Meeting\Models\MeetingAgenda::flattenedByMeeting($m->id);
         if ($rows->isEmpty()) {
             // Không có row → setValue trống để xóa placeholder (nếu template có row mẫu).
             $tp->cloneRow('stt', 0);
@@ -673,15 +674,18 @@ class MeetingMinutesGenerator
 
     private function fillDiscussionTable(TemplateProcessor $tp, Meeting $m): void
     {
+        // Agenda có phân cấp parent-child → sort theo tree_index thay vì agenda_id flat.
+        $treeIndex = \App\Modules\Meeting\Models\MeetingAgenda::treeIndexMap($m->id);
         $rows = \App\Modules\Meeting\Models\MeetingDiscussionRegistration::query()
             ->with('participant.attendee.user')
             ->where('meeting_id', $m->id)
             ->where('type', 'discussion')
-            // Sort ưu tiên: theo chương trình (agenda) → thời gian đăng ký.
-            ->orderByRaw('meeting_agenda_id IS NULL ASC')
-            ->orderBy('meeting_agenda_id')
-            ->orderBy('created_at')
-            ->get();
+            ->get()
+            ->sortBy(fn ($r) => sprintf('%010d|%s',
+                $treeIndex[$r->meeting_agenda_id] ?? PHP_INT_MAX,
+                $r->created_at?->toIso8601String() ?? '~'
+            ))
+            ->values();
         $tp->cloneRow('d_stt', max($rows->count(), 0));
         foreach ($rows->values() as $i => $r) {
             $idx = $i + 1;
@@ -694,15 +698,17 @@ class MeetingMinutesGenerator
 
     private function fillQuestionTable(TemplateProcessor $tp, Meeting $m): void
     {
+        $treeIndex = \App\Modules\Meeting\Models\MeetingAgenda::treeIndexMap($m->id);
         $rows = \App\Modules\Meeting\Models\MeetingDiscussionRegistration::query()
             ->with('participant.attendee.user')
             ->where('meeting_id', $m->id)
             ->where('type', 'question')
-            // Sort ưu tiên: theo chương trình (agenda) → thời gian đăng ký.
-            ->orderByRaw('meeting_agenda_id IS NULL ASC')
-            ->orderBy('meeting_agenda_id')
-            ->orderBy('created_at')
-            ->get();
+            ->get()
+            ->sortBy(fn ($r) => sprintf('%010d|%s',
+                $treeIndex[$r->meeting_agenda_id] ?? PHP_INT_MAX,
+                $r->created_at?->toIso8601String() ?? '~'
+            ))
+            ->values();
         $tp->cloneRow('q_stt', max($rows->count(), 0));
         foreach ($rows->values() as $i => $r) {
             $idx = $i + 1;
@@ -715,14 +721,17 @@ class MeetingMinutesGenerator
 
     private function fillVoteTable(TemplateProcessor $tp, Meeting $m): void
     {
-        // Sort ưu tiên: theo chương trình (agenda) → sort_order → created_at.
+        $treeIndex = \App\Modules\Meeting\Models\MeetingAgenda::treeIndexMap($m->id);
         $rows = \App\Modules\Meeting\Models\MeetingVoteTopic::query()
             ->where('meeting_id', $m->id)
-            ->orderByRaw('meeting_agenda_id IS NULL ASC')
-            ->orderBy('meeting_agenda_id')
             ->orderBy('sort_order')
             ->orderBy('created_at')
-            ->get();
+            ->get()
+            ->sortBy(fn ($t) => sprintf('%010d|%010d',
+                $treeIndex[$t->meeting_agenda_id] ?? PHP_INT_MAX,
+                $t->sort_order ?? 0
+            ))
+            ->values();
         $tp->cloneRow('v_stt', max($rows->count(), 0));
         foreach ($rows->values() as $i => $t) {
             $idx = $i + 1;
