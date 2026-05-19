@@ -364,8 +364,14 @@ class MeetingMinutesGenerator
     }
 
     /**
-     * Inject `<w:tblPr/>` vào những `<w:tbl>` thiếu — fix Word strict mode "corrupt" error.
-     * Idempotent: bảng đã có tblPr giữ nguyên.
+     * Post-process docx output để fix các issue làm Word strict mode báo "corrupt":
+     *
+     *   1. `<w:tbl>` thiếu `<w:tblPr>` → inject `<w:tblPr/>` rỗng (sample template cũ).
+     *   2. `<w:pgSz>` / `<w:pgMar>` có giá trị thập phân (PhpWord convert mm → twips
+     *      ra decimal, vd "11905.511811023622") → Word schema yêu cầu integer twips
+     *      → round về int.
+     *
+     * Idempotent: phần đã đúng giữ nguyên.
      */
     private function repairDocxTables(string $path): void
     {
@@ -379,16 +385,32 @@ class MeetingMinutesGenerator
             return;
         }
 
-        // Match `<w:tbl>` (open tag) NOT immediately followed by `<w:tblPr` — inject `<w:tblPr/>`.
-        $fixed = preg_replace_callback(
+        $original = $xml;
+
+        // Issue 1: tbl thiếu tblPr.
+        $xml = preg_replace_callback(
             '/<w:tbl>(?!\s*<w:tblPr)/u',
             fn () => '<w:tbl><w:tblPr/>',
             $xml
         );
 
-        if ($fixed !== null && $fixed !== $xml) {
+        // Issue 2: pgSz/pgMar attributes có decimal → round về integer.
+        // Match attributes như w="11905.5" hoặc h="16837.79527559055" trong w:pgSz/w:pgMar.
+        $xml = preg_replace_callback(
+            '/<w:(pgSz|pgMar)\b[^>]*>/u',
+            function ($m) {
+                return preg_replace_callback(
+                    '/(\bw:(?:w|h|top|right|bottom|left|header|footer|gutter)=")(\d+(?:\.\d+)?)("\s*)/u',
+                    fn ($attr) => $attr[1].(string) (int) round((float) $attr[2]).$attr[3],
+                    $m[0]
+                );
+            },
+            $xml
+        );
+
+        if ($xml !== $original) {
             $zip->deleteName('word/document.xml');
-            $zip->addFromString('word/document.xml', $fixed);
+            $zip->addFromString('word/document.xml', $xml);
         }
         $zip->close();
     }
