@@ -31,7 +31,7 @@ class SendDeliveryJob implements ShouldQueue
         $notifiable = $notification->notifiable; // morphTo resolves actual model
 
         if (! $notifiable) {
-            $delivery->update(['status' => 'failed', 'error_message' => 'Notifiable no longer exists']);
+            $delivery->update(['status' => 'failed', 'error_message' => 'Đối tượng thông báo không còn tồn tại.']);
 
             return;
         }
@@ -43,7 +43,7 @@ class SendDeliveryJob implements ShouldQueue
         if ($payload === null) {
             $delivery->update([
                 'status' => 'skipped',
-                'error_message' => 'Recipient missing field for channel',
+                'error_message' => 'Người nhận thiếu thông tin liên hệ cho kênh gửi này.',
             ]);
 
             return;

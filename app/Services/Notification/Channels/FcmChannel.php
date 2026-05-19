@@ -34,7 +34,7 @@ class FcmChannel implements NotificationChannel
         $cfg = $this->loadConfig();
 
         if (! $cfg['enabled']) {
-            return $this->fail('FCM is disabled');
+            return $this->fail('Kênh thông báo đẩy đang bị tắt.');
         }
 
         $messaging = $this->resolveMessaging($cfg['service_account']);

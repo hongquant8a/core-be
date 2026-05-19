@@ -30,3 +30,7 @@ test-fixtures
 
 /.scribe
 /resources/views/scribe
+
+# Personal notes / scratch files
+/requirement.txt
+/xml.txt

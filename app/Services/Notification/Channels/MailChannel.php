@@ -25,7 +25,7 @@ class MailChannel implements NotificationChannel
         $cfg = $this->loadConfig();
 
         if (! $cfg['enabled']) {
-            return $this->fail('Mail is disabled');
+            return $this->fail('Kênh Email đang bị tắt.');
         }
 
         if (! $cfg['host'] || ! $cfg['username'] || ! $cfg['password']) {

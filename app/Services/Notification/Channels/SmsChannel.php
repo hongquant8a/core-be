@@ -25,7 +25,7 @@ class SmsChannel implements NotificationChannel
         $cfg = $this->loadConfig();
 
         if (! $cfg['enabled']) {
-            return $this->fail('SMS is disabled');
+            return $this->fail('Kênh SMS đang bị tắt.');
         }
 
         if (! $cfg['server'] || ! $cfg['username'] || ! $cfg['password']) {

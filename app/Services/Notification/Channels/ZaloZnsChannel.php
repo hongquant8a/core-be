@@ -39,7 +39,7 @@ class ZaloZnsChannel implements NotificationChannel
         $cfg = $this->loadConfig();
 
         if (! $cfg['enabled']) {
-            return $this->fail('Zalo is disabled');
+            return $this->fail('Kênh Zalo đang bị tắt.');
         }
 
         if (! $cfg['server'] || ! $cfg['username'] || ! $cfg['password']) {

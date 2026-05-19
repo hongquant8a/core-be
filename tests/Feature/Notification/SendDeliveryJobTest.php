@@ -67,7 +67,7 @@ class SendDeliveryJobTest extends TestCase
 
         $d = $delivery->fresh();
         $this->assertSame('skipped', $d->status);
-        $this->assertSame('Recipient missing field for channel', $d->error_message);
+        $this->assertSame('Người nhận thiếu thông tin liên hệ cho kênh gửi này.', $d->error_message);
     }
 
     public function test_marks_sent_on_success(): void
