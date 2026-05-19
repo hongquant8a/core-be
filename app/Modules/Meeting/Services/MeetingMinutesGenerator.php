@@ -464,7 +464,75 @@ class MeetingMinutesGenerator
             $zip->deleteName('word/document.xml');
             $zip->addFromString('word/document.xml', $xml);
         }
+
+        // Issue 3: word/styles.xml — PhpWord emit <w:tblPr> con sai sequence (CT_TblPrBase).
+        // Spec: tblStyle → tblpPr → tblOverlap → ... → tblW → ... → tblBorders → shd → tblLayout → tblCellMar → ...
+        // PhpWord output: tblW → tblLayout → tblCellMar → tblBorders → Word strict reject.
+        $stylesXml = $zip->getFromName('word/styles.xml');
+        if ($stylesXml !== false) {
+            $fixed = $this->reorderTblPrChildren($stylesXml);
+            if ($fixed !== null && $fixed !== $stylesXml) {
+                $zip->deleteName('word/styles.xml');
+                $zip->addFromString('word/styles.xml', $fixed);
+            }
+        }
+
         $zip->close();
+    }
+
+    /**
+     * Reorder children của mọi <w:tblPr> theo CT_TblPrBase canonical sequence.
+     * Dùng cho styles.xml (PhpWord emit sai order trong style definition).
+     */
+    private function reorderTblPrChildren(string $xml): ?string
+    {
+        $order = [
+            'tblStyle', 'tblpPr', 'tblOverlap', 'bidiVisual',
+            'tblStyleRowBandSize', 'tblStyleColBandSize',
+            'tblW', 'jc', 'tblCellSpacing', 'tblInd',
+            'tblBorders', 'shd', 'tblLayout', 'tblCellMar',
+            'tblLook', 'tblCaption', 'tblDescription',
+        ];
+
+        $dom = new \DOMDocument();
+        $dom->preserveWhiteSpace = false;
+        $dom->formatOutput = false;
+        if (! @$dom->loadXML($xml)) {
+            return null;
+        }
+        $ns = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+        $tblPrs = $dom->getElementsByTagNameNS($ns, 'tblPr');
+        $list = [];
+        foreach ($tblPrs as $n) {
+            $list[] = $n;
+        }
+        foreach ($list as $tblPr) {
+            $children = [];
+            foreach (iterator_to_array($tblPr->childNodes) as $child) {
+                if (! ($child instanceof \DOMElement)) {
+                    continue;
+                }
+                $children[] = $child;
+                $tblPr->removeChild($child);
+            }
+            usort($children, function ($a, $b) use ($order) {
+                $ia = array_search($a->localName, $order, true);
+                $ib = array_search($b->localName, $order, true);
+                if ($ia === false) {
+                    $ia = PHP_INT_MAX;
+                }
+                if ($ib === false) {
+                    $ib = PHP_INT_MAX;
+                }
+
+                return $ia <=> $ib;
+            });
+            foreach ($children as $child) {
+                $tblPr->appendChild($child);
+            }
+        }
+
+        return $dom->saveXML();
     }
 
     private function fillScalar(TemplateProcessor $tp, Meeting $m): void
