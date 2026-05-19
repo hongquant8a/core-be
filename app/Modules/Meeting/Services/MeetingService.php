@@ -460,6 +460,13 @@ class MeetingService
             Event::dispatch(new MeetingPublished($meeting->fresh()));
         }
 
+        // Notification khi hủy meeting đã ban hành. KHÔNG bắn khi chuyển draft → cancelled
+        // (chưa publish → chưa ai nhận được lời mời, không cần thông báo hủy).
+        if ($previous === MeetingStatusEnum::Published->value
+            && $status === MeetingStatusEnum::Cancelled->value) {
+            Event::dispatch(new \App\Services\Notification\Events\MeetingCancelled($meeting->fresh()));
+        }
+
         return $meeting->load(['meetingType', 'meetingLocation', 'creator.media', 'editor.media']);
     }
 

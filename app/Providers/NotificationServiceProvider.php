@@ -12,6 +12,7 @@ use App\Services\Notification\Channels\MailChannel;
 use App\Services\Notification\Channels\SmsChannel;
 use App\Services\Notification\Channels\ZaloChannel;
 use App\Services\Notification\ContentBuilders\DocumentIssuedContentBuilder;
+use App\Services\Notification\ContentBuilders\MeetingCancelledContentBuilder;
 use App\Services\Notification\ContentBuilders\MeetingPublishedContentBuilder;
 use App\Services\Notification\ContentBuilders\MeetingReminderContentBuilder;
 use App\Services\Notification\ContentBuilders\MeetingUpdatedContentBuilder;
@@ -20,12 +21,14 @@ use App\Services\Notification\ContentBuilders\TaskAssignedContentBuilder;
 use App\Services\Notification\ContentBuilders\TaskCompletedContentBuilder;
 use App\Services\Notification\ContentBuilders\TaskConfirmedContentBuilder;
 use App\Services\Notification\Events\DocumentIssued;
+use App\Services\Notification\Events\MeetingCancelled;
 use App\Services\Notification\Events\MeetingPublished;
 use App\Services\Notification\Events\MeetingUpdated;
 use App\Services\Notification\Events\TaskAssigned;
 use App\Services\Notification\Events\TaskCompleted;
 use App\Services\Notification\Events\TaskConfirmed;
 use App\Services\Notification\Listeners\SendDocumentIssuedNotifications;
+use App\Services\Notification\Listeners\SendMeetingCancelledNotifications;
 use App\Services\Notification\Listeners\SendMeetingPublishedNotifications;
 use App\Services\Notification\Listeners\SendMeetingUpdatedNotifications;
 use App\Services\Notification\Listeners\SendTaskAssignedNotifications;
@@ -74,6 +77,7 @@ class NotificationServiceProvider extends ServiceProvider
         $registry->register('reminder_after', new ReminderContentBuilder('after'));
         $registry->register('meeting_published', $this->app->make(MeetingPublishedContentBuilder::class));
         $registry->register('meeting_updated', $this->app->make(MeetingUpdatedContentBuilder::class));
+        $registry->register('meeting_cancelled', $this->app->make(MeetingCancelledContentBuilder::class));
         $registry->register('meeting_reminder_before', new MeetingReminderContentBuilder('before'));
         $registry->register('meeting_reminder_on', new MeetingReminderContentBuilder('on'));
         $registry->register('meeting_reminder_after', new MeetingReminderContentBuilder('after'));
@@ -85,6 +89,7 @@ class NotificationServiceProvider extends ServiceProvider
         Event::listen(TaskConfirmed::class, SendTaskConfirmedNotifications::class);
         Event::listen(MeetingPublished::class, SendMeetingPublishedNotifications::class);
         Event::listen(MeetingUpdated::class, SendMeetingUpdatedNotifications::class);
+        Event::listen(MeetingCancelled::class, SendMeetingCancelledNotifications::class);
 
         // Register model observer for auto reminder scheduling
         TaskAssignmentItem::observe(TaskAssignmentItemObserver::class);
