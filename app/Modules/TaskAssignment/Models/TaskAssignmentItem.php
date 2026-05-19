@@ -197,7 +197,24 @@ class TaskAssignmentItem extends TenantModel implements HasMedia
                     \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Done->value,
                     \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Cancelled->value,
                 ]))
-            ->when($filters['sort_by'] ?? 'created_at', function ($q, $sortBy) use ($filters) {
+            // Sort: FE truyền sort_by → tôn trọng. Mặc định → composite "smart sort" theo spec:
+            //   1. Ưu tiên (priority) DESC: urgent → high → medium → low
+            //   2. Quá hạn DESC: task overdue (has_deadline + end_at < now + chưa done/cancelled) trước
+            //   3. Gần đến hạn ASC: end_at sớm trước (NULL/no deadline đẩy về cuối)
+            ->when(empty($filters['sort_by']), function ($q) {
+                $doneStatuses = [
+                    \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Done->value,
+                    \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Cancelled->value,
+                ];
+                $doneIn = "'".implode("','", $doneStatuses)."'";
+                $hasDeadline = \App\Modules\TaskAssignment\Enums\TaskDeadlineTypeEnum::HasDeadline->value;
+
+                $q->orderByRaw("CASE priority WHEN 'urgent' THEN 4 WHEN 'high' THEN 3 WHEN 'medium' THEN 2 WHEN 'low' THEN 1 ELSE 0 END DESC")
+                    ->orderByRaw("CASE WHEN deadline_type = '$hasDeadline' AND end_at < NOW() AND processing_status NOT IN ($doneIn) THEN 1 ELSE 0 END DESC")
+                    ->orderByRaw('end_at IS NULL ASC')
+                    ->orderBy('end_at', 'asc');
+            }, function ($q) use ($filters) {
+                $sortBy = $filters['sort_by'];
                 $allowed = ['id', 'name', 'start_at', 'end_at', 'completion_percent', 'priority', 'created_at', 'updated_at'];
                 $column = in_array($sortBy, $allowed) ? $sortBy : 'created_at';
                 \App\Modules\Core\Support\VietnameseSort::apply($q, $column, $filters['sort_order'] ?? 'desc');
