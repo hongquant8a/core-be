@@ -22,7 +22,7 @@ use ZipArchive;
  */
 class DebugMeetingMinutesCommand extends Command
 {
-    protected $signature = 'meeting:debug-minutes {meeting} {template}';
+    protected $signature = 'meeting:debug-minutes {meeting} {template} {--dump-xml : Dump toàn bộ document.xml + styles.xml ra console (cho copy/paste debug)}';
 
     protected $description = 'Generate biên bản .docx + dump diagnostic cho debug Word strict';
 
@@ -94,6 +94,13 @@ class DebugMeetingMinutesCommand extends Command
         $this->line('styles.xml: '.($dom->loadXML($styles) ? 'valid' : 'INVALID'));
         foreach (libxml_get_errors() as $e) {
             $this->line('  '.trim($e->message));
+        }
+
+        if ($this->option('dump-xml')) {
+            $this->line("\n===== document.xml =====");
+            echo $xml.PHP_EOL;
+            $this->line("\n===== word/styles.xml =====");
+            echo $styles.PHP_EOL;
         }
 
         return self::SUCCESS;
