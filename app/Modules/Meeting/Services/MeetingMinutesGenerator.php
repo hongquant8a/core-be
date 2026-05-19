@@ -499,7 +499,10 @@ class MeetingMinutesGenerator
             ->with('participant.attendee.user')
             ->where('meeting_id', $m->id)
             ->where('type', 'discussion')
-            ->orderBy('sort_order')
+            // Sort ưu tiên: theo chương trình (agenda) → thời gian đăng ký.
+            ->orderByRaw('meeting_agenda_id IS NULL ASC')
+            ->orderBy('meeting_agenda_id')
+            ->orderBy('created_at')
             ->get();
         $tp->cloneRow('d_stt', max($rows->count(), 0));
         foreach ($rows->values() as $i => $r) {
@@ -517,7 +520,10 @@ class MeetingMinutesGenerator
             ->with('participant.attendee.user')
             ->where('meeting_id', $m->id)
             ->where('type', 'question')
-            ->orderBy('sort_order')
+            // Sort ưu tiên: theo chương trình (agenda) → thời gian đăng ký.
+            ->orderByRaw('meeting_agenda_id IS NULL ASC')
+            ->orderBy('meeting_agenda_id')
+            ->orderBy('created_at')
             ->get();
         $tp->cloneRow('q_stt', max($rows->count(), 0));
         foreach ($rows->values() as $i => $r) {
@@ -531,7 +537,14 @@ class MeetingMinutesGenerator
 
     private function fillVoteTable(TemplateProcessor $tp, Meeting $m): void
     {
-        $rows = $m->voteTopics ?? collect();
+        // Sort ưu tiên: theo chương trình (agenda) → sort_order → created_at.
+        $rows = \App\Modules\Meeting\Models\MeetingVoteTopic::query()
+            ->where('meeting_id', $m->id)
+            ->orderByRaw('meeting_agenda_id IS NULL ASC')
+            ->orderBy('meeting_agenda_id')
+            ->orderBy('sort_order')
+            ->orderBy('created_at')
+            ->get();
         $tp->cloneRow('v_stt', max($rows->count(), 0));
         foreach ($rows->values() as $i => $t) {
             $idx = $i + 1;
