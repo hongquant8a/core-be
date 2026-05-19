@@ -202,7 +202,7 @@ class MeetingLocationController extends Controller
     public function importTemplate()
     {
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Meeting\Imports\CatalogImport::TEMPLATE_LABELS_LOCATION),
+            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Meeting\Imports\CatalogImport::TEMPLATE_LABELS_LOCATION, \App\Modules\Meeting\Imports\CatalogImport::TEMPLATE_EXAMPLES_LOCATION),
             'import-meeting-locations-template.xlsx'
         );
     }

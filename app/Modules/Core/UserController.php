@@ -277,7 +277,7 @@ class UserController extends Controller
     public function importTemplate()
     {
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Core\Imports\UsersImport::TEMPLATE_LABELS),
+            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Core\Imports\UsersImport::TEMPLATE_LABELS, \App\Modules\Core\Imports\UsersImport::TEMPLATE_EXAMPLES),
             'import-users-template.xlsx'
         );
     }

@@ -26,6 +26,12 @@ class LookupImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFa
         'status' => 'Trạng thái',
     ];
 
+    /** Ví dụ mẫu cho row 2 trong template — user xóa trước khi nhập data thật. */
+    public const TEMPLATE_EXAMPLES = [
+        'name' => 'Tên loại mẫu (xóa hàng này trước khi nhập)',
+        'status' => 'active',
+    ];
+
     public function __construct(private string $modelClass) {}
 
     public function model(array $row)

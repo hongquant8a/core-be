@@ -218,7 +218,7 @@ class PermissionController extends Controller
     public function importTemplate()
     {
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Core\Imports\PermissionsImport::TEMPLATE_LABELS),
+            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Core\Imports\PermissionsImport::TEMPLATE_LABELS, \App\Modules\Core\Imports\PermissionsImport::TEMPLATE_EXAMPLES),
             'import-permissions-template.xlsx'
         );
     }

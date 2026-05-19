@@ -41,6 +41,14 @@ class UsersImport implements ToModel, WithHeadingRow, WithValidation
         'role' => 'Vai trò',
     ];
 
+    public const TEMPLATE_EXAMPLES = [
+        'name' => 'Nguyễn Văn A (xóa hàng này)',
+        'email' => 'nguyenvana@example.com',
+        'password' => 'password',
+        'organization' => 'Tên tổ chức',
+        'role' => 'Đại biểu',
+    ];
+
     public function model(array $row)
     {
         $password = trim((string) ($row['password'] ?? 'password'));

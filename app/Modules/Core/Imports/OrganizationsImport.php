@@ -30,6 +30,11 @@ class OrganizationsImport implements ToModel, WithHeadingRow, WithValidation
         'status' => 'Trạng thái',
     ];
 
+    public const TEMPLATE_EXAMPLES = [
+        'name' => 'UBND Phường Hòa An (xóa hàng này)',
+        'status' => 'active',
+    ];
+
     public function model(array $row)
     {
         $parentSlug = $row['parent_slug'] ?? $row['parent slug'] ?? '';

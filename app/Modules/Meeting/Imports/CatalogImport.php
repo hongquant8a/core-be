@@ -32,11 +32,23 @@ class CatalogImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnF
         'description' => 'Mô tả',
     ];
 
+    public const TEMPLATE_EXAMPLES = [
+        'name' => 'Tên mẫu (xóa hàng này trước khi nhập)',
+        'description' => 'Mô tả mẫu',
+    ];
+
     public const TEMPLATE_LABELS_LOCATION = [
         'name' => 'Tên',
         'description' => 'Mô tả',
         'address' => 'Địa chỉ',
         'google_maps_url' => 'Google Maps URL',
+    ];
+
+    public const TEMPLATE_EXAMPLES_LOCATION = [
+        'name' => 'Hội trường UBND (xóa hàng này)',
+        'description' => 'Phòng họp tầng 2',
+        'address' => '123 Lê Lợi, Đà Nẵng',
+        'google_maps_url' => 'https://maps.google.com/?q=...',
     ];
 
     public function __construct(private string $modelClass) {}

@@ -30,6 +30,13 @@ class DepartmentImport implements ToModel, WithHeadingRow, WithValidation, Skips
         'status' => 'Trạng thái',
     ];
 
+    /** Ví dụ mẫu — user xóa trước khi nhập data thật. */
+    public const TEMPLATE_EXAMPLES = [
+        'code' => 'PB-001',
+        'name' => 'Phòng Hành chính (xóa hàng này)',
+        'status' => 'active',
+    ];
+
     public function model(array $row)
     {
         return new TaskAssignmentDepartment([

@@ -28,6 +28,13 @@ class EmployeeImport implements ToModel, WithHeadingRow, WithValidation, SkipsOn
         'note' => 'Ghi chú',
     ];
 
+    /** Ví dụ mẫu — user xóa trước khi nhập data thật. */
+    public const TEMPLATE_EXAMPLES = [
+        'user_id' => '1',
+        'status' => 'active',
+        'note' => 'Ví dụ mẫu — xóa hàng này',
+    ];
+
     public function model(array $row)
     {
         return new TaskAssignmentEmployee([

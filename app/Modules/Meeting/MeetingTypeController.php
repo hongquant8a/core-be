@@ -202,7 +202,7 @@ class MeetingTypeController extends Controller
     public function importTemplate()
     {
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Meeting\Imports\CatalogImport::TEMPLATE_LABELS),
+            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Meeting\Imports\CatalogImport::TEMPLATE_LABELS, \App\Modules\Meeting\Imports\CatalogImport::TEMPLATE_EXAMPLES),
             'import-meeting-types-template.xlsx'
         );
     }

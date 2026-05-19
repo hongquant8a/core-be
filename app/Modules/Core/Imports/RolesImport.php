@@ -23,6 +23,10 @@ class RolesImport implements ToModel, WithHeadingRow, WithValidation
         'name' => 'Tên vai trò',
     ];
 
+    public const TEMPLATE_EXAMPLES = [
+        'name' => 'Quản trị viên (xóa hàng này trước khi nhập)',
+    ];
+
     public function model(array $row)
     {
         $guard = $row['guard_name'] ?? config('auth.defaults.guard', 'web');

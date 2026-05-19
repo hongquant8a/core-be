@@ -195,7 +195,7 @@ class MeetingAttendeeController extends Controller
     public function importTemplate()
     {
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Meeting\Imports\MeetingAttendeeImport::TEMPLATE_LABELS),
+            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Meeting\Imports\MeetingAttendeeImport::TEMPLATE_LABELS, \App\Modules\Meeting\Imports\MeetingAttendeeImport::TEMPLATE_EXAMPLES),
             'import-meeting-attendees-template.xlsx'
         );
     }

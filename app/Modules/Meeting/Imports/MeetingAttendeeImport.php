@@ -34,6 +34,13 @@ class MeetingAttendeeImport implements ToModel, WithHeadingRow, WithValidation, 
         'note' => 'Ghi chú',
     ];
 
+    public const TEMPLATE_EXAMPLES = [
+        'email' => 'daibieu@example.com',
+        'position_name' => 'Đại biểu HĐND',
+        'department_name' => 'Phòng Hành chính (xóa hàng này)',
+        'note' => 'Ví dụ mẫu',
+    ];
+
     public function model(array $row)
     {
         $user = User::where('email', $row['email'])->first();

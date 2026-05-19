@@ -25,6 +25,10 @@ class PermissionsImport implements ToModel, WithHeadingRow, WithValidation
         'name' => 'Tên quyền',
     ];
 
+    public const TEMPLATE_EXAMPLES = [
+        'name' => 'users.index (xóa hàng này trước khi nhập)',
+    ];
+
     public function model(array $row)
     {
         $guard = $row['guard_name'] ?? config('auth.defaults.guard', 'web');
