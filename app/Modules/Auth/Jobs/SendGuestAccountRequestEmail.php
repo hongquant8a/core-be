@@ -22,13 +22,20 @@ class SendGuestAccountRequestEmail implements ShouldQueue
 
     public function handle(MailChannel $mail): void
     {
+        $appName = null;
+        try {
+            $appName = app(\App\Modules\Core\Services\SettingService::class)
+                ->getByKey('organization_name')['value'] ?? null;
+        } catch (\Throwable) {
+        }
+
         $html = View::make('emails.guest_account_request', [
             'fullName' => $this->data['full_name'],
             'phone' => $this->data['phone'],
             'email' => $this->data['email'],
             'content' => $this->data['content'],
             'recipient' => (object) ['name' => 'Quản trị viên'],
-            'appName' => config('app.name'),
+            'appName' => $appName ?: config('app.name', 'Hệ thống'),
             'logoUrl' => null,
             'copyright' => null,
             'subjectText' => 'Yêu cầu mở tài khoản từ '.$this->data['full_name'],

@@ -85,7 +85,7 @@ class AppServiceProvider extends ServiceProvider
             try {
                 $settings = app(SettingService::class);
                 $logoPath = $settings->getByKey('logo')['value'] ?? null;
-                $appName = $settings->getByKey('admin_app_name')['value'] ?? null;
+                $appName = $settings->getByKey('organization_name')['value'] ?? null;
                 $copyright = $settings->getByKey('copyright')['value'] ?? null;
             } catch (Throwable) {
                 // Setting service unavailable — render with fallbacks.
