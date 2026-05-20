@@ -100,7 +100,11 @@ class MeetingParticipantService
             'responded_at' => now(),
         ]);
 
-        return $meetingParticipant->load(['attendee.user', 'attendance']);
+        $meetingParticipant->load(['attendee.user', 'attendance']);
+
+        event(new \App\Modules\Meeting\Events\MeetingParticipantResponded($meetingParticipant));
+
+        return $meetingParticipant;
     }
 
     public function bulkDestroy(array $ids): void
