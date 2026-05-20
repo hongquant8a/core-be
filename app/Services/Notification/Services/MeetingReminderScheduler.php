@@ -26,6 +26,11 @@ class MeetingReminderScheduler
             return;
         }
 
+        // Chỉ schedule khi meeting đã phát hành — tránh tạo reminder cho draft.
+        if ($meeting->status !== 'published') {
+            return;
+        }
+
         $organizationId = (int) $meeting->organization_id;
         if ($organizationId === 0) {
             return;

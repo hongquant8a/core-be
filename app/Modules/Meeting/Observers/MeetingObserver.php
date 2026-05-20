@@ -49,7 +49,9 @@ class MeetingObserver
             return;
         }
 
-        if ($meeting->wasChanged(['start_time', 'status']) || $meeting->wasRecentlyCreated) {
+        // Schedule reminders — chỉ khi đã phát hành VÀ start_time hoặc status thay đổi
+        if ($meeting->status === 'published'
+            && ($meeting->wasChanged(['start_time', 'status']) || $meeting->wasRecentlyCreated)) {
             $this->scheduler->scheduleFor($meeting);
         }
     }

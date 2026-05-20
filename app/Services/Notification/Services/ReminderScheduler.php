@@ -22,7 +22,12 @@ class ReminderScheduler
             return;
         }
 
+        // Chỉ schedule khi document đã ban hành — tránh tạo reminder cho item draft.
         $item->loadMissing('document');
+        if (($item->document->status ?? null) !== \App\Modules\TaskAssignment\Enums\TaskAssignmentDocumentStatusEnum::Issued->value) {
+            return;
+        }
+
         $organizationId = (int) ($item->document->organization_id ?? 0);
         if ($organizationId === 0) {
             return;

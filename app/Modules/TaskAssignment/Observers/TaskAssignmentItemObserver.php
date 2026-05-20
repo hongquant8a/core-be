@@ -2,6 +2,7 @@
 
 namespace App\Modules\TaskAssignment\Observers;
 
+use App\Modules\TaskAssignment\Enums\TaskAssignmentDocumentStatusEnum;
 use App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Services\Notification\Services\ReminderScheduler;
@@ -19,8 +20,11 @@ class TaskAssignmentItemObserver
             return;
         }
 
-        // Schedule reminders — chỉ khi end_at hoặc status thay đổi (tránh spam mỗi lần save)
-        if ($item->wasChanged(['end_at', 'processing_status', 'deadline_type']) || $item->wasRecentlyCreated) {
+        // Schedule reminders — chỉ khi document đã ban hành VÀ end_at hoặc status thay đổi
+        $item->loadMissing('document');
+        $isIssued = ($item->document->status ?? null) === TaskAssignmentDocumentStatusEnum::Issued->value;
+
+        if ($isIssued && ($item->wasChanged(['end_at', 'processing_status', 'deadline_type']) || $item->wasRecentlyCreated)) {
             $this->scheduler->scheduleFor($item);
         }
     }
