@@ -6,7 +6,6 @@ use App\Modules\Core\Models\FcmToken;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -27,14 +26,6 @@ class SyncFcmToken
         $token = $request->header('X-FCM-Token');
         $deviceId = $request->header('X-Device-Id');
 
-        Log::info('SyncFcmToken middleware triggered', [
-            'user_id' => $user?->id,
-            'has_token' => ! empty($token),
-            'has_device_id' => ! empty($deviceId),
-            'token' => substr($token ?? '', 0, 30),
-            'device_id' => $deviceId,
-        ]);
-
         if ($user && $token && $deviceId) {
             DB::transaction(function () use ($user, $token, $deviceId, $request) {
                 // Tránh push nhầm: nếu token này đang gắn với user khác (vd phone bán cho người khác)
@@ -52,16 +43,6 @@ class SyncFcmToken
                     ],
                 );
             });
-
-            Log::info('SyncFcmToken synced', [
-                'user_id' => $user->id,
-                'device_id' => $deviceId,
-                'device_type' => $request->header('X-Device-Type'),
-            ]);
-        } else {
-            Log::info('SyncFcmToken skipped', [
-                'reason' => ! $user ? 'no_user' : (! $token ? 'no_token' : 'no_device_id'),
-            ]);
         }
 
         return $next($request);
