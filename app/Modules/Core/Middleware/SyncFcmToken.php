@@ -5,6 +5,8 @@ namespace App\Modules\Core\Middleware;
 use App\Modules\Core\Models\FcmToken;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -21,31 +23,47 @@ class SyncFcmToken
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $response = $next($request);
-
         $user = $request->user();
         $token = $request->header('X-FCM-Token');
         $deviceId = $request->header('X-Device-Id');
 
-        if (! $user || ! $token || ! $deviceId) {
-            return $response;
+        Log::info('SyncFcmToken middleware triggered', [
+            'user_id' => $user?->id,
+            'has_token' => ! empty($token),
+            'has_device_id' => ! empty($deviceId),
+            'token' => substr($token ?? '', 0, 30),
+            'device_id' => $deviceId,
+        ]);
+
+        if ($user && $token && $deviceId) {
+            DB::transaction(function () use ($user, $token, $deviceId, $request) {
+                // Tránh push nhầm: nếu token này đang gắn với user khác (vd phone bán cho người khác)
+                // → xóa row đó trước khi upsert.
+                FcmToken::where('fcm_token', $token)
+                    ->where('user_id', '!=', $user->id)
+                    ->delete();
+
+                FcmToken::updateOrCreate(
+                    ['user_id' => $user->id, 'device_id' => $deviceId],
+                    [
+                        'fcm_token' => $token,
+                        'device_type' => $request->header('X-Device-Type'),
+                        'last_used_at' => now(),
+                    ],
+                );
+            });
+
+            Log::info('SyncFcmToken synced', [
+                'user_id' => $user->id,
+                'device_id' => $deviceId,
+                'device_type' => $request->header('X-Device-Type'),
+            ]);
+        } else {
+            Log::info('SyncFcmToken skipped', [
+                'reason' => ! $user ? 'no_user' : (! $token ? 'no_token' : 'no_device_id'),
+            ]);
         }
 
-        // Tránh push nhầm: nếu token này đang gắn với user khác (vd phone bán cho người khác)
-        // → xóa row đó trước khi upsert.
-        FcmToken::where('fcm_token', $token)
-            ->where('user_id', '!=', $user->id)
-            ->delete();
-
-        FcmToken::updateOrCreate(
-            ['user_id' => $user->id, 'device_id' => $deviceId],
-            [
-                'fcm_token' => $token,
-                'device_type' => $request->header('X-Device-Type'),
-                'last_used_at' => now(),
-            ],
-        );
-
-        return $response;
+        return $next($request);
     }
 }
