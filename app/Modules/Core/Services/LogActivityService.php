@@ -25,12 +25,35 @@ class LogActivityService
             ")
             ->first();
 
+        // Calculate % change for total visits (Last 7 days vs Previous 7 days)
+        // If a specific from_date/to_date is passed, we could dynamically adjust,
+        // but typically "so với tuần trước" implies a rolling 7-day comparison.
+        $now = Carbon::now();
+        $sevenDaysAgo = $now->copy()->subDays(7);
+        $fourteenDaysAgo = $now->copy()->subDays(14);
+
+        $thisWeekTotal = LogActivity::filter($filters)
+            ->whereBetween('created_at', [$sevenDaysAgo, $now])
+            ->count();
+
+        $lastWeekTotal = LogActivity::filter($filters)
+            ->whereBetween('created_at', [$fourteenDaysAgo, $sevenDaysAgo])
+            ->count();
+
+        $change = 0;
+        if ($lastWeekTotal > 0) {
+            $change = round((($thisWeekTotal - $lastWeekTotal) / $lastWeekTotal) * 100, 1);
+        } elseif ($thisWeekTotal > 0) {
+            $change = 100;
+        }
+
         return [
             'total' => (int) $stats->total,
             'views' => (int) $stats->views,
             'creates' => (int) $stats->creates,
             'updates' => (int) $stats->updates,
             'deletes' => (int) $stats->deletes,
+            'change' => $change,
         ];
     }
 

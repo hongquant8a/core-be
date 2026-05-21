@@ -436,7 +436,7 @@ class MeetingService
     {
         $previous = $meeting->status;
 
-        DB::transaction(function () use ($meeting, $status) {
+        DB::transaction(function () use ($meeting, $status, $previous) {
             $payload = ['status' => $status];
 
             // Auto-set published_at lần đầu publish; republish sau đó không ghi đè (giữ mốc gốc).
@@ -448,6 +448,15 @@ class MeetingService
 
             if ($status === MeetingStatusEnum::Published->value) {
                 $this->createInvitationsForParticipants($meeting);
+
+                // Re-publish (cancelled → published): reset invitation status về pending
+                // để listener MeetingPublished gửi lại thông báo cho toàn bộ người tham gia.
+                if ($previous === MeetingStatusEnum::Cancelled->value) {
+                    MeetingInvitation::where('meeting_id', $meeting->id)
+                        ->where('organization_id', $meeting->organization_id)
+                        ->whereIn('status', ['sent', 'failed'])
+                        ->update(['status' => 'pending', 'sent_at' => null]);
+                }
             }
         });
 
