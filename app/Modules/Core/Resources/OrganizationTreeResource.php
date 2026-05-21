@@ -18,6 +18,7 @@ class OrganizationTreeResource extends JsonResource
             'status' => $this->status,
             'parent_id' => $this->parent_id,
             'sort_order' => $this->sort_order,
+            'user_count' => $this->user_count ?? 0,
             'depth' => $this->depth,
             'children' => $this->whenLoaded(
                 'children',
