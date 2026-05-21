@@ -66,6 +66,18 @@ class OrganizationService
             ->when($status, fn ($q, $value) => $q->where('status', $value));
         $items = $query->orderBy('sort_order')->orderBy('id')->get();
 
+        // Calculate user counts per organization
+        $userCounts = \Illuminate\Support\Facades\DB::table('model_has_roles')
+            ->select('organization_id', \Illuminate\Support\Facades\DB::raw('count(distinct model_id) as count'))
+            ->where('model_type', \App\Modules\Core\Models\User::class)
+            ->groupBy('organization_id')
+            ->pluck('count', 'organization_id');
+
+        // Append user_count to each item
+        $items->each(function ($item) use ($userCounts) {
+            $item->user_count = $userCounts->get($item->id) ?? 0;
+        });
+
         return $this->buildTree($items);
     }
 
