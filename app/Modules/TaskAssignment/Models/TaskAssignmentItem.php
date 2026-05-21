@@ -69,6 +69,18 @@ class TaskAssignmentItem extends TenantModel implements HasMedia
             ], true);
     }
 
+    /**
+     * "Hoàn thành trễ hạn" — task đã hoàn thành nhưng completed_at > end_at.
+     */
+    public function isLate(): bool
+    {
+        return $this->processing_status === \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Done->value
+            && $this->deadline_type === \App\Modules\TaskAssignment\Enums\TaskDeadlineTypeEnum::HasDeadline->value
+            && $this->completed_at
+            && $this->end_at
+            && $this->completed_at->greaterThan($this->end_at);
+    }
+
     public function document()
     {
         return $this->belongsTo(TaskAssignmentDocument::class, 'task_assignment_document_id');
@@ -148,6 +160,28 @@ class TaskAssignmentItem extends TenantModel implements HasMedia
 
                     return;
                 }
+
+                // 'late' (Trễ hạn) là một virtual status: đã hoàn thành nhưng completed_at > end_at
+                if ($status === 'late') {
+                    $q->where('processing_status', \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Done->value)
+                        ->where('deadline_type', \App\Modules\TaskAssignment\Enums\TaskDeadlineTypeEnum::HasDeadline->value)
+                        ->whereColumn('completed_at', '>', 'end_at');
+
+                    return;
+                }
+
+                // Nếu filter là 'done' (Hoàn thành đúng hạn), ta chỉ lấy các task done mà completed_at <= end_at (hoặc không có deadline)
+                if ($status === \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Done->value) {
+                    $q->where('processing_status', $status)
+                        ->where(function ($sub) {
+                            $sub->where('deadline_type', '!=', \App\Modules\TaskAssignment\Enums\TaskDeadlineTypeEnum::HasDeadline->value)
+                                ->orWhereNull('end_at')
+                                ->orWhereColumn('completed_at', '<=', 'end_at');
+                        });
+                    
+                    return;
+                }
+
                 $q->where('processing_status', $status);
 
                 // Active statuses (todo/in_progress/paused): loại task đang quá hạn — đồng bộ với stats `countByStatusExcludingOverdue`.

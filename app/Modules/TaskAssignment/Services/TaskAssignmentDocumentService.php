@@ -72,14 +72,25 @@ class TaskAssignmentDocumentService
     public function index(array $filters, int $limit)
     {
         return TaskAssignmentDocument::with(['type', 'creator.media', 'editor.media'])
-            ->withCount('items')
+            ->withCount([
+                'items',
+                'items as completed_items_count' => function ($query) {
+                    $query->where('processing_status', \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Done->value);
+                },
+            ])
             ->filter($filters)
             ->paginate($limit);
     }
 
     public function show(TaskAssignmentDocument $document): TaskAssignmentDocument
     {
-        return $document->load(['type', 'items.attachments.media', 'attachments.media', 'creator.media', 'editor.media']);
+        return $document->load(['type', 'items.attachments.media', 'attachments.media', 'creator.media', 'editor.media'])
+            ->loadCount([
+                'items',
+                'items as completed_items_count' => function ($query) {
+                    $query->where('processing_status', \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Done->value);
+                },
+            ]);
     }
 
     public function store(array $validated, array $files = []): TaskAssignmentDocument

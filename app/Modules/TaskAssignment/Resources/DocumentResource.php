@@ -20,6 +20,11 @@ class DocumentResource extends JsonResource
             'status' => $this->status,
             'issued_at' => $this->issued_at?->format('H:i:s d/m/Y'),
             'items_count' => $this->whenCounted('items'),
+            'completed_items_count' => $this->whenCounted('completed_items_count'),
+            'completion_percent' => $this->when(
+                $this->items_count !== null && $this->completed_items_count !== null,
+                fn() => $this->items_count > 0 ? (int) round(($this->completed_items_count / $this->items_count) * 100) : 0
+            ),
             'attachments' => $this->whenLoaded('attachments', function () {
                 return $this->attachments->map(function ($attachment) {
                     return [

@@ -33,7 +33,17 @@ class TaskAssignmentItemService
             'todo' => $this->countByStatusExcludingOverdue($base, TaskProgressStatusEnum::Todo->value),
             'in_progress' => $this->countByStatusExcludingOverdue($base, TaskProgressStatusEnum::InProgress->value),
             'paused' => $this->countByStatusExcludingOverdue($base, TaskProgressStatusEnum::Paused->value),
-            'done' => (clone $base)->where('processing_status', TaskProgressStatusEnum::Done->value)->count(),
+            'done' => (clone $base)
+                ->where('processing_status', TaskProgressStatusEnum::Done->value)
+                ->where(function ($sub) {
+                    $sub->where('deadline_type', '!=', TaskDeadlineTypeEnum::HasDeadline->value)
+                        ->orWhereNull('end_at')
+                        ->orWhereColumn('completed_at', '<=', 'end_at');
+                })->count(),
+            'late' => (clone $base)
+                ->where('processing_status', TaskProgressStatusEnum::Done->value)
+                ->where('deadline_type', TaskDeadlineTypeEnum::HasDeadline->value)
+                ->whereColumn('completed_at', '>', 'end_at')->count(),
             'overdue' => $this->countOverdue($base),
             'cancelled' => (clone $base)->where('processing_status', TaskProgressStatusEnum::Cancelled->value)->count(),
         ];
@@ -376,7 +386,17 @@ class TaskAssignmentItemService
                 'todo' => $this->countByStatusExcludingOverdue($base, TaskProgressStatusEnum::Todo->value),
                 'in_progress' => $this->countByStatusExcludingOverdue($base, TaskProgressStatusEnum::InProgress->value),
                 'paused' => $this->countByStatusExcludingOverdue($base, TaskProgressStatusEnum::Paused->value),
-                'done' => (clone $base)->where('processing_status', $done)->count(),
+                'done' => (clone $base)
+                    ->where('processing_status', $done)
+                    ->where(function ($sub) use ($hasDeadline) {
+                        $sub->where('deadline_type', '!=', $hasDeadline)
+                            ->orWhereNull('end_at')
+                            ->orWhereColumn('completed_at', '<=', 'end_at');
+                    })->count(),
+                'late' => (clone $base)
+                    ->where('processing_status', $done)
+                    ->where('deadline_type', $hasDeadline)
+                    ->whereColumn('completed_at', '>', 'end_at')->count(),
                 'overdue' => $this->countOverdue($base),
                 'cancelled' => (clone $base)->where('processing_status', $cancelled)->count(),
             ];
@@ -421,7 +441,17 @@ class TaskAssignmentItemService
                 'todo' => $this->countByStatusExcludingOverdue($base, TaskProgressStatusEnum::Todo->value),
                 'in_progress' => $this->countByStatusExcludingOverdue($base, TaskProgressStatusEnum::InProgress->value),
                 'paused' => $this->countByStatusExcludingOverdue($base, TaskProgressStatusEnum::Paused->value),
-                'done' => (clone $base)->where('processing_status', $done)->count(),
+                'done' => (clone $base)
+                    ->where('processing_status', $done)
+                    ->where(function ($sub) {
+                        $sub->where('deadline_type', '!=', TaskDeadlineTypeEnum::HasDeadline->value)
+                            ->orWhereNull('end_at')
+                            ->orWhereColumn('completed_at', '<=', 'end_at');
+                    })->count(),
+                'late' => (clone $base)
+                    ->where('processing_status', $done)
+                    ->where('deadline_type', TaskDeadlineTypeEnum::HasDeadline->value)
+                    ->whereColumn('completed_at', '>', 'end_at')->count(),
                 'overdue' => $this->countOverdue($base),
                 'cancelled' => (clone $base)->where('processing_status', $cancelled)->count(),
                 'new_in_period' => ($fromDate && $toDate)
@@ -465,12 +495,16 @@ class TaskAssignmentItemService
         // Status không overdue = chưa quá end_at hoặc no_deadline.
         $notOverdueWhen = "(ti.deadline_type != ? OR ti.end_at IS NULL OR ti.end_at >= NOW())";
 
+        $lateWhen = "(ti.processing_status = ? AND ti.deadline_type = ? AND ti.completed_at > ti.end_at)";
+        $doneWhen = "(ti.processing_status = ? AND (ti.deadline_type != ? OR ti.end_at IS NULL OR ti.completed_at <= ti.end_at))";
+
         $query->groupBy('tiu.user_id', 'u.name')
             ->selectRaw('tiu.user_id, u.name as user_name')
             ->selectRaw('COUNT(*) as total')
             ->selectRaw("SUM(CASE WHEN ti.processing_status = 'todo' AND {$notOverdueWhen} THEN 1 ELSE 0 END) as todo", [$hasDeadline])
             ->selectRaw("SUM(CASE WHEN ti.processing_status = 'in_progress' AND {$notOverdueWhen} THEN 1 ELSE 0 END) as in_progress", [$hasDeadline])
-            ->selectRaw('SUM(CASE WHEN ti.processing_status = ? THEN 1 ELSE 0 END) as done', [$done])
+            ->selectRaw("SUM(CASE WHEN {$doneWhen} THEN 1 ELSE 0 END) as done", [$done, $hasDeadline])
+            ->selectRaw("SUM(CASE WHEN {$lateWhen} THEN 1 ELSE 0 END) as late", [$done, $hasDeadline])
             ->selectRaw("SUM(CASE WHEN ti.processing_status = 'paused' AND {$notOverdueWhen} THEN 1 ELSE 0 END) as paused", [$hasDeadline])
             ->selectRaw("SUM(CASE WHEN ti.processing_status = ? THEN 1 ELSE 0 END) as cancelled", [$cancelled])
             ->selectRaw("SUM(CASE WHEN {$overdueWhen} THEN 1 ELSE 0 END) as overdue", [$hasDeadline])
@@ -495,6 +529,7 @@ class TaskAssignmentItemService
             'todo' => (int) $row->todo,
             'in_progress' => (int) $row->in_progress,
             'done' => (int) $row->done,
+            'late' => (int) $row->late,
             'paused' => (int) $row->paused,
             'cancelled' => (int) $row->cancelled,
             'overdue' => (int) $row->overdue,
@@ -534,6 +569,18 @@ class TaskAssignmentItemService
 
             $doneInMonth = (clone $baseQuery)
                 ->where('processing_status', $done)
+                ->where(function ($sub) use ($hasDeadline) {
+                    $sub->where('deadline_type', '!=', $hasDeadline)
+                        ->orWhereNull('end_at')
+                        ->orWhereColumn('completed_at', '<=', 'end_at');
+                })
+                ->whereBetween('completed_at', [$monthStart, $monthEnd])
+                ->count();
+
+            $lateInMonth = (clone $baseQuery)
+                ->where('processing_status', $done)
+                ->where('deadline_type', $hasDeadline)
+                ->whereColumn('completed_at', '>', 'end_at')
                 ->whereBetween('completed_at', [$monthStart, $monthEnd])
                 ->count();
 
@@ -551,6 +598,7 @@ class TaskAssignmentItemService
                 'month' => $monthKey,
                 'total' => $totalUpToMonth,
                 'done' => $doneInMonth,
+                'late' => $lateInMonth,
                 'overdue' => $overdueInMonth,
                 'new_tasks' => $newTasks,
             ];
@@ -581,10 +629,14 @@ class TaskAssignmentItemService
             ->when($filters['from_date'] ?? null, fn ($q, $v) => $q->where('td.issue_date', '>=', $v))
             ->when($filters['to_date'] ?? null, fn ($q, $v) => $q->where('td.issue_date', '<=', $v));
 
+        $lateWhen = "ti.processing_status = ? AND ti.deadline_type = ? AND ti.completed_at > ti.end_at";
+        $doneWhen = "ti.processing_status = ? AND (ti.deadline_type != ? OR ti.end_at IS NULL OR ti.completed_at <= ti.end_at)";
+
         $results = $query->groupBy('td.id', 'td.name', 'td.issue_date')
             ->selectRaw('td.id as document_id, td.name as document_name, td.issue_date')
             ->selectRaw('COUNT(*) as total_items')
-            ->selectRaw('SUM(CASE WHEN ti.processing_status = ? THEN 1 ELSE 0 END) as done', [$done])
+            ->selectRaw("SUM(CASE WHEN {$doneWhen} THEN 1 ELSE 0 END) as done", [$done, $hasDeadline])
+            ->selectRaw("SUM(CASE WHEN {$lateWhen} THEN 1 ELSE 0 END) as late", [$done, $hasDeadline])
             ->selectRaw("SUM(CASE WHEN ti.processing_status = 'in_progress' THEN 1 ELSE 0 END) as in_progress")
             ->selectRaw('SUM(CASE WHEN ti.deadline_type = ? AND ti.end_at < NOW() AND ti.processing_status NOT IN (?, ?) THEN 1 ELSE 0 END) as overdue', [$hasDeadline, $done, $cancelled])
             ->orderBy('td.issue_date', 'desc')
@@ -596,6 +648,7 @@ class TaskAssignmentItemService
             'issue_date' => $row->issue_date,
             'total_items' => (int) $row->total_items,
             'done' => (int) $row->done,
+            'late' => (int) $row->late,
             'in_progress' => (int) $row->in_progress,
             'overdue' => (int) $row->overdue,
             'completion_rate' => $row->total_items > 0 ? round(((int) $row->done / (int) $row->total_items) * 100, 1) : 0,
