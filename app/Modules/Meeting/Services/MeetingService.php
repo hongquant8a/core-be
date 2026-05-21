@@ -74,29 +74,32 @@ class MeetingService
                 }
             });
 
-        // Sort cố định cho list đại biểu — 3 bucket, override sort_by từ FE (business logic).
-        //   1. Đang diễn ra: start <= now AND (end IS NULL OR end > now) — ưu tiên cao nhất.
-        //   2. Sắp diễn ra: start > now — ASC (gần now nhất trước).
-        //   3. Đã kết thúc: end_time IS NOT NULL AND end <= now — DESC (mới nhất trước).
+        // Sort cố định cho list đại biểu — 4 bucket, override sort_by từ FE (business logic).
+        //   1. Đang diễn ra: start <= now AND (end IS NULL OR end > now) (loại trừ đã hủy) — ưu tiên cao nhất.
+        //   2. Sắp diễn ra: start > now (loại trừ đã hủy) — ASC (gần now nhất trước).
+        //   3. Bị hủy: ra trước cuộc họp đã kết thúc — DESC theo thời gian bắt đầu.
+        //   4. Đã kết thúc: end_time <= now (loại trừ đã hủy) — DESC (mới nhất trước).
         $query->reorder()
-            ->orderByRaw('
+            ->orderByRaw("
                 CASE
+                    WHEN status = 'cancelled' THEN 2
                     WHEN start_time <= NOW() AND (end_time IS NULL OR end_time > NOW()) THEN 0
                     WHEN start_time > NOW() THEN 1
-                    ELSE 2
+                    ELSE 3
                 END ASC
-            ')
-            ->orderByRaw('
+            ")
+            ->orderByRaw("
                 CASE
-                    WHEN start_time <= NOW() AND (end_time IS NULL OR end_time > NOW()) THEN start_time
+                    WHEN status != 'cancelled' AND start_time <= NOW() AND (end_time IS NULL OR end_time > NOW()) THEN start_time
                 END ASC
-            ')
-            ->orderByRaw('CASE WHEN start_time > NOW() THEN start_time END ASC')
-            ->orderByRaw('
+            ")
+            ->orderByRaw("CASE WHEN status != 'cancelled' AND start_time > NOW() THEN start_time END ASC")
+            ->orderByRaw("
                 CASE
+                    WHEN status = 'cancelled' THEN start_time
                     WHEN start_time <= NOW() AND end_time IS NOT NULL AND end_time <= NOW() THEN start_time
                 END DESC
-            ');
+            ");
 
         return $query->paginate($limit);
     }

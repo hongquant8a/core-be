@@ -70,14 +70,28 @@ class NotificationScheduleSeeder extends Seeder
     {
         $moduleKey = NotificationModuleEnum::Meeting->value;
 
-        // Instant event: meeting_published — gửi giấy mời ngay khi chair publish meeting.
+        // Instant events: published, updated, cancelled
+        $instantEvents = [
+            NotificationEventEnum::MeetingPublished->value,
+            NotificationEventEnum::MeetingUpdated->value,
+            NotificationEventEnum::MeetingCancelled->value,
+        ];
+
         $publishedConfigs = NotificationEventConfig::where('module_key', $moduleKey)
-            ->where('event_key', NotificationEventEnum::MeetingPublished->value)
+            ->whereIn('event_key', $instantEvents)
             ->get();
+            
         foreach ($publishedConfigs as $config) {
+            $label = match ($config->event_key) {
+                NotificationEventEnum::MeetingPublished->value => 'Gửi giấy mời tức thì',
+                NotificationEventEnum::MeetingUpdated->value => 'Gửi thông báo cập nhật tức thì',
+                NotificationEventEnum::MeetingCancelled->value => 'Gửi thông báo hủy tức thì',
+                default => 'Gửi tức thì',
+            };
+            
             NotificationSchedule::firstOrCreate(
                 ['notification_event_config_id' => $config->id, 'moment' => null, 'offset_minutes' => null],
-                ['channels' => [], 'label' => 'Gửi giấy mời tức thì', 'sort_order' => 0]
+                ['channels' => [], 'label' => $label, 'sort_order' => 0]
             );
         }
 
