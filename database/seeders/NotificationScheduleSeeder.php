@@ -31,9 +31,16 @@ class NotificationScheduleSeeder extends Seeder
             ->whereIn('event_key', $nonReminder)
             ->get();
         foreach ($configs as $config) {
-            NotificationSchedule::firstOrCreate(
+            $label = match ($config->event_key) {
+                NotificationEventEnum::DocumentIssued->value => 'Thông báo ngay khi ban hành',
+                NotificationEventEnum::TaskAssigned->value => 'Thông báo ngay khi giao việc',
+                NotificationEventEnum::TaskCompleted->value => 'Thông báo ngay khi hoàn thành',
+                NotificationEventEnum::TaskConfirmed->value => 'Thông báo ngay khi xác nhận',
+                default => 'Gửi ngay lập tức',
+            };
+            NotificationSchedule::updateOrCreate(
                 ['notification_event_config_id' => $config->id, 'moment' => null, 'offset_minutes' => null],
-                ['channels' => [], 'label' => 'Gửi tức thì', 'sort_order' => 0]
+                ['label' => $label, 'sort_order' => 0] // We exclude 'channels' from updateOrCreate to avoid wiping user settings if run again
             );
         }
 
@@ -83,15 +90,15 @@ class NotificationScheduleSeeder extends Seeder
             
         foreach ($publishedConfigs as $config) {
             $label = match ($config->event_key) {
-                NotificationEventEnum::MeetingPublished->value => 'Gửi giấy mời tức thì',
-                NotificationEventEnum::MeetingUpdated->value => 'Gửi thông báo cập nhật tức thì',
-                NotificationEventEnum::MeetingCancelled->value => 'Gửi thông báo hủy tức thì',
-                default => 'Gửi tức thì',
+                NotificationEventEnum::MeetingPublished->value => 'Gửi giấy mời ngay',
+                NotificationEventEnum::MeetingUpdated->value => 'Thông báo ngay khi cập nhật',
+                NotificationEventEnum::MeetingCancelled->value => 'Thông báo ngay khi hủy',
+                default => 'Gửi ngay lập tức',
             };
             
-            NotificationSchedule::firstOrCreate(
+            NotificationSchedule::updateOrCreate(
                 ['notification_event_config_id' => $config->id, 'moment' => null, 'offset_minutes' => null],
-                ['channels' => [], 'label' => $label, 'sort_order' => 0]
+                ['label' => $label, 'sort_order' => 0] // Exclude channels to prevent wiping user settings
             );
         }
 
