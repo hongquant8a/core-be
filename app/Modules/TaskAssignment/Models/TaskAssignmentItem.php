@@ -180,6 +180,8 @@ class TaskAssignmentItem extends TenantModel implements HasMedia
                             ->orWhereNull('end_at')
                             ->orWhereRaw('DATE(completed_at) = DATE(end_at)')
                         );
+                } elseif ($timing === 'cancelled') {
+                    $q->where('processing_status', $cancelled);
                 }
             })
             ->when($filters['priority'] ?? null, fn ($q, $priority) => $q->where('priority', $priority))

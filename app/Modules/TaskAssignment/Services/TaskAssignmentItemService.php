@@ -84,12 +84,16 @@ class TaskAssignmentItemService
                 ->orWhereRaw('DATE(completed_at) = DATE(end_at)')
             )->count();
 
+        // Cancelled: cancelled status
+        $cancelledCount = (clone $base)->where('processing_status', $cancelled)->count();
+
         return [
             'upcoming' => $upcoming,
             'overdue' => $overdue,
             'late' => $late,
             'early' => $early,
             'on_time' => $onTime,
+            'cancelled' => $cancelledCount,
         ];
     }
 
