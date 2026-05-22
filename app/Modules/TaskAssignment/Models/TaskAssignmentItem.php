@@ -149,53 +149,37 @@ class TaskAssignmentItem extends TenantModel implements HasMedia
     {
         $query->when($filters['search'] ?? null, fn ($q, $search) => $q->where('name', 'like', '%'.$search.'%'))
             ->when($filters['processing_status'] ?? null, function ($q, $status) {
-                // Giá trị 'overdue' không còn trong enum — map thành predicate is_overdue để đồng bộ với stats counter.
-                if ($status === 'overdue') {
-                    $q->where('deadline_type', \App\Modules\TaskAssignment\Enums\TaskDeadlineTypeEnum::HasDeadline->value)
-                        ->where('end_at', '<', now())
-                        ->whereNotIn('processing_status', [
-                            \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Done->value,
-                            \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Cancelled->value,
-                        ]);
-
-                    return;
-                }
-
-                // 'late' (Trễ hạn) là một virtual status: đã hoàn thành nhưng completed_at > end_at
-                if ($status === 'late') {
-                    $q->where('processing_status', \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Done->value)
-                        ->where('deadline_type', \App\Modules\TaskAssignment\Enums\TaskDeadlineTypeEnum::HasDeadline->value)
-                        ->whereColumn('completed_at', '>', 'end_at');
-
-                    return;
-                }
-
-                // Nếu filter là 'done' (Hoàn thành đúng hạn), ta chỉ lấy các task done mà completed_at <= end_at (hoặc không có deadline)
-                if ($status === \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Done->value) {
-                    $q->where('processing_status', $status)
-                        ->where(function ($sub) {
-                            $sub->where('deadline_type', '!=', \App\Modules\TaskAssignment\Enums\TaskDeadlineTypeEnum::HasDeadline->value)
-                                ->orWhereNull('end_at')
-                                ->orWhereColumn('completed_at', '<=', 'end_at');
-                        });
-                    
-                    return;
-                }
-
                 $q->where('processing_status', $status);
+            })
+            ->when($filters['timing_status'] ?? null, function ($q, $timing) {
+                $done = \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Done->value;
+                $cancelled = \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Cancelled->value;
+                $hasDeadline = \App\Modules\TaskAssignment\Enums\TaskDeadlineTypeEnum::HasDeadline->value;
 
-                // Active statuses (todo/in_progress/paused): loại task đang quá hạn — đồng bộ với stats `countByStatusExcludingOverdue`.
-                $activeStatuses = [
-                    \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Todo->value,
-                    \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::InProgress->value,
-                    \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Paused->value,
-                ];
-                if (in_array($status, $activeStatuses, true)) {
-                    $q->where(fn ($q2) => $q2
-                        ->where('deadline_type', '!=', \App\Modules\TaskAssignment\Enums\TaskDeadlineTypeEnum::HasDeadline->value)
-                        ->orWhereNull('end_at')
-                        ->orWhere('end_at', '>=', now())
-                    );
+                if ($timing === 'upcoming') {
+                    $q->whereNotIn('processing_status', [$done, $cancelled])
+                        ->where(fn ($sub) => $sub->where('deadline_type', '!=', $hasDeadline)
+                            ->orWhereNull('end_at')
+                            ->orWhere('end_at', '>=', now())
+                        );
+                } elseif ($timing === 'overdue') {
+                    $q->whereNotIn('processing_status', [$done, $cancelled])
+                        ->where('deadline_type', $hasDeadline)
+                        ->where('end_at', '<', now());
+                } elseif ($timing === 'late') {
+                    $q->where('processing_status', $done)
+                        ->where('deadline_type', $hasDeadline)
+                        ->whereColumn('completed_at', '>', 'end_at');
+                } elseif ($timing === 'early') {
+                    $q->where('processing_status', $done)
+                        ->where('deadline_type', $hasDeadline)
+                        ->whereRaw('DATE(completed_at) < DATE(end_at)');
+                } elseif ($timing === 'on_time') {
+                    $q->where('processing_status', $done)
+                        ->where(fn ($sub) => $sub->where('deadline_type', '!=', $hasDeadline)
+                            ->orWhereNull('end_at')
+                            ->orWhereRaw('DATE(completed_at) = DATE(end_at)')
+                        );
                 }
             })
             ->when($filters['priority'] ?? null, fn ($q, $priority) => $q->where('priority', $priority))
