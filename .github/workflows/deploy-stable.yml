@@ -15,4 +15,4 @@ jobs:
       - name: Run deploy script
         run: |
           chmod +x deploy.sh
-          SITES="${{ secrets.DEPLOY_SITES }}" bash deploy.sh
+          SITES="${{ secrets.DEPLOY_SITES }}" bash deploy.sh --be-only
