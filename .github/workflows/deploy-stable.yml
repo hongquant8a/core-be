@@ -1,11 +1,3 @@
-# =========================================================================
-# deploy-stable.yml — GitHub Actions Workflow
-#
-# Place in your repo:  .github/workflows/deploy-stable.yml
-#
-# Triggers on push to `stable`, deploys to ALL production servers.
-# Configurable via GitHub repo secrets.
-# =========================================================================
 name: Deploy (stable)
 
 on:
@@ -13,33 +5,34 @@ on:
     branches: [stable]
 
 jobs:
-  deploy:
-    name: Deploy to ${{ matrix.server.name }}
+  deploy-server-1:
+    name: Deploy Server 1 (danatec-core)
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        server:
-          - name: Server 1 (danatec-core)
-            host: ${{ secrets.DEPLOY_HOST_1 }}
-            user: ${{ secrets.DEPLOY_USER_1 }}
-            sites: ${{ secrets.DEPLOY_SITES_1 }}
-
-          - name: Server 2 (qlcv)
-            host: ${{ secrets.DEPLOY_HOST_2 }}
-            user: ${{ secrets.DEPLOY_USER_2 }}
-            sites: ${{ secrets.DEPLOY_SITES_2 }}
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Deploy via SSH
+      - name: SSH and deploy
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ matrix.server.host }}
-          username: ${{ matrix.server.user }}
+          host: ${{ secrets.DEPLOY_HOST_1 }}
+          username: ${{ secrets.DEPLOY_USER_1 }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          port: ${{ matrix.server.port || 22 }}
           script: |
             chmod +x deploy.sh
-            SITES="${{ matrix.server.sites }}" bash deploy.sh
+            SITES="${{ secrets.DEPLOY_SITES_1 }}" bash deploy.sh
+
+  deploy-server-2:
+    name: Deploy Server 2 (qlcv)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: SSH and deploy
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST_2 }}
+          username: ${{ secrets.DEPLOY_USER_2 }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            chmod +x deploy.sh
+            SITES="${{ secrets.DEPLOY_SITES_2 }}" bash deploy.sh
