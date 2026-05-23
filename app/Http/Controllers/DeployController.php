@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\RunDeployJob;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -28,14 +29,9 @@ class DeployController extends Controller
             return response()->json(['error' => 'Branch not allowed', 'ref' => $ref], 422);
         }
 
-        $script = base_path('scripts/deploy.sh');
-        if (! is_file($script)) {
-            return response()->json(['error' => 'Deploy script not found'], 500);
-        }
+        dispatch(new RunDeployJob());
+        Log::info('[deploy] Webhook received, job dispatched.');
 
-        $output = shell_exec('bash '.escapeshellarg($script).' 2>&1');
-        Log::info('[deploy] '.($output ?? '(no output)'));
-
-        return response()->json(['status' => 'ok']);
+        return response()->json(['status' => 'ok', 'message' => 'Deploy job queued']);
     }
 }
