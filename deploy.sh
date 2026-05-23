@@ -75,6 +75,10 @@ deploy_be() {
   # Artisan commands
   log "  [BE] Running artisan commands..."
   sudo -u www $PHP_BIN artisan optimize:clear 2>/dev/null || true
+  # Fix open_basedir (aaPanel resets .user.ini)
+  local ini="${dir}/public/.user.ini"
+  echo "open_basedir=${dir%/backend}/:/tmp/" | sudo tee "$ini" > /dev/null
+  sudo chattr +i "$ini" 2>/dev/null || true
   sudo -u www $PHP_BIN artisan migrate --force 2>&1 | grep -E "DONE|Nothing"
   sudo -u www $PHP_BIN artisan optimize 2>/dev/null || true
 
