@@ -61,12 +61,13 @@ deploy_be() {
   log "  [BE] Deploying ${site}..."
 
   cd "$dir"
+  # Remove immutable flag (prevents git checkout/reset errors)
+  sudo chattr -i "${dir}/public/.user.ini" 2>/dev/null || true
 
   # Stash local changes & switch to target branch
   sudo -u www git stash --include-untracked 2>/dev/null || true
   sudo -u www git fetch origin "$BRANCH" 2>&1 | tail -1
   sudo -u www git checkout -f "$BRANCH"
-  # Remove immutable flag from .user.ini so git can update it
   sudo chattr -i "${dir}/public/.user.ini" 2>/dev/null || true
   sudo -u www git reset --hard "origin/$BRANCH"
 
@@ -96,12 +97,13 @@ deploy_fe() {
   log "  [FE] Deploying ${site}..."
 
   cd "$dir"
+  # Remove immutable flag (prevents git checkout/reset errors)
+  sudo chattr -i "${dir}/public/.user.ini" 2>/dev/null || true
 
   # Stash & switch
   sudo -u www git stash --include-untracked 2>/dev/null || true
   sudo -u www git fetch origin "$BRANCH" 2>&1 | tail -1
   sudo -u www git checkout -f "$BRANCH"
-  # Remove immutable flag from .user.ini so git can update it
   sudo chattr -i "${dir}/public/.user.ini" 2>/dev/null || true
   sudo -u www git reset --hard "origin/$BRANCH"
 
