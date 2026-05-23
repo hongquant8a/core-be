@@ -70,7 +70,7 @@ deploy_be() {
 
   # Composer install (only if lock changed — fast path: always check)
   log "  [BE] Composer install..."
-  sudo -u www $COMPOSER install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-audit --ignore-platform-req=php --ansi 2>&1 || log "  [BE] Composer install had warnings (continuing...)"
+  sudo -u www $COMPOSER install --no-dev --no-interaction --prefer-dist --optimize-autoloader --ignore-platform-req=php --ansi 2>&1 || log "  [BE] Composer install had warnings (continuing...)"
 
   # Artisan commands
   log "  [BE] Running artisan commands..."
