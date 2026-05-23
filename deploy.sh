@@ -66,6 +66,8 @@ deploy_be() {
   sudo -u www git stash --include-untracked 2>/dev/null || true
   sudo -u www git fetch origin "$BRANCH" 2>&1 | tail -1
   sudo -u www git checkout -f "$BRANCH"
+  # Remove immutable flag from .user.ini so git can update it
+  sudo chattr -i "${dir}/public/.user.ini" 2>/dev/null || true
   sudo -u www git reset --hard "origin/$BRANCH"
 
   # Composer install (only if lock changed — fast path: always check)
@@ -99,6 +101,8 @@ deploy_fe() {
   sudo -u www git stash --include-untracked 2>/dev/null || true
   sudo -u www git fetch origin "$BRANCH" 2>&1 | tail -1
   sudo -u www git checkout -f "$BRANCH"
+  # Remove immutable flag from .user.ini so git can update it
+  sudo chattr -i "${dir}/public/.user.ini" 2>/dev/null || true
   sudo -u www git reset --hard "origin/$BRANCH"
 
   # pnpm install
