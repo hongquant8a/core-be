@@ -5,34 +5,14 @@ on:
     branches: [stable]
 
 jobs:
-  deploy-server-1:
-    name: Deploy Server 1 (danatec-core)
-    runs-on: ubuntu-latest
+  deploy:
+    name: Deploy all servers
+    runs-on: self-hosted
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: SSH and deploy
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.DEPLOY_HOST_1 }}
-          username: ${{ secrets.DEPLOY_USER_1 }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script: |
-            chmod +x deploy.sh
-            SITES="${{ secrets.DEPLOY_SITES_1 }}" bash deploy.sh
 
-  deploy-server-2:
-    name: Deploy Server 2 (qlcv)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: SSH and deploy
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.DEPLOY_HOST_2 }}
-          username: ${{ secrets.DEPLOY_USER_2 }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script: |
-            chmod +x deploy.sh
-            SITES="${{ secrets.DEPLOY_SITES_2 }}" bash deploy.sh
+      - name: Run deploy script
+        run: |
+          chmod +x deploy.sh
+          SITES="${{ secrets.DEPLOY_SITES }}" bash deploy.sh
