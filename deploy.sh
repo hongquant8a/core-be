@@ -99,7 +99,7 @@ deploy_fe() {
 
   # pnpm install
   log "  [FE] pnpm install..."
-  sudo -u www $PNPM install --frozen-lockfile 2>&1 | tail -1
+  sudo -u www $PNPM install  2>&1 | tail -1
 
   # Build
   log "  [FE] Building..."
