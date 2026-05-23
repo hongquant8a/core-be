@@ -46,7 +46,7 @@ if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
   exit 0
 fi
 
-MODE="${1#--}"; MODE="${MODE:-all}"  # all | be-only | fe-only
+MODE="${1:-}"; MODE="${MODE#--}"; MODE="${MODE:-all}"  # all | be-only | fe-only
 
 # ─── FUNCTIONS ────────────────────────────────────────────────────────────
 log()  { echo "[$(date '+%H:%M:%S')] $*"; }
