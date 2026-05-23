@@ -76,7 +76,7 @@ class PermissionSeeder extends Seeder
         // TaskAssignment - Văn bản giao việc
         'task-assignment-documents' => [
             'stats', 'statsByTime', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
+            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'presentation',
         ],
         // TaskAssignment - Công việc
         'task-assignment-items' => [
@@ -320,6 +320,7 @@ class PermissionSeeder extends Seeder
         'reject' => 'Từ chối',
         'attendees' => 'Quản lý đại biểu trong nhóm',
         'systemOverview' => 'Tổng quan hệ thống',
+        'presentation' => 'Trình chiếu tổng quan công việc',
     ];
 
     /** Tạo đầy đủ permission từ danh sách PERMISSIONS (kèm description, sort_order, parent_id). */
