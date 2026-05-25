@@ -83,6 +83,14 @@ deploy_be() {
   echo "open_basedir=${dir%/backend}/:/tmp/" | sudo tee "$ini" > /dev/null
   sudo chattr +i "$ini" 2>/dev/null || true
   sudo -u www $PHP_BIN artisan migrate --force 2>&1 | grep -E "DONE|Nothing"
+
+  # Seed (add data, NOT fresh — seeder checks duplicates)
+  log "  [BE] Running seeders..."
+  sudo -u www $PHP_BIN artisan db:seed --force --ansi 2>&1 | grep -E "DONE|Seeding" | tail -3
+
+  # Cleanup orphan permissions/settings
+  log "  [BE] Cleanup obsolete..."
+  sudo -u www $PHP_BIN artisan seed:cleanup-obsolete --ansi 2>&1 | tail -2
   sudo -u www $PHP_BIN artisan optimize 2>/dev/null || true
 
   log "  [BE] ${site} ✅"
