@@ -121,7 +121,7 @@ deploy_fe() {
 
   # Build
   log "  [FE] Building..."
-  rm -rf "${dir}/dist"
+  sudo rm -rf "${dir}/dist"
   sudo -u www $PNPM run build 2>&1 | tail -3
 
   log "  [FE] ${site} ✅"
