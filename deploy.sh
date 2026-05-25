@@ -122,6 +122,7 @@ deploy_fe() {
   # Build
   log "  [FE] Building..."
   sudo rm -rf "${dir}/dist"
+  sudo rm -f "${dir}/.eslintrc-auto-import.json"
   sudo -u www $PNPM run build 2>&1 | tail -3
 
   log "  [FE] ${site} ✅"
