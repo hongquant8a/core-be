@@ -37,10 +37,11 @@ class MeetingVoteResponseService
                 ->with('meeting')
                 ->findOrFail($topicId);
 
-            $isPrivileged = $this->isPrivilegedForMeeting($topic->meeting);
-            if (! $isPrivileged && ! $topic->show_result_on_personal_device) {
-                throw new AuthorizationException('Phiên biểu quyết này không cho phép xem kết quả tổng hợp ngoài quản lý/chủ trì.');
-            }
+            // Bỏ check theo yêu cầu: open cho cả đại biểu xem kết quả vote
+            // $isPrivileged = $this->isPrivilegedForMeeting($topic->meeting);
+            // if (! $isPrivileged && ! $topic->show_result_on_personal_device) {
+            //     throw new AuthorizationException('Phiên biểu quyết này không cho phép xem kết quả tổng hợp ngoài quản lý/chủ trì.');
+            // }
         }
 
         $base = MeetingVoteResponse::query()
