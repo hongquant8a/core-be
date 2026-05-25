@@ -121,7 +121,7 @@ Route::prefix('{meeting}/vote-responses')->group(function () {
 
 // Tab 5 Điểm danh — self checkin/markAbsent (participant); chair/op manual/approve/reject.
 Route::prefix('{meeting}/attendances')->group(function () {
-    Route::get('/stats', [MeetingAttendanceController::class, 'statsInMeeting'])->middleware('can:operate,meeting');
+    Route::get('/stats', [MeetingAttendanceController::class, 'statsInMeeting'])->middleware('can:viewParticipant,meeting');
     Route::get('/export', [MeetingAttendanceController::class, 'exportInMeeting'])->middleware('can:operate,meeting');
     Route::get('/', [MeetingAttendanceController::class, 'indexInMeeting'])->middleware('can:operate,meeting');
     Route::post('/checkin', [MeetingAttendanceController::class, 'checkinInMeeting'])->middleware('can:participate,meeting');
