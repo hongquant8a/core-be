@@ -40,7 +40,7 @@ class ProcessRemindersTimezoneTest extends TestCase
             'created_at' => now(), 'updated_at' => now(),
         ]);
         $deptId = DB::table('task_assignment_departments')->insertGetId([
-            'code' => 'TZ-'.uniqid(), 'name' => 'Dept', 'status' => 'active',
+            'name' => 'Dept', 'status' => 'active',
             'created_at' => now(), 'updated_at' => now(),
         ]);
         $item = TaskAssignmentItem::create([

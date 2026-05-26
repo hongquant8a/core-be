@@ -43,7 +43,7 @@ class ProcessRemindersCommandTest extends TestCase
             'created_at' => now(), 'updated_at' => now(),
         ]);
         $deptId = DB::table('task_assignment_departments')->insertGetId([
-            'code' => 'DEPT', 'name' => 'Dept', 'status' => 'active',
+            'name' => 'Dept', 'status' => 'active',
             'created_at' => now(), 'updated_at' => now(),
         ]);
         $item = TaskAssignmentItem::create([
@@ -107,7 +107,7 @@ class ProcessRemindersCommandTest extends TestCase
             'name' => 'IT', 'status' => 'active', 'created_at' => now(), 'updated_at' => now(),
         ]);
         $deptId = DB::table('task_assignment_departments')->insertGetId([
-            'code' => 'DBULK', 'name' => 'D', 'status' => 'active',
+            'name' => 'D', 'status' => 'active',
             'created_at' => now(), 'updated_at' => now(),
         ]);
         $docId = DB::table('task_assignment_documents')->insertGetId([

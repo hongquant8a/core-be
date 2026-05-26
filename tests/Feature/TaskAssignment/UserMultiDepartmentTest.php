@@ -29,8 +29,8 @@ class UserMultiDepartmentTest extends TestCase
     public function test_user_can_belong_to_multiple_departments(): void
     {
         $user = User::factory()->create();
-        $deptA = TaskAssignmentDepartment::create(['code' => 'A', 'name' => 'A', 'organization_id' => $this->org->id]);
-        $deptB = TaskAssignmentDepartment::create(['code' => 'B', 'name' => 'B', 'organization_id' => $this->org->id]);
+        $deptA = TaskAssignmentDepartment::create(['name' => 'A', 'organization_id' => $this->org->id]);
+        $deptB = TaskAssignmentDepartment::create(['name' => 'B', 'organization_id' => $this->org->id]);
 
         $this->service->syncUsers($deptA, [$user->id]);
         $this->service->syncUsers($deptB, [$user->id]);
@@ -41,7 +41,7 @@ class UserMultiDepartmentTest extends TestCase
     public function test_first_attachment_becomes_primary_automatically(): void
     {
         $user = User::factory()->create();
-        $deptA = TaskAssignmentDepartment::create(['code' => 'A', 'name' => 'A', 'organization_id' => $this->org->id]);
+        $deptA = TaskAssignmentDepartment::create(['name' => 'A', 'organization_id' => $this->org->id]);
 
         $this->service->syncUsers($deptA, [$user->id]);
 
@@ -52,8 +52,8 @@ class UserMultiDepartmentTest extends TestCase
     public function test_set_primary_swaps_flag(): void
     {
         $user = User::factory()->create();
-        $deptA = TaskAssignmentDepartment::create(['code' => 'A', 'name' => 'A', 'organization_id' => $this->org->id]);
-        $deptB = TaskAssignmentDepartment::create(['code' => 'B', 'name' => 'B', 'organization_id' => $this->org->id]);
+        $deptA = TaskAssignmentDepartment::create(['name' => 'A', 'organization_id' => $this->org->id]);
+        $deptB = TaskAssignmentDepartment::create(['name' => 'B', 'organization_id' => $this->org->id]);
         $this->service->syncUsers($deptA, [$user->id]);
         $this->service->syncUsers($deptB, [$user->id]);
 
@@ -68,8 +68,8 @@ class UserMultiDepartmentTest extends TestCase
     public function test_remove_primary_promotes_another(): void
     {
         $user = User::factory()->create();
-        $deptA = TaskAssignmentDepartment::create(['code' => 'A', 'name' => 'A', 'organization_id' => $this->org->id]);
-        $deptB = TaskAssignmentDepartment::create(['code' => 'B', 'name' => 'B', 'organization_id' => $this->org->id]);
+        $deptA = TaskAssignmentDepartment::create(['name' => 'A', 'organization_id' => $this->org->id]);
+        $deptB = TaskAssignmentDepartment::create(['name' => 'B', 'organization_id' => $this->org->id]);
         $this->service->syncUsers($deptA, [$user->id]);
         $this->service->syncUsers($deptB, [$user->id]);
 

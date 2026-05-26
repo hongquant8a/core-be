@@ -36,7 +36,7 @@ class ItemResource extends JsonResource
 
                     return [
                         'id' => $dept?->id,
-                        'code' => $dept?->code,
+
                         'name' => $dept?->name,
                         'role' => $group->first()->pivot->department_role,
                     ];

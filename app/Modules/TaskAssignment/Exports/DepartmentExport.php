@@ -20,7 +20,7 @@ class DepartmentExport extends AbstractExcelExport implements FromCollection
             ->values()
             ->map(fn ($dept, $i) => [
                 'stt' => $i + 1,
-                'code' => $dept->code,
+
                 'name' => $dept->name,
                 'description' => $dept->description,
                 'status' => StatusEnum::tryFrom((string) $dept->status)?->label() ?? $dept->status,
@@ -35,6 +35,6 @@ class DepartmentExport extends AbstractExcelExport implements FromCollection
 
     public function headings(): array
     {
-        return ['STT', 'Mã phòng ban', 'Tên phòng ban', 'Mô tả', 'Trạng thái', 'Thứ tự', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
+        return ['STT', 'Tên phòng ban', 'Mô tả', 'Trạng thái', 'Thứ tự', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
     }
 }

@@ -16,7 +16,6 @@ class DepartmentImport implements ToModel, WithHeadingRow, WithValidation, Skips
     use Importable, SkipsFailures, TranslatesExcelHeadings;
 
     public const FIELD_LABELS = [
-        'code' => 'Mã phòng ban',
         'name' => 'Tên phòng ban',
         'description' => 'Mô tả',
         'status' => 'Trạng thái',
@@ -25,14 +24,12 @@ class DepartmentImport implements ToModel, WithHeadingRow, WithValidation, Skips
 
     /** Subset xuất ra template — chỉ field required theo StoreDepartmentRequest. */
     public const TEMPLATE_LABELS = [
-        'code' => 'Mã phòng ban',
         'name' => 'Tên phòng ban',
         'status' => 'Trạng thái',
     ];
 
     /** Ví dụ mẫu — user xóa trước khi nhập data thật. */
     public const TEMPLATE_EXAMPLES = [
-        'code' => 'PB-001',
         'name' => 'Phòng Hành chính (xóa hàng này)',
         'status' => 'active',
     ];
@@ -40,7 +37,6 @@ class DepartmentImport implements ToModel, WithHeadingRow, WithValidation, Skips
     public function model(array $row)
     {
         return new TaskAssignmentDepartment([
-            'code' => $row['code'] ?? null,
             'name' => $row['name'] ?? null,
             'description' => $row['description'] ?? null,
             'status' => $row['status'] ?? 'active',
@@ -54,7 +50,6 @@ class DepartmentImport implements ToModel, WithHeadingRow, WithValidation, Skips
     {
         $data = $this->translateHeadings($data);
 
-        $data['code'] = isset($data['code']) ? (string) $data['code'] : null;
         $data['name'] = isset($data['name']) ? (string) $data['name'] : null;
 
         return $data;
@@ -63,7 +58,6 @@ class DepartmentImport implements ToModel, WithHeadingRow, WithValidation, Skips
     public function rules(): array
     {
         return [
-            'code' => 'required|string|max:50|unique:task_assignment_departments,code',
             'name' => 'required|string|max:255',
         ];
     }
@@ -71,10 +65,6 @@ class DepartmentImport implements ToModel, WithHeadingRow, WithValidation, Skips
     public function customValidationMessages(): array
     {
         return [
-            'code.required' => 'Mã phòng ban không được để trống.',
-            'code.string' => 'Mã phòng ban phải là một chuỗi ký tự.',
-            'code.max' => 'Mã phòng ban không được vượt quá 50 ký tự.',
-            'code.unique' => 'Mã phòng ban :input đã tồn tại.',
             'name.required' => 'Tên phòng ban không được để trống.',
             'name.string' => 'Tên phòng ban phải là một chuỗi ký tự.',
             'name.max' => 'Tên phòng ban không được vượt quá 255 ký tự.',
@@ -84,7 +74,6 @@ class DepartmentImport implements ToModel, WithHeadingRow, WithValidation, Skips
     public function customValidationAttributes(): array
     {
         return [
-            'code' => 'Mã phòng ban',
             'name' => 'Tên phòng ban',
             'description' => 'Mô tả',
             'status' => 'Trạng thái',

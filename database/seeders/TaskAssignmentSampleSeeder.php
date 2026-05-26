@@ -48,8 +48,8 @@ class TaskAssignmentSampleSeeder extends Seeder
 
         // 2. Đảm bảo có Phòng ban
         $dept = TaskAssignmentDepartment::firstOrCreate(
-            ['code' => 'TTTH'],
-            ['name' => 'Phòng Thông tin - Tổng hợp', 'status' => 'active', 'organization_id' => 1]
+            ['name' => 'Phòng Thông tin - Tổng hợp'],
+            ['status' => 'active', 'organization_id' => 1]
         );
 
         // 3. Gán User vào module TaskAssignment

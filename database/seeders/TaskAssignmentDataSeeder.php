@@ -67,20 +67,20 @@ class TaskAssignmentDataSeeder extends Seeder
         $now = Carbon::parse('2026-01-15 08:30:00');
         $creatorId = $this->getCategoryCreatorId();
         $departments = [
-            ['code' => 'TTBCXB', 'name' => 'Phòng Tuyên truyền, Báo chí - Xuất bản', 'sort_order' => 1],
-            ['code' => 'TTTH',   'name' => 'Phòng Thông tin - Tổng hợp', 'sort_order' => 2],
-            ['code' => 'DVDTTG', 'name' => 'Phòng Dân vận các CQNN, dân tộc, tôn giáo', 'sort_order' => 3],
-            ['code' => 'VP',     'name' => 'Văn phòng', 'sort_order' => 4],
-            ['code' => 'DTCH',   'name' => 'Phòng đoàn thể và các hội', 'sort_order' => 5],
-            ['code' => 'LLCTLSD', 'name' => 'Phòng Lý luận chính trị, lịch sử Đảng', 'sort_order' => 6],
-            ['code' => 'KGVHVN', 'name' => 'Phòng Khoa giáo, Văn hoá - Văn nghệ', 'sort_order' => 7],
+            ['name' => 'Phòng Tuyên truyền, Báo chí - Xuất bản', 'sort_order' => 1],
+            ['name' => 'Phòng Thông tin - Tổng hợp', 'sort_order' => 2],
+            ['name' => 'Phòng Dân vận các CQNN, dân tộc, tôn giáo', 'sort_order' => 3],
+            ['name' => 'Văn phòng', 'sort_order' => 4],
+            ['name' => 'Phòng đoàn thể và các hội', 'sort_order' => 5],
+            ['name' => 'Phòng Lý luận chính trị, lịch sử Đảng', 'sort_order' => 6],
+            ['name' => 'Phòng Khoa giáo, Văn hoá - Văn nghệ', 'sort_order' => 7],
         ];
 
         foreach ($departments as $i => $dept) {
             $ts = $now->copy()->addMinutes($i * 5);
             $record = TaskAssignmentDepartment::unguarded(fn () => TaskAssignmentDepartment::withoutGlobalScopes()->firstOrCreate(
-                ['code' => $dept['code']],
-                ['name' => $dept['name'], 'status' => 'active', 'sort_order' => $dept['sort_order'], 'organization_id' => 1]
+                ['name' => $dept['name']],
+                ['status' => 'active', 'sort_order' => $dept['sort_order'], 'organization_id' => 1]
             )
             );
             DB::table('task_assignment_departments')->where('id', $record->id)->update([
@@ -134,7 +134,24 @@ class TaskAssignmentDataSeeder extends Seeder
 
     protected function assignUsersToDepartments(): void
     {
-        $this->deptIds = TaskAssignmentDepartment::orderBy('sort_order')->pluck('id', 'code')->all();
+        $departmentCodesToNames = [
+            'TTBCXB' => 'Phòng Tuyên truyền, Báo chí - Xuất bản',
+            'TTTH'   => 'Phòng Thông tin - Tổng hợp',
+            'DVDTTG' => 'Phòng Dân vận các CQNN, dân tộc, tôn giáo',
+            'VP'     => 'Văn phòng',
+            'DTCH'   => 'Phòng đoàn thể và các hội',
+            'LLCTLSD' => 'Phòng Lý luận chính trị, lịch sử Đảng',
+            'KGVHVN' => 'Phòng Khoa giáo, Văn hoá - Văn nghệ',
+        ];
+        
+        $deptNamesToIds = TaskAssignmentDepartment::orderBy('sort_order')->pluck('id', 'name')->all();
+        $this->deptIds = [];
+        foreach ($departmentCodesToNames as $code => $name) {
+            if (isset($deptNamesToIds[$name])) {
+                $this->deptIds[$code] = $deptNamesToIds[$name];
+            }
+        }
+
         $users = User::orderBy('id')->get();
         $orgId = getPermissionsTeamId() ?: Organization::first()?->id;
 

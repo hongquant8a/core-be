@@ -35,7 +35,7 @@ class TaskAssignmentDepartmentService
             'sort_order' => $filters['sort_order'] ?? 'asc',
         ];
 
-        return TaskAssignmentDepartment::select(['id', 'name', 'code', 'description'])->filter($publicFilters)->get();
+        return TaskAssignmentDepartment::select(['id', 'name', 'description'])->filter($publicFilters)->get();
     }
 
     public function stats(array $filters): array

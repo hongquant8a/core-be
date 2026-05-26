@@ -37,7 +37,7 @@ class UserDestroyGuardTest extends TestCase
             'name' => 'IT', 'status' => 'active', 'created_at' => now(), 'updated_at' => now(),
         ]);
         $deptId = DB::table('task_assignment_departments')->insertGetId([
-            'code' => 'D-'.uniqid(), 'name' => 'D', 'status' => 'active',
+            'name' => 'D', 'status' => 'active',
             'created_at' => now(), 'updated_at' => now(),
         ]);
         $document = TaskAssignmentDocument::create([
