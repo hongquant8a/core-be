@@ -10,7 +10,7 @@ class UpdateDepartmentRequest extends BaseRequest
     public function rules(): array
     {
         return [
-            'code' => ['sometimes', 'string', 'max:50', Rule::unique('task_assignment_departments', 'code')->ignore($this->route('taskAssignmentDepartment'))],
+            'code' => ['nullable', 'string', 'max:50', Rule::unique('task_assignment_departments', 'code')->ignore($this->route('taskAssignmentDepartment'))],
             'name' => 'sometimes|string|max:255',
             'description' => 'nullable|string|max:65535',
             'status' => ['sometimes', StatusEnum::rule()],
