@@ -9,7 +9,6 @@ class StoreDepartmentRequest extends BaseRequest
     public function rules(): array
     {
         return [
-            'code' => 'nullable|string|max:50|unique:task_assignment_departments,code',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:65535',
             'status' => ['required', StatusEnum::rule()],
@@ -20,10 +19,6 @@ class StoreDepartmentRequest extends BaseRequest
     public function bodyParameters(): array
     {
         return [
-            'code' => [
-                'description' => 'Mã phòng ban (duy nhất).',
-                'example' => 'PB-KT',
-            ],
             'name' => [
                 'description' => 'Tên phòng ban.',
                 'example' => 'Phòng Kế toán',
