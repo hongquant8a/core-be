@@ -116,7 +116,9 @@ deploy_fe() {
   sudo -u www git reset --hard "origin/$BRANCH"
 
   # pnpm install
+  sudo -u www $PNPM rebuild 2>&1 | tail -1
   log "  [FE] pnpm install..."
+  sudo -u www $PNPM rebuild 2>&1 | tail -1
   sudo rm -rf "${dir}/node_modules" 2>/dev/null || true
   sudo -u www $PNPM install --no-frozen-lockfile  2>&1 | tail -1
 
