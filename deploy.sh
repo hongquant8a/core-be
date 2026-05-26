@@ -117,9 +117,11 @@ deploy_fe() {
 
   # pnpm install
   log "  [FE] pnpm install..."
+  sudo rm -rf "${dir}/node_modules" 2>/dev/null || true
   sudo -u www $PNPM install --no-frozen-lockfile  2>&1 | tail -1
 
   # Build
+  sudo chmod -R 775 "${dir}/dist" 2>/dev/null || true
   log "  [FE] Building..."
   sudo rm -rf "${dir}/dist"
   sudo rm -f "${dir}/.eslintrc-auto-import.json"
