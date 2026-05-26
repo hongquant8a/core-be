@@ -95,6 +95,10 @@ deploy_be() {
   sudo -u quandh $PHP_BIN artisan seed:cleanup-obsolete --ansi 2>&1 | tail -2
   sudo -u quandh $PHP_BIN artisan optimize 2>/dev/null || true
 
+  log "  [BE] Fixing storage permissions..."
+  sudo chown -R www:www "${dir}/storage" "${dir}/bootstrap/cache" 2>/dev/null || true
+  sudo chmod -R 775 "${dir}/storage" "${dir}/bootstrap/cache" 2>/dev/null || true
+
   log "  [BE] ${site} ✅"
 }
 
