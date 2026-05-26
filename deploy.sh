@@ -65,35 +65,35 @@ deploy_be() {
   sudo chattr -i "${dir}/public/.user.ini" 2>/dev/null || true
 
   # Stash local changes & switch to target branch
-  sudo -u www git clean -fd 2>/dev/null || true
+  sudo -u quandh git clean -fd 2>/dev/null || true
   # If repo is corrupted, re-clone
-  sudo -u www git fsck 2>&1 | grep -q "error|corrupt" && { log "  [FE] Repo corrupted, re-cloning..."; sudo rm -rf "${dir}" && sudo -u www git clone --branch "$BRANCH" "$REPO_URL" "${dir}" && return 0; } || true
-  sudo -u www git fetch origin "$BRANCH" 2>&1 | tail -1
-  sudo -u www git checkout -f "$BRANCH"
+  sudo -u quandh git fsck 2>&1 | grep -q "error|corrupt" && { log "  [FE] Repo corrupted, re-cloning..."; sudo rm -rf "${dir}" && sudo -u quandh git clone --branch "$BRANCH" "$REPO_URL" "${dir}" && return 0; } || true
+  sudo -u quandh git fetch origin "$BRANCH" 2>&1 | tail -1
+  sudo -u quandh git checkout -f "$BRANCH"
   sudo chattr -i "${dir}/public/.user.ini" 2>/dev/null || true
-  sudo -u www git reset --hard "origin/$BRANCH"
+  sudo -u quandh git reset --hard "origin/$BRANCH"
 
   # Composer install (only if lock changed — fast path: always check)
   log "  [BE] Composer install..."
-  sudo -u www $COMPOSER install --no-dev --no-interaction --prefer-dist --optimize-autoloader --ignore-platform-req=php --ansi 2>&1 || log "  [BE] Composer install had warnings (continuing...)"
+  sudo -u quandh $COMPOSER install --no-dev --no-interaction --prefer-dist --optimize-autoloader --ignore-platform-req=php --ansi 2>&1 || log "  [BE] Composer install had warnings (continuing...)"
 
   # Artisan commands
   log "  [BE] Running artisan commands..."
-  sudo -u www $PHP_BIN artisan optimize:clear 2>/dev/null || true
+  sudo -u quandh $PHP_BIN artisan optimize:clear 2>/dev/null || true
   # Fix open_basedir (aaPanel resets .user.ini)
   local ini="${dir}/public/.user.ini"
   echo "open_basedir=${dir%/backend}/:/tmp/" | sudo tee "$ini" > /dev/null
   sudo chattr +i "$ini" 2>/dev/null || true
-  sudo -u www $PHP_BIN artisan migrate --force 2>&1 | grep -E "DONE|Nothing"
+  sudo -u quandh $PHP_BIN artisan migrate --force 2>&1 | grep -E "DONE|Nothing"
 
   # Seed (add data, NOT fresh — seeder checks duplicates)
   log "  [BE] Running seeders..."
-  sudo -u www $PHP_BIN artisan db:seed --force --ansi 2>&1 | grep -E "DONE|Seeding" | tail -3
+  sudo -u quandh $PHP_BIN artisan db:seed --force --ansi 2>&1 | grep -E "DONE|Seeding" | tail -3
 
   # Cleanup orphan permissions/settings
   log "  [BE] Cleanup obsolete..."
-  sudo -u www $PHP_BIN artisan seed:cleanup-obsolete --ansi 2>&1 | tail -2
-  sudo -u www $PHP_BIN artisan optimize 2>/dev/null || true
+  sudo -u quandh $PHP_BIN artisan seed:cleanup-obsolete --ansi 2>&1 | tail -2
+  sudo -u quandh $PHP_BIN artisan optimize 2>/dev/null || true
 
   log "  [BE] ${site} ✅"
 }
@@ -111,27 +111,27 @@ deploy_fe() {
   sudo chattr -i "${dir}/public/.user.ini" 2>/dev/null || true
 
   # Stash & switch
-  sudo -u www git clean -fd 2>/dev/null || true
+  sudo -u quandh git clean -fd 2>/dev/null || true
   # If repo is corrupted, re-clone
-  sudo -u www git fsck 2>&1 | grep -q "error|corrupt" && { log "  [FE] Repo corrupted, re-cloning..."; sudo rm -rf "${dir}" && sudo -u www git clone --branch "$BRANCH" "$REPO_URL" "${dir}" && return 0; } || true
-  sudo -u www git fetch origin "$BRANCH" 2>&1 | tail -1
-  sudo -u www git checkout -f "$BRANCH"
+  sudo -u quandh git fsck 2>&1 | grep -q "error|corrupt" && { log "  [FE] Repo corrupted, re-cloning..."; sudo rm -rf "${dir}" && sudo -u quandh git clone --branch "$BRANCH" "$REPO_URL" "${dir}" && return 0; } || true
+  sudo -u quandh git fetch origin "$BRANCH" 2>&1 | tail -1
+  sudo -u quandh git checkout -f "$BRANCH"
   sudo chattr -i "${dir}/public/.user.ini" 2>/dev/null || true
-  sudo -u www git reset --hard "origin/$BRANCH"
+  sudo -u quandh git reset --hard "origin/$BRANCH"
 
   # pnpm install
-  sudo -u www $PNPM rebuild 2>&1 | tail -1
+  sudo -u quandh $PNPM rebuild 2>&1 | tail -1
   log "  [FE] pnpm install..."
-  sudo -u www $PNPM rebuild 2>&1 | tail -1
+  sudo -u quandh $PNPM rebuild 2>&1 | tail -1
   sudo rm -rf "${dir}/node_modules" 2>/dev/null || true
-  sudo -u www $PNPM install --no-frozen-lockfile  2>&1 | tail -1
+  sudo -u quandh $PNPM install --no-frozen-lockfile  2>&1 | tail -1
 
   # Build
   sudo chmod -R 775 "${dir}/dist" 2>/dev/null || true
   log "  [FE] Building..."
   sudo rm -rf "${dir}/dist"
   sudo rm -f "${dir}/.eslintrc-auto-import.json"
-  sudo -u www $PNPM run build 2>&1 | tail -3
+  sudo -u quandh $PNPM run build 2>&1 | tail -3
 
   log "  [FE] ${site} ✅"
 }
