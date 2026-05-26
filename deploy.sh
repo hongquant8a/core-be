@@ -65,7 +65,9 @@ deploy_be() {
   sudo chattr -i "${dir}/public/.user.ini" 2>/dev/null || true
 
   # Stash local changes & switch to target branch
-  sudo -u www git stash --include-untracked 2>/dev/null || true
+  sudo -u www git clean -fd 2>/dev/null || true
+  # If repo is corrupted, re-clone
+  sudo -u www git fsck 2>&1 | grep -q "error|corrupt" && { log "  [FE] Repo corrupted, re-cloning..."; sudo rm -rf "${dir}" && sudo -u www git clone --branch "$BRANCH" "$REPO_URL" "${dir}" && return 0; } || true
   sudo -u www git fetch origin "$BRANCH" 2>&1 | tail -1
   sudo -u www git checkout -f "$BRANCH"
   sudo chattr -i "${dir}/public/.user.ini" 2>/dev/null || true
@@ -109,7 +111,9 @@ deploy_fe() {
   sudo chattr -i "${dir}/public/.user.ini" 2>/dev/null || true
 
   # Stash & switch
-  sudo -u www git stash --include-untracked 2>/dev/null || true
+  sudo -u www git clean -fd 2>/dev/null || true
+  # If repo is corrupted, re-clone
+  sudo -u www git fsck 2>&1 | grep -q "error|corrupt" && { log "  [FE] Repo corrupted, re-cloning..."; sudo rm -rf "${dir}" && sudo -u www git clone --branch "$BRANCH" "$REPO_URL" "${dir}" && return 0; } || true
   sudo -u www git fetch origin "$BRANCH" 2>&1 | tail -1
   sudo -u www git checkout -f "$BRANCH"
   sudo chattr -i "${dir}/public/.user.ini" 2>/dev/null || true
