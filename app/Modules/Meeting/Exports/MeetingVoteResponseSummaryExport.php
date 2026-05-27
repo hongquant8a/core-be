@@ -11,7 +11,7 @@ use Maatwebsite\Excel\Concerns\FromCollection;
  * Xuất tổng hợp biểu quyết — mỗi row = 1 topic + đếm số phiếu theo option.
  * Filter: meeting_id (export tất cả topic của 1 meeting) hoặc meeting_vote_topic_id (1 topic).
  *
- * Columns: STT, Nội dung biểu quyết, Đồng ý, Không đồng ý, Ý kiến khác.
+ * Columns: STT, Nội dung biểu quyết, Đồng ý / Tán thành, Không đồng ý / Không tán thành, Không ý kiến.
  */
 class MeetingVoteResponseSummaryExport extends AbstractExcelExport implements FromCollection
 {
@@ -55,6 +55,6 @@ class MeetingVoteResponseSummaryExport extends AbstractExcelExport implements Fr
 
     public function headings(): array
     {
-        return ['STT', 'Nội dung biểu quyết', 'Đồng ý', 'Không đồng ý', 'Ý kiến khác'];
+        return ['STT', 'Nội dung biểu quyết', 'Đồng ý / Tán thành', 'Không đồng ý / Không tán thành', 'Không ý kiến'];
     }
 }

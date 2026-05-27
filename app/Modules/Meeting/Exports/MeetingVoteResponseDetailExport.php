@@ -57,9 +57,11 @@ class MeetingVoteResponseDetailExport extends AbstractExcelExport implements Fro
     private function optionLabel(?string $option): string
     {
         return match ($option) {
-            'agree', 'approve' => 'Đồng ý',
-            'disagree', 'reject' => 'Không đồng ý',
-            'abstain' => 'Ý kiến khác',
+            'approve' => 'Tán thành',
+            'reject' => 'Không tán thành',
+            'agree' => 'Đồng ý',
+            'disagree' => 'Không đồng ý',
+            'abstain' => 'Không ý kiến',
             default => (string) $option,
         };
     }
