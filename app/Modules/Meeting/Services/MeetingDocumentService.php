@@ -33,11 +33,7 @@ class MeetingDocumentService
                     $mq->where('is_public', true)
                         ->whereIn('status', ['published', 'completed']);
                 }))
-            ->when($isParticipant && $meetingId, fn ($q) => $q->where('meeting_id', $meetingId))
-            ->when(! $isParticipant && $meetingId, fn ($q) => $q->where('meeting_id', $meetingId))
-            ->when($filters['search'] ?? null, fn ($q, $search) => $q->where('title', 'like', '%'.$search.'%'))
-            ->orderBy('sort_order')
-            ->orderByDesc('created_at')
+            ->filter($filters)
             ->paginate($limit);
     }
 
