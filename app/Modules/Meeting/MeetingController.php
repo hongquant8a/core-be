@@ -217,9 +217,8 @@ class MeetingController extends Controller
     }
 
     /**
-     * Kết thúc cuộc họp sớm — operator bấm khi muốn finalize phiên họp trước end_time
-     * dự kiến. BE set `end_time = now()`; FE phase tự derive thành "finished".
-     * Đã quá end_time → 422 (không cần kết thúc sớm).
+     * Kết thúc cuộc họp — operator bấm khi muốn kết thúc phiên họp.
+     * BE set `status = completed`. Các hành động như điểm danh, biểu quyết sẽ bị khóa.
      *
      * @urlParam meeting integer required ID cuộc họp. Example: 1
      */
@@ -228,6 +227,18 @@ class MeetingController extends Controller
         $item = $this->meetingService->endEarly($meeting);
 
         return $this->successResource(new MeetingResource($item), 'Đã kết thúc cuộc họp.');
+    }
+
+    /**
+     * Mở lại cuộc họp — Đổi trạng thái từ completed về published.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     */
+    public function reopen(Meeting $meeting)
+    {
+        $item = $this->meetingService->reopen($meeting);
+
+        return $this->successResource(new MeetingResource($item), 'Mở lại cuộc họp thành công!');
     }
 
     /**

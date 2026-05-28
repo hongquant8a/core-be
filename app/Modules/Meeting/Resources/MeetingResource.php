@@ -19,6 +19,7 @@ class MeetingResource extends JsonResource
             'meeting_type_name' => $this->meetingType?->name,
             'meeting_location_id' => $this->meeting_location_id,
             'meeting_location_name' => $this->meetingLocation?->name,
+            'meeting_location_google_maps_url' => $this->meetingLocation?->google_maps_url,
             'chairperson_meeting_attendee_id' => $this->chairperson_meeting_attendee_id,
             'chairperson' => $this->chairperson_meeting_attendee_id && $this->chairperson ? [
                 'id' => $this->chairperson->id,

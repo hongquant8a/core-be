@@ -87,8 +87,8 @@ deploy_be() {
   sudo -u quandh $PHP_BIN artisan migrate --force 2>&1 | grep -E "DONE|Nothing"
 
   # Seed (add data, NOT fresh — seeder checks duplicates)
-  log "  [BE] Running seeders..."
-  sudo -u quandh $PHP_BIN artisan db:seed --force --ansi 2>&1 | grep -E "DONE|Seeding" | tail -3
+  # log "  [BE] Running seeders..."
+  # sudo -u quandh $PHP_BIN artisan db:seed --force --ansi 2>&1 | grep -E "DONE|Seeding" | tail -3
 
   # Cleanup orphan permissions/settings
   log "  [BE] Cleanup obsolete..."

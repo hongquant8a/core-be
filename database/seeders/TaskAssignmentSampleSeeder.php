@@ -24,7 +24,7 @@ class TaskAssignmentSampleSeeder extends Seeder
         }
 
         // 1. Tạo/Cập nhật Users
-        $admin = User::updateOrCreate(
+        $admin = User::firstOrCreate(
             ['email' => 'admin@example.com'],
             [
                 'name' => 'Quản lý Mẫu',
@@ -33,7 +33,7 @@ class TaskAssignmentSampleSeeder extends Seeder
             ]
         );
 
-        $staff = User::updateOrCreate(
+        $staff = User::firstOrCreate(
             ['email' => 'nhanvien@example.com'],
             [
                 'name' => 'Nhân viên Mẫu',
@@ -53,21 +53,21 @@ class TaskAssignmentSampleSeeder extends Seeder
         );
 
         // 3. Gán User vào module TaskAssignment
-        TaskAssignmentUser::updateOrCreate(
+        TaskAssignmentUser::firstOrCreate(
             ['user_id' => $admin->id, 'organization_id' => 1],
             ['task_assignment_department_id' => $dept->id, 'status' => 'active']
         );
 
-        TaskAssignmentUser::updateOrCreate(
+        TaskAssignmentUser::firstOrCreate(
             ['user_id' => $staff->id, 'organization_id' => 1],
             ['task_assignment_department_id' => $dept->id, 'status' => 'active']
         );
 
-        // 4. Tạo dữ liệu công việc mẫu (Dùng updateOrCreate để không bị trùng khi chạy lại)
+        // 4. Tạo dữ liệu công việc mẫu (Dùng firstOrCreate để không bị trùng khi chạy lại)
         $type = TaskAssignmentType::firstOrCreate(['name' => 'Thường trực Thành ủy giao'], ['organization_id' => 1]);
         $itemType = TaskAssignmentItemType::firstOrCreate(['name' => 'Soạn thảo văn bản'], ['organization_id' => 1]);
 
-        $doc = TaskAssignmentDocument::updateOrCreate(
+        $doc = TaskAssignmentDocument::firstOrCreate(
             ['name' => 'Văn bản test điều chuyển'],
             [
                 'summary' => 'Văn bản dùng để test tính năng transfer',
@@ -80,7 +80,7 @@ class TaskAssignmentSampleSeeder extends Seeder
             ]
         );
 
-        $item = TaskAssignmentItem::updateOrCreate(
+        $item = TaskAssignmentItem::firstOrCreate(
             ['name' => 'Việc cần điều chuyển', 'task_assignment_document_id' => $doc->id],
             [
                 'description' => 'Công việc này đang giao cho nhân viên mẫu, hãy thử điều chuyển sang admin hoặc người khác',

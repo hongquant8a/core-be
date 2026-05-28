@@ -81,17 +81,17 @@ class MeetingService
         $query->reorder()
             ->orderByRaw("
                 CASE
-                    WHEN status != 'cancelled' AND start_time <= NOW() AND (end_time IS NULL OR end_time > NOW()) THEN 0
-                    WHEN status != 'cancelled' AND start_time > NOW() THEN 1
+                    WHEN status = 'published' AND start_time <= NOW() THEN 0
+                    WHEN status = 'published' AND start_time > NOW() THEN 1
                     ELSE 2
                 END ASC
             ")
             ->orderByRaw("
                 CASE
-                    WHEN status != 'cancelled' AND start_time <= NOW() AND (end_time IS NULL OR end_time > NOW()) THEN start_time
+                    WHEN status = 'published' AND start_time <= NOW() THEN start_time
                 END ASC
             ")
-            ->orderByRaw("CASE WHEN status != 'cancelled' AND start_time > NOW() THEN start_time END ASC")
+            ->orderByRaw("CASE WHEN status = 'published' AND start_time > NOW() THEN start_time END ASC")
             ->orderBy('start_time', 'desc');
 
         return $query->paginate($limit);
@@ -218,6 +218,7 @@ class MeetingService
             'total' => (clone $base)->count(),
             'published' => (clone $base)->where('status', MeetingStatusEnum::Published->value)->count(),
             'draft' => (clone $base)->where('status', MeetingStatusEnum::Draft->value)->count(),
+            'completed' => (clone $base)->where('status', MeetingStatusEnum::Completed->value)->count(),
         ];
     }
 
@@ -246,12 +247,12 @@ class MeetingService
 
         return [
             'total' => (clone $base)->count(),
-            'upcoming' => (clone $base)->where('start_time', '>', $now)->count(),
+            'upcoming' => (clone $base)->where('status', MeetingStatusEnum::Published->value)->where('start_time', '>', $now)->count(),
             'in_progress' => (clone $base)
+                ->where('status', MeetingStatusEnum::Published->value)
                 ->where('start_time', '<=', $now)
-                ->where(fn ($q) => $q->whereNull('end_time')->orWhere('end_time', '>=', $now))
                 ->count(),
-            'finished' => (clone $base)->whereNotNull('end_time')->where('end_time', '<', $now)->count(),
+            'finished' => (clone $base)->where('status', MeetingStatusEnum::Completed->value)->count(),
         ];
     }
 
@@ -543,20 +544,24 @@ class MeetingService
     }
 
     /**
-     * Operator kết thúc cuộc họp sớm — set end_time = now() để FE phase derive thành "finished".
-     * Chặn override khi đã quá end_time dự kiến (tránh thay đổi data lịch sử).
+     * Operator kết thúc cuộc họp — set status = completed.
+     * Hóa các hành động (khóa điểm danh, biểu quyết, thảo luận...).
      */
     public function endEarly(Meeting $meeting): Meeting
     {
-        if ($meeting->end_time !== null && $meeting->end_time->lte(now())) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'end_time' => ['Cuộc họp đã quá giờ kết thúc dự kiến — không cần kết thúc sớm.'],
-            ]);
-        }
-
-        $meeting->update(['end_time' => now()]);
+        $meeting->update(['status' => MeetingStatusEnum::Completed->value]);
 
         broadcast(new \App\Modules\Meeting\Events\MeetingEndedEarly($meeting))->toOthers();
+
+        return $meeting->load(['meetingType', 'meetingLocation', 'chairperson.user', 'operator.user']);
+    }
+
+    /**
+     * Operator mở lại cuộc họp — set status = published.
+     */
+    public function reopen(Meeting $meeting): Meeting
+    {
+        $meeting->update(['status' => MeetingStatusEnum::Published->value]);
 
         return $meeting->load(['meetingType', 'meetingLocation', 'chairperson.user', 'operator.user']);
     }

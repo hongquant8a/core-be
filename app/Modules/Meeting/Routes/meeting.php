@@ -50,6 +50,7 @@ Route::put('/{meeting}', [MeetingController::class, 'update'])->middleware('perm
 Route::patch('/{meeting}', [MeetingController::class, 'update'])->middleware('permission:meetings.update,web');
 Route::delete('/{meeting}', [MeetingController::class, 'destroy'])->middleware('permission:meetings.destroy,web');
 Route::patch('/{meeting}/status', [MeetingController::class, 'changeStatus'])->middleware('permission:meetings.changeStatus,web');
+Route::patch('/{meeting}/reopen', [MeetingController::class, 'reopen'])->middleware('permission:meetings.changeStatus,web');
 
 // ───────────────────── 2. In-meeting control (chair/operator) ────────────────────
 
