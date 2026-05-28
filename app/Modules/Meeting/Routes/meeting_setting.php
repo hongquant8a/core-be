@@ -1,6 +1,6 @@
 <?php
 
-use App\Modules\Meeting\MeetingSettingController;
+use App\Modules\Meeting\Controllers\MeetingSettingController;
 use Illuminate\Support\Facades\Route;
 
 // Singleton per org — GET trả config hiện tại, POST/PUT upsert (multipart).

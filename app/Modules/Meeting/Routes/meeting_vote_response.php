@@ -1,6 +1,6 @@
 <?php
 
-use App\Modules\Meeting\MeetingVoteResponseController;
+use App\Modules\Meeting\Controllers\MeetingVoteResponseController;
 use Illuminate\Support\Facades\Route;
 
 // Export — auth-only, không Spatie permission. Gate qua MeetingPolicy::operate (chair/operator).

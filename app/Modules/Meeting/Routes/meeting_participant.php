@@ -1,6 +1,6 @@
 <?php
 
-use App\Modules\Meeting\MeetingParticipantController;
+use App\Modules\Meeting\Controllers\MeetingParticipantController;
 use Illuminate\Support\Facades\Route;
 
 // Flat admin routes — CRUD cấp admin. Self-action `respond` đã DROP, dùng nested

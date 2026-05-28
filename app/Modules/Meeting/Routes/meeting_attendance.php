@@ -1,6 +1,6 @@
 <?php
 
-use App\Modules\Meeting\MeetingAttendanceController;
+use App\Modules\Meeting\Controllers\MeetingAttendanceController;
 use Illuminate\Support\Facades\Route;
 
 /*

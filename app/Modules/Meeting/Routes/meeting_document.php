@@ -1,6 +1,6 @@
 <?php
 
-use App\Modules\Meeting\MeetingDocumentController;
+use App\Modules\Meeting\Controllers\MeetingDocumentController;
 use Illuminate\Support\Facades\Route;
 
 Route::delete('/bulk-delete', [MeetingDocumentController::class, 'bulkDestroy'])->middleware('permission:meeting-documents.bulkDestroy,web');

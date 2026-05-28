@@ -1,6 +1,6 @@
 <?php
 
-use App\Modules\Meeting\MeetingAgendaController;
+use App\Modules\Meeting\Controllers\MeetingAgendaController;
 use Illuminate\Support\Facades\Route;
 
 Route::delete('/bulk-delete', [MeetingAgendaController::class, 'bulkDestroy'])->middleware('permission:meeting-agendas.bulkDestroy,web');

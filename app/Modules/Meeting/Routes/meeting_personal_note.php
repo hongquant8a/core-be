@@ -1,6 +1,6 @@
 <?php
 
-use App\Modules\Meeting\MeetingPersonalNoteController;
+use App\Modules\Meeting\Controllers\MeetingPersonalNoteController;
 use Illuminate\Support\Facades\Route;
 
 Route::delete('/bulk-delete', [MeetingPersonalNoteController::class, 'bulkDestroy'])->middleware('permission:meeting-personal-notes.bulkDestroy,web');

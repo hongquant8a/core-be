@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Modules\Meeting;
+namespace App\Modules\Meeting\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Meeting\Requests\UpdateMeetingSettingRequest;
