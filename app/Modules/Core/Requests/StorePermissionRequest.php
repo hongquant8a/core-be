@@ -34,4 +34,15 @@ class StorePermissionRequest extends FormRequest
     {
         return [];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'name' => 'Tên',
+            'guard_name' => 'Guard',
+            'description' => 'Mô tả',
+            'sort_order' => 'Thứ tự sắp xếp',
+            'parent_id' => 'Đơn vị cha',
+        ];
+    }
 }

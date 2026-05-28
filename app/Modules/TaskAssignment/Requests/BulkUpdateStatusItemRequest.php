@@ -22,4 +22,13 @@ class BulkUpdateStatusItemRequest extends BaseRequest
             'processing_status' => ['description' => 'Trạng thái xử lý mới.', 'example' => TaskProgressStatusEnum::InProgress->value],
         ];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'ids' => 'Danh sách ID',
+            'ids.*' => 'ID',
+            'processing_status' => 'Trạng thái xử lý',
+        ];
+    }
 }

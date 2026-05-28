@@ -33,4 +33,11 @@ class ForgotPasswordRequest extends FormRequest
     {
         return [];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'email' => 'Email',
+        ];
+    }
 }

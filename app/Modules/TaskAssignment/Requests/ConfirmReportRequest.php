@@ -25,4 +25,12 @@ class ConfirmReportRequest extends FormRequest
             'confirm_note.max' => 'Ghi chú xác nhận không được vượt quá 2000 ký tự.',
         ];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'confirm_note' => 'Ghi chú xác nhận',
+            'is_done' => 'Hoàn thành',
+        ];
+    }
 }

@@ -17,4 +17,11 @@ class UpdateNotificationEventConfigRequest extends FormRequest
             'enabled' => 'required|boolean',
         ];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'enabled' => 'Enabled',
+        ];
+    }
 }

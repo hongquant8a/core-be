@@ -10,4 +10,11 @@ class ExportMonthlyReportRequest extends BaseRequest
             'month' => 'nullable|date_format:Y-m',
         ];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'month' => 'Tháng',
+        ];
+    }
 }

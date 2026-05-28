@@ -27,4 +27,12 @@ class UpdateItemProgressRequest extends BaseRequest
             ],
         ];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'processing_status' => 'Trạng thái xử lý',
+            'completion_percent' => 'Phần trăm hoàn thành',
+        ];
+    }
 }

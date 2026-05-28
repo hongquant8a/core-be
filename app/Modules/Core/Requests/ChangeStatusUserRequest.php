@@ -31,4 +31,11 @@ class ChangeStatusUserRequest extends FormRequest
     {
         return [];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'status' => 'Trạng thái',
+        ];
+    }
 }

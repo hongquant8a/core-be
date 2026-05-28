@@ -36,4 +36,11 @@ class SwitchOrganizationRequest extends FormRequest
             ],
         ];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'organization_id' => 'Tổ chức',
+        ];
+    }
 }

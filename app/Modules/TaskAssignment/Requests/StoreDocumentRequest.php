@@ -48,4 +48,17 @@ class StoreDocumentRequest extends BaseRequest
             ],
         ];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'name' => 'Tên',
+            'summary' => 'Summary',
+            'issue_date' => 'Ngày ban hành',
+            'task_assignment_type_id' => 'Task assignment type',
+            'status' => 'Trạng thái',
+            'attachments' => 'Tệp đính kèm',
+            'attachments.*' => 'Tệp đính kèm',
+        ];
+    }
 }

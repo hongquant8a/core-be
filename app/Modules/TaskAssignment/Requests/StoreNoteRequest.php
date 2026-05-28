@@ -10,4 +10,11 @@ class StoreNoteRequest extends BaseRequest
             'content' => 'required|string|max:200',
         ];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'content' => 'Nội dung',
+        ];
+    }
 }

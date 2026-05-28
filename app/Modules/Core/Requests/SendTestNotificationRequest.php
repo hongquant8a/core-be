@@ -37,4 +37,20 @@ class SendTestNotificationRequest extends FormRequest
             'email.email' => 'Email không hợp lệ.',
         ];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'channels' => 'Kênh thông báo',
+            'channels.*' => 'Kênh thông báo',
+            'phone' => 'Số điện thoại',
+            'email' => 'Email',
+            'zalo_id' => 'Zalo',
+            'fcm_token' => 'FCM Token',
+            'name' => 'Tên',
+            'content' => 'Nội dung',
+            'subject' => 'Chủ đề',
+            'context' => 'Context',
+        ];
+    }
 }

@@ -40,4 +40,14 @@ class ResetPasswordRequest extends FormRequest
     {
         return [];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'email' => 'Email',
+            'password' => 'Mật khẩu',
+            'password_confirmation' => 'Xác nhận mật khẩu',
+            'token' => 'Mã xác thực',
+        ];
+    }
 }

@@ -18,4 +18,19 @@ class UpcomingDeadlineRequest extends BaseRequest
             'limit' => 'sometimes|integer|min:1|max:100',
         ];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'days' => 'Số ngày',
+            'department_id' => 'Phòng ban',
+            'user_id' => 'Người dùng',
+            'priority' => 'Mức ưu tiên',
+            'from_date' => 'Từ ngày',
+            'to_date' => 'Đến ngày',
+            'sort_by' => 'Sắp xếp theo',
+            'sort_order' => 'Thứ tự sắp xếp',
+            'limit' => 'Số bản ghi/trang',
+        ];
+    }
 }

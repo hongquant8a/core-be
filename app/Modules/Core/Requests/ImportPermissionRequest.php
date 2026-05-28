@@ -22,4 +22,11 @@ class ImportPermissionRequest extends FormRequest
     {
         return [];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'file' => 'Tệp tin',
+        ];
+    }
 }

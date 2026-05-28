@@ -32,4 +32,13 @@ class UpdateLookupRequest extends BaseRequest
             ],
         ];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'name' => 'Tên',
+            'description' => 'Mô tả',
+            'status' => 'Trạng thái',
+        ];
+    }
 }

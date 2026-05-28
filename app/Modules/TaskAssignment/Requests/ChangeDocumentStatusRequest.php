@@ -22,4 +22,11 @@ class ChangeDocumentStatusRequest extends BaseRequest
             ],
         ];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'status' => 'Trạng thái',
+        ];
+    }
 }

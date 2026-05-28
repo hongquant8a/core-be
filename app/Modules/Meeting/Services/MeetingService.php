@@ -64,7 +64,7 @@ class MeetingService
                 // Branch 1: cuộc họp công khai + đã ban hành.
                 $outer->where(function ($public) {
                     $public->where('is_public', true)
-                        ->where('status', MeetingStatusEnum::Published->value);
+                        ->whereIn('status', [MeetingStatusEnum::Published->value, MeetingStatusEnum::Completed->value]);
                 });
 
                 // Branch 2 (auth): meeting user là chủ trì / thư ký / participant
@@ -185,7 +185,7 @@ class MeetingService
     {
         $isParticipant = $this->shouldSeeAllDocs($meeting);
         $isPublishedPublic = $meeting->is_public
-            && $meeting->status === MeetingStatusEnum::Published->value;
+            && in_array($meeting->status, [MeetingStatusEnum::Published->value, MeetingStatusEnum::Completed->value], true);
 
         if (! $isParticipant && ! $isPublishedPublic) {
             throw new ModelNotFoundException('Không tìm thấy cuộc họp.');
