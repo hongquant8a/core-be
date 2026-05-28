@@ -85,6 +85,7 @@ deploy_be() {
   echo "open_basedir=${dir%/backend}/:/tmp/" | sudo tee "$ini" > /dev/null
   sudo chattr +i "$ini" 2>/dev/null || true
   sudo -u quandh $PHP_BIN artisan migrate --force 2>&1 | grep -E "DONE|Nothing"
+  sudo -u quandh $PHP_BIN artisan horizon:terminate 2>/dev/null || true
 
   # Seed (add data, NOT fresh — seeder checks duplicates)
   # log "  [BE] Running seeders..."
