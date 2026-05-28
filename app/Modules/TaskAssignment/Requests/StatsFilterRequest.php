@@ -21,4 +21,22 @@ class StatsFilterRequest extends BaseRequest
             'limit' => 'sometimes|integer|min:1|max:100',
         ];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'processing_status' => 'Trạng thái xử lý',
+            'priority' => 'Mức ưu tiên',
+            'deadline_type' => 'Loại thời hạn',
+            'from_date' => 'Từ ngày',
+            'to_date' => 'Đến ngày',
+            'task_assignment_item_type_id' => 'Loại công việc',
+            'task_assignment_type_id' => 'Task assignment type',
+            'department_id' => 'Phòng ban',
+            'user_id' => 'Người dùng',
+            'sort_by' => 'Sắp xếp theo',
+            'sort_order' => 'Thứ tự sắp xếp',
+            'limit' => 'Số bản ghi/trang',
+        ];
+    }
 }

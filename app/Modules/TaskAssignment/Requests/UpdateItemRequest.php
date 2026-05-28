@@ -130,4 +130,25 @@ class UpdateItemRequest extends BaseRequest
             ],
         ];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'name' => 'Tên',
+            'description' => 'Mô tả',
+            'task_assignment_item_type_id' => 'Loại công việc',
+            'deadline_type' => 'Loại thời hạn',
+            'start_at' => 'Thời gian bắt đầu',
+            'end_at' => 'Thời gian kết thúc',
+            'processing_status' => 'Trạng thái xử lý',
+            'completion_percent' => 'Phần trăm hoàn thành',
+            'priority' => 'Mức ưu tiên',
+            'users' => 'Danh sách người thực hiện',
+            'users.*' => 'Người thực hiện',
+            'attachments' => 'Tệp đính kèm',
+            'attachments.*' => 'Tệp đính kèm',
+            'remove_attachment_ids' => 'Danh sách tệp xóa',
+            'remove_attachment_ids.*' => 'ID tệp xóa',
+        ];
+    }
 }

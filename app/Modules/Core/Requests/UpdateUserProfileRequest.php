@@ -39,4 +39,16 @@ class UpdateUserProfileRequest extends FormRequest
             'citizen_id.unique' => 'Số CCCD/CMND này đã được sử dụng bởi người dùng khác.',
         ];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'phone' => 'Số điện thoại',
+            'gender' => 'Gender',
+            'birth_date' => 'Ngày sinh',
+            'citizen_id' => 'Citizen',
+            'permanent_address' => 'Địa chỉ thường trú',
+            'temporary_address' => 'Địa chỉ tạm trú',
+        ];
+    }
 }

@@ -54,4 +54,19 @@ class UpdateDocumentRequest extends BaseRequest
             ],
         ];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'name' => 'Tên',
+            'summary' => 'Summary',
+            'issue_date' => 'Ngày ban hành',
+            'task_assignment_type_id' => 'Task assignment type',
+            'status' => 'Trạng thái',
+            'attachments' => 'Tệp đính kèm',
+            'attachments.*' => 'Tệp đính kèm',
+            'remove_attachment_ids' => 'Danh sách tệp xóa',
+            'remove_attachment_ids.*' => 'ID tệp xóa',
+        ];
+    }
 }

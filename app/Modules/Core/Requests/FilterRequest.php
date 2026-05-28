@@ -96,4 +96,17 @@ class FilterRequest extends FormRequest
     {
         return [];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'search' => 'Từ khóa tìm kiếm',
+            'status' => 'Trạng thái',
+            'from_date' => 'Từ ngày',
+            'to_date' => 'Đến ngày',
+            'sort_by' => 'Sắp xếp theo',
+            'sort_order' => 'Thứ tự sắp xếp',
+            'limit' => 'Số bản ghi/trang',
+        ];
+    }
 }

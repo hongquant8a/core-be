@@ -38,4 +38,14 @@ class UpdateDepartmentRequest extends BaseRequest
             ],
         ];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'name' => 'Tên',
+            'description' => 'Mô tả',
+            'status' => 'Trạng thái',
+            'sort_order' => 'Thứ tự sắp xếp',
+        ];
+    }
 }

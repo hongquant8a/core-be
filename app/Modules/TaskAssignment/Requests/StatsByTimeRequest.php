@@ -27,4 +27,15 @@ class StatsByTimeRequest extends BaseRequest
             }
         });
     }
+
+    public function attributes(): array
+    {
+        return [
+            'from_date' => 'Từ ngày',
+            'to_date' => 'Đến ngày',
+            'department_id' => 'Phòng ban',
+            'user_id' => 'Người dùng',
+            'processing_status' => 'Trạng thái xử lý',
+        ];
+    }
 }

@@ -25,4 +25,13 @@ class DocumentStatsByTimeRequest extends BaseRequest
             }
         });
     }
+
+    public function attributes(): array
+    {
+        return [
+            'from_date' => 'Từ ngày',
+            'to_date' => 'Đến ngày',
+            'task_assignment_type_id' => 'Task assignment type',
+        ];
+    }
 }

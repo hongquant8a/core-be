@@ -47,4 +47,18 @@ class UpdateReportRequest extends BaseRequest
             ],
         ];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'completed_at' => 'Thời gian hoàn thành',
+            'report_document_number' => 'Số văn bản báo cáo',
+            'report_document_excerpt' => 'Report document excerpt',
+            'report_document_content' => 'Report document content',
+            'attachments' => 'Tệp đính kèm',
+            'attachments.*' => 'Tệp đính kèm',
+            'remove_attachment_ids' => 'Danh sách tệp xóa',
+            'remove_attachment_ids.*' => 'ID tệp xóa',
+        ];
+    }
 }

@@ -11,4 +11,12 @@ class StoreTransferRequest extends BaseRequest
             'note' => 'nullable|string|max:200',
         ];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'to_user_id' => 'Người nhận',
+            'note' => 'Ghi chú',
+        ];
+    }
 }

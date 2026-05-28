@@ -32,4 +32,12 @@ class DestroyByDateLogActivityRequest extends FormRequest
     {
         return [];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'from_date' => 'Từ ngày',
+            'to_date' => 'Đến ngày',
+        ];
+    }
 }

@@ -22,4 +22,13 @@ class BulkUpdateStatusDocumentRequest extends BaseRequest
             'status' => ['description' => 'Trạng thái mới.', 'example' => TaskAssignmentDocumentStatusEnum::Draft->value],
         ];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'ids' => 'Danh sách ID',
+            'ids.*' => 'ID',
+            'status' => 'Trạng thái',
+        ];
+    }
 }

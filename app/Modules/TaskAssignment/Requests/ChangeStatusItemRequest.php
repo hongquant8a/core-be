@@ -19,4 +19,11 @@ class ChangeStatusItemRequest extends BaseRequest
             'processing_status' => ['description' => 'Trạng thái xử lý mới. KHÔNG chấp nhận `done` — giá trị `done` được tự động set khi báo cáo cuối được xác nhận và khóa.', 'example' => TaskProgressStatusEnum::InProgress->value],
         ];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'processing_status' => 'Trạng thái xử lý',
+        ];
+    }
 }

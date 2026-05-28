@@ -20,4 +20,11 @@ class ImportLookupRequest extends BaseRequest
             ],
         ];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'file' => 'Tệp tin',
+        ];
+    }
 }

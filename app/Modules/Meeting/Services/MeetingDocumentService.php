@@ -31,13 +31,9 @@ class MeetingDocumentService
             ->when(! $isParticipant, fn ($q) => $q->where('is_public', true)
                 ->whereHas('meeting', function ($mq) {
                     $mq->where('is_public', true)
-                        ->where('status', 'published');
+                        ->whereIn('status', ['published', 'completed']);
                 }))
-            ->when($isParticipant && $meetingId, fn ($q) => $q->where('meeting_id', $meetingId))
-            ->when(! $isParticipant && $meetingId, fn ($q) => $q->where('meeting_id', $meetingId))
-            ->when($filters['search'] ?? null, fn ($q, $search) => $q->where('title', 'like', '%'.$search.'%'))
-            ->orderBy('sort_order')
-            ->orderByDesc('created_at')
+            ->filter($filters)
             ->paginate($limit);
     }
 
@@ -55,7 +51,7 @@ class MeetingDocumentService
                 ! $meetingDocument->is_public
                 || ! $meeting
                 || ! $meeting->is_public
-                || $meeting->status !== 'published'
+                || ! in_array($meeting->status, ['published', 'completed'], true)
             ) {
                 throw new ModelNotFoundException('Không tìm thấy tài liệu.');
             }

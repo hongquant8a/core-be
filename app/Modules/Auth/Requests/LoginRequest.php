@@ -44,4 +44,12 @@ class LoginRequest extends FormRequest
             ],
         ];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'email' => 'Email',
+            'password' => 'Mật khẩu',
+        ];
+    }
 }

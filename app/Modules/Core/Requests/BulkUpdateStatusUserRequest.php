@@ -36,4 +36,13 @@ class BulkUpdateStatusUserRequest extends FormRequest
     {
         return [];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'ids' => 'Danh sách ID',
+            'ids.*' => 'ID',
+            'status' => 'Trạng thái',
+        ];
+    }
 }

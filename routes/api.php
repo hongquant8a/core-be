@@ -48,6 +48,7 @@ Route::prefix('public')->middleware('log.activity')->group(function () {
 
     // Meetings — list + stats + show
     Route::get('/meetings', [\App\Modules\Meeting\MeetingController::class, 'public']);
+    Route::get('/meetings/document-tree', [\App\Modules\Meeting\MeetingController::class, 'publicDocumentTree']);
     Route::get('/meetings/stats', [\App\Modules\Meeting\MeetingController::class, 'publicStats']);
     Route::get('/meetings/{meeting}', [\App\Modules\Meeting\MeetingController::class, 'publicShow'])->middleware('count.meeting.view');
 

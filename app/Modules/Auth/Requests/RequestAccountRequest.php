@@ -48,4 +48,14 @@ class RequestAccountRequest extends FormRequest
             'content' => ['description' => 'Nội dung yêu cầu mở tài khoản.', 'example' => 'Xin mở tài khoản phòng X...'],
         ];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'full_name' => 'Full name',
+            'phone' => 'Số điện thoại',
+            'email' => 'Email',
+            'content' => 'Nội dung',
+        ];
+    }
 }

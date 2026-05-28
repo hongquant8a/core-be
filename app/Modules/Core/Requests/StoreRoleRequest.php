@@ -32,4 +32,14 @@ class StoreRoleRequest extends FormRequest
     {
         return [];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'name' => 'Tên',
+            'guard_name' => 'Guard',
+            'permission_ids' => 'Danh sách quyền',
+            'permission_ids.*' => 'ID quyền',
+        ];
+    }
 }

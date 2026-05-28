@@ -51,4 +51,16 @@ class UpdateOrganizationRequest extends FormRequest
     {
         return [];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'name' => 'Tên',
+            'slug' => 'Đường dẫn tĩnh',
+            'description' => 'Mô tả',
+            'status' => 'Trạng thái',
+            'parent_id' => 'Đơn vị cha',
+            'sort_order' => 'Thứ tự sắp xếp',
+        ];
+    }
 }

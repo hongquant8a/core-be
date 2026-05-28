@@ -26,4 +26,12 @@ class SsoExchangeRequest extends FormRequest
             'code.required' => 'Thiếu authorization code.',
         ];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'provider' => 'Nhà cung cấp',
+            'code' => 'Mã',
+        ];
+    }
 }

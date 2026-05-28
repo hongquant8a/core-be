@@ -22,4 +22,16 @@ class StoreNotificationScheduleRequest extends FormRequest
             'sort_order' => 'integer',
         ];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'moment' => 'Moment',
+            'offset_minutes' => 'Nhắc trước (phút)',
+            'channels' => 'Kênh thông báo',
+            'channels.*' => 'Kênh thông báo',
+            'label' => 'Nhãn',
+            'sort_order' => 'Thứ tự sắp xếp',
+        ];
+    }
 }

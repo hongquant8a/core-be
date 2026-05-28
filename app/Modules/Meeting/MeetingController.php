@@ -47,6 +47,27 @@ class MeetingController extends Controller
     }
 
     /**
+     * Danh sách cuộc họp công khai kèm cây tài liệu (Document Tree).
+     *
+     * @unauthenticated
+     * @queryParam search string Từ khóa tìm kiếm theo tiêu đề. Example: họp giao ban
+     * @queryParam meeting_type_id integer Lọc theo loại cuộc họp. Example: 1
+     * @queryParam status string Lọc theo trạng thái cuộc họp. Example: published
+     * @queryParam from_date date Lọc từ ngày tạo (Y-m-d). Example: 2026-05-01
+     * @queryParam to_date date Lọc đến ngày tạo (Y-m-d). Example: 2026-05-31
+     * @queryParam sort_by string Sắp xếp theo trường. Example: start_time
+     * @queryParam sort_order string Thứ tự sắp xếp (asc/desc). Example: desc
+     * @queryParam limit integer Số bản ghi mỗi trang. Example: 100
+     */
+    public function publicDocumentTree(FilterRequest $request)
+    {
+        $meetings = $this->meetingService->publicIndex($request->all(), (int) ($request->limit ?? 100));
+
+        return $this->successCollection(\App\Modules\Meeting\Resources\MeetingDocumentTreeResource::collection($meetings));
+    }
+
+    /**
+
      * Chi tiết cuộc họp công khai.
      *
      * @unauthenticated

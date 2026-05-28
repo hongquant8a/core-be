@@ -21,4 +21,12 @@ class BulkDestroyDocumentRequest extends BaseRequest
             ],
         ];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'ids' => 'Danh sách ID',
+            'ids.*' => 'ID',
+        ];
+    }
 }

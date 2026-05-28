@@ -26,4 +26,12 @@ class CbccvcLoginRequest extends FormRequest
             'password.required' => 'Mật khẩu không được để trống.',
         ];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'username' => 'Username',
+            'password' => 'Mật khẩu',
+        ];
+    }
 }
