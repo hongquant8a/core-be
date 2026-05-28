@@ -74,25 +74,28 @@ class MeetingService
                 }
             });
 
-        // Sort cố định cho list đại biểu — 3 bucket, override sort_by từ FE (business logic).
-        //   1. Đang diễn ra: start <= now AND (end IS NULL OR end > now) (loại trừ đã hủy) — ưu tiên cao nhất.
-        //   2. Sắp diễn ra: start > now (loại trừ đã hủy) — ASC (gần now nhất trước).
-        //   3. Còn lại (Đã kết thúc, Đã hủy): order theo ngày bình thường — DESC (mới nhất trước).
-        $query->reorder()
-            ->orderByRaw("
-                CASE
-                    WHEN status = 'published' AND start_time <= NOW() THEN 0
-                    WHEN status = 'published' AND start_time > NOW() THEN 1
-                    ELSE 2
-                END ASC
-            ")
-            ->orderByRaw("
-                CASE
-                    WHEN status = 'published' AND start_time <= NOW() THEN start_time
-                END ASC
-            ")
-            ->orderByRaw("CASE WHEN status = 'published' AND start_time > NOW() THEN start_time END ASC")
-            ->orderBy('start_time', 'desc');
+        // Nếu FE không truyền sort_by -> Áp dụng Bucket Sort mặc định.
+        // Nếu FE truyền sort_by (ví dụ: start_time desc) -> Bỏ qua Bucket Sort, dùng sort từ FE.
+        if (empty($filters['sort_by'])) {
+            $query->reorder()
+                // 3 bucket: 0 = Đang diễn ra, 1 = Sắp diễn ra, 2 = Đã kết thúc
+                // Đang diễn ra: status = published, start_time <= NOW và (end_time IS NULL hoặc end_time > NOW)
+                // Sắp diễn ra: status = published và start_time > NOW
+                // Đã kết thúc: status = completed hoặc (status = published và end_time <= NOW)
+                ->orderByRaw("
+                    CASE
+                        WHEN status = 'published' AND start_time <= NOW() AND (end_time IS NULL OR end_time > NOW()) THEN 0
+                        WHEN status = 'published' AND start_time > NOW() THEN 1
+                        ELSE 2
+                    END ASC
+                ")
+                // Đang diễn ra: cái nào bắt đầu gần NOW nhất trước (DESC)
+                ->orderByRaw("CASE WHEN status = 'published' AND start_time <= NOW() AND (end_time IS NULL OR end_time > NOW()) THEN start_time END DESC")
+                // Sắp diễn ra: cái nào sắp đến gần nhất trước (ASC)
+                ->orderByRaw("CASE WHEN status = 'published' AND start_time > NOW() THEN start_time END ASC")
+                // Đã kết thúc: vừa kết thúc gần nhất trước (DESC)
+                ->orderByRaw("CASE WHEN status = 'completed' OR (status = 'published' AND end_time <= NOW()) THEN start_time END DESC");
+        }
 
         return $query->paginate($limit);
     }
