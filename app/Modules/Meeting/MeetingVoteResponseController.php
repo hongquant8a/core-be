@@ -160,7 +160,7 @@ class MeetingVoteResponseController extends Controller
      * Auth-only, không qua Spatie permission. Gate qua MeetingPolicy::operate.
      * Filter: meeting_id (tất cả topic của 1 meeting) HOẶC meeting_vote_topic_id (1 topic).
      *
-     * Xuất ra các trường: STT, Nội dung biểu quyết, Đồng ý, Không đồng ý, Ý kiến khác.
+     * Xuất ra các trường: STT, Nội dung biểu quyết, Đồng ý, Không đồng ý, Không ý kiến.
      *
      * @queryParam meeting_id integer ID cuộc họp. Example: 1
      * @queryParam meeting_vote_topic_id integer ID phiên biểu quyết (chỉ 1 topic). Example: 1

@@ -11,6 +11,7 @@ enum MeetingStatusEnum: string
     case Draft = 'draft';
     case Published = 'published';
     case Cancelled = 'cancelled';
+    case Completed = 'completed';
 
     public static function values(): array
     {
@@ -28,6 +29,7 @@ enum MeetingStatusEnum: string
             self::Draft => 'Bản nháp',
             self::Published => 'Đã công bố',
             self::Cancelled => 'Đã hủy',
+            self::Completed => 'Đã kết thúc',
         };
     }
 }

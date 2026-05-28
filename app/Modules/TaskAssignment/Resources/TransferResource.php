@@ -20,7 +20,7 @@ class TransferResource extends JsonResource
             'transferred_by' => $this->whenLoaded('transferredBy', fn () => $this->formatUserSummary($this->transferredBy)),
             'department' => $this->whenLoaded('department', fn () => [
                 'id' => $this->department?->id,
-                'code' => $this->department?->code,
+
                 'name' => $this->department?->name,
             ]),
             'transferred_at' => $this->transferred_at?->format('H:i:s d/m/Y'),

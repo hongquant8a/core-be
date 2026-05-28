@@ -78,6 +78,11 @@ class MeetingDocument extends TenantModel implements HasMedia
         $this->addMediaCollection('meeting-document-attachments');
     }
 
+    public function views()
+    {
+        return $this->hasMany(MeetingView::class, 'meeting_document_id');
+    }
+
     public function scopeFilter($query, array $filters)
     {
         $query->when($filters['meeting_id'] ?? null, fn ($q, $meetingId) => $q->where('meeting_id', $meetingId))

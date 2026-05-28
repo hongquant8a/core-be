@@ -118,7 +118,7 @@ class MeetingMinutesGenerator
                 'v_topic' => 'Nội dung biểu quyết',
                 'v_agree' => 'Số phiếu tán thành',
                 'v_disagree' => 'Số phiếu không tán thành',
-                'v_abstain' => 'Số phiếu không biểu quyết / ý kiến khác',
+                'v_abstain' => 'Số phiếu không biểu quyết / không ý kiến',
                 'v_rate' => 'Tỷ lệ tán thành (%)',
                 'v_result' => 'Kết quả (Thông qua / Không thông qua)',
             ],

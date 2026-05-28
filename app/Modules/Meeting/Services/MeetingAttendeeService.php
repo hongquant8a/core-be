@@ -28,6 +28,10 @@ class MeetingAttendeeService
 
     public function index(array $filters, int $limit)
     {
+        if ($limit === -1) {
+            $limit = 1000000;
+        }
+
         return MeetingAttendee::with(['groups', 'creator.media', 'editor.media'])
             ->filter($filters)
             ->paginate($limit);

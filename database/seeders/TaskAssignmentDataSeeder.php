@@ -67,20 +67,20 @@ class TaskAssignmentDataSeeder extends Seeder
         $now = Carbon::parse('2026-01-15 08:30:00');
         $creatorId = $this->getCategoryCreatorId();
         $departments = [
-            ['code' => 'TTBCXB', 'name' => 'Phòng Tuyên truyền, Báo chí - Xuất bản', 'sort_order' => 1],
-            ['code' => 'TTTH',   'name' => 'Phòng Thông tin - Tổng hợp', 'sort_order' => 2],
-            ['code' => 'DVDTTG', 'name' => 'Phòng Dân vận các CQNN, dân tộc, tôn giáo', 'sort_order' => 3],
-            ['code' => 'VP',     'name' => 'Văn phòng', 'sort_order' => 4],
-            ['code' => 'DTCH',   'name' => 'Phòng đoàn thể và các hội', 'sort_order' => 5],
-            ['code' => 'LLCTLSD', 'name' => 'Phòng Lý luận chính trị, lịch sử Đảng', 'sort_order' => 6],
-            ['code' => 'KGVHVN', 'name' => 'Phòng Khoa giáo, Văn hoá - Văn nghệ', 'sort_order' => 7],
+            ['name' => 'Phòng Tuyên truyền, Báo chí - Xuất bản', 'sort_order' => 1],
+            ['name' => 'Phòng Thông tin - Tổng hợp', 'sort_order' => 2],
+            ['name' => 'Phòng Dân vận các CQNN, dân tộc, tôn giáo', 'sort_order' => 3],
+            ['name' => 'Văn phòng', 'sort_order' => 4],
+            ['name' => 'Phòng đoàn thể và các hội', 'sort_order' => 5],
+            ['name' => 'Phòng Lý luận chính trị, lịch sử Đảng', 'sort_order' => 6],
+            ['name' => 'Phòng Khoa giáo, Văn hoá - Văn nghệ', 'sort_order' => 7],
         ];
 
         foreach ($departments as $i => $dept) {
             $ts = $now->copy()->addMinutes($i * 5);
             $record = TaskAssignmentDepartment::unguarded(fn () => TaskAssignmentDepartment::withoutGlobalScopes()->firstOrCreate(
-                ['code' => $dept['code']],
-                ['name' => $dept['name'], 'status' => 'active', 'sort_order' => $dept['sort_order'], 'organization_id' => 1]
+                ['name' => $dept['name']],
+                ['status' => 'active', 'sort_order' => $dept['sort_order'], 'organization_id' => 1]
             )
             );
             DB::table('task_assignment_departments')->where('id', $record->id)->update([
@@ -134,7 +134,24 @@ class TaskAssignmentDataSeeder extends Seeder
 
     protected function assignUsersToDepartments(): void
     {
-        $this->deptIds = TaskAssignmentDepartment::orderBy('sort_order')->pluck('id', 'code')->all();
+        $departmentCodesToNames = [
+            'TTBCXB' => 'Phòng Tuyên truyền, Báo chí - Xuất bản',
+            'TTTH'   => 'Phòng Thông tin - Tổng hợp',
+            'DVDTTG' => 'Phòng Dân vận các CQNN, dân tộc, tôn giáo',
+            'VP'     => 'Văn phòng',
+            'DTCH'   => 'Phòng đoàn thể và các hội',
+            'LLCTLSD' => 'Phòng Lý luận chính trị, lịch sử Đảng',
+            'KGVHVN' => 'Phòng Khoa giáo, Văn hoá - Văn nghệ',
+        ];
+        
+        $deptNamesToIds = TaskAssignmentDepartment::orderBy('sort_order')->pluck('id', 'name')->all();
+        $this->deptIds = [];
+        foreach ($departmentCodesToNames as $code => $name) {
+            if (isset($deptNamesToIds[$name])) {
+                $this->deptIds[$code] = $deptNamesToIds[$name];
+            }
+        }
+
         $users = User::orderBy('id')->get();
         $orgId = getPermissionsTeamId() ?: Organization::first()?->id;
 
@@ -173,27 +190,25 @@ class TaskAssignmentDataSeeder extends Seeder
 
     protected function seedDocumentsAndItems(): void
     {
-        TaskAssignmentItemReport::query()->delete();
-        TaskAssignmentItem::query()->delete();
-        TaskAssignmentDocument::query()->delete();
 
         foreach ($this->getDocumentData() as $docData) {
             $createdAt = Carbon::parse($docData['issue_date'])->subDays(rand(1, 3))->setTime(rand(7, 9), rand(0, 59));
             $updatedAt = $docData['issued_at'] ? Carbon::parse($docData['issued_at']) : $createdAt->copy()->addHours(rand(1, 4));
             $creatorId = $this->getAuthorizedUserId();
 
-            $doc = TaskAssignmentDocument::unguarded(fn () => TaskAssignmentDocument::create([
-                'name' => $docData['name'],
-                'summary' => $docData['summary'],
-                'issue_date' => $docData['issue_date'],
-                'status' => $docData['status'],
-                'issued_at' => $docData['issued_at'],
-                'task_assignment_type_id' => $this->typeIds[$docData['type']],
-                'organization_id' => 1,
-                'created_by' => $creatorId,
-                'updated_by' => $creatorId,
-            ])
-            );
+            $doc = TaskAssignmentDocument::unguarded(fn () => TaskAssignmentDocument::firstOrCreate(
+                ['name' => $docData['name']],
+                [
+                    'summary' => $docData['summary'],
+                    'issue_date' => $docData['issue_date'],
+                    'status' => $docData['status'],
+                    'issued_at' => $docData['issued_at'],
+                    'task_assignment_type_id' => $this->typeIds[$docData['type']],
+                    'organization_id' => 1,
+                    'created_by' => $creatorId,
+                    'updated_by' => $creatorId,
+                ]
+            ));
             // Ghi đè timestamp đúng (booted hook set auth()->id() và Eloquent set now())
             DB::table('task_assignment_documents')->where('id', $doc->id)->update([
                 'organization_id' => 1,
@@ -209,21 +224,24 @@ class TaskAssignmentDataSeeder extends Seeder
                 $itemCreatorId = $this->getAuthorizedUserId();
                 $itemEditorId = $this->getAuthorizedUserId();
 
-                $item = TaskAssignmentItem::unguarded(fn () => TaskAssignmentItem::create([
-                    'task_assignment_document_id' => $doc->id,
-                    'name' => $itemData['name'],
-                    'description' => $itemData['description'] ?? null,
-                    'task_assignment_item_type_id' => $this->itemTypeIds[$itemData['item_type']],
-                    'deadline_type' => $itemData['deadline_type'],
-                    'start_at' => $itemData['start_at'],
-                    'end_at' => $itemData['end_at'],
-                    'processing_status' => $itemData['processing_status'],
-                    'completion_percent' => $itemData['completion_percent'],
-                    'priority' => $itemData['priority'],
-                    'completed_at' => $itemData['completed_at'] ?? null,
-                    'organization_id' => 1,
-                ])
-                );
+                $item = TaskAssignmentItem::unguarded(fn () => TaskAssignmentItem::firstOrCreate(
+                    [
+                        'task_assignment_document_id' => $doc->id,
+                        'name' => $itemData['name'],
+                    ],
+                    [
+                        'description' => $itemData['description'] ?? null,
+                        'task_assignment_item_type_id' => $this->itemTypeIds[$itemData['item_type']],
+                        'deadline_type' => $itemData['deadline_type'],
+                        'start_at' => $itemData['start_at'],
+                        'end_at' => $itemData['end_at'],
+                        'processing_status' => $itemData['processing_status'],
+                        'completion_percent' => $itemData['completion_percent'],
+                        'priority' => $itemData['priority'],
+                        'completed_at' => $itemData['completed_at'] ?? null,
+                        'organization_id' => 1,
+                    ]
+                ));
                 DB::table('task_assignment_items')->where('id', $item->id)->update([
                     'organization_id' => 1,
                     'created_by' => $itemCreatorId, 'updated_by' => $itemEditorId,
@@ -237,7 +255,7 @@ class TaskAssignmentDataSeeder extends Seeder
 
                 if ($mainDeptId && isset($this->usersByDept[$mainDeptId])) {
                     $assignee = $this->usersByDept[$mainDeptId]->first();
-                    if ($assignee) {
+                    if ($assignee && !$item->users()->where('user_id', $assignee->id)->exists()) {
                         $item->users()->attach($assignee->id, [
                             'department_id' => $mainDeptId,
                             'department_role' => $mainDeptRole,
@@ -254,18 +272,21 @@ class TaskAssignmentDataSeeder extends Seeder
                 if ($itemData['processing_status'] === 'done' && $mainDeptId && isset($this->usersByDept[$mainDeptId])) {
                     $reporter = $this->usersByDept[$mainDeptId]->first();
                     $reportCreatedAt = Carbon::parse($itemData['completed_at'])->addHours(rand(1, 8));
-                    TaskAssignmentItemReport::unguarded(fn () => TaskAssignmentItemReport::create([
-                        'task_assignment_item_id' => $item->id,
-                        'reporter_user_id' => $reporter->id,
-                        'completed_at' => $itemData['completed_at'],
-                        'report_document_number' => $this->fakeDocumentNumber($docData['issue_date']),
-                        'report_document_excerpt' => 'Báo cáo kết quả thực hiện: '.$itemData['name'],
-                        'report_document_content' => 'Đã hoàn thành công việc theo đúng kế hoạch được giao.',
-                        'organization_id' => 1,
-                        'created_at' => $reportCreatedAt,
-                        'updated_at' => $reportCreatedAt,
-                    ])
-                    );
+                    TaskAssignmentItemReport::unguarded(fn () => TaskAssignmentItemReport::firstOrCreate(
+                        [
+                            'task_assignment_item_id' => $item->id,
+                            'reporter_user_id' => $reporter->id,
+                        ],
+                        [
+                            'completed_at' => $itemData['completed_at'],
+                            'report_document_number' => $this->fakeDocumentNumber($docData['issue_date']),
+                            'report_document_excerpt' => 'Báo cáo kết quả thực hiện: '.$itemData['name'],
+                            'report_document_content' => 'Đã hoàn thành công việc theo đúng kế hoạch được giao.',
+                            'organization_id' => 1,
+                            'created_at' => $reportCreatedAt,
+                            'updated_at' => $reportCreatedAt,
+                        ]
+                    ));
                 }
             }
         }

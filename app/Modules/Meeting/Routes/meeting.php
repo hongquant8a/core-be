@@ -50,6 +50,7 @@ Route::put('/{meeting}', [MeetingController::class, 'update'])->middleware('perm
 Route::patch('/{meeting}', [MeetingController::class, 'update'])->middleware('permission:meetings.update,web');
 Route::delete('/{meeting}', [MeetingController::class, 'destroy'])->middleware('permission:meetings.destroy,web');
 Route::patch('/{meeting}/status', [MeetingController::class, 'changeStatus'])->middleware('permission:meetings.changeStatus,web');
+Route::patch('/{meeting}/reopen', [MeetingController::class, 'reopen'])->middleware('permission:meetings.changeStatus,web');
 
 // ───────────────────── 2. In-meeting control (chair/operator) ────────────────────
 
@@ -121,7 +122,7 @@ Route::prefix('{meeting}/vote-responses')->group(function () {
 
 // Tab 5 Điểm danh — self checkin/markAbsent (participant); chair/op manual/approve/reject.
 Route::prefix('{meeting}/attendances')->group(function () {
-    Route::get('/stats', [MeetingAttendanceController::class, 'statsInMeeting'])->middleware('can:operate,meeting');
+    Route::get('/stats', [MeetingAttendanceController::class, 'statsInMeeting'])->middleware('can:viewParticipant,meeting');
     Route::get('/export', [MeetingAttendanceController::class, 'exportInMeeting'])->middleware('can:operate,meeting');
     Route::get('/', [MeetingAttendanceController::class, 'indexInMeeting'])->middleware('can:operate,meeting');
     Route::post('/checkin', [MeetingAttendanceController::class, 'checkinInMeeting'])->middleware('can:participate,meeting');

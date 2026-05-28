@@ -38,10 +38,16 @@ class NotificationScheduleSeeder extends Seeder
                 NotificationEventEnum::TaskConfirmed->value => 'Thông báo ngay khi xác nhận',
                 default => 'Gửi ngay lập tức',
             };
-            NotificationSchedule::updateOrCreate(
-                ['notification_event_config_id' => $config->id, 'moment' => null, 'offset_minutes' => null],
-                ['label' => $label, 'sort_order' => 0] // We exclude 'channels' from updateOrCreate to avoid wiping user settings if run again
-            );
+            $schedule = NotificationSchedule::firstOrNew([
+                'notification_event_config_id' => $config->id,
+                'moment' => null,
+                'offset_minutes' => null
+            ]);
+            
+            // Cập nhật nhãn và thứ tự hiển thị nhưng KHÔNG ghi đè channels hay trạng thái đã lưu
+            $schedule->label = $label;
+            $schedule->sort_order = 0;
+            $schedule->save();
         }
 
         // Reminder events: N schedules/event với moment + offset — per org.
@@ -96,10 +102,16 @@ class NotificationScheduleSeeder extends Seeder
                 default => 'Gửi ngay lập tức',
             };
             
-            NotificationSchedule::updateOrCreate(
-                ['notification_event_config_id' => $config->id, 'moment' => null, 'offset_minutes' => null],
-                ['label' => $label, 'sort_order' => 0] // Exclude channels to prevent wiping user settings
-            );
+            $schedule = NotificationSchedule::firstOrNew([
+                'notification_event_config_id' => $config->id,
+                'moment' => null,
+                'offset_minutes' => null
+            ]);
+            
+            // Cập nhật nhãn và thứ tự hiển thị nhưng KHÔNG ghi đè channels hay trạng thái đã lưu
+            $schedule->label = $label;
+            $schedule->sort_order = 0;
+            $schedule->save();
         }
 
         // Reminder events: trước 1 ngày + 30 phút, đến giờ, sau 5 phút.

@@ -417,7 +417,7 @@ class TaskAssignmentItemService
         // Iterate ALL departments (active + inactive) — task gắn với inactive dept vẫn hiển thị.
         $departments = TaskAssignmentDepartment::query()
             ->when($filters['department_id'] ?? null, fn ($q, $id) => $q->where('id', $id))
-            ->get(['id', 'name', 'code', 'status']);
+            ->get(['id', 'name', 'status']);
 
         $done = TaskProgressStatusEnum::Done->value;
         $cancelled = TaskProgressStatusEnum::Cancelled->value;

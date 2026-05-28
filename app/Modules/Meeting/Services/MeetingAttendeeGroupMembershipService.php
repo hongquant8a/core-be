@@ -24,6 +24,10 @@ class MeetingAttendeeGroupMembershipService
      */
     public function listAttendees(MeetingAttendeeGroup $group, array $filters, int $limit)
     {
+        if ($limit === -1) {
+            $limit = 1000000;
+        }
+
         $search = $filters['search'] ?? null;
         $sortBy = $filters['sort_by'] ?? 'created_at';
         $sortOrder = $filters['sort_order'] ?? 'desc';

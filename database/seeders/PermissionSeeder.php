@@ -78,6 +78,10 @@ class PermissionSeeder extends Seeder
             'stats', 'statsByTime', 'index', 'show', 'store', 'update', 'destroy',
             'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
         ],
+        // Trình chiếu tổng quan công việc
+        'presentation' => [
+            'index',
+        ],
         // TaskAssignment - Công việc
         'task-assignment-items' => [
             'stats', 'index', 'show', 'store', 'update', 'destroy',
@@ -257,6 +261,7 @@ class PermissionSeeder extends Seeder
         'task-assignment-item-reports' => 'Báo cáo công việc',
         'task-assignment-item-transfers' => 'Điều chuyển công việc',
         'task-assignment-item-notes' => 'Ghi chú công việc',
+        'presentation' => 'Trình chiếu tổng quan công việc',
         'dashboard' => 'Tổng quan',
         'notifications' => 'Thông báo',
         'notifications.event-configs' => 'Cấu hình sự kiện thông báo',

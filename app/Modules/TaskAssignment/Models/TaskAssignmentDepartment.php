@@ -17,7 +17,7 @@ class TaskAssignmentDepartment extends TenantModel
 
     protected $table = 'task_assignment_departments';
 
-    protected $fillable = ['code', 'name', 'description', 'status', 'sort_order', 'organization_id', 'created_by', 'updated_by'];
+    protected $fillable = ['name', 'description', 'status', 'sort_order', 'organization_id', 'created_by', 'updated_by'];
 
     protected $casts = [
         'sort_order' => 'integer',
@@ -46,12 +46,12 @@ class TaskAssignmentDepartment extends TenantModel
 
     public function scopeFilter($query, array $filters)
     {
-        $query->when($filters['search'] ?? null, fn ($q, $search) => $q->where(fn ($q2) => $q2->where('name', 'like', '%'.$search.'%')->orWhere('code', 'like', '%'.$search.'%')))
+        $query->when($filters['search'] ?? null, fn ($q, $search) => $q->where(fn ($q2) => $q2->where('name', 'like', '%'.$search.'%')))
             ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
             ->when($filters['from_date'] ?? null, fn ($q, $date) => $q->whereDate('created_at', '>=', $date))
             ->when($filters['to_date'] ?? null, fn ($q, $date) => $q->whereDate('created_at', '<=', $date))
             ->when($filters['sort_by'] ?? 'created_at', function ($q, $sortBy) use ($filters) {
-                $allowed = ['id', 'name', 'code', 'sort_order', 'created_at', 'updated_at'];
+                $allowed = ['id', 'name', 'sort_order', 'created_at', 'updated_at'];
                 $column = in_array($sortBy, $allowed) ? $sortBy : 'created_at';
                 \App\Modules\Core\Support\VietnameseSort::apply($q, $column, $filters['sort_order'] ?? 'desc');
             });

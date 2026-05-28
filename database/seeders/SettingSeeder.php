@@ -117,10 +117,19 @@ class SettingSeeder extends Seeder
     public function run(): void
     {
         foreach (self::$items as $item) {
-            Setting::updateOrCreate(
-                ['key' => $item['key']],
-                $item
-            );
+            $setting = Setting::firstOrNew(['key' => $item['key']]);
+            
+            // Chỉ gán value nếu record chưa tồn tại (chưa được tạo/người dùng chưa sửa)
+            if (! $setting->exists) {
+                $setting->value = $item['value'];
+            }
+            
+            $setting->group = $item['group'];
+            $setting->is_public = $item['is_public'];
+            $setting->type = $item['type'];
+            $setting->label = $item['label'];
+            $setting->sort_order = $item['sort_order'];
+            $setting->save();
         }
 
         Setting::clearCache();

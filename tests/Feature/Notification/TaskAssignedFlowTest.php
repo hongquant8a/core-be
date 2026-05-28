@@ -37,7 +37,7 @@ class TaskAssignedFlowTest extends TestCase
             'name' => 'IT', 'status' => 'active', 'created_at' => now(), 'updated_at' => now(),
         ]);
         $deptId = DB::table('task_assignment_departments')->insertGetId([
-            'name' => 'D', 'code' => 'DEPT-'.uniqid(), 'status' => 'active',
+            'name' => 'D', 'status' => 'active',
             'created_at' => now(), 'updated_at' => now(),
         ]);
         $document = TaskAssignmentDocument::create([
@@ -104,7 +104,7 @@ class TaskAssignedFlowTest extends TestCase
             'name' => 'IT', 'status' => 'active', 'created_at' => now(), 'updated_at' => now(),
         ]);
         $deptId = DB::table('task_assignment_departments')->insertGetId([
-            'name' => 'D', 'code' => 'DEPT-'.uniqid(), 'status' => 'active',
+            'name' => 'D', 'status' => 'active',
             'created_at' => now(), 'updated_at' => now(),
         ]);
         $draftDoc = TaskAssignmentDocument::create([

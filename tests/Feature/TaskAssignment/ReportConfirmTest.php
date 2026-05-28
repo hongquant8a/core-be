@@ -100,7 +100,7 @@ class ReportConfirmTest extends TestCase
         $reporter = User::factory()->create();
         $reporter->assignRole('Super Admin');
         $dept = \App\Modules\TaskAssignment\Models\TaskAssignmentDepartment::create([
-            'code' => 'D1', 'name' => 'D1', 'organization_id' => $this->org->id,
+            'name' => 'D1', 'organization_id' => $this->org->id,
         ]);
         $doc = \App\Modules\TaskAssignment\Models\TaskAssignmentDocument::create([
             'name' => 'Doc', 'status' => 'issued', 'organization_id' => $this->org->id,

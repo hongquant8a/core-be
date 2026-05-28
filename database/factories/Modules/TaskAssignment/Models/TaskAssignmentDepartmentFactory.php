@@ -15,7 +15,7 @@ class TaskAssignmentDepartmentFactory extends Factory
     public function definition(): array
     {
         return [
-            'code' => $this->faker->unique()->bothify('DEPT-###'),
+
             'name' => $this->faker->company(),
             'description' => $this->faker->sentence(),
             'status' => 'active',

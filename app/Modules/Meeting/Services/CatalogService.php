@@ -60,6 +60,10 @@ class CatalogService
 
     public function index(string $modelClass, array $filters, int $limit)
     {
+        if ($limit === -1) {
+            $limit = 1000000;
+        }
+
         /** @var Model $model */
         $model = app($modelClass);
 

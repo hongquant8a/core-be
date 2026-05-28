@@ -9,7 +9,7 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 /**
  * Xuất danh sách tài liệu của 1 meeting — mỗi row = 1 tài liệu.
  *
- * Columns: STT, Tên tài liệu, Loại tài liệu, Thuộc chương trình.
+ * Columns: STT, Tên tài liệu, Loại tài liệu, Thuộc chương trình, Tổng lượt xem, Người xem.
  *
  * $isPrivileged=false (guest hoặc auth-không-vai-trò) chỉ xuất doc is_public=true.
  * $isPrivileged=true (chair/op/participant) xuất đầy đủ.
@@ -24,7 +24,7 @@ class MeetingDocumentExport extends AbstractExcelExport implements FromCollectio
     public function collection()
     {
         return MeetingDocument::query()
-            ->with(['documentType:id,name', 'agenda:id,content'])
+            ->with(['documentType:id,name', 'agenda:id,content', 'views.user:id,name'])
             ->where('meeting_id', $this->meetingId)
             ->when(! $this->isPrivileged, fn ($q) => $q->where('is_public', true))
             ->orderBy('sort_order')
@@ -36,11 +36,13 @@ class MeetingDocumentExport extends AbstractExcelExport implements FromCollectio
                 'title' => $doc->title,
                 'document_type' => $doc->documentType?->name ?? '',
                 'agenda' => $doc->agenda?->content ?? '',
+                'view_count' => $doc->view_count,
+                'viewers' => $doc->views->map(fn ($v) => $v->user ? $v->user->name : 'Khách')->unique()->implode(', '),
             ]);
     }
 
     public function headings(): array
     {
-        return ['STT', 'Tên tài liệu', 'Loại tài liệu', 'Thuộc chương trình'];
+        return ['STT', 'Tên tài liệu', 'Loại tài liệu', 'Thuộc chương trình', 'Tổng lượt xem', 'Người xem'];
     }
 }

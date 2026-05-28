@@ -33,7 +33,7 @@ class DepartmentRepresentativeTest extends TestCase
     private function makeDept(string $code = 'A'): TaskAssignmentDepartment
     {
         return TaskAssignmentDepartment::create([
-            'code' => $code,
+
             'name' => $code,
             'organization_id' => $this->org->id,
         ]);
@@ -182,7 +182,7 @@ class DepartmentRepresentativeTest extends TestCase
 
         // Switch to org B and create another dept + user
         setPermissionsTeamId($orgB->id);
-        $deptB = TaskAssignmentDepartment::create(['code' => 'B', 'name' => 'B', 'organization_id' => $orgB->id]);
+        $deptB = TaskAssignmentDepartment::create(['name' => 'B', 'organization_id' => $orgB->id]);
         $userB = User::factory()->create();
         $this->service->syncUsers($deptB, [$userB->id], $userB->id);
 

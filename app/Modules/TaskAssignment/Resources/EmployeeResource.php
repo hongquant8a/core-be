@@ -22,7 +22,7 @@ class EmployeeResource extends JsonResource
                 ->map(fn ($m) => [
                     'id' => $m->task_assignment_department_id,
                     'name' => $m->department?->name,
-                    'code' => $m->department?->code,
+
                     'is_primary' => (bool) $m->is_primary,
                     'is_representative' => (bool) $m->is_representative,
                 ])

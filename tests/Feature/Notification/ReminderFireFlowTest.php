@@ -38,7 +38,7 @@ class ReminderFireFlowTest extends TestCase
             'name' => 'IT', 'status' => 'active', 'created_at' => now(), 'updated_at' => now(),
         ]);
         $deptId = DB::table('task_assignment_departments')->insertGetId([
-            'name' => 'D', 'code' => 'DEPT-'.uniqid(), 'status' => 'active',
+            'name' => 'D', 'status' => 'active',
             'created_at' => now(), 'updated_at' => now(),
         ]);
         $docId = DB::table('task_assignment_documents')->insertGetId([
