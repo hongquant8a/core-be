@@ -1,6 +1,6 @@
 <?php
 
-use App\Modules\Meeting\MeetingPersonalNoteAttachmentController;
+use App\Modules\Meeting\Controllers\MeetingPersonalNoteAttachmentController;
 use Illuminate\Support\Facades\Route;
 
 Route::patch('/reorder', [MeetingPersonalNoteAttachmentController::class, 'reorder'])->middleware('permission:meeting-personal-note-attachments.update,web');

@@ -1,6 +1,6 @@
 <?php
 
-use App\Modules\Meeting\MeetingLocationController;
+use App\Modules\Meeting\Controllers\MeetingLocationController;
 use Illuminate\Support\Facades\Route;
 
 Route::delete('/bulk-delete', [MeetingLocationController::class, 'bulkDestroy'])->middleware('permission:meeting-locations.bulkDestroy,web');

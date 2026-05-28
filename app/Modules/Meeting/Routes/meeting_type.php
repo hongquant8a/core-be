@@ -1,6 +1,6 @@
 <?php
 
-use App\Modules\Meeting\MeetingTypeController;
+use App\Modules\Meeting\Controllers\MeetingTypeController;
 use Illuminate\Support\Facades\Route;
 
 Route::delete('/bulk-delete', [MeetingTypeController::class, 'bulkDestroy'])->middleware('permission:meeting-types.bulkDestroy,web');

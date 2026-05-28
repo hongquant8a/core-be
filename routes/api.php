@@ -39,32 +39,32 @@ Route::prefix('public')->middleware('log.activity')->group(function () {
     Route::get('/task-assignment-departments/options', [\App\Modules\TaskAssignment\Controllers\TaskAssignmentDepartmentController::class, 'publicOptions']);
 
     // Meeting catalogs
-    Route::get('/meeting-types', [\App\Modules\Meeting\MeetingTypeController::class, 'public']);
-    Route::get('/meeting-types/options', [\App\Modules\Meeting\MeetingTypeController::class, 'publicOptions']);
-    Route::get('/meeting-locations', [\App\Modules\Meeting\MeetingLocationController::class, 'public']);
-    Route::get('/meeting-locations/options', [\App\Modules\Meeting\MeetingLocationController::class, 'publicOptions']);
-    Route::get('/meeting-document-types', [\App\Modules\Meeting\MeetingDocumentTypeController::class, 'public']);
-    Route::get('/meeting-document-types/options', [\App\Modules\Meeting\MeetingDocumentTypeController::class, 'publicOptions']);
+    Route::get('/meeting-types', [\App\Modules\Meeting\Controllers\MeetingTypeController::class, 'public']);
+    Route::get('/meeting-types/options', [\App\Modules\Meeting\Controllers\MeetingTypeController::class, 'publicOptions']);
+    Route::get('/meeting-locations', [\App\Modules\Meeting\Controllers\MeetingLocationController::class, 'public']);
+    Route::get('/meeting-locations/options', [\App\Modules\Meeting\Controllers\MeetingLocationController::class, 'publicOptions']);
+    Route::get('/meeting-document-types', [\App\Modules\Meeting\Controllers\MeetingDocumentTypeController::class, 'public']);
+    Route::get('/meeting-document-types/options', [\App\Modules\Meeting\Controllers\MeetingDocumentTypeController::class, 'publicOptions']);
 
     // Meetings — list + stats + show
-    Route::get('/meetings', [\App\Modules\Meeting\MeetingController::class, 'public']);
-    Route::get('/meetings/document-tree', [\App\Modules\Meeting\MeetingController::class, 'publicDocumentTree']);
-    Route::get('/meetings/stats', [\App\Modules\Meeting\MeetingController::class, 'publicStats']);
-    Route::get('/meetings/{meeting}', [\App\Modules\Meeting\MeetingController::class, 'publicShow'])->middleware('count.meeting.view');
+    Route::get('/meetings', [\App\Modules\Meeting\Controllers\MeetingController::class, 'public']);
+    Route::get('/meetings/document-tree', [\App\Modules\Meeting\Controllers\MeetingController::class, 'publicDocumentTree']);
+    Route::get('/meetings/stats', [\App\Modules\Meeting\Controllers\MeetingController::class, 'publicStats']);
+    Route::get('/meetings/{meeting}', [\App\Modules\Meeting\Controllers\MeetingController::class, 'publicShow'])->middleware('count.meeting.view');
 
     // Meeting sub-resources cho guest (Tab 1 Chương trình, Tab 2 Tài liệu).
     // Gate: MeetingPolicy::viewPublic (meeting is_public=true + status=published).
-    Route::get('/meetings/{meeting}/agendas', [\App\Modules\Meeting\MeetingAgendaController::class, 'publicListInMeeting']);
-    Route::get('/meetings/{meeting}/documents', [\App\Modules\Meeting\MeetingDocumentController::class, 'publicListInMeeting']);
+    Route::get('/meetings/{meeting}/agendas', [\App\Modules\Meeting\Controllers\MeetingAgendaController::class, 'publicListInMeeting']);
+    Route::get('/meetings/{meeting}/documents', [\App\Modules\Meeting\Controllers\MeetingDocumentController::class, 'publicListInMeeting']);
     // Export tài liệu — auth-optional. Guest chỉ thấy doc is_public=true; chair/op/participant
     // thấy đầy đủ. Controller tự resolve auth qua Bearer/cookie + shouldSeeAllDocs.
-    Route::get('/meetings/{meeting}/documents/export', [\App\Modules\Meeting\MeetingDocumentController::class, 'exportInMeeting']);
-    Route::get('/meetings/{meeting}/documents/export-views', [\App\Modules\Meeting\MeetingDocumentController::class, 'exportViewsInMeeting']);
+    Route::get('/meetings/{meeting}/documents/export', [\App\Modules\Meeting\Controllers\MeetingDocumentController::class, 'exportInMeeting']);
+    Route::get('/meetings/{meeting}/documents/export-views', [\App\Modules\Meeting\Controllers\MeetingDocumentController::class, 'exportViewsInMeeting']);
 
     // Meeting documents — list công khai (theo query meeting_id) + show + download (backward compat).
-    Route::get('/meeting-documents', [\App\Modules\Meeting\MeetingDocumentController::class, 'public']);
-    Route::get('/meeting-documents/{meetingDocument}', [\App\Modules\Meeting\MeetingDocumentController::class, 'publicShow'])->middleware('count.meeting.view');
-    Route::get('/meeting-documents/{meetingDocument}/download', [\App\Modules\Meeting\MeetingDocumentController::class, 'publicDownload']);
+    Route::get('/meeting-documents', [\App\Modules\Meeting\Controllers\MeetingDocumentController::class, 'public']);
+    Route::get('/meeting-documents/{meetingDocument}', [\App\Modules\Meeting\Controllers\MeetingDocumentController::class, 'publicShow'])->middleware('count.meeting.view');
+    Route::get('/meeting-documents/{meetingDocument}/download', [\App\Modules\Meeting\Controllers\MeetingDocumentController::class, 'publicDownload']);
 });
 
 // Route yêu cầu đăng nhập (Bearer token) và đặt ngữ cảnh team cho Spatie Permission

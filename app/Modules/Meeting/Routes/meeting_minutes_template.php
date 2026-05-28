@@ -1,6 +1,6 @@
 <?php
 
-use App\Modules\Meeting\MeetingMinutesTemplateController;
+use App\Modules\Meeting\Controllers\MeetingMinutesTemplateController;
 use Illuminate\Support\Facades\Route;
 
 // Cheatsheet biến template — auth-only, không Spatie permission.

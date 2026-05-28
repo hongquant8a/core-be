@@ -1,13 +1,13 @@
 <?php
 
-use App\Modules\Meeting\MeetingAttendanceController;
-use App\Modules\Meeting\MeetingController;
-use App\Modules\Meeting\MeetingDiscussionRegistrationController;
-use App\Modules\Meeting\MeetingParticipantController;
-use App\Modules\Meeting\MeetingPersonalNoteAttachmentController;
-use App\Modules\Meeting\MeetingPersonalNoteController;
-use App\Modules\Meeting\MeetingVoteResponseController;
-use App\Modules\Meeting\MeetingVoteTopicController;
+use App\Modules\Meeting\Controllers\MeetingAttendanceController;
+use App\Modules\Meeting\Controllers\MeetingController;
+use App\Modules\Meeting\Controllers\MeetingDiscussionRegistrationController;
+use App\Modules\Meeting\Controllers\MeetingParticipantController;
+use App\Modules\Meeting\Controllers\MeetingPersonalNoteAttachmentController;
+use App\Modules\Meeting\Controllers\MeetingPersonalNoteController;
+use App\Modules\Meeting\Controllers\MeetingVoteResponseController;
+use App\Modules\Meeting\Controllers\MeetingVoteTopicController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -35,9 +35,9 @@ use Illuminate\Support\Facades\Route;
 // ───────────────────────────── 1. Catalog/CRUD admin ─────────────────────────────
 
 // Export biên bản .docx từ template — auth-only, gate operate pure FK (chair/op của meeting).
-Route::post('/{meeting}/export-minutes', [\App\Modules\Meeting\MeetingMinutesTemplateController::class, 'exportMinutes']);
+Route::post('/{meeting}/export-minutes', [\App\Modules\Meeting\Controllers\MeetingMinutesTemplateController::class, 'exportMinutes']);
 // List template biên bản cho dialog "Chọn template" trước export.
-Route::get('/{meeting}/minutes-templates', [\App\Modules\Meeting\MeetingMinutesTemplateController::class, 'indexInMeeting'])->middleware('can:operate,meeting');
+Route::get('/{meeting}/minutes-templates', [\App\Modules\Meeting\Controllers\MeetingMinutesTemplateController::class, 'indexInMeeting'])->middleware('can:operate,meeting');
 
 Route::delete('/bulk-delete', [MeetingController::class, 'bulkDestroy'])->middleware('permission:meetings.bulkDestroy,web');
 Route::patch('/bulk-status', [MeetingController::class, 'bulkUpdateStatus'])->middleware('permission:meetings.bulkUpdateStatus,web');
@@ -89,11 +89,11 @@ Route::prefix('{meeting}/discussion-registrations')->group(function () {
 // dùng tên ngắn `discAttachment` + explicit Route::model binding để Route Model Binding vẫn resolve.
 Route::model('discAttachment', \App\Modules\Meeting\Models\MeetingDiscussionRegistrationAttachment::class);
 Route::prefix('{meeting}/discussion-registrations/{meetingDiscussionRegistration}/attachments')->group(function () {
-    Route::post('/', [\App\Modules\Meeting\MeetingDiscussionRegistrationAttachmentController::class, 'storeInRegistration'])
+    Route::post('/', [\App\Modules\Meeting\Controllers\MeetingDiscussionRegistrationAttachmentController::class, 'storeInRegistration'])
         ->middleware('can:update,meetingDiscussionRegistration');
-    Route::patch('/reorder', [\App\Modules\Meeting\MeetingDiscussionRegistrationAttachmentController::class, 'reorderInRegistration'])
+    Route::patch('/reorder', [\App\Modules\Meeting\Controllers\MeetingDiscussionRegistrationAttachmentController::class, 'reorderInRegistration'])
         ->middleware('can:update,meetingDiscussionRegistration');
-    Route::delete('/{discAttachment}', [\App\Modules\Meeting\MeetingDiscussionRegistrationAttachmentController::class, 'destroyInRegistration'])
+    Route::delete('/{discAttachment}', [\App\Modules\Meeting\Controllers\MeetingDiscussionRegistrationAttachmentController::class, 'destroyInRegistration'])
         ->middleware('can:delete,discAttachment');
 });
 
