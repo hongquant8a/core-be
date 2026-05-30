@@ -74,19 +74,25 @@ class SettingSeeder extends Seeder
         ['key' => 'sms_username', 'value' => null, 'group' => 'sms', 'is_public' => false, 'type' => 'string', 'label' => 'Tên đăng nhập', 'sort_order' => 2],
         ['key' => 'sms_password', 'value' => null, 'group' => 'sms', 'is_public' => false, 'type' => 'string', 'label' => 'Mật khẩu', 'sort_order' => 3],
         ['key' => 'sms_test_phone', 'value' => null, 'group' => 'sms', 'is_public' => false, 'type' => 'string', 'label' => 'Số điện thoại kiểm thử', 'sort_order' => 4],
-        // Zalo OA Message — free-form text qua Official Account API v2.0 (channel hiện đang active)
+        // Zalo OA Message — free-form text qua Official Account API v2.0 (channel key: 'zalo')
         ['key' => 'zalo_enabled', 'value' => '0', 'group' => 'zalo', 'is_public' => false, 'type' => 'boolean', 'label' => 'Bật Zalo OA', 'sort_order' => 0],
         ['key' => 'zalo_app_id', 'value' => null, 'group' => 'zalo', 'is_public' => false, 'type' => 'string', 'label' => 'App ID', 'sort_order' => 1],
         ['key' => 'zalo_app_secret', 'value' => null, 'group' => 'zalo', 'is_public' => false, 'type' => 'string', 'label' => 'Secret Key', 'sort_order' => 2],
         ['key' => 'zalo_access_token', 'value' => null, 'group' => 'zalo', 'is_public' => false, 'type' => 'string', 'label' => 'Access Token', 'sort_order' => 3],
         ['key' => 'zalo_refresh_token', 'value' => null, 'group' => 'zalo', 'is_public' => false, 'type' => 'string', 'label' => 'Refresh Token', 'sort_order' => 4],
-        // Zalo ZNS legacy — DORMANT (giữ làm fallback nếu swap về ZaloZnsChannel)
-        ['key' => 'zalo_server', 'value' => null, 'group' => 'zalo', 'is_public' => false, 'type' => 'string', 'label' => '[Legacy ZNS] Máy chủ Zalo', 'sort_order' => 11],
-        ['key' => 'zalo_username', 'value' => null, 'group' => 'zalo', 'is_public' => false, 'type' => 'string', 'label' => '[Legacy ZNS] Tên đăng nhập', 'sort_order' => 12],
-        ['key' => 'zalo_password', 'value' => null, 'group' => 'zalo', 'is_public' => false, 'type' => 'string', 'label' => '[Legacy ZNS] Mật khẩu', 'sort_order' => 13],
-        ['key' => 'zalo_sender', 'value' => null, 'group' => 'zalo', 'is_public' => false, 'type' => 'string', 'label' => '[Legacy ZNS] Người gửi (OA sender ID)', 'sort_order' => 14],
-        ['key' => 'zalo_template_id', 'value' => null, 'group' => 'zalo', 'is_public' => false, 'type' => 'string', 'label' => '[Legacy ZNS] Mẫu tin nhắn ID', 'sort_order' => 15],
-        ['key' => 'zalo_extra_params', 'value' => null, 'group' => 'zalo', 'is_public' => false, 'type' => 'json', 'label' => '[Legacy ZNS] Tham số bổ sung', 'sort_order' => 16],
+        // Zalo ZNS — template-based qua WorldSMS relay (South Telecom) (channel key: 'zalo_zns')
+        // Endpoint: POST https://api-04.worldsms.vn/apidebit/sendZNS
+        // Auth: Basic base64(username:password)
+        ['key' => 'zns_enabled', 'value' => '0', 'group' => 'zalo_zns', 'is_public' => false, 'type' => 'boolean', 'label' => 'Bật Zalo ZNS', 'sort_order' => 0],
+        ['key' => 'zns_server', 'value' => 'https://api-04.worldsms.vn/apidebit/sendZNS', 'group' => 'zalo_zns', 'is_public' => false, 'type' => 'string', 'label' => 'Endpoint ZNS', 'sort_order' => 1],
+        ['key' => 'zns_username', 'value' => null, 'group' => 'zalo_zns', 'is_public' => false, 'type' => 'string', 'label' => 'Tên đăng nhập WorldSMS', 'sort_order' => 2],
+        ['key' => 'zns_password', 'value' => null, 'group' => 'zalo_zns', 'is_public' => false, 'type' => 'string', 'label' => 'Mật khẩu WorldSMS', 'sort_order' => 3],
+        ['key' => 'zns_sender', 'value' => null, 'group' => 'zalo_zns', 'is_public' => false, 'type' => 'string', 'label' => 'Zalo OA Sender ID (from)', 'sort_order' => 4],
+        ['key' => 'zns_template_id', 'value' => null, 'group' => 'zalo_zns', 'is_public' => false, 'type' => 'string', 'label' => 'Template ID đã duyệt ZNS', 'sort_order' => 5],
+        ['key' => 'zns_extra_params', 'value' => null, 'group' => 'zalo_zns', 'is_public' => false, 'type' => 'json', 'label' => 'Tham số bổ sung template_data (JSON)', 'sort_order' => 6],
+        // SMS Failover (tùy chọn) — gửi SMS nếu ZNS thất bại
+        ['key' => 'zns_sms_failover_sender', 'value' => null, 'group' => 'zalo_zns', 'is_public' => false, 'type' => 'string', 'label' => 'SMS Failover Brandname (tùy chọn)', 'sort_order' => 7],
+        ['key' => 'zns_sms_failover_unicode', 'value' => '1', 'group' => 'zalo_zns', 'is_public' => false, 'type' => 'boolean', 'label' => 'SMS Failover unicode (có dấu)', 'sort_order' => 8],
         // Chat
         ['key' => 'chat_enabled', 'value' => '0', 'group' => 'chat', 'is_public' => false, 'type' => 'boolean', 'label' => 'Bật Chat', 'sort_order' => 0],
         ['key' => 'chat_server', 'value' => null, 'group' => 'chat', 'is_public' => false, 'type' => 'string', 'label' => 'Máy chủ Chat', 'sort_order' => 1],

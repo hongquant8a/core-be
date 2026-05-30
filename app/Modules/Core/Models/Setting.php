@@ -39,6 +39,38 @@ class Setting extends Model implements HasMedia
 
     public const CACHE_KEY_ALL = 'settings.all';
 
+    // ─── Setting groups ────────────────────────────────────────────────────────
+    public const GROUP_GENERAL      = 'general';
+    public const GROUP_EMAIL        = 'email';
+    public const GROUP_SMS          = 'sms';
+    public const GROUP_NOTIFICATION = 'notification';
+    public const GROUP_ZALO         = 'zalo';      // Zalo OA (free-text)
+    public const GROUP_ZALO_ZNS     = 'zalo_zns';  // Zalo ZNS via WorldSMS
+    public const GROUP_CHAT         = 'chat';
+    public const GROUP_LOG          = 'log';
+    public const GROUP_SSO_DANANG   = 'sso_danang';
+    public const GROUP_SSO_CBCCVC   = 'sso_cbccvc';
+    public const GROUP_AUTH         = 'auth';
+    public const GROUP_API          = 'api';
+
+    // ─── Zalo OA keys (group: zalo) ───────────────────────────────────────────
+    public const KEY_ZALO_ENABLED       = 'zalo_enabled';
+    public const KEY_ZALO_APP_ID        = 'zalo_app_id';
+    public const KEY_ZALO_APP_SECRET    = 'zalo_app_secret';
+    public const KEY_ZALO_ACCESS_TOKEN  = 'zalo_access_token';
+    public const KEY_ZALO_REFRESH_TOKEN = 'zalo_refresh_token';
+
+    // ─── Zalo ZNS keys (group: zalo_zns) ─────────────────────────────────────
+    public const KEY_ZNS_ENABLED              = 'zns_enabled';
+    public const KEY_ZNS_SERVER               = 'zns_server';
+    public const KEY_ZNS_USERNAME             = 'zns_username';
+    public const KEY_ZNS_PASSWORD             = 'zns_password';
+    public const KEY_ZNS_SENDER               = 'zns_sender';
+    public const KEY_ZNS_TEMPLATE_ID          = 'zns_template_id';
+    public const KEY_ZNS_EXTRA_PARAMS         = 'zns_extra_params';
+    public const KEY_ZNS_SMS_FAILOVER_SENDER  = 'zns_sms_failover_sender';
+    public const KEY_ZNS_SMS_FAILOVER_UNICODE = 'zns_sms_failover_unicode';
+
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');

@@ -74,9 +74,28 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
     - **Bắt buộc**: Luôn làm việc theo cấu trúc Modular tại `/app/Modules/`.
     - **Bắt buộc**: Namespace phải khớp chính xác với cấu trúc thư mục (ví dụ: `App\Modules\Voter\Controllers`).
     - **Khuyến nghị**: Ưu tiên tạo file mới trong module thay vì các thư mục mặc định của Laravel.
-    - **Bắt buộc**: Mỗi module có thư mục `Enums/` chứa enum (trạng thái, loại, ...). Ví dụ: `Core/Enums/UserStatusEnum.php`, `Post/Enums/PostStatusEnum.php`. Enum dùng `rule()` và `values()` cho validation.
-    - **Bắt buộc**: Với các bảng danh mục liên quan trực tiếp tới module chức năng, tên bảng phải có tiền tố module để dễ phân biệt và tránh xung đột (ví dụ module `Document`: `document_types`, `document_fields`; module `Post`: `post_categories`).
-    - **Bắt buộc**: Với bảng pivot thuộc module chức năng, tên bảng phải nhất quán theo resource của module và có nhận diện module rõ ràng (ưu tiên tiền tố module), ví dụ: `post_post_category`, `document_document_type`, `document_document_field`.
+    - **Bắt buộc**: Mỗi module có thư mục `Enums/` chứa enum (trạng thái, loại, ...). Ví dụ: `Core/Enums/UserStatusEnum.php`, `Meeting/Enums/MeetingStatusEnum.php`. Enum dùng `rule()` và `values()` cho validation:
+        ```php
+        enum MeetingStatusEnum: string
+        {
+            case Active   = 'active';
+            case Inactive = 'inactive';
+
+            public static function values(): array
+            {
+                return array_column(self::cases(), 'value');
+            }
+
+            public static function rule(): string
+            {
+                return 'in:' . implode(',', self::values());
+            }
+        }
+        // Dùng trong FormRequest: 'status' => ['required', MeetingStatusEnum::rule()]
+        ```
+    - **Bắt buộc**: Với các bảng danh mục liên quan trực tiếp tới module chức năng, tên bảng phải có tiền tố module để dễ phân biệt và tránh xung đột (ví dụ module `Meeting`: `meeting_rooms`, `meeting_agendas`; module `TaskAssignment`: `task_assignment_priorities`).
+    - **Bắt buộc**: Với bảng pivot thuộc module chức năng, tên bảng phải nhất quán theo resource của module và có nhận diện module rõ ràng (ưu tiên tiền tố module), ví dụ: `meeting_meeting_room`, `task_assignment_task_assignment_department`.
+    - **Tham khảo**: Module `Meeting` (`app/Modules/Meeting/`) có thêm các folder tùy chọn cho module phức tạp: `Concerns/` (trait dùng chung nội bộ), `Events/` (domain events), `Middleware/`, `Policies/` (Laravel authorization). Không bắt buộc — chỉ tạo khi thực sự cần.
 
 - **Module Chức năng Chuẩn**:
     - **Bắt buộc**: Một module mới mặc định phải bao gồm các hàm: `stats`, `index`, `show`, `store`, `update`, `destroy`, `bulk delete`, `bulk update status`, `change status`, `export`, `import`.
@@ -108,10 +127,10 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
     - **Khuyến nghị**: Dùng shortcut `$this->unauthorized()`, `$this->forbidden()`, `$this->notFound()`, `$this->conflict()`.
 
 - **Service Layer & Transaction**:
-    - **Bắt buộc**: Mỗi module phải có `Services/` để chứa nghiệp vụ. Namespace chuẩn: `App\Modules\<Module>\Services`. Quy ước tên: `{Resource}Service` (ví dụ: `PostService`, `UserService`).
+    - **Bắt buộc**: Mỗi module phải có `Services/` để chứa nghiệp vụ. Namespace chuẩn: `App\Modules\<Module>\Services`. Quy ước tên: `{Resource}Service` (ví dụ: `MeetingService`, `UserService`).
     - **Bắt buộc**: Controller chỉ điều phối theo luồng: nhận request -> validate (FormRequest) -> gọi Service -> trả response chuẩn (`success/successResource/successCollection/error`).
     - **Bắt buộc**: Không đặt nghiệp vụ xử lý dữ liệu phức tạp trong Controller (query nhiều bước, sync quan hệ, xử lý trạng thái, import/export, ...).
-    - **Bắt buộc**: Service phải ưu tiên giữ bộ method chuẩn theo module: `stats`, `index`, `show`, `store`, `update`, `destroy`, `bulkDestroy`, `bulkUpdateStatus`, `changeStatus`, `export`, `import` (áp dụng theo resource có hỗ trợ).
+    - **Bắt buộc**: Service phải ưu tiên giữ bộ method chuẩn theo module: `stats`, `index`, `show`, `store`, `update`, `destroy`, `bulkDestroy`, `bulkUpdateStatus`, `changeStatus`, `export`, `import` (áp dụng theo resource có hỗ trợ). Quy ước tên class: `{Resource}Service` (ví dụ: `MeetingService`, `MeetingRoomService`, `TaskAssignmentItemService`).
     - **Bắt buộc**: Dùng `DB::transaction()` cho các luồng ghi nhiều bước có phụ thuộc nhau (ví dụ: create/update + sync quan hệ + xóa/thêm dữ liệu liên quan).
     - **Khuyến nghị**: Với thao tác hàng loạt nhiều bước (bulk delete theo từng bản ghi, bulk sync...), bọc transaction để đảm bảo toàn vẹn dữ liệu.
     - **Bắt buộc**: Các thao tác chỉ đọc dữ liệu hoặc chỉ một câu lệnh ghi đơn lẻ thì không cần transaction để tránh lạm dụng.
@@ -157,12 +176,12 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
         - **Bắt buộc** với endpoint **yêu cầu X-Organization-Id**: Thêm `@header X-Organization-Id` (required, ID tổ chức làm việc).
         - **Khuyến nghị**: `@response` hoặc `@responseField` khi cần mô tả response mẫu cụ thể.
     - **Bắt buộc**: Đồng bộ chuẩn module, mỗi action (stats, index, show, store, update, destroy, bulkDestroy, bulkUpdateStatus, changeStatus, export, import) phải có block PHPDoc đầy đủ tham số.
-    - **Khuyến nghị**: Tham khảo style trong `app/Modules/Post/PostController.php` và `app/Modules/Post/PostCategoryController.php`.
+    - **Khuyến nghị**: Tham khảo style trong các controller của `app/Modules/Meeting/Controllers/` (module phức tạp, có đầy đủ PHPDoc) hoặc `app/Modules/Core/` controllers.
 
 - **Seed Permission (phân quyền)**:
     - **Bắt buộc**: Danh sách permission chuẩn nằm trong `database/seeders/PermissionSeeder.php` (mảng `PERMISSIONS`: resource => [actions]).
     - **Bắt buộc**: Khi có thay đổi/bổ sung chức năng (thêm resource mới hoặc action mới như `duplicate`), phải cập nhật mảng permission trong `PermissionSeeder`, sau đó chạy `sail artisan db:seed --class=PermissionSeeder` (hoặc `migrate:fresh --seed`) để đồng bộ quyền.
-    - **Bắt buộc**: Định dạng permission: `{resource}.{action}` (resource trùng prefix API: users, permissions, roles, organizations, posts, post-categories, log-activities).
+    - **Bắt buộc**: Định dạng permission: `{resource}.{action}` (resource trùng prefix API route, ví dụ: `users`, `roles`, `organizations`, `meeting-rooms`, `task-assignment-items`, `log-activities`).
     - **Bắt buộc**: Dùng guard `web` cho cả web và API Sanctum (đồng bộ với Spatie Permission).
 
 - **LogActivity Middleware (mô tả nhật ký)**:
@@ -196,5 +215,5 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 - **Factory phục vụ Scribe model examples**:
     - **Bắt buộc**: Model dùng `HasFactory` phải có factory tương ứng đúng namespace để Scribe không báo `Couldn't get example model ... via factoryCreate/factoryMake`.
-    - **Bắt buộc**: Với model trong module, namespace factory phải khớp convention Laravel của module model (ví dụ `Database\Factories\Modules\Document\Models\...Factory`).
+    - **Bắt buộc**: Với model trong module, namespace factory phải khớp convention Laravel của module model (ví dụ `Database\Factories\Modules\Meeting\Models\MeetingRoomFactory`).
 

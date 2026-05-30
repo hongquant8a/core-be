@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Http;
 use Throwable;
 
 /**
- * Zalo OA Message channel — gửi tin nhắn text tự do qua Official Account.
+ * Zalo OA Message channel — gửi tin nhắn text tự do qua Official Account (channel key: 'zalo').
  *
  * - Endpoint: POST https://openapi.zalo.me/v2.0/oa/message
  *   API legacy được mọi OA tier (kể cả nhà nước/community) chấp nhận. V3.0 endpoints
@@ -20,6 +20,8 @@ use Throwable;
  * - Auth: header `access_token` (1h). Refresh qua POST https://oauth.zaloapp.com/v4/oa/access_token
  *   (refresh_token 3 tháng, single-use → mỗi lần refresh nhận token mới phải replace).
  * - Recipient ID: Zalo user_id (từ webhook follow / OAuth). Channel đọc qua $recipient->zaloId.
+ *
+ * Channel ZNS (template-based qua WorldSMS) xem ZaloZnsChannel.php (key: 'zalo_zns').
  */
 class ZaloChannel implements NotificationChannel
 {

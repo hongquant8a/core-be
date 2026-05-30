@@ -154,6 +154,35 @@ class MeetingReminderContentBuilder implements ContentBuilder
         );
     }
 
+private function toZaloZns(User $recipient, Meeting $meeting): ?NotificationPayload
+    {
+        if (! $recipient->phone) {
+            return null;
+        }
+
+        $start = $meeting->start_time?->format('d/m/Y H:i') ?? '';
+        $url = $this->meetingFrontendUrl($meeting);
+        $prefix = match ($this->moment) {
+            'before' => 'Nhắc cuộc họp sắp diễn ra',
+            'on' => 'Cuộc họp đã đến giờ',
+            'after' => 'Cuộc họp đã kết thúc',
+            default => 'Nhắc lịch họp',
+        };
+        $text = "{$prefix}: {$meeting->title}.".($start ? " Thời gian: {$start}." : '')." Xem chi tiết: {$url}";
+
+        return new NotificationPayload(
+            channels: ['zalo_zns'],
+            recipient: new Recipient(phone: $recipient->phone, name: $recipient->name),
+            content: $text,
+            context: [
+                'customer_name' => $recipient->name,
+                'meeting_title' => $meeting->title,
+                'url' => $url,
+                'event' => "meeting_reminder_{$this->moment}",
+            ],
+        );
+    }
+
     private function toFcm(User $recipient, Meeting $meeting): ?NotificationPayload
     {
         $tokens = $recipient->fcmTokens()->pluck('fcm_token')->all();

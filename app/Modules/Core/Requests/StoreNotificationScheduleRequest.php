@@ -17,7 +17,7 @@ class StoreNotificationScheduleRequest extends FormRequest
             'moment' => 'nullable|in:before,on,after',
             'offset_minutes' => 'nullable|integer|min:0',
             'channels' => 'array',
-            'channels.*' => 'in:sms,mail,zalo,fcm',
+            'channels.*' => 'in:sms,mail,zalo,zalo_zns,fcm',
             'label' => 'required|string|max:255',
             'sort_order' => 'integer',
         ];

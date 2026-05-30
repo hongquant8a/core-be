@@ -4,10 +4,11 @@ namespace App\Services\Notification\Enums;
 
 enum NotificationDeliveryChannelEnum: string
 {
-    case Sms = 'sms';
-    case Mail = 'mail';
-    case Zalo = 'zalo';
-    case Fcm = 'fcm';
+    case Sms     = 'sms';
+    case Mail    = 'mail';
+    case Zalo    = 'zalo';      // Zalo OA (free-text qua user_id)
+    case ZaloZns = 'zalo_zns';  // Zalo ZNS (template-based qua WorldSMS)
+    case Fcm     = 'fcm';
 
     public static function values(): array
     {
@@ -17,10 +18,11 @@ enum NotificationDeliveryChannelEnum: string
     public function label(): string
     {
         return match ($this) {
-            self::Sms => 'SMS',
-            self::Mail => 'Email',
-            self::Zalo => 'Zalo',
-            self::Fcm => 'Thông báo đẩy',
+            self::Sms     => 'SMS',
+            self::Mail    => 'Email',
+            self::Zalo    => 'Zalo OA',
+            self::ZaloZns => 'Zalo ZNS',
+            self::Fcm     => 'Thông báo đẩy',
         };
     }
 

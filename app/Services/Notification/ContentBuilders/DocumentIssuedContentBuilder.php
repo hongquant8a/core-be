@@ -111,6 +111,29 @@ class DocumentIssuedContentBuilder implements ContentBuilder
         );
     }
 
+private function toZaloZns(User $recipient, TaskAssignmentItem $item, $document): ?NotificationPayload
+    {
+        if (! $recipient->phone) {
+            return null;
+        }
+
+        $documentName = $document?->name ?? '';
+        $deadline = $item->end_at ? " (hạn {$item->end_at->format('d/m/Y H:i')})" : '';
+        $text = "Văn bản đã ban hành: {$documentName}. Công việc: {$item->name}{$deadline}.";
+
+        return new NotificationPayload(
+            channels: ['zalo_zns'],
+            recipient: new Recipient(phone: $recipient->phone, name: $recipient->name),
+            content: $text,
+            context: [
+                'customer_name' => $recipient->name,
+                'task_name' => $item->name,
+                'document_name' => $document?->name ?? '',
+                'deadline' => $item->end_at?->format('d/m/Y H:i') ?? '',
+            ],
+        );
+    }
+
     private function toFcm(User $recipient, TaskAssignmentItem $item, $document): ?NotificationPayload
     {
         $tokens = $recipient->fcmTokens()->pluck('fcm_token')->all();
