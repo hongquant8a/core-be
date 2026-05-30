@@ -13,6 +13,7 @@ QLCV (quản lý công việc) là backend API cho hệ thống nội bộ đa t
 - **Auth** — đăng nhập, đổi mật khẩu, **chuyển tổ chức làm việc** (1 user có thể thuộc nhiều tổ chức).
 - **Core** — user, role, permission, organization, settings, log truy cập, notification.
 - **TaskAssignment** — luồng nghiệp vụ chính: văn bản giao việc → chia thành các đầu việc cho phòng ban/cá nhân → assignee submit báo cáo → quản lý confirm. Có nhắc nhở deadline (reminder), thống kê, xuất Excel.
+- **Meeting** — quản lý cuộc họp nội bộ: lập lịch họp, mời thành viên, agenda + biểu quyết, ghi nhận RSVP, báo cáo sau họp, xuất kết quả Excel.
 
 Tất cả qua REST API, FE riêng (Vue/React, không trong repo này). Auth bằng Bearer token (Sanctum).
 
@@ -80,6 +81,7 @@ API docs (Scribe): `/docs` sau khi chạy `php artisan scribe:generate`.
 - `Modules/Auth/` — đăng nhập, sso, password
 - `Modules/Core/` — user/role/permission/org/setting/log/notification
 - `Modules/TaskAssignment/` — nghiệp vụ chính
+- `Modules/Meeting/` — quản lý cuộc họp (có thêm `Concerns/`, `Events/`, `Middleware/`, `Policies/` so với pattern cơ bản)
 - `Providers/` — `AppServiceProvider`, `NotificationServiceProvider`
 - `Services/Notification/` — service xuyên module, là notification engine
 
@@ -98,7 +100,7 @@ API docs (Scribe): `/docs` sau khi chạy `php artisan scribe:generate`.
 - `DATABASE_DESIGN.md` — mô tả CSDL
 - `STRUCTURE_DESIGN.md` — cấu trúc dự án ở dạng decision log
 - `api/` — docs API generate
-- `changelogs/` — changelog cho FE migrate (xem section 12)
+- `changelogs/` — changelog cho FE migrate (xem section 12), format `.md` hoặc `.txt`
 - `guides/` — hướng dẫn flow notification
 - `answer/` — phân tích/trả lời các câu hỏi nghiệp vụ
 - `superpowers/` — specs + plans cho feature lớn (workflow brainstorm → plan → impl)
@@ -109,7 +111,7 @@ API docs (Scribe): `/docs` sau khi chạy `php artisan scribe:generate`.
 - `web.php`
 
 **`tests/`**
-- `Feature/` — đa số test ở đây (subfolders: `Auth/`, `Notification/`, `TaskAssignment/`, `Core/`)
+- `Feature/` — đa số test ở đây (subfolders: `Auth/`, `Notification/`, `TaskAssignment/`, `Core/`, `Meeting/`)
 - `Unit/`
 
 Quy ước quan trọng:
@@ -145,7 +147,25 @@ Khi thêm 1 resource (vd `TaskAssignmentXyz`), đi qua 6 file gần như cố đ
 6. `app/Modules/TaskAssignment/Resources/XyzResource.php` + `Routes/task_assignment_xyz.php`
 7. Đăng ký route group trong `routes/api.php`
 
+**Bộ method chuẩn** mỗi resource phải implement (trừ khi không phù hợp nghiệp vụ):
+
+| Method service | Endpoint tương ứng |
+|----------------|--------------------|
+| `stats` | `GET /stats` |
+| `index` | `GET /` |
+| `show` | `GET /{id}` |
+| `store` | `POST /` |
+| `update` | `PUT /{id}` |
+| `destroy` | `DELETE /{id}` |
+| `bulkDestroy` | `DELETE /bulk-delete` |
+| `bulkUpdateStatus` | `PATCH /bulk-status` |
+| `changeStatus` | `PATCH /{id}/status` |
+| `export` | `GET /export` |
+| `import` | `POST /import` |
+
 Module `Core` cùng pattern, chỉ khác là controller nằm trực tiếp trong `app/Modules/Core/` (lịch sử, không phải lỗi).
+
+Module `Meeting` cùng pattern nhưng có thêm: `Concerns/` (trait dùng chung nội bộ module), `Events/` (domain events), `Middleware/` (middleware riêng), `Policies/` (authorization policy). Khi thêm module mới phức tạp, tham khảo Meeting làm reference.
 
 ---
 
@@ -235,6 +255,23 @@ Sanctum::actingAs($user);
 
 (Nếu quên `setPermissionsTeamId` SAU seed — role sẽ assign vào default org của seeder, không phải org test → 403 khi gọi endpoint. Đây là gotcha thường gặp nhất.)
 
+### Khi thêm resource / action mới
+
+Bắt buộc cập nhật `database/seeders/PermissionSeeder.php` — mảng `PERMISSIONS` khai báo theo dạng:
+
+```php
+'resource-name' => ['index', 'show', 'store', 'update', 'destroy', 'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import', 'stats'],
+```
+
+Sau đó re-seed để đồng bộ:
+```bash
+sail artisan db:seed --class=PermissionSeeder
+# hoặc nếu dev local muốn fresh:
+sail artisan migrate:fresh --seed
+```
+
+Format permission string: `{resource-kebab}.{actionCamel}` — vd `meeting-rooms.bulkDestroy`, `task-assignment-items.changeStatus`. Guard dùng `web` cho cả API Sanctum.
+
 ---
 
 ## 9. Notification engine — flow tổng quát
@@ -295,6 +332,114 @@ Validation errors → 422 với `errors` object. Permission denied → 403. Cấ
 
 ### Filter pattern
 Hầu hết list endpoint nhận query params: `search`, `status`, `from_date`, `to_date`, `sort_by`, `sort_order`, `limit`. Validate qua [FilterRequest](../app/Modules/Core/Requests/FilterRequest.php). Service nhận `$request->all()` rồi gọi `Model::filter($filters)` (scope `scopeFilter` ở model).
+
+### HTTP method conventions
+Quy tắc bắt buộc — **không dùng POST thay cho DELETE/PATCH**:
+
+| Thao tác | Method | Route mẫu |
+|----------|--------|-----------|
+| Xóa 1 | `DELETE` | `/{id}` |
+| Xóa hàng loạt | `DELETE` | `/bulk-delete` |
+| Đổi trạng thái 1 | `PATCH` | `/{id}/status` |
+| Đổi trạng thái hàng loạt | `PATCH` | `/bulk-status` |
+| Sắp xếp lại | `PATCH` | `/reorder` |
+
+`bulk-delete` dùng `DELETE` với body JSON `{ "ids": [...] }` — Laravel parse được JSON body cho DELETE qua `$request->input('ids')`. Dùng `POST` cho bulk-delete là di sản scaffold cũ, không áp dụng cho code mới.
+
+### FormRequest conventions
+Mỗi FormRequest phải có đủ 3 method:
+
+```php
+public function rules(): array { /* ... */ }
+
+public function messages(): array
+{
+    return [
+        'name.required' => 'Tên là bắt buộc.',
+        'status.in'     => 'Trạng thái không hợp lệ.',
+        // ... bao phủ mọi rule đang dùng, tiếng Việt
+    ];
+}
+
+public function attributes(): array
+{
+    return [
+        'name'   => 'tên',
+        'status' => 'trạng thái',
+        // ... map tên thân thiện cho từng field validate
+    ];
+}
+```
+
+Với request dùng cho endpoint API, bổ sung thêm:
+- `bodyParameters()` — mô tả field cho Scribe sinh API doc.
+- `queryParameters()` — với FilterRequest hoặc request dùng query params.
+
+### DB::transaction() — khi nào dùng
+- **Dùng**: luồng ghi nhiều bước có phụ thuộc nhau (create + sync relation + xóa row liên quan, import nhiều bản ghi...).
+- **Không dùng**: chỉ đọc, hoặc chỉ 1 câu ghi đơn lẻ — tránh lạm dụng.
+- **Lưu ý file**: nếu trong transaction có upload/xóa file, phải `try/catch` và cleanup file khi exception để tránh lệch DB vs storage.
+
+### MediaService — upload/xóa file
+Mọi thao tác upload/xóa media phải đi qua `App\Modules\Core\Services\MediaService`. Không gọi trực tiếp `addMedia()` hay `Storage::put/delete` trong service của module khác.
+
+```php
+// Đúng
+$this->mediaService->upload($model, $request->file('attachment'));
+
+// Sai — gọi thẳng Spatie trong service nghiệp vụ
+$model->addMedia($file)->toMediaCollection('attachments');
+```
+
+### Public catalog API pattern
+Danh mục dùng cho dropdown/form công khai (không cần auth) phải có 2 endpoint riêng, đặt **ngoài** nhóm `auth:sanctum` trong `routes/api.php`:
+
+| Endpoint | Dùng khi |
+|----------|----------|
+| `GET /api/{resource}/public` | Cần data đầy đủ theo Resource hiện có |
+| `GET /api/{resource}/public-options` | Dropdown — chỉ cần `id`, `name`, `description`; filter `status=active` |
+
+`public-options` phải select tối thiểu cột cần thiết và sort ổn định (tránh phân trang nặng cho dropdown).
+
+### Scribe PHPDoc conventions
+Scribe sinh API doc từ PHPDoc trong controller. Mỗi controller/action phải có:
+
+```php
+/**
+ * @group Meeting - Phòng họp
+ *
+ * Quản lý phòng họp nội bộ.
+ */
+class MeetingRoomController extends Controller
+{
+    /**
+     * Danh sách phòng họp
+     *
+     * @header X-Organization-Id required ID tổ chức làm việc. Example: 1
+     * @queryParam search string Tìm theo tên. Example: phòng A
+     * @queryParam status string Lọc theo trạng thái (active/inactive). Example: active
+     */
+    public function index(FilterRequest $request) { ... }
+
+    /**
+     * Danh sách công khai (dropdown)
+     *
+     * @unauthenticated  ← bắt buộc với public endpoint, không thì Scribe hiển thị "requires auth" sai
+     */
+    public function publicOptions() { ... }
+
+    /**
+     * Xuất Excel
+     *
+     * Xuất ra các trường: id, name, capacity, status, created_by, updated_by, created_at, updated_at.
+     *
+     * @header X-Organization-Id required ID tổ chức làm việc. Example: 1
+     */
+    public function export() { ... }
+}
+```
+
+Tham khảo style đầy đủ: `app/Modules/Core/` controllers hoặc `app/Modules/Meeting/` controllers gần nhất. Sau khi thêm/sửa PHPDoc: `sail artisan scribe:generate` và kiểm tra `public/docs/`.
 
 ---
 
@@ -382,6 +527,8 @@ Cho feature **lớn**: brainstorm → spec → implementation plan → execute. 
 
 5. **`remind_at` lệch 7h**: timezone bị set về UTC ở đâu đó (CI env, test setUp). App phải chạy `Asia/Ho_Chi_Minh`. Có 4 test riêng cho timezone trong `tests/Feature/Notification/ProcessRemindersTimezoneTest.php` — chạy xanh ⇒ TZ ổn.
 
+6. **`bulk-delete` route dùng sai HTTP method**: nếu thấy route `POST /bulk-delete` trong code mới → sai convention. Phải là `DELETE /bulk-delete`. Client gửi body JSON `{ "ids": [...] }` qua DELETE — Laravel parse bình thường. POST là di sản scaffold cũ.
+
 ---
 
 ## 14. Khi nào đào sâu chỗ nào
@@ -391,9 +538,11 @@ Cho feature **lớn**: brainstorm → spec → implementation plan → execute. 
 | Schema CSDL trông ra sao | [docs/DATABASE_DESIGN.md](DATABASE_DESIGN.md) |
 | Cấu trúc dự án thiết kế thế nào | [docs/STRUCTURE_DESIGN.md](STRUCTURE_DESIGN.md) |
 | Module TaskAssignment chi tiết | [docs/answer/tong-hop-module-task-assignment.md](answer/tong-hop-module-task-assignment.md), [docs/answer/phan-tich-module-quan-ly-giao-viec-lien-phong-ban.md](answer/phan-tich-module-quan-ly-giao-viec-lien-phong-ban.md) |
+| Module Meeting chi tiết | `docs/superpowers/specs/` — tìm file spec meeting gần nhất; `app/Modules/Meeting/` — xem code trực tiếp |
 | Notification flow + cách thêm module mới | [docs/guides/notification-flow-behavior.md](guides/notification-flow-behavior.md), [docs/guides/notification-new-module-integration.md](guides/notification-new-module-integration.md) |
-| API list | `php artisan scribe:generate` → mở `public/docs/index.html`. Hoặc đọc trực tiếp `docs/api/`. |
+| API list | `sail artisan scribe:generate` → mở `public/docs/index.html`. Hoặc đọc trực tiếp `docs/api/`. |
 | Format export/import Excel | [docs/answer/model-export-import-theo-module.md](answer/model-export-import-theo-module.md) |
+| Cách thêm label cho LogActivity | `app/Modules/Core/Middleware/LogActivity.php` — `resourceLabel()`, `actionLabels`, `pathActions` |
 | Workflow viết feature mới | Mở 1 spec gần đây trong `docs/superpowers/specs/` để xem format |
 | Migrate FE khi BE đổi API | `docs/changelogs/` — luôn có changelog cho mỗi PR đổi API |
 
