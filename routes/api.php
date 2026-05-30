@@ -191,4 +191,27 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
     Route::prefix('meeting-settings')->group(function () {
         require base_path('app/Modules/Meeting/Routes/meeting_setting.php');
     });
+
+    // Scheduling module
+    Route::prefix('schedules')->middleware('ensure.route.org')->group(function () {
+        require base_path('app/Modules/Scheduling/Routes/schedule.php');
+    });
+    Route::prefix('scheduling-employees')->middleware('ensure.route.org')->group(function () {
+        require base_path('app/Modules/Scheduling/Routes/scheduling_employee.php');
+    });
+    Route::prefix('scheduling-employee-groups')->middleware('ensure.route.org')->group(function () {
+        require base_path('app/Modules/Scheduling/Routes/scheduling_employee_group.php');
+    });
+    Route::prefix('scheduling-notification-groups')->middleware('ensure.route.org')->group(function () {
+        require base_path('app/Modules/Scheduling/Routes/notification_group.php');
+    });
+    Route::prefix('scheduling-reminder-presets')->middleware('ensure.route.org')->group(function () {
+        require base_path('app/Modules/Scheduling/Routes/reminder_preset.php');
+    });
+    Route::prefix('scheduling-settings')->group(function () {
+        require base_path('app/Modules/Scheduling/Routes/org_scheduling_settings.php');
+    });
+    Route::prefix('scheduling-filter-presets')->middleware('ensure.route.org')->group(function () {
+        require base_path('app/Modules/Scheduling/Routes/filter_preset.php');
+    });
 });

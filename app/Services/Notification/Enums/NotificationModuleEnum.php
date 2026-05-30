@@ -10,12 +10,14 @@ enum NotificationModuleEnum: string
 {
     case TaskAssignment = 'task_assignment';
     case Meeting = 'meeting';
+    case Scheduling = 'scheduling';
 
     public function label(): string
     {
         return match ($this) {
             self::TaskAssignment => 'Giao việc',
             self::Meeting => 'Cuộc họp',
+            self::Scheduling => 'Lịch công tác',
         };
     }
 

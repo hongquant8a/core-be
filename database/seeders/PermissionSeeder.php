@@ -210,6 +210,32 @@ class PermissionSeeder extends Seeder
         'meeting-settings' => [
             'show', 'update',
         ],
+        // Scheduling - Lịch công tác
+        'scheduling.schedules' => [
+            'stats', 'index', 'show', 'store', 'update', 'destroy',
+            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
+            'approve', 'reorder',
+        ],
+        'scheduling.employees' => [
+            'stats', 'index', 'show', 'store', 'update', 'destroy',
+            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
+        ],
+        'scheduling.employee-groups' => [
+            'stats', 'index', 'show', 'store', 'update', 'destroy',
+            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus',
+        ],
+        'scheduling.notification-groups' => [
+            'stats', 'index', 'show', 'store', 'update', 'destroy',
+        ],
+        'scheduling.reminder-presets' => [
+            'stats', 'index', 'show', 'store', 'update', 'destroy',
+        ],
+        'scheduling.filter-presets' => [
+            'index', 'show', 'store', 'update', 'destroy',
+        ],
+        'scheduling.settings' => [
+            'show', 'update',
+        ],
     ];
 
     public function run(): void
@@ -286,6 +312,13 @@ class PermissionSeeder extends Seeder
         'meeting-personal-note-attachments' => 'File ghi chú cá nhân',
         'meeting-minutes-templates' => 'Template biên bản họp',
         'meeting-settings' => 'Cấu hình cuộc họp',
+        'scheduling.schedules' => 'Lịch công tác',
+        'scheduling.employees' => 'Nhân viên lịch công tác',
+        'scheduling.employee-groups' => 'Nhóm nhân viên lịch công tác',
+        'scheduling.notification-groups' => 'Nhóm nhận thông báo lịch',
+        'scheduling.reminder-presets' => 'Preset nhắc lịch',
+        'scheduling.filter-presets' => 'Bộ lọc cá nhân lịch',
+        'scheduling.settings' => 'Cấu hình lịch công tác',
     ];
 
     /** Nhãn action (để description). */
@@ -325,6 +358,7 @@ class PermissionSeeder extends Seeder
         'reject' => 'Từ chối',
         'attendees' => 'Quản lý đại biểu trong nhóm',
         'systemOverview' => 'Tổng quan hệ thống',
+        'reorder' => 'Sắp xếp lại',
     ];
 
     /** Tạo đầy đủ permission từ danh sách PERMISSIONS (kèm description, sort_order, parent_id). */
@@ -381,6 +415,22 @@ class PermissionSeeder extends Seeder
             ['name' => 'Nhân viên', 'guard_name' => self::GUARD],
             ['organization_id' => null]
         );
+        Role::firstOrCreate(
+            ['name' => 'Tổng hợp lịch', 'guard_name' => self::GUARD],
+            ['organization_id' => null]
+        );
+        Role::firstOrCreate(
+            ['name' => 'Thư ký', 'guard_name' => self::GUARD],
+            ['organization_id' => null]
+        );
+        Role::firstOrCreate(
+            ['name' => 'Lãnh đạo', 'guard_name' => self::GUARD],
+            ['organization_id' => null]
+        );
+        Role::firstOrCreate(
+            ['name' => 'Lái xe', 'guard_name' => self::GUARD],
+            ['organization_id' => null]
+        );
 
         // Chuẩn hóa dữ liệu cũ nếu còn role theo organization.
         Role::query()->update(['organization_id' => null]);
@@ -414,6 +464,26 @@ class PermissionSeeder extends Seeder
         $nhanVienRole = Role::where('name', 'Nhân viên')->where('guard_name', self::GUARD)->first();
         if ($nhanVienRole) {
             $nhanVienRole->syncPermissions($this->getNhanVienPermissionNames());
+        }
+
+        $tongHopRole = Role::where('name', 'Tổng hợp lịch')->where('guard_name', self::GUARD)->first();
+        if ($tongHopRole) {
+            $tongHopRole->syncPermissions($this->getTongHopPermissionNames());
+        }
+
+        $thuKyRole = Role::where('name', 'Thư ký')->where('guard_name', self::GUARD)->first();
+        if ($thuKyRole) {
+            $thuKyRole->syncPermissions($this->getThuKyPermissionNames());
+        }
+
+        $lanhDaoRole = Role::where('name', 'Lãnh đạo')->where('guard_name', self::GUARD)->first();
+        if ($lanhDaoRole) {
+            $lanhDaoRole->syncPermissions($this->getLanhDaoPermissionNames());
+        }
+
+        $laiXeRole = Role::where('name', 'Lái xe')->where('guard_name', self::GUARD)->first();
+        if ($laiXeRole) {
+            $laiXeRole->syncPermissions($this->getLaiXePermissionNames());
         }
     }
 
@@ -645,6 +715,56 @@ class PermissionSeeder extends Seeder
 
             // Công việc được giao (xem task cua minh)
             'my-received-tasks.index',
+        ];
+    }
+
+    protected function getTongHopPermissionNames(): array
+    {
+        $names = [];
+        foreach (['scheduling.schedules', 'scheduling.employees', 'scheduling.employee-groups', 'scheduling.notification-groups', 'scheduling.reminder-presets', 'scheduling.filter-presets', 'scheduling.settings'] as $resource) {
+            foreach (self::$PERMISSIONS[$resource] as $action) {
+                $names[] = "{$resource}.{$action}";
+            }
+        }
+        return $names;
+    }
+
+    protected function getThuKyPermissionNames(): array
+    {
+        return [
+            'scheduling.schedules.index',
+            'scheduling.schedules.show',
+            'scheduling.schedules.store',
+            'scheduling.schedules.update',
+            'scheduling.schedules.destroy',
+            'scheduling.schedules.export',
+            'scheduling.filter-presets.index',
+            'scheduling.filter-presets.show',
+            'scheduling.filter-presets.store',
+            'scheduling.filter-presets.update',
+            'scheduling.filter-presets.destroy',
+        ];
+    }
+
+    protected function getLanhDaoPermissionNames(): array
+    {
+        return [
+            'scheduling.schedules.index',
+            'scheduling.schedules.show',
+            'scheduling.schedules.export',
+            'scheduling.filter-presets.index',
+            'scheduling.filter-presets.show',
+            'scheduling.filter-presets.store',
+            'scheduling.filter-presets.update',
+            'scheduling.filter-presets.destroy',
+        ];
+    }
+
+    protected function getLaiXePermissionNames(): array
+    {
+        return [
+            'scheduling.schedules.index',
+            'scheduling.schedules.show',
         ];
     }
 }
