@@ -11,6 +11,7 @@ use App\Services\Notification\Channels\FcmChannel;
 use App\Services\Notification\Channels\MailChannel;
 use App\Services\Notification\Channels\SmsChannel;
 use App\Services\Notification\Channels\ZaloChannel;
+use App\Services\Notification\Channels\ZaloZnsChannel;
 use App\Services\Notification\ContentBuilders\DocumentIssuedContentBuilder;
 use App\Services\Notification\ContentBuilders\MeetingCancelledContentBuilder;
 use App\Services\Notification\ContentBuilders\MeetingPublishedContentBuilder;
@@ -34,6 +35,16 @@ use App\Services\Notification\Listeners\SendMeetingUpdatedNotifications;
 use App\Services\Notification\Listeners\SendTaskAssignedNotifications;
 use App\Services\Notification\Listeners\SendTaskCompletedNotifications;
 use App\Services\Notification\Listeners\SendTaskConfirmedNotifications;
+use App\Services\Notification\ContentBuilders\SchedulePublishedContentBuilder;
+use App\Services\Notification\ContentBuilders\ScheduleUpdatedContentBuilder;
+use App\Services\Notification\ContentBuilders\ScheduleCancelledContentBuilder;
+use App\Services\Notification\ContentBuilders\ScheduleReminderContentBuilder;
+use App\Services\Notification\Events\SchedulePublished;
+use App\Services\Notification\Events\ScheduleUpdated;
+use App\Services\Notification\Events\ScheduleCancelled;
+use App\Services\Notification\Listeners\SendSchedulePublishedNotifications;
+use App\Services\Notification\Listeners\SendScheduleUpdatedNotifications;
+use App\Services\Notification\Listeners\SendScheduleCancelledNotifications;
 use App\Services\Notification\NotificationService;
 use App\Services\Notification\Services\ContentBuilderRegistry;
 use App\Services\Notification\SmsClient;
@@ -54,11 +65,11 @@ class NotificationServiceProvider extends ServiceProvider
                 channels: [
                     'sms' => new SmsChannel($smsClient, $settings),
                     'mail' => new MailChannel($settings),
-                    // Channel zalo đang dùng OA Message API v2.0 (free-form text qua user_id).
-                    // Swap về ZNS legacy: thay ZaloChannel → ZaloZnsChannel + đảm bảo settings ZNS đã điền
-                    // (zalo_server/username/password/sender/template_id) — xem ZaloZnsChannel docblock.
-                    'zalo' => new ZaloChannel($settings),
-                    'fcm' => new FcmChannel($settings),
+                    // Zalo OA Message (free-form text qua user_id, key: 'zalo') — ZaloChannel.php
+                    'zalo'     => new ZaloChannel($settings),
+                    // Zalo ZNS template qua WorldSMS relay (key: 'zalo_zns') — ZaloZnsChannel.php
+                    'zalo_zns' => new ZaloZnsChannel($settings),
+                    'fcm'      => new FcmChannel($settings),
                 ],
             );
         });
@@ -82,6 +93,12 @@ class NotificationServiceProvider extends ServiceProvider
         $registry->register('meeting_reminder_on', new MeetingReminderContentBuilder('on'));
         $registry->register('meeting_reminder_after', new MeetingReminderContentBuilder('after'));
 
+        // Register Scheduling Content Builders
+        $registry->register('schedule_published', $this->app->make(SchedulePublishedContentBuilder::class));
+        $registry->register('schedule_updated', $this->app->make(ScheduleUpdatedContentBuilder::class));
+        $registry->register('schedule_cancelled', $this->app->make(ScheduleCancelledContentBuilder::class));
+        $registry->register('schedule_reminder', $this->app->make(ScheduleReminderContentBuilder::class));
+
         // Register event listeners
         Event::listen(DocumentIssued::class, SendDocumentIssuedNotifications::class);
         Event::listen(TaskAssigned::class, SendTaskAssignedNotifications::class);
@@ -90,6 +107,9 @@ class NotificationServiceProvider extends ServiceProvider
         Event::listen(MeetingPublished::class, SendMeetingPublishedNotifications::class);
         Event::listen(MeetingUpdated::class, SendMeetingUpdatedNotifications::class);
         Event::listen(MeetingCancelled::class, SendMeetingCancelledNotifications::class);
+        Event::listen(SchedulePublished::class, SendSchedulePublishedNotifications::class);
+        Event::listen(ScheduleUpdated::class, SendScheduleUpdatedNotifications::class);
+        Event::listen(ScheduleCancelled::class, SendScheduleCancelledNotifications::class);
 
         // Register model observer for auto reminder scheduling
         TaskAssignmentItem::observe(TaskAssignmentItemObserver::class);

@@ -116,6 +116,27 @@ class MeetingCancelledContentBuilder implements ContentBuilder
         );
     }
 
+private function toZaloZns(User $recipient, Meeting $meeting): ?NotificationPayload
+    {
+        if (! $recipient->phone) {
+            return null;
+        }
+        $url = $this->meetingFrontendUrl($meeting);
+        $text = "Cuộc họp '{$meeting->title}' đã bị hủy. Xem chi tiết: {$url}";
+
+        return new NotificationPayload(
+            channels: ['zalo_zns'],
+            recipient: new Recipient(phone: $recipient->phone, name: $recipient->name),
+            content: $text,
+            context: [
+                'customer_name' => $recipient->name,
+                'meeting_title' => $meeting->title,
+                'url' => $url,
+                'event' => 'meeting_cancelled',
+            ],
+        );
+    }
+
     private function toFcm(User $recipient, Meeting $meeting): ?NotificationPayload
     {
         $tokens = $recipient->fcmTokens()->pluck('fcm_token')->all();

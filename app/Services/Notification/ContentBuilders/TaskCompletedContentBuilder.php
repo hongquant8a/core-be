@@ -104,6 +104,26 @@ class TaskCompletedContentBuilder implements ContentBuilder
         );
     }
 
+private function toZaloZns(User $recipient, TaskAssignmentItem $item): ?NotificationPayload
+    {
+        if (! $recipient->phone) {
+            return null;
+        }
+
+        $text = "Công việc đã hoàn thành: {$item->name}.";
+
+        return new NotificationPayload(
+            channels: ['zalo_zns'],
+            recipient: new Recipient(phone: $recipient->phone, name: $recipient->name),
+            content: $text,
+            context: [
+                'customer_name' => $recipient->name,
+                'task_name' => $item->name,
+                'event' => 'task_completed',
+            ],
+        );
+    }
+
     private function toFcm(User $recipient, TaskAssignmentItem $item): ?NotificationPayload
     {
         $tokens = $recipient->fcmTokens()->pluck('fcm_token')->all();

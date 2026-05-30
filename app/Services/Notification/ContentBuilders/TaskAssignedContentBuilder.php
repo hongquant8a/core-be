@@ -109,6 +109,27 @@ class TaskAssignedContentBuilder implements ContentBuilder
         );
     }
 
+private function toZaloZns(User $recipient, TaskAssignmentItem $item): ?NotificationPayload
+    {
+        if (! $recipient->phone) {
+            return null;
+        }
+
+        $deadline = $item->end_at ? " (hạn {$item->end_at->format('d/m/Y')})" : '';
+        $text = "Bạn vừa được giao công việc: {$item->name}{$deadline}.";
+
+        return new NotificationPayload(
+            channels: ['zalo_zns'],
+            recipient: new Recipient(phone: $recipient->phone, name: $recipient->name),
+            content: $text,
+            context: [
+                'customer_name' => $recipient->name,
+                'task_name' => $item->name,
+                'event' => 'task_assigned',
+            ],
+        );
+    }
+
     private function toFcm(User $recipient, TaskAssignmentItem $item): ?NotificationPayload
     {
         $tokens = $recipient->fcmTokens()->pluck('fcm_token')->all();

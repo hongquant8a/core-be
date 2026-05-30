@@ -118,6 +118,28 @@ class MeetingPublishedContentBuilder implements ContentBuilder
         );
     }
 
+private function toZaloZns(User $recipient, Meeting $meeting): ?NotificationPayload
+    {
+        if (! $recipient->phone) {
+            return null;
+        }
+        $start = $meeting->start_time?->format('d/m/Y H:i') ?? '';
+        $url = $this->meetingFrontendUrl($meeting);
+        $text = "Bạn được mời tham dự cuộc họp: {$meeting->title}.".($start ? " Thời gian: {$start}." : '')." Xem chi tiết: {$url}";
+
+        return new NotificationPayload(
+            channels: ['zalo_zns'],
+            recipient: new Recipient(phone: $recipient->phone, name: $recipient->name),
+            content: $text,
+            context: [
+                'customer_name' => $recipient->name,
+                'meeting_title' => $meeting->title,
+                'url' => $url,
+                'event' => 'meeting_published',
+            ],
+        );
+    }
+
     private function toFcm(User $recipient, Meeting $meeting): ?NotificationPayload
     {
         $tokens = $recipient->fcmTokens()->pluck('fcm_token')->all();

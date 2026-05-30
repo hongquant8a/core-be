@@ -17,7 +17,7 @@ class UpdateNotificationScheduleRequest extends FormRequest
             'moment' => 'sometimes|nullable|in:before,on,after',
             'offset_minutes' => 'sometimes|nullable|integer|min:0',
             'channels' => 'sometimes|array',
-            'channels.*' => 'in:sms,mail,zalo,fcm',
+            'channels.*' => 'in:sms,mail,zalo,zalo_zns,fcm',
             'label' => 'sometimes|string|max:255',
             'sort_order' => 'sometimes|integer',
         ];

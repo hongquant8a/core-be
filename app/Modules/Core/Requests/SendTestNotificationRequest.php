@@ -15,7 +15,7 @@ class SendTestNotificationRequest extends FormRequest
     {
         return [
             'channels' => ['required', 'array', 'min:1'],
-            'channels.*' => ['required', 'string', 'in:sms,mail,zalo,fcm'],
+            'channels.*' => ['required', 'string', 'in:sms,mail,zalo,zalo_zns,fcm'],
             'phone' => ['nullable', 'string', 'max:20'],
             'email' => ['nullable', 'email', 'max:255'],
             'zalo_id' => ['nullable', 'string', 'max:100'],
@@ -32,7 +32,7 @@ class SendTestNotificationRequest extends FormRequest
         return [
             'channels.required' => 'Phải chọn ít nhất một kênh gửi.',
             'channels.array' => 'Danh sách kênh phải là mảng.',
-            'channels.*.in' => 'Kênh không hợp lệ. Chỉ chấp nhận: sms, mail, zalo, fcm.',
+            'channels.*.in' => 'Kênh không hợp lệ. Chỉ chấp nhận: sms, mail, zalo, zalo_zns, fcm.',
             'content.required' => 'Nội dung là bắt buộc.',
             'email.email' => 'Email không hợp lệ.',
         ];

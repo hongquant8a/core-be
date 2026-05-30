@@ -141,6 +141,34 @@ class ReminderContentBuilder implements ContentBuilder
         );
     }
 
+private function toZaloZns(User $recipient, TaskAssignmentItem $item): ?NotificationPayload
+    {
+        if (! $recipient->phone) {
+            return null;
+        }
+
+        $deadline = $item->end_at ? " (hạn {$item->end_at->format('d/m/Y H:i')})" : '';
+        $prefix = match ($this->moment) {
+            'before' => 'Sắp đến hạn công việc',
+            'on' => 'Đến hạn công việc',
+            'after' => 'Quá hạn công việc',
+            default => 'Nhắc công việc',
+        };
+        $text = "{$prefix}: {$item->name}{$deadline}.";
+
+        return new NotificationPayload(
+            channels: ['zalo_zns'],
+            recipient: new Recipient(phone: $recipient->phone, name: $recipient->name),
+            content: $text,
+            context: [
+                'customer_name' => $recipient->name,
+                'task_name' => $item->name,
+                'deadline' => $item->end_at?->format('d/m/Y H:i') ?? '',
+                'moment' => $this->moment,
+            ],
+        );
+    }
+
     private function toFcm(User $recipient, TaskAssignmentItem $item): ?NotificationPayload
     {
         $tokens = $recipient->fcmTokens()->pluck('fcm_token')->all();
