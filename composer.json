@@ -10,6 +10,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "barryvdh/laravel-dompdf": "^3.1",
         "kalnoy/nestedset": "^6.0",
         "knuckleswtf/scribe": "^5.7",
         "kreait/firebase-php": "^8.2",

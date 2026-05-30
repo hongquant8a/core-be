@@ -23,6 +23,18 @@ use App\Modules\Meeting\Policies\MeetingPersonalNotePolicy;
 use App\Modules\Meeting\Policies\MeetingPolicy;
 use App\Modules\Meeting\Policies\MeetingVoteResponsePolicy;
 use App\Modules\Meeting\Policies\MeetingVoteTopicPolicy;
+use App\Modules\Scheduling\Models\Schedule;
+use App\Modules\Scheduling\Policies\SchedulePolicy;
+use App\Modules\Scheduling\Models\NotificationGroup;
+use App\Modules\Scheduling\Policies\NotificationGroupPolicy;
+use App\Modules\Scheduling\Models\ReminderPreset;
+use App\Modules\Scheduling\Policies\ReminderPresetPolicy;
+use App\Modules\Scheduling\Models\FilterPreset;
+use App\Modules\Scheduling\Policies\FilterPresetPolicy;
+use App\Modules\Scheduling\Models\SchedulingEmployee;
+use App\Modules\Scheduling\Policies\SchedulingEmployeePolicy;
+use App\Modules\Scheduling\Models\SchedulingEmployeeGroup;
+use App\Modules\Scheduling\Policies\SchedulingEmployeeGroupPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -61,6 +73,14 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(MeetingParticipant::class, MeetingParticipantPolicy::class);
         Gate::policy(MeetingPersonalNote::class, MeetingPersonalNotePolicy::class);
         Gate::policy(MeetingPersonalNoteAttachment::class, MeetingPersonalNoteAttachmentPolicy::class);
+
+        // Register Scheduling Policies
+        Gate::policy(Schedule::class, SchedulePolicy::class);
+        Gate::policy(NotificationGroup::class, NotificationGroupPolicy::class);
+        Gate::policy(ReminderPreset::class, ReminderPresetPolicy::class);
+        Gate::policy(FilterPreset::class, FilterPresetPolicy::class);
+        Gate::policy(SchedulingEmployee::class, SchedulingEmployeePolicy::class);
+        Gate::policy(SchedulingEmployeeGroup::class, SchedulingEmployeeGroupPolicy::class);
 
         // Giữ nguyên header Excel khi import (không lowercase/snake_case).
         // Cho phép import dùng header tiếng Việt giống hệt template export.
