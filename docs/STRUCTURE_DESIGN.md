@@ -23,55 +23,75 @@ quandh-core/
 └── phpunit.xml
 ```
 
-## 2) Cấu trúc module trong `app/Modules`
+## 2) Cấu trúc `app/` ngoài Modules
+
+```text
+app/
+├── Console/
+│   └── Commands/          # Artisan commands (cleanup seeds, simulate notifications/reminders)
+├── Http/
+│   └── Controllers/       # Controller chung (DeployController, ...)
+├── Modules/               # Xem mục 2b
+├── Providers/             # AppServiceProvider, HorizonServiceProvider, NotificationServiceProvider
+└── Services/
+    ├── Notification/      # Engine notification xuyên module (dispatcher, job, channel senders)
+    └── Zalo/              # Zalo OA integration service
+```
+
+## 2b) Cấu trúc module trong `app/Modules`
 
 ```text
 app/Modules/
 ├── Auth/
+│   ├── AuthController.php   # Controller ở root (lịch sử)
+│   ├── SsoController.php
+│   ├── Jobs/
 │   ├── Requests/
 │   ├── Routes/
 │   └── Services/
 ├── Core/
+│   ├── *Controller.php      # Controllers đặt thẳng ở root Core (lịch sử, không phải lỗi)
 │   ├── Enums/
 │   ├── Exports/
 │   ├── Imports/
 │   ├── Middleware/
-│   ├── Models/  (User, Organization, UserPreference, …)
+│   ├── Models/              # User, Organization, UserPreference, …
+│   ├── Observers/
 │   ├── Requests/
 │   ├── Resources/
 │   ├── Routes/
 │   ├── Services/
+│   ├── Support/
 │   └── Traits/
-├── Post/
-│   ├── Enums/
-│   ├── Exports/
-│   ├── Imports/
-│   ├── Models/
-│   ├── Requests/
-│   ├── Resources/
-│   ├── Routes/
-│   └── Services/
-├── Document/
+├── TaskAssignment/
 │   ├── Controllers/
 │   ├── Enums/
 │   ├── Exports/
 │   ├── Imports/
 │   ├── Models/
+│   ├── Observers/
 │   ├── Requests/
 │   ├── Resources/
 │   ├── Routes/
 │   └── Services/
-└── TaskAssignment/
+└── Meeting/                 # Module phức tạp — có thêm folder tùy chọn
     ├── Controllers/
+    ├── Concerns/            # Trait dùng chung nội bộ module
     ├── Enums/
+    ├── Events/              # Domain events
     ├── Exports/
     ├── Imports/
+    ├── Middleware/
     ├── Models/
+    ├── Observers/
+    ├── Policies/            # Laravel authorization policies
     ├── Requests/
     ├── Resources/
     ├── Routes/
     └── Services/
 ```
+
+> Các folder tùy chọn (`Concerns/`, `Events/`, `Middleware/`, `Policies/`) chỉ tạo khi thực sự cần — không bắt buộc cho mọi module.
 
 ## 3) Quy ước luồng xử lý
 
@@ -83,9 +103,13 @@ app/Modules/
 
 ## 4) Vị trí tài liệu liên quan
 
-- Tài liệu API: `docs/api`.
-- Phân tích nghiệp vụ/đề xuất: `docs/answer`.
-- Thiết kế cơ sở dữ liệu: `docs/DATABASE_DESIGN.md`.
+- Tài liệu API (generate): `docs/api/`
+- Phân tích nghiệp vụ/đề xuất: `docs/answer/`
+- Thiết kế cơ sở dữ liệu: `docs/DATABASE_DESIGN.md`
+- Changelog cho FE khi BE đổi API: `docs/changelogs/` (format `.md` hoặc `.txt`)
+- Hướng dẫn flow notification: `docs/guides/`
+- Specs + plans cho feature lớn: `docs/superpowers/specs/` và `docs/superpowers/plans/`
+- Onboarding dev mới: `docs/ONBOARDING.md`
 
 ## 5) Kiểm tra cập nhật tài liệu khi thay đổi kiến trúc
 
@@ -97,7 +121,8 @@ Khi thêm module mới hoặc thay đổi cấu trúc lớn, cần cập nhật 
 
 ## 6) Quy ước multi-tenant theo tổ chức
 
-- Các module nghiệp vụ có dữ liệu theo tổ chức (hiện tại: `Post`, `Document`) phải có cột `organization_id` trên bảng chính.
+- Các module nghiệp vụ có dữ liệu theo tổ chức (hiện tại: `TaskAssignment`, `Meeting`) phải có cột `organization_id` trên bảng chính.
 - Mọi truy vấn CRUD/bulk/index/stats/export/import phải scope theo tổ chức hiện tại được middleware `set.permissions.team` thiết lập từ header `X-Organization-Id`.
+- Model dùng trait `HasOrganizationScope` để tự động scope query và gán `organization_id` khi create — không cần `where('organization_id', ...)` thủ công trong service.
 - Không cho phép truy cập chéo tổ chức khi thao tác theo ID; khi không cùng tổ chức phải trả lỗi tương đương không tìm thấy/không có quyền.
-- Middleware dùng chung: `Core/Middleware/EnsureRouteModelsBelongToOrganization.php` để kiểm tra đồng loạt model route (`{post}`, `{document}`, ...) thuộc đúng `organization_id` hiện tại.
+- Middleware dùng chung: `Core/Middleware/EnsureRouteModelsBelongToOrganization.php` để kiểm tra đồng loạt model route (`{meeting}`, `{taskAssignmentItem}`, ...) thuộc đúng `organization_id` hiện tại.
