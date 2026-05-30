@@ -88,8 +88,10 @@ deploy_be() {
   sudo -u quandh $PHP_BIN artisan horizon:terminate 2>/dev/null || true
 
   # Seed (add data, NOT fresh — seeder checks duplicates)
-  log "  [BE] Running seeders..."
-  sudo -u quandh $PHP_BIN artisan db:seed --force --ansi 2>&1 | grep -E "DONE|Seeding" | tail -3
+  log "  [BE] Running seeders (chỉ chạy seed cấu hình/quyền, không seed data mẫu)..."
+  for seeder in PermissionSeeder MeetingPermissionSeeder SettingSeeder NotificationEventConfigSeeder ReminderPresetSeeder OrgSchedulingSettingsSeeder; do
+    sudo -u quandh $PHP_BIN artisan db:seed --class=$seeder --force --ansi 2>&1 | grep -E "DONE|Seeding" | tail -1
+  done
 
   # Cleanup orphan permissions/settings
   log "  [BE] Cleanup obsolete..."
