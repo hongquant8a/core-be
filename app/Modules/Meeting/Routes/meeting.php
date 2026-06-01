@@ -37,7 +37,9 @@ use Illuminate\Support\Facades\Route;
 // Export biên bản .docx từ template — auth-only, gate operate pure FK (chair/op của meeting).
 Route::post('/{meeting}/export-minutes', [\App\Modules\Meeting\Controllers\MeetingMinutesTemplateController::class, 'exportMinutes']);
 // List template biên bản cho dialog "Chọn template" trước export.
-Route::get('/{meeting}/minutes-templates', [\App\Modules\Meeting\Controllers\MeetingMinutesTemplateController::class, 'indexInMeeting'])->middleware('can:operate,meeting');
+Route::get('/{meeting}/minutes-templates', [\App\Modules\Meeting\Controllers\MeetingMinutesTemplateController::class, 'indexInMeeting'])->middleware('can:exportReports,meeting');
+
+
 
 Route::delete('/bulk-delete', [MeetingController::class, 'bulkDestroy'])->middleware('permission:meetings.bulkDestroy,web');
 Route::patch('/bulk-status', [MeetingController::class, 'bulkUpdateStatus'])->middleware('permission:meetings.bulkUpdateStatus,web');

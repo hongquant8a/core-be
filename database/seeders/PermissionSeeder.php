@@ -207,33 +207,27 @@ class PermissionSeeder extends Seeder
         'meeting-minutes-templates' => [
             'index', 'show', 'store', 'update', 'destroy',
         ],
+        'meeting-invitation-templates' => [
+            'index', 'show', 'store', 'update', 'destroy',
+        ],
         'meeting-settings' => [
             'show', 'update',
         ],
         // Scheduling - Lịch công tác
-        'scheduling.schedules' => [
+        'schedules' => [
             'stats', 'index', 'show', 'store', 'update', 'destroy',
             'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
-            'approve', 'reorder',
+            'approve', 'duplicate', 'reorder', 'driver-view',
         ],
-        'scheduling.employees' => [
+        'scheduling-employees' => [
             'stats', 'index', 'show', 'store', 'update', 'destroy',
             'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
         ],
-        'scheduling.employee-groups' => [
+        'scheduling-employee-groups' => [
             'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus',
+            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
         ],
-        'scheduling.notification-groups' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy',
-        ],
-        'scheduling.reminder-presets' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy',
-        ],
-        'scheduling.filter-presets' => [
-            'index', 'show', 'store', 'update', 'destroy',
-        ],
-        'scheduling.settings' => [
+        'scheduling-settings' => [
             'show', 'update',
         ],
     ];
@@ -311,14 +305,12 @@ class PermissionSeeder extends Seeder
         'meeting-personal-notes' => 'Ghi chú cá nhân họp',
         'meeting-personal-note-attachments' => 'File ghi chú cá nhân',
         'meeting-minutes-templates' => 'Template biên bản họp',
+        'meeting-invitation-templates' => 'Template giấy mời họp',
         'meeting-settings' => 'Cấu hình cuộc họp',
-        'scheduling.schedules' => 'Lịch công tác',
-        'scheduling.employees' => 'Nhân viên lịch công tác',
-        'scheduling.employee-groups' => 'Nhóm nhân viên lịch công tác',
-        'scheduling.notification-groups' => 'Nhóm nhận thông báo lịch',
-        'scheduling.reminder-presets' => 'Preset nhắc lịch',
-        'scheduling.filter-presets' => 'Bộ lọc cá nhân lịch',
-        'scheduling.settings' => 'Cấu hình lịch công tác',
+        'schedules' => 'Lịch công tác',
+        'scheduling-employees' => 'Nhân viên lịch công tác',
+        'scheduling-employee-groups' => 'Nhóm nhân viên lịch công tác',
+        'scheduling-settings' => 'Cấu hình lịch công tác',
     ];
 
     /** Nhãn action (để description). */
@@ -359,6 +351,8 @@ class PermissionSeeder extends Seeder
         'attendees' => 'Quản lý đại biểu trong nhóm',
         'systemOverview' => 'Tổng quan hệ thống',
         'reorder' => 'Sắp xếp lại',
+        'duplicate' => 'Sao chép',
+        'driver-view' => 'Xem lịch phân công lái xe',
     ];
 
     /** Tạo đầy đủ permission từ danh sách PERMISSIONS (kèm description, sort_order, parent_id). */
@@ -721,7 +715,7 @@ class PermissionSeeder extends Seeder
     protected function getTongHopPermissionNames(): array
     {
         $names = [];
-        foreach (['scheduling.schedules', 'scheduling.employees', 'scheduling.employee-groups', 'scheduling.notification-groups', 'scheduling.reminder-presets', 'scheduling.filter-presets', 'scheduling.settings'] as $resource) {
+        foreach (['schedules', 'scheduling-employees', 'scheduling-employee-groups', 'scheduling-settings'] as $resource) {
             foreach (self::$PERMISSIONS[$resource] as $action) {
                 $names[] = "{$resource}.{$action}";
             }
@@ -732,39 +726,34 @@ class PermissionSeeder extends Seeder
     protected function getThuKyPermissionNames(): array
     {
         return [
-            'scheduling.schedules.index',
-            'scheduling.schedules.show',
-            'scheduling.schedules.store',
-            'scheduling.schedules.update',
-            'scheduling.schedules.destroy',
-            'scheduling.schedules.export',
-            'scheduling.filter-presets.index',
-            'scheduling.filter-presets.show',
-            'scheduling.filter-presets.store',
-            'scheduling.filter-presets.update',
-            'scheduling.filter-presets.destroy',
+            'schedules.index',
+            'schedules.show',
+            'schedules.store',
+            'schedules.update',
+            'schedules.destroy',
+            'schedules.export',
+            'schedules.stats',
+            'schedules.reorder',
         ];
     }
 
     protected function getLanhDaoPermissionNames(): array
     {
         return [
-            'scheduling.schedules.index',
-            'scheduling.schedules.show',
-            'scheduling.schedules.export',
-            'scheduling.filter-presets.index',
-            'scheduling.filter-presets.show',
-            'scheduling.filter-presets.store',
-            'scheduling.filter-presets.update',
-            'scheduling.filter-presets.destroy',
+            'schedules.index',
+            'schedules.show',
+            'schedules.export',
+            'schedules.stats',
+            'schedules.approve',
         ];
     }
 
     protected function getLaiXePermissionNames(): array
     {
         return [
-            'scheduling.schedules.index',
-            'scheduling.schedules.show',
+            'schedules.index',
+            'schedules.show',
+            'schedules.driver-view',
         ];
     }
 }
