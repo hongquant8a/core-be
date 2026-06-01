@@ -84,6 +84,7 @@ class SyncDeletedMigrationsCommand extends Command
             'schedule_attachments', 
             'schedule_participants', 
             'schedule_reminders', 
+            'schedule_notification_recipients',
             'scheduling_employees', 
             'scheduling_employee_groups', 
             'scheduling_employee_group_members', 
@@ -96,16 +97,23 @@ class SyncDeletedMigrationsCommand extends Command
             'filter_presets'
         ];
 
-        foreach ($deletedMigrations as $migration) {
-            // Khớp các migration dạng: create_table_name_table hoặc create_table_name_tables
-            if (preg_match('/_create_(.+)_tables?$/i', $migration, $matches)) {
-                $tableName = strtolower($matches[1]);
+        // Nếu có bất kỳ migration nào của module Scheduling bị xóa,
+        // dọn sạch các bảng Scheduling hiện có trong whitelist để tránh xung đột cấu trúc mới
+        if (!empty($deletedMigrations)) {
+            foreach ($allowedTables as $tableName) {
                 if (Schema::hasTable($tableName)) {
-                    if (!in_array($tableName, $allowedTables)) {
-                        $this->warn("⚠️ Bỏ qua bảng '{$tableName}' vì không thuộc whitelist các bảng của module Scheduling.");
-                        continue;
+                    // Liên kết bảng với một migration bị xóa để ghi log hiển thị
+                    $associatedMigration = null;
+                    foreach ($deletedMigrations as $migration) {
+                        if (str_contains($migration, $tableName) || 
+                            ($tableName === 'scheduling_employee_group_members' && str_contains($migration, 'scheduling_employee_groups')) ||
+                            ($tableName === 'schedule_notification_recipients' && str_contains($migration, 'schedule_notification_recipients'))) {
+                            $associatedMigration = $migration;
+                            break;
+                        }
                     }
-                    $tablesToDrop[$migration] = $tableName;
+                    $key = $associatedMigration ?: array_values($deletedMigrations)[0];
+                    $tablesToDrop[$key . '.' . $tableName] = $tableName;
                 }
             }
         }
