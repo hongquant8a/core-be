@@ -2,588 +2,381 @@
 
 namespace App\Modules\Scheduling\Services;
 
-use App\Modules\Core\Models\User;
 use App\Modules\Core\Services\MediaService;
-use App\Modules\Scheduling\Enums\ModuleTypeEnum;
-use App\Modules\Scheduling\Enums\NatureEnum;
-use App\Modules\Scheduling\Enums\ReminderSourceEnum;
+use App\Modules\Core\Support\ExportFilename;
 use App\Modules\Scheduling\Enums\ScheduleStatusEnum;
-use App\Modules\Scheduling\Enums\SessionTypeEnum;
-use App\Modules\Scheduling\Models\OrgSchedulingSettings;
+use App\Modules\Scheduling\Exports\WeeklyScheduleExcelExport;
+use App\Modules\Scheduling\Exports\WeeklySchedulePdfExporter;
 use App\Modules\Scheduling\Models\Schedule;
-use App\Services\Notification\Events\SchedulePublished;
-use App\Services\Notification\Events\ScheduleUpdated;
-use App\Services\Notification\Events\ScheduleCancelled;
-use Carbon\Carbon;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ScheduleService
 {
-    public function __construct(
-        protected ScheduleFilterService $filterService,
-        protected MediaService $mediaService
-    ) {}
+    public function __construct(private MediaService $mediaService) {}
 
     /**
-     * Get paginated schedules.
-     */
-    public function index(array $filters, int $limit)
-    {
-        $query = Schedule::with(['host', 'driver', 'creator', 'editor', 'attachments.mediaFile']);
-        $this->filterService->filter($query, $filters);
-
-        return $query->paginate($limit);
-    }
-
-    /**
-     * Get schedules for weekly matrix (no pagination).
-     */
-    public function weeklyMatrix(array $filters)
-    {
-        $query = Schedule::with(['host', 'driver', 'creator', 'editor', 'attachments.mediaFile']);
-        
-        // Default to current week if no date context is provided
-        if (empty($filters['week_number']) && empty($filters['start_date']) && empty($filters['event_date'])) {
-            $filters['week_number'] = (int) date('W');
-            $filters['year'] = (int) date('Y');
-        }
-
-        $this->filterService->filter($query, $filters);
-
-        return $query->get();
-    }
-
-    /**
-     * Show schedule details.
-     */
-    public function show(Schedule $schedule): Schedule
-    {
-        return $schedule->load([
-            'host',
-            'driver',
-            'creator',
-            'editor',
-            'attachments.mediaFile',
-            'reminders.preset',
-            'recipients.user',
-            'recipients.group'
-        ]);
-    }
-
-    /**
-     * Store a new schedule.
-     */
-    public function store(array $validated, array $files = []): Schedule
-    {
-        $storedFiles = [];
-        try {
-            return DB::transaction(function () use ($validated, $files, &$storedFiles) {
-                $orgId = $this->resolveCurrentOrganizationId();
-
-                // Compute dependent fields
-                $carbonDate = Carbon::parse($validated['event_date']);
-                $validated['week_number'] = $carbonDate->weekOfYear;
-                $validated['year'] = $carbonDate->year;
-
-                if (!isset($validated['session']) && !empty($validated['start_time'])) {
-                    $validated['session'] = SessionTypeEnum::fromTime($validated['start_time']);
-                }
-
-                // Denormalize host priority weight
-                $host = User::findOrFail($validated['host_id']);
-                $validated['host_priority_weight'] = $host->priority_weight ?? 0;
-
-                // Handle approval configuration
-                $orgSettings = OrgSchedulingSettings::where('organization_id', $orgId)->first();
-                $approvalRequired = false;
-                
-                $moduleType = is_string($validated['module_type']) 
-                    ? $validated['module_type'] 
-                    : $validated['module_type']->value;
-
-                if ($moduleType === ModuleTypeEnum::Executive->value) {
-                    $approvalRequired = $orgSettings?->executive_approval_required ?? false;
-                } else {
-                    $approvalRequired = $orgSettings?->office_approval_required ?? false;
-                }
-
-                $reqStatus = isset($validated['status']) 
-                    ? (is_int($validated['status']) ? $validated['status'] : $validated['status']->value)
-                    : ScheduleStatusEnum::Draft->value;
-
-                if ($reqStatus === ScheduleStatusEnum::Published->value) {
-                    if ($approvalRequired) {
-                        $validated['status'] = ScheduleStatusEnum::Pending->value;
-                    } else {
-                        $validated['status'] = ScheduleStatusEnum::Published->value;
-                        $validated['approved_by'] = auth()->id();
-                        $validated['approved_at'] = now();
-                    }
-                } else {
-                    $validated['status'] = $reqStatus;
-                }
-
-                $validated['organization_id'] = $orgId;
-
-                // Create schedule
-                $schedule = Schedule::create($validated);
-
-                // Handle attachments
-                if (!empty($files)) {
-                    $sortOrder = 0;
-                    foreach ($files as $file) {
-                        if ($file instanceof UploadedFile && $file->isValid()) {
-                            $media = $this->mediaService->uploadOne($schedule, $file, 'schedule-attachments', ['disk' => 'public']);
-                            $storedFiles[] = ['disk' => $media->disk, 'path' => $media->getPathRelativeToRoot()];
-
-                            $schedule->attachments()->create([
-                                'organization_id' => $orgId,
-                                'media_id' => $media->id,
-                                'file_name' => $file->getClientOriginalName(),
-                                'sort_order' => $sortOrder++,
-                            ]);
-                        }
-                    }
-                }
-
-                // Handle recipients
-                if (!empty($validated['recipients'])) {
-                    foreach ($validated['recipients'] as $rec) {
-                        $schedule->recipients()->create([
-                            'user_id' => $rec['user_id'] ?? null,
-                            'group_id' => $rec['group_id'] ?? null,
-                        ]);
-                    }
-                }
-
-                // Handle reminders
-                if (!empty($validated['reminders'])) {
-                    foreach ($validated['reminders'] as $rem) {
-                        $schedule->reminders()->create([
-                            'minutes_before' => $rem['minutes_before'],
-                            'channels' => $rem['channels'],
-                            'source' => $rem['source'] ?? ReminderSourceEnum::Custom->value,
-                            'preset_id' => $rem['preset_id'] ?? null,
-                        ]);
-                    }
-                }
-
-                if ($schedule->status->value === ScheduleStatusEnum::Published->value) {
-                    Event::dispatch(new SchedulePublished($schedule));
-                }
-
-                return $schedule;
-            });
-        } catch (\Throwable $e) {
-            $this->mediaService->cleanupStoredFiles($storedFiles);
-            throw $e;
-        }
-    }
-
-    /**
-     * Update an existing schedule.
-     */
-    public function update(Schedule $schedule, array $validated, array $newFiles = []): Schedule
-    {
-        $originalStatusVal = $schedule->status->value;
-        $storedFiles = [];
-        try {
-            return DB::transaction(function () use ($schedule, $validated, $newFiles, &$storedFiles, $originalStatusVal) {
-                $orgId = $this->resolveCurrentOrganizationId();
-
-                // Compute dependent fields if event_date changed
-                if (!empty($validated['event_date'])) {
-                    $carbonDate = Carbon::parse($validated['event_date']);
-                    $validated['week_number'] = $carbonDate->weekOfYear;
-                    $validated['year'] = $carbonDate->year;
-                }
-
-                if (!empty($validated['start_time'])) {
-                    $validated['session'] = SessionTypeEnum::fromTime($validated['start_time']);
-                }
-
-                // Update denormalized priority if host_id changed
-                if (!empty($validated['host_id'])) {
-                    $host = User::findOrFail($validated['host_id']);
-                    $validated['host_priority_weight'] = $host->priority_weight ?? 0;
-                }
-
-                // Handle approval configuration if status is updated to Published
-                if (isset($validated['status'])) {
-                    $orgSettings = OrgSchedulingSettings::where('organization_id', $orgId)->first();
-                    $approvalRequired = false;
-
-                    $moduleType = !empty($validated['module_type']) 
-                        ? (is_string($validated['module_type']) ? $validated['module_type'] : $validated['module_type']->value)
-                        : $schedule->module_type->value;
-
-                    if ($moduleType === ModuleTypeEnum::Executive->value) {
-                        $approvalRequired = $orgSettings?->executive_approval_required ?? false;
-                    } else {
-                        $approvalRequired = $orgSettings?->office_approval_required ?? false;
-                    }
-
-                    $reqStatus = is_int($validated['status']) ? $validated['status'] : $validated['status']->value;
-
-                    if ($reqStatus === ScheduleStatusEnum::Published->value && $schedule->status->value !== ScheduleStatusEnum::Published->value) {
-                        if ($approvalRequired) {
-                            $validated['status'] = ScheduleStatusEnum::Pending->value;
-                        } else {
-                            $validated['status'] = ScheduleStatusEnum::Published->value;
-                            $validated['approved_by'] = auth()->id();
-                            $validated['approved_at'] = now();
-                        }
-                    } else {
-                        $validated['status'] = $reqStatus;
-                    }
-                }
-
-                // Update schedule details
-                $schedule->update($validated);
-
-                // Handle deleted attachments
-                if (!empty($validated['delete_attachments'])) {
-                    $attachmentsToDelete = $schedule->attachments()->whereIn('id', $validated['delete_attachments'])->get();
-                    foreach ($attachmentsToDelete as $att) {
-                        $this->mediaService->removeByIds($schedule, [$att->media_id], 'schedule-attachments');
-                        $att->delete();
-                    }
-                }
-
-                // Handle new attachments
-                if (!empty($newFiles)) {
-                    $nextSort = ((int) $schedule->attachments()->max('sort_order')) + 1;
-                    foreach ($newFiles as $file) {
-                        if ($file instanceof UploadedFile && $file->isValid()) {
-                            $media = $this->mediaService->uploadOne($schedule, $file, 'schedule-attachments', ['disk' => 'public']);
-                            $storedFiles[] = ['disk' => $media->disk, 'path' => $media->getPathRelativeToRoot()];
-
-                            $schedule->attachments()->create([
-                                'organization_id' => $orgId,
-                                'media_id' => $media->id,
-                                'file_name' => $file->getClientOriginalName(),
-                                'sort_order' => $nextSort++,
-                            ]);
-                        }
-                    }
-                }
-
-                // Update recipients if provided
-                if (isset($validated['recipients'])) {
-                    $schedule->recipients()->delete();
-                    foreach ($validated['recipients'] as $rec) {
-                        $schedule->recipients()->create([
-                            'user_id' => $rec['user_id'] ?? null,
-                            'group_id' => $rec['group_id'] ?? null,
-                        ]);
-                    }
-                }
-
-                // Update reminders if provided
-                if (isset($validated['reminders'])) {
-                    $schedule->reminders()->delete();
-                    foreach ($validated['reminders'] as $rem) {
-                        $schedule->reminders()->create([
-                            'minutes_before' => $rem['minutes_before'],
-                            'channels' => $rem['channels'],
-                            'source' => $rem['source'] ?? ReminderSourceEnum::Custom->value,
-                            'preset_id' => $rem['preset_id'] ?? null,
-                        ]);
-                    }
-                }
-
-                $statusVal = $schedule->status->value;
-
-                $isPublishedNow = $statusVal === ScheduleStatusEnum::Published->value;
-                $wasPublishedBefore = $originalStatusVal === ScheduleStatusEnum::Published->value;
-
-                if ($isPublishedNow && !$wasPublishedBefore) {
-                    Event::dispatch(new SchedulePublished($schedule));
-                } elseif ($isPublishedNow && $wasPublishedBefore) {
-                    $changedFields = array_filter(
-                        ['content', 'event_date', 'start_time', 'location'],
-                        fn ($f) => $schedule->wasChanged($f)
-                    );
-                    if (!empty($changedFields)) {
-                        Event::dispatch(new ScheduleUpdated($schedule, array_values($changedFields)));
-                    }
-                } elseif (!$isPublishedNow && $wasPublishedBefore) {
-                    Event::dispatch(new ScheduleCancelled($schedule));
-                }
-
-                return $schedule->fresh(['host', 'driver', 'creator', 'editor', 'attachments.mediaFile']);
-            });
-        } catch (\Throwable $e) {
-            $this->mediaService->cleanupStoredFiles($storedFiles);
-            throw $e;
-        }
-    }
-
-    /**
-     * Soft delete a schedule.
-     */
-    public function destroy(Schedule $schedule): bool
-    {
-        $wasPublished = $schedule->status->value === ScheduleStatusEnum::Published->value;
-        $deleted = $schedule->delete();
-        if ($deleted && $wasPublished) {
-            Event::dispatch(new ScheduleCancelled($schedule));
-        }
-        return $deleted;
-    }
-
-    /**
-     * Restore a soft-deleted schedule.
-     */
-    public function restore(int $id): Schedule
-    {
-        $orgId = $this->resolveCurrentOrganizationId();
-        $schedule = Schedule::onlyTrashed()
-            ->where('organization_id', $orgId)
-            ->findOrFail($id);
-
-        $schedule->restore();
-
-        return $schedule;
-    }
-
-    /**
-     * Approve a pending schedule.
-     */
-    public function approve(Schedule $schedule): Schedule
-    {
-        $wasPublished = $schedule->status->value === ScheduleStatusEnum::Published->value;
-        $schedule->status = ScheduleStatusEnum::Published;
-        $schedule->approved_by = auth()->id();
-        $schedule->approved_at = now();
-        $schedule->save();
-
-        if (!$wasPublished) {
-            Event::dispatch(new SchedulePublished($schedule));
-        }
-
-        return $schedule;
-    }
-
-    /**
-     * Reject a pending schedule back to draft.
-     */
-    public function reject(Schedule $schedule): Schedule
-    {
-        $wasPublished = $schedule->status->value === ScheduleStatusEnum::Published->value;
-        $schedule->status = ScheduleStatusEnum::Draft;
-        $schedule->save();
-
-        if ($wasPublished) {
-            Event::dispatch(new ScheduleCancelled($schedule));
-        }
-
-        return $schedule;
-    }
-
-    /**
-     * Reorder schedules sort order.
-     */
-    public function reorder(array $orders): void
-    {
-        DB::transaction(function () use ($orders) {
-            foreach ($orders as $order) {
-                Schedule::where('organization_id', $this->resolveCurrentOrganizationId())
-                    ->where('id', $order['id'])
-                    ->update(['sort_order' => $order['sort_order']]);
-            }
-        });
-    }
-
-    /**
-     * Duplicate schedule to multiple target dates.
-     */
-    public function duplicate(Schedule $schedule, array $dates): array
-    {
-        $duplicatedSchedules = [];
-
-        DB::transaction(function () use ($schedule, $dates, &$duplicatedSchedules) {
-            $orgId = $this->resolveCurrentOrganizationId();
-            
-            // Eager load relations for cloning
-            $schedule->load(['recipients', 'reminders', 'attachments.mediaFile']);
-
-            foreach ($dates as $date) {
-                $carbonDate = Carbon::parse($date);
-                
-                // Clone attributes
-                $newAttributes = $schedule->toArray();
-                unset($newAttributes['id'], $newAttributes['created_at'], $newAttributes['updated_at'], $newAttributes['deleted_at']);
-                
-                $newAttributes['event_date'] = $date;
-                $newAttributes['week_number'] = $carbonDate->weekOfYear;
-                $newAttributes['year'] = $carbonDate->year;
-                $newAttributes['status'] = ScheduleStatusEnum::Draft->value; // Duplicates always default to Draft
-
-                // Create new schedule
-                $newSchedule = Schedule::create($newAttributes);
-
-                // Clone recipients
-                foreach ($schedule->recipients as $rec) {
-                    $newSchedule->recipients()->create([
-                        'user_id' => $rec->user_id,
-                        'group_id' => $rec->group_id,
-                    ]);
-                }
-
-                // Clone reminders
-                foreach ($schedule->reminders as $rem) {
-                    $newSchedule->reminders()->create([
-                        'minutes_before' => $rem->minutes_before,
-                        'channels' => $rem->channels,
-                        'source' => $rem->source->value,
-                        'preset_id' => $rem->preset_id,
-                    ]);
-                }
-
-                // Clone attachments
-                foreach ($schedule->attachments as $att) {
-                    $mediaFile = $att->mediaFile;
-                    if ($mediaFile) {
-                        $newMedia = $mediaFile->copy($newSchedule, 'schedule-attachments', 'public');
-                        $newSchedule->attachments()->create([
-                            'organization_id' => $orgId,
-                            'media_id' => $newMedia->id,
-                            'file_name' => $att->file_name,
-                            'sort_order' => $att->sort_order,
-                        ]);
-                    }
-                }
-
-                $duplicatedSchedules[] = $newSchedule;
-            }
-        });
-
-        return $duplicatedSchedules;
-    }
-
-    /**
-     * Get statistics counts per status.
+     * Thống kê: total, draft, pending, approved, rejected, cancelled.
      */
     public function stats(array $filters): array
     {
-        $query = Schedule::query();
-        $this->filterService->filter($query, $filters);
-
+        $base = Schedule::filter($filters);
         return [
-            'total' => (clone $query)->count(),
-            'draft' => (clone $query)->where('status', ScheduleStatusEnum::Draft->value)->count(),
-            'pending' => (clone $query)->where('status', ScheduleStatusEnum::Pending->value)->count(),
-            'published' => (clone $query)->where('status', ScheduleStatusEnum::Published->value)->count(),
-            'cancelled' => (clone $query)->where('status', ScheduleStatusEnum::Cancelled->value)->count(),
+            'total'     => (clone $base)->count(),
+            'draft'     => (clone $base)->where('status', ScheduleStatusEnum::Draft)->count(),
+            'pending'   => (clone $base)->where('status', ScheduleStatusEnum::Pending)->count(),
+            'approved'  => (clone $base)->where('status', ScheduleStatusEnum::Approved)->count(),
+            'rejected'  => (clone $base)->where('status', ScheduleStatusEnum::Rejected)->count(),
+            'cancelled' => (clone $base)->where('status', ScheduleStatusEnum::Cancelled)->count(),
         ];
     }
 
     /**
-     * Bulk delete schedules.
+     * Danh sách phân trang.
      */
+    public function index(array $filters, int $limit)
+    {
+        // Lái xe — khi user có role scheduling-lai-xe, tự động áp driver_user_id = auth()->id() vào filter
+        if (Auth::check() && Auth::user()->hasRole('scheduling-lai-xe')) {
+            $filters['driver_user_id'] = Auth::id();
+        }
+
+        return Schedule::with(['creator', 'editor', 'host', 'driver', 'participants.user'])
+            ->filter($filters)
+            ->paginate($limit);
+    }
+
+    /**
+     * Ma trận tuần: group theo date → session → [schedules], kèm thông tin tuần (week_id, week_number, year).
+     */
+    public function weekMatrix(array $filters): array
+    {
+        // Lái xe — khi user có role scheduling-lai-xe, tự động áp driver_user_id = auth()->id() vào filter
+        if (Auth::check() && Auth::user()->hasRole('scheduling-lai-xe')) {
+            $filters['driver_user_id'] = Auth::id();
+        }
+
+        // Tự động suy luận week_number và year từ bộ lọc nếu chưa truyền
+        $year = $filters['year'] ?? null;
+        $weekNumber = $filters['week_number'] ?? null;
+
+        if (!$year || !$weekNumber) {
+            $anchorDate = $filters['from_date'] ?? $filters['date'] ?? now()->toDateString();
+            $carbon = \Carbon\Carbon::parse($anchorDate);
+            $year = $carbon->isoWeekYear;
+            $weekNumber = $carbon->isoWeek;
+        }
+
+        $weekId = "{$year}-W" . str_pad($weekNumber, 2, '0', STR_PAD_LEFT);
+        $start = now()->setISODate((int)$year, (int)$weekNumber)->startOfWeek();
+        $end = now()->setISODate((int)$year, (int)$weekNumber)->endOfWeek();
+
+        // Ép lọc theo tuần nếu chưa được lọc trong scope
+        if (empty($filters['week']) && empty($filters['date']) && empty($filters['from_date'])) {
+            $filters['week'] = $weekId;
+        }
+
+        $schedules = Schedule::with(['host', 'driver', 'participants.user'])
+            ->filter($filters)
+            ->orderBy('date')
+            ->orderBy('session')
+            ->orderBy('sort_order')
+            ->get();
+
+        $matrix = $schedules->groupBy(fn($item) => $item->date->format('Y-m-d'))->map(function ($day) {
+            return $day->groupBy('session');
+        })->toArray();
+
+        return [
+            'week_id'     => $weekId,
+            'week_number' => (int)$weekNumber,
+            'year'        => (int)$year,
+            'date_from'   => $start->format('Y-m-d'),
+            'date_to'     => $end->format('Y-m-d'),
+            'matrix'      => $matrix,
+        ];
+    }
+
+    /**
+     * Lấy danh sách các tuần đã có lịch (dropdown chọn tuần).
+     */
+    public function getWeeks(array $filters): array
+    {
+        $dates = Schedule::filter($filters)
+            ->select('date')
+            ->distinct()
+            ->orderBy('date', 'asc')
+            ->pluck('date');
+
+        $weeks = [];
+        foreach ($dates as $date) {
+            $carbon = \Carbon\Carbon::parse($date);
+            $year = $carbon->isoWeekYear;
+            $weekNumber = $carbon->isoWeek;
+            $weekId = "{$year}-W" . str_pad($weekNumber, 2, '0', STR_PAD_LEFT);
+
+            if (!isset($weeks[$weekId])) {
+                $start = (clone $carbon)->startOfWeek()->format('d/m/Y');
+                $end = (clone $carbon)->endOfWeek()->format('d/m/Y');
+                $weeks[$weekId] = [
+                    'week_id'     => $weekId,
+                    'week_number' => $weekNumber,
+                    'year'        => $year,
+                    'label'       => "Tuần {$weekNumber}, {$year} ({$start} - {$end})",
+                    'date_from'   => (clone $carbon)->startOfWeek()->format('Y-m-d'),
+                    'date_to'     => (clone $carbon)->endOfWeek()->format('Y-m-d'),
+                ];
+            }
+        }
+
+        return array_values($weeks);
+    }
+
+    /**
+     * Chi tiết + preload đầy đủ.
+     */
+    public function show(Schedule $schedule): Schedule
+    {
+        return $schedule->load([
+            'creator', 'editor', 'host', 'driver', 'approver',
+            'participants.user', 'reminders.notificationSchedule',
+            'media',
+        ]);
+    }
+
+    /**
+     * Tạo mới lịch.
+     */
+    public function store(array $data, array $files = [], array $participants = [], array $reminders = []): Schedule
+    {
+        return DB::transaction(function () use ($data, $files, $participants, $reminders) {
+            $data['organization_id'] = getPermissionsTeamId();
+            
+            // Check duyệt lịch: chỉ kích hoạt khi scheduling_settings.approval_enabled = true và module_type nằm trong approval_module_types
+            if (($data['status'] ?? null) === ScheduleStatusEnum::Draft->value) {
+                $data['status'] = ScheduleStatusEnum::Draft->value;
+            } else {
+                $settingService = app(SchedulingSettingService::class);
+                $settings = $settingService->get($data['organization_id']);
+                if ($settings->approval_enabled && in_array($data['module_type'], $settings->approval_module_types ?? [])) {
+                    $data['status'] = ScheduleStatusEnum::Pending->value;
+                } else {
+                    $data['status'] = ScheduleStatusEnum::Approved->value;
+                }
+            }
+
+            $schedule = Schedule::create($data);
+
+            $this->syncParticipants($schedule, $participants);
+            $this->syncReminders($schedule, $reminders);
+
+            if ($files) {
+                foreach ($files as $file) {
+                    $this->mediaService->uploadOne($schedule, $file, Schedule::COLLECTION_ATTACHMENTS, [
+                        'allowed_mimes' => ['pdf','doc','docx','xls','xlsx','png','jpg','jpeg'],
+                        'max_size_kb'   => 20480,
+                    ]);
+                }
+            }
+
+            // Manually dispatch SchedulePublished since participants are now fully synced
+            $statusVal = $schedule->status instanceof ScheduleStatusEnum ? $schedule->status->value : $schedule->status;
+            if ($statusVal === ScheduleStatusEnum::Approved->value) {
+                \Illuminate\Support\Facades\Event::dispatch(new \App\Services\Notification\Events\SchedulePublished($schedule));
+            }
+
+            return $this->show($schedule);
+        });
+    }
+
+    /**
+     * Cập nhật lịch.
+     */
+    public function update(Schedule $schedule, array $data, array $files = [], array $participants = null, array $reminders = null, array $removeMediaIds = []): Schedule
+    {
+        return DB::transaction(function () use ($schedule, $data, $files, $participants, $reminders, $removeMediaIds) {
+            $schedule->update($data);
+
+            if ($participants !== null) {
+                $this->syncParticipants($schedule, $participants);
+            }
+            if ($reminders !== null) {
+                $this->syncReminders($schedule, $reminders);
+            }
+            if ($removeMediaIds) {
+                $this->mediaService->removeByIds($schedule, $removeMediaIds, Schedule::COLLECTION_ATTACHMENTS);
+            }
+            foreach ($files as $file) {
+                $this->mediaService->uploadOne($schedule, $file, Schedule::COLLECTION_ATTACHMENTS);
+            }
+
+            return $this->show($schedule->fresh());
+        });
+    }
+
+    /**
+     * Xóa mềm.
+     */
+    public function destroy(Schedule $schedule): void
+    {
+        $schedule->delete();
+    }
+
     public function bulkDestroy(array $ids): void
     {
-        $orgId = $this->resolveCurrentOrganizationId();
-        
-        DB::transaction(function () use ($ids, $orgId) {
-            $schedules = Schedule::whereIn('id', $ids)
-                ->where('organization_id', $orgId)
-                ->get();
+        Schedule::whereIn('id', $ids)->delete();
+    }
 
-            foreach ($schedules as $schedule) {
-                if ($schedule->status === ScheduleStatusEnum::Published->value) {
-                    Event::dispatch(new ScheduleCancelled($schedule));
-                }
-                $schedule->delete();
+    public function bulkUpdateStatus(array $ids, string $status): void
+    {
+        Schedule::whereIn('id', $ids)->update(['status' => $status]);
+    }
+
+    /**
+     * Đổi trạng thái đơn lẻ.
+     */
+    public function changeStatus(Schedule $schedule, string $status): Schedule
+    {
+        $schedule->update(['status' => $status]);
+        return $this->show($schedule->fresh());
+    }
+
+    /**
+     * Duyệt lịch — set approved_by, approved_at.
+     */
+    public function approve(Schedule $schedule): Schedule
+    {
+        $schedule->update([
+            'status'      => ScheduleStatusEnum::Approved,
+            'approved_by' => Auth::id(),
+            'approved_at' => now(),
+        ]);
+        return $this->show($schedule->fresh());
+    }
+
+    /**
+     * Từ chối lịch — set rejection_note.
+     */
+    public function reject(Schedule $schedule, string $note): Schedule
+    {
+        $schedule->update([
+            'status'         => ScheduleStatusEnum::Rejected,
+            'rejection_note' => $note,
+        ]);
+        return $this->show($schedule->fresh());
+    }
+
+    /**
+     * Sao chép lịch sang ngày khác.
+     */
+    public function duplicate(Schedule $schedule, string $date): Schedule
+    {
+        return DB::transaction(function () use ($schedule, $date) {
+            $new = $schedule->replicate(['approved_by', 'approved_at', 'rejection_note', 'created_by', 'updated_by']);
+            $new->date              = $date;
+            $new->status            = ScheduleStatusEnum::Draft->value;
+            $new->parent_schedule_id = $schedule->id;
+            $new->save();
+
+            // Clone participants
+            foreach ($schedule->participants as $p) {
+                $new->participants()->create(
+                    $p->only(['user_id', 'display_name', 'position_name', 'is_external', 'sort_order']) +
+                    ['organization_id' => $new->organization_id]
+                );
+            }
+
+            return $this->show($new);
+        });
+    }
+
+    /**
+     * Sắp xếp lại thứ tự lịch.
+     */
+    public function reorder(array $orderedIds): void
+    {
+        DB::transaction(function () use ($orderedIds) {
+            foreach ($orderedIds as $order => $id) {
+                Schedule::where('id', $id)->update(['sort_order' => $order + 1]);
             }
         });
     }
 
     /**
-     * Bulk update status of schedules.
+     * Xuất Excel.
      */
-    public function bulkUpdateStatus(array $ids, int $status): void
+    public function export(array $filters): BinaryFileResponse
     {
-        $orgId = $this->resolveCurrentOrganizationId();
-
-        DB::transaction(function () use ($ids, $status, $orgId) {
-            $schedules = Schedule::whereIn('id', $ids)
-                ->where('organization_id', $orgId)
-                ->get();
-
-            foreach ($schedules as $schedule) {
-                $oldStatus = $schedule->status;
-                
-                $schedule->status = $status;
-                if ($status === ScheduleStatusEnum::Published->value) {
-                    $schedule->approved_by = auth()->id();
-                    $schedule->approved_at = now();
-                }
-                $schedule->save();
-
-                if ($oldStatus !== $schedule->status) {
-                    if ($schedule->status === ScheduleStatusEnum::Published->value) {
-                        Event::dispatch(new SchedulePublished($schedule));
-                    } elseif ($schedule->status === ScheduleStatusEnum::Cancelled->value) {
-                        Event::dispatch(new ScheduleCancelled($schedule));
-                    } elseif ($oldStatus === ScheduleStatusEnum::Published->value) {
-                        Event::dispatch(new ScheduleCancelled($schedule));
-                    }
-                }
-            }
-        });
+        return Excel::download(
+            new WeeklyScheduleExcelExport($filters),
+            ExportFilename::make('lich-cong-tac')
+        );
     }
 
     /**
-     * Change status of a single schedule.
+     * Xuất PDF.
      */
-    public function changeStatus(Schedule $schedule, int $status): Schedule
+    public function exportPdf(array $filters)
     {
-        $oldStatus = $schedule->status;
+        $exporter = new WeeklySchedulePdfExporter();
+        $path = $exporter->generate($filters);
+        return response()->download($path, ExportFilename::make('lich-cong-tac', 'pdf'))->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Xuất Word.
+     */
+    public function exportWord(array $filters)
+    {
+        $schedules = Schedule::with(['host', 'driver', 'participants.user'])
+            ->filter($filters)
+            ->orderBy('date')->orderBy('session')->orderBy('sort_order')
+            ->get();
+
+        $phpWord = new \PhpOffice\PhpWord\PhpWord();
+        $section = $phpWord->addSection();
+        $section->addText("LỊCH CÔNG TÁC", ['bold' => true, 'size' => 16]);
+
+        foreach ($schedules as $s) {
+            $section->addText("- {$s->title} ({$s->date->format('d/m/Y')})");
+        }
+
+        $objWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
+        $filename  = ExportFilename::make('lich-cong-tac', 'docx');
         
-        $schedule->status = $status;
-        if ($status === ScheduleStatusEnum::Published->value) {
-            $schedule->approved_by = auth()->id();
-            $schedule->approved_at = now();
+        $tempDir = storage_path('app/temp');
+        if (!file_exists($tempDir)) {
+            mkdir($tempDir, 0755, true);
         }
-        $schedule->save();
-
-        if ($oldStatus !== $schedule->status) {
-            if ($schedule->status === ScheduleStatusEnum::Published->value) {
-                Event::dispatch(new SchedulePublished($schedule));
-            } elseif ($schedule->status === ScheduleStatusEnum::Cancelled->value) {
-                Event::dispatch(new ScheduleCancelled($schedule));
-            } elseif ($oldStatus === ScheduleStatusEnum::Published->value) {
-                Event::dispatch(new ScheduleCancelled($schedule));
-            }
-        }
-
-        return $this->show($schedule);
+        
+        $path      = "{$tempDir}/{$filename}";
+        $objWriter->save($path);
+        return response()->download($path)->deleteFileAfterSend(true);
     }
 
-    /**
-     * Import schedules from Excel.
-     */
-    public function import($file): void
+    // ── Private helpers ────────────────────────────────────────────────────────
+
+    private function syncParticipants(Schedule $schedule, array $participants): void
     {
-        \Maatwebsite\Excel\Facades\Excel::import(new \App\Modules\Scheduling\Imports\ScheduleImport, $file);
+        $schedule->participants()->delete();
+        foreach ($participants as $i => $p) {
+            $schedule->participants()->create(array_merge($p, [
+                'organization_id' => $schedule->organization_id,
+                'sort_order'      => $i,
+            ]));
+        }
     }
 
-    /**
-     * Resolve the current organization ID.
-     */
-    protected function resolveCurrentOrganizationId(): int
+    private function syncReminders(Schedule $schedule, array $reminders): void
     {
-        $organizationId = function_exists('getPermissionsTeamId') ? getPermissionsTeamId() : null;
-
-        if (!is_numeric($organizationId) || (int) $organizationId <= 0) {
-            throw new ModelNotFoundException('Không xác định được tổ chức làm việc hiện tại.');
+        $schedule->reminders()->delete();
+        foreach ($reminders as $r) {
+            $schedule->reminders()->create(array_merge($r, [
+                'organization_id' => $schedule->organization_id,
+                'created_by'      => Auth::id(),
+            ]));
         }
-
-        return (int) $organizationId;
     }
 }

@@ -2,10 +2,8 @@
 
 namespace App\Modules\Scheduling\Requests;
 
-use App\Modules\Scheduling\Enums\ModuleTypeEnum;
-use App\Modules\Scheduling\Enums\NatureEnum;
-use App\Modules\Scheduling\Enums\ReminderSourceEnum;
-use App\Modules\Scheduling\Enums\ScheduleStatusEnum;
+use App\Modules\Scheduling\Enums\ScheduleModuleTypeEnum;
+use App\Modules\Scheduling\Enums\ScheduleSessionEnum;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreScheduleRequest extends FormRequest
@@ -18,73 +16,42 @@ class StoreScheduleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'module_type' => ['required', ModuleTypeEnum::rule()],
-            'event_date' => 'required|date_format:Y-m-d',
-            'start_time' => 'required|regex:/^\d{2}:\d{2}(:\d{2})?$/',
-            'end_time' => 'nullable|regex:/^\d{2}:\d{2}(:\d{2})?$/',
-            'content' => 'required|string',
-            'host_id' => 'required|integer|exists:users,id',
-            'location' => 'nullable|string|max:255',
-            'preparation_unit' => 'nullable|string|max:255',
-            'participant_count' => 'nullable|string|max:50',
-            'nature' => ['required', NatureEnum::rule()],
-            'driver_id' => 'nullable|integer|exists:users,id',
-            'color_code' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'participants_text' => 'nullable|string',
-            'departments_text' => 'nullable|string',
-            'status' => ['nullable', ScheduleStatusEnum::rule()],
-            'attachments' => 'nullable|array',
-            'attachments.*' => 'file|max:51200', // 50MB max
-            'recipients' => 'nullable|array',
-            'recipients.*.user_id' => 'nullable|integer|exists:users,id',
-            'recipients.*.group_id' => 'nullable|integer|exists:notification_groups,id',
-            'reminders' => 'nullable|array',
-            'reminders.*.minutes_before' => 'required|integer|min:0',
-            'reminders.*.channels' => 'required|array',
-            'reminders.*.channels.*' => 'string|in:fcm,zalo,sms,inapp,FCM,ZALO,SMS,APP',
-            'reminders.*.source' => ['nullable', ReminderSourceEnum::rule()],
-            'reminders.*.preset_id' => 'nullable|integer|exists:reminder_presets,id',
-        ];
-    }
+            'module_type' => ['required', ScheduleModuleTypeEnum::rule()],
+            'title'       => ['required', 'string', 'max:500'],
+            'content'     => ['nullable', 'string'],
+            'location'    => ['nullable', 'string', 'max:500'],
+            'session'     => ['required', ScheduleSessionEnum::rule()],
+            'date'        => ['required', 'date_format:Y-m-d'],
+            'start_time'  => ['nullable', 'date_format:H:i:s,H:i'],
+            'end_time'    => ['nullable', 'date_format:H:i:s,H:i'],
+            'status'      => ['nullable', 'string'],
 
-    public function messages(): array
-    {
-        return [
-            'required' => ':attribute là trường bắt buộc.',
-            'string' => ':attribute phải là chuỗi.',
-            'integer' => ':attribute phải là số nguyên.',
-            'boolean' => ':attribute phải là giá trị đúng/sai.',
-            'array' => ':attribute phải là mảng.',
-            'file' => ':attribute phải là tệp hợp lệ.',
-            'max' => ':attribute không được vượt quá :max.',
-            'min' => ':attribute phải lớn hơn hoặc bằng :min.',
-            'date_format' => ':attribute không đúng định dạng ngày tháng :format.',
-            'regex' => ':attribute không đúng định dạng hoặc mã màu.',
-            'exists' => ':attribute không tồn tại trong hệ thống.',
-        ];
-    }
+            'host_user_id'         => ['nullable', 'integer', 'exists:users,id'],
+            'driver_user_id'       => ['nullable', 'integer', 'exists:users,id'],
+            'preparation_location' => ['nullable', 'string', 'max:500'],
 
-    public function attributes(): array
-    {
-        return [
-            'module_type' => 'Phân hệ lịch công tác',
-            'event_date' => 'Ngày diễn ra',
-            'start_time' => 'Giờ bắt đầu',
-            'end_time' => 'Giờ kết thúc',
-            'content' => 'Nội dung',
-            'host_id' => 'Người chủ trì',
-            'location' => 'Địa điểm',
-            'preparation_unit' => 'Đơn vị chuẩn bị',
-            'participant_count' => 'Số lượng người tham gia',
-            'nature' => 'Tính chất',
-            'driver_id' => 'Lái xe',
-            'color_code' => 'Mã màu hiển thị',
-            'participants_text' => 'Thành phần tham dự (văn bản)',
-            'departments_text' => 'Ban ngành tham dự (văn bản)',
-            'status' => 'Trạng thái',
-            'attachments' => 'Tài liệu đính kèm',
-            'recipients' => 'Danh sách nhận thông báo',
-            'reminders' => 'Danh sách mốc nhắc nhở',
+            'sort_order'         => ['nullable', 'integer', 'min:0'],
+            'is_recurring'       => ['nullable', 'boolean'],
+            'recurrence_rule'    => ['nullable', 'array'],
+            'parent_schedule_id' => ['nullable', 'integer', 'exists:schedules,id'],
+
+            'participants'                  => ['nullable', 'array'],
+            'participants.*.user_id'        => ['nullable', 'integer', 'exists:users,id'],
+            'participants.*.display_name'   => ['nullable', 'string', 'max:255'],
+            'participants.*.position_name'  => ['nullable', 'string', 'max:255'],
+            'participants.*.is_external'    => ['nullable', 'boolean'],
+
+            'reminders'                  => ['nullable', 'array'],
+            'reminders.*.reminder_type'  => ['required_without:reminders.*.source', 'nullable', 'in:PRESET,CUSTOM'],
+            'reminders.*.source'         => ['required_without:reminders.*.reminder_type', 'nullable', 'in:preset,custom,PRESET,CUSTOM'],
+            'reminders.*.moment'         => ['nullable', 'in:BEFORE,ON,AFTER'],
+            'reminders.*.offset_minutes' => ['required_without:reminders.*.minutes_before', 'nullable', 'integer'],
+            'reminders.*.minutes_before' => ['required_without:reminders.*.offset_minutes', 'nullable', 'integer'],
+            'reminders.*.channels'       => ['required', 'array'],
+            'reminders.*.channels.*'     => ['string'],
+
+            'files'   => ['nullable', 'array'],
+            'files.*' => ['file', 'max:20480', 'mimes:pdf,doc,docx,xls,xlsx,png,jpg,jpeg'],
         ];
     }
 }

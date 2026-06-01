@@ -26,16 +26,16 @@ class WeeklyScheduleExcelExport extends AbstractExcelExport implements FromColle
     public function collection()
     {
         $query = Schedule::with(['host', 'driver'])
-            ->orderBy('event_date', 'asc')
+            ->orderBy('date', 'asc')
             ->orderBy('session', 'asc')
             ->orderBy('sort_order', 'asc');
 
         // Apply filters (org scope is applied via tenant model boot)
-        if (!empty($this->filters['week_number'])) {
-            $query->where('week_number', $this->filters['week_number']);
-        }
-        if (!empty($this->filters['year'])) {
-            $query->where('year', $this->filters['year']);
+        if (!empty($this->filters['week_number']) && !empty($this->filters['year'])) {
+            $carbon = \Carbon\Carbon::now()->setISODate($this->filters['year'], $this->filters['week_number']);
+            $start = $carbon->startOfWeek()->toDateString();
+            $end = $carbon->endOfWeek()->toDateString();
+            $query->whereBetween('date', [$start, $end]);
         }
         if (!empty($this->filters['module_type'])) {
             $query->where('module_type', $this->filters['module_type']);
@@ -49,10 +49,10 @@ class WeeklyScheduleExcelExport extends AbstractExcelExport implements FromColle
             ->map(function ($item, $i) {
                 // Vietnamese Day representation
                 $dayLabel = 'N/A';
-                if ($item->event_date) {
-                    $dayOfWeek = $item->event_date->dayOfWeek;
+                if ($item->date) {
+                    $dayOfWeek = $item->date->dayOfWeek;
                     $dayName = self::$daysMap[$dayOfWeek] ?? '';
-                    $dateStr = $item->event_date->format('d/m/Y');
+                    $dateStr = $item->date->format('d/m/Y');
                     $dayLabel = "{$dayName} ({$dateStr})";
                 }
 

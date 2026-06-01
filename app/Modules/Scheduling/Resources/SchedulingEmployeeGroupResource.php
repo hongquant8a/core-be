@@ -2,27 +2,24 @@
 
 namespace App\Modules\Scheduling\Resources;
 
-use App\Modules\Core\Resources\Concerns\FormatsUserSummary;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class SchedulingEmployeeGroupResource extends JsonResource
 {
-    use FormatsUserSummary;
-
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'description' => $this->description,
-            'status' => $this->status,
-            'employees_count' => $this->whenCounted('employees'),
-            'employees' => SchedulingEmployeeResource::collection($this->whenLoaded('employees')),
-            'created_by' => $this->whenLoaded('creator', fn () => $this->formatUserSummary($this->creator), null),
-            'updated_by' => $this->whenLoaded('editor', fn () => $this->formatUserSummary($this->editor), null),
-            'created_at' => $this->created_at?->format('H:i:s d/m/Y'),
-            'updated_at' => $this->updated_at?->format('H:i:s d/m/Y'),
+            'id'              => $this->id,
+            'organization_id' => $this->organization_id,
+            'name'            => $this->name,
+            'description'     => $this->description,
+            'status'          => (bool)$this->status,
+            'sort_order'      => $this->sort_order,
+            'members_count'   => $this->whenCounted('members'),
+            'members'         => SchedulingEmployeeResource::collection($this->whenLoaded('members')),
+            'created_at'      => $this->created_at?->toIso8601String(),
+            'updated_at'      => $this->updated_at?->toIso8601String(),
         ];
     }
 }

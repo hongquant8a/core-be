@@ -14,7 +14,7 @@ class ScheduleObserver
 {
     private const NOTIFY_FIELDS = [
         'content',
-        'event_date',
+        'date',
         'start_time',
         'location',
     ];
@@ -30,8 +30,8 @@ class ScheduleObserver
         $statusVal = $status instanceof ScheduleStatusEnum ? $status->value : $status;
         $originalStatusVal = $originalStatus instanceof ScheduleStatusEnum ? $originalStatus->value : $originalStatus;
 
-        $isPublishedNow = $statusVal === ScheduleStatusEnum::Published->value;
-        $wasPublishedBefore = $originalStatusVal === ScheduleStatusEnum::Published->value;
+        $isPublishedNow = $statusVal === ScheduleStatusEnum::Approved->value;
+        $wasPublishedBefore = $originalStatusVal === ScheduleStatusEnum::Approved->value;
 
         // 1. Transition: Draft/Pending -> Published
         if ($isPublishedNow && (!$wasPublishedBefore || $schedule->wasRecentlyCreated)) {
@@ -64,7 +64,7 @@ class ScheduleObserver
         $originalStatus = $schedule->getOriginal('status');
         $originalStatusVal = $originalStatus instanceof ScheduleStatusEnum ? $originalStatus->value : $originalStatus;
 
-        if ($originalStatusVal === ScheduleStatusEnum::Published->value) {
+        if ($originalStatusVal === ScheduleStatusEnum::Approved->value) {
             Event::dispatch(new ScheduleCancelled($schedule));
         } else {
             $this->scheduler->cancelPending($schedule);

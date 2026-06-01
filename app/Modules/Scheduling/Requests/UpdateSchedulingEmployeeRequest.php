@@ -2,8 +2,8 @@
 
 namespace App\Modules\Scheduling\Requests;
 
-use App\Modules\Core\Enums\StatusEnum;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateSchedulingEmployeeRequest extends FormRequest
 {
@@ -15,38 +15,23 @@ class UpdateSchedulingEmployeeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => ['sometimes', StatusEnum::rule()],
-            'note' => 'sometimes|nullable|string|max:65535',
-        ];
-    }
-
-    public function messages(): array
-    {
-        return [
-            'status.in' => 'Trạng thái không hợp lệ.',
-            'note.max' => 'Ghi chú quá dài.',
-        ];
-    }
-
-    public function attributes(): array
-    {
-        return [
-            'status' => 'trạng thái',
-            'note' => 'ghi chú',
-        ];
-    }
-
-    public function bodyParameters(): array
-    {
-        return [
-            'status' => [
-                'description' => 'Trạng thái nhân viên.',
-                'example' => StatusEnum::Active->value,
+            'user_id'         => [
+                'nullable',
+                'integer',
+                'exists:users,id',
+                Rule::unique('scheduling_employees', 'user_id')
+                    ->where('organization_id', getPermissionsTeamId() ?: $this->header('X-Organization-Id'))
+                    ->whereNull('deleted_at')
+                    ->ignore($this->route('scheduling_employee') ?: $this->route('schedulingEmployee'))
             ],
-            'note' => [
-                'description' => 'Ghi chú nội bộ.',
-                'example' => 'Tạm ngưng do nghỉ phép.',
-            ],
+            'name'            => ['nullable', 'string', 'max:255'],
+            'position_name'   => ['nullable', 'string', 'max:255'],
+            'department'      => ['nullable', 'string', 'max:255'],
+            'phone'           => ['nullable', 'string', 'max:30'],
+            'email'           => ['nullable', 'email', 'max:255'],
+            'priority_weight' => ['nullable', 'integer', 'min:0'],
+            'status'          => ['nullable', 'boolean'],
+            'sort_order'      => ['nullable', 'integer', 'min:0'],
         ];
     }
 }

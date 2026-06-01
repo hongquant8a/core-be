@@ -4,115 +4,69 @@ namespace App\Modules\Scheduling\Policies;
 
 use App\Modules\Core\Models\User;
 use App\Modules\Scheduling\Models\Schedule;
+use Illuminate\Auth\Access\HandlesAuthorization;
 
 class SchedulePolicy
 {
-    /**
-     * Determine whether the user can view any schedules.
-     */
+    use HandlesAuthorization;
+
+    public function before(User $user, string $ability): ?bool
+    {
+        if ($user->hasRole('Super Admin') || $user->hasRole('Admin')) {
+            return true;
+        }
+        return null;
+    }
+
     public function viewAny(User $user): bool
     {
-        return $user->hasPermissionTo('scheduling.schedules.index');
+        return $user->hasPermissionTo('schedules.view');
     }
 
-    /**
-     * Determine whether the user can view the schedule.
-     */
     public function view(User $user, Schedule $schedule): bool
     {
-        if (!$user->hasPermissionTo('scheduling.schedules.show')) {
-            return false;
-        }
-
-        // Driver restriction
-        if ($user->hasRole('Lái xe') && !$user->hasAnyRole(['Super Admin', 'Admin', 'Quản trị', 'Tổng hợp lịch', 'Thư ký', 'Lãnh đạo'])) {
-            return (int) $schedule->driver_id === (int) $user->id;
-        }
-
-        return true;
+        return $user->hasPermissionTo('schedules.view');
     }
 
-    /**
-     * Determine whether the user can create schedules.
-     */
     public function create(User $user): bool
     {
-        return $user->hasPermissionTo('scheduling.schedules.store');
+        return $user->hasPermissionTo('schedules.create');
     }
 
-    /**
-     * Determine whether the user can update the schedule.
-     */
     public function update(User $user, Schedule $schedule): bool
     {
-        if (!$user->hasPermissionTo('scheduling.schedules.update')) {
-            return false;
-        }
-
-        // Admins and scheduling coordinators can update any schedule
-        if ($user->hasAnyRole(['Super Admin', 'Admin', 'Quản trị', 'Tổng hợp lịch'])) {
-            return true;
-        }
-
-        // Secretaries and staff can only update their own schedules
-        return (int) $schedule->created_by === (int) $user->id;
+        return $user->hasPermissionTo('schedules.update');
     }
 
-    /**
-     * Determine whether the user can delete the schedule.
-     */
     public function delete(User $user, Schedule $schedule): bool
     {
-        if (!$user->hasPermissionTo('scheduling.schedules.destroy')) {
-            return false;
-        }
-
-        // Admins and scheduling coordinators can delete any schedule
-        if ($user->hasAnyRole(['Super Admin', 'Admin', 'Quản trị', 'Tổng hợp lịch'])) {
-            return true;
-        }
-
-        // Others can only delete their own schedules
-        return (int) $schedule->created_by === (int) $user->id;
+        return $user->hasPermissionTo('schedules.delete');
     }
 
-    /**
-     * Determine whether the user can approve the schedule.
-     */
+    public function deleteAny(User $user): bool
+    {
+        return $user->hasPermissionTo('schedules.delete');
+    }
+
+    public function updateAny(User $user): bool
+    {
+        return $user->hasPermissionTo('schedules.update');
+    }
+
     public function approve(User $user, Schedule $schedule): bool
     {
-        return $user->hasPermissionTo('scheduling.schedules.approve');
+        return $user->hasPermissionTo('schedules.approve');
     }
 
-    /**
-     * Determine whether the user can reorder schedules.
-     */
-    public function reorder(User $user): bool
+    public function driverViewAny(User $user): bool
     {
-        return $user->hasPermissionTo('scheduling.schedules.reorder');
+        return $user->hasPermissionTo('schedules.driver-view') || $user->hasRole('Lái xe') || $user->hasRole('scheduling-lai-xe');
     }
 
-    /**
-     * Determine whether the user can export schedules.
-     */
-    public function export(User $user): bool
+    public function driverView(User $user, Schedule $schedule): bool
     {
-        return $user->hasPermissionTo('scheduling.schedules.export');
-    }
-
-    /**
-     * Determine whether the user can view statistics.
-     */
-    public function stats(User $user): bool
-    {
-        return $user->hasPermissionTo('scheduling.schedules.stats');
-    }
-
-    /**
-     * Determine whether the user can bulk update status of schedules.
-     */
-    public function updateStatus(User $user): bool
-    {
-        return $user->hasPermissionTo('scheduling.schedules.bulkUpdateStatus');
+        return ($user->hasPermissionTo('schedules.driver-view') || $user->hasRole('Lái xe') || $user->hasRole('scheduling-lai-xe')) 
+            && $schedule->driver_user_id === $user->id
+            && $schedule->status === \App\Modules\Scheduling\Enums\ScheduleStatusEnum::Approved->value;
     }
 }

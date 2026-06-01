@@ -5,166 +5,154 @@ namespace App\Modules\Scheduling\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
 use App\Modules\Scheduling\Models\SchedulingEmployeeGroup;
-use App\Modules\Scheduling\Requests\BulkDestroySchedulingEmployeeGroupRequest;
-use App\Modules\Scheduling\Requests\BulkUpdateStatusSchedulingEmployeeGroupRequest;
-use App\Modules\Scheduling\Requests\ChangeStatusSchedulingEmployeeGroupRequest;
-use App\Modules\Scheduling\Requests\StoreSchedulingEmployeeGroupRequest;
-use App\Modules\Scheduling\Requests\UpdateSchedulingEmployeeGroupRequest;
-use App\Modules\Scheduling\Resources\SchedulingEmployeeGroupCollection;
-use App\Modules\Scheduling\Resources\SchedulingEmployeeGroupResource;
+use App\Modules\Scheduling\Requests\{
+    StoreSchedulingEmployeeGroupRequest, UpdateSchedulingEmployeeGroupRequest,
+    BulkDestroySchedulingEmployeeGroupRequest, BulkUpdateStatusSchedulingEmployeeGroupRequest,
+    ChangeStatusSchedulingEmployeeGroupRequest, SyncMembersSchedulingEmployeeGroupRequest
+};
+use App\Modules\Scheduling\Resources\{SchedulingEmployeeGroupCollection, SchedulingEmployeeGroupResource};
 use App\Modules\Scheduling\Services\SchedulingEmployeeGroupService;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 /**
  * @group Scheduling - Nhóm nhân viên lịch công tác
  * @header X-Organization-Id ID tổ chức cần làm việc (bắt buộc). Example: 1
  *
- * Quản lý danh sách các nhóm nhân viên lịch công tác.
+ * Quản lý các nhóm nhân viên trong phân hệ lịch công tác.
  */
 class SchedulingEmployeeGroupController extends Controller
 {
-    use AuthorizesRequests;
-
     public function __construct(private SchedulingEmployeeGroupService $groupService) {}
 
     /**
-     * Danh sách nhóm nhân viên cho dropdown.
+     * Thống kê nhóm nhân viên lịch công tác.
      *
      * @queryParam search string Tìm theo tên nhóm.
      */
-    public function options(FilterRequest $request)
+    public function stats(FilterRequest $request): JsonResponse
     {
-        $items = $this->groupService->options($request->all());
-
-        return $this->success($items->map(fn ($group) => [
-            'id' => $group->id,
-            'name' => $group->name,
-        ]));
+        return $this->success($this->groupService->stats($request->all()));
     }
 
-    /**
-     * Thống kê nhóm nhân viên.
-     *
-     * @queryParam search string Tìm theo tên nhóm.
-     * @response 200 {"success": true, "data": {"total": 5, "active": 4, "inactive": 1}}
-     */
-    public function stats(FilterRequest $request)
+    public function options(): JsonResponse
     {
-        $this->authorize('viewAny', SchedulingEmployeeGroup::class);
+        $groups = SchedulingEmployeeGroup::where('status', true)
+            ->get(['id', 'name']);
 
-        return $this->success($this->groupService->stats($request->all()));
+        return $this->success($groups);
     }
 
     /**
      * Danh sách các nhóm nhân viên lịch công tác.
      *
      * @queryParam search string Tìm theo tên, mô tả.
-     * @queryParam status string Lọc theo trạng thái: active, inactive.
-     * @queryParam sort_by string Sắp xếp theo: id, name, status, created_at, updated_at. Example: name
-     * @queryParam sort_order string Thứ tự: asc, desc. Example: asc
-     * @queryParam limit integer Số bản ghi mỗi trang (1-100). Example: 10
+     * @queryParam status boolean Lọc theo trạng thái hoạt động (true/false).
+     * @queryParam limit integer Số bản ghi mỗi trang. Example: 20
      */
-    public function index(FilterRequest $request)
+    public function index(FilterRequest $request): JsonResponse
     {
-        $this->authorize('viewAny', SchedulingEmployeeGroup::class);
-
-        $items = $this->groupService->index($request->all(), (int) ($request->limit ?? 10));
-
-        return $this->successCollection(new SchedulingEmployeeGroupCollection($items));
+        return $this->successCollection(
+            new SchedulingEmployeeGroupCollection(
+                $this->groupService->index($request->all(), (int)($request->limit ?? 20))
+            )
+        );
     }
 
     /**
-     * Chi tiết nhóm nhân viên.
+     * Chi tiết nhóm nhân viên lịch công tác.
      *
-     * @urlParam schedulingEmployeeGroup integer required ID nhóm nhân viên. Example: 1
+     * @urlParam schedulingEmployeeGroup integer required ID nhóm. Example: 1
      */
-    public function show(SchedulingEmployeeGroup $schedulingEmployeeGroup)
+    public function show(SchedulingEmployeeGroup $schedulingEmployeeGroup): JsonResponse
     {
-        $this->authorize('view', $schedulingEmployeeGroup);
-
-        $loaded = $this->groupService->show($schedulingEmployeeGroup);
-
-        return $this->successResource(new SchedulingEmployeeGroupResource($loaded));
+        return $this->successResource(new SchedulingEmployeeGroupResource($this->groupService->show($schedulingEmployeeGroup)));
     }
 
     /**
      * Tạo nhóm nhân viên lịch công tác mới.
+     *
+     * @bodyParam name string required Tên nhóm. Example: Nhóm A
+     * @bodyParam description string Mô tả nhóm. Example: Nhóm thường trực
+     * @bodyParam status boolean Trạng thái hoạt động. Example: true
+     * @bodyParam employee_ids array Danh sách ID nhân viên thành viên ban đầu. Example: [1, 2]
      */
-    public function store(StoreSchedulingEmployeeGroupRequest $request)
+    public function store(StoreSchedulingEmployeeGroupRequest $request): JsonResponse
     {
-        $this->authorize('create', SchedulingEmployeeGroup::class);
-
-        $validated = $request->validated();
-        $validated['organization_id'] = getPermissionsTeamId();
-
-        $group = $this->groupService->store($validated);
-
+        $group = $this->groupService->store($request->validated());
         return $this->successResource(new SchedulingEmployeeGroupResource($group), 'Tạo nhóm nhân viên thành công!', 201);
     }
 
     /**
-     * Cập nhật thông tin nhóm nhân viên.
+     * Cập nhật thông tin nhóm nhân viên lịch công tác.
      *
-     * @urlParam schedulingEmployeeGroup integer required ID nhóm nhân viên. Example: 1
+     * @urlParam schedulingEmployeeGroup integer required ID nhóm. Example: 1
+     * @bodyParam name string required Tên nhóm. Example: Nhóm A
+     * @bodyParam description string Mô tả nhóm. Example: Nhóm thường trực
+     * @bodyParam status boolean Trạng thái hoạt động. Example: true
+     * @bodyParam employee_ids array Danh sách ID nhân viên thành viên mới. Example: [1, 2]
      */
-    public function update(UpdateSchedulingEmployeeGroupRequest $request, SchedulingEmployeeGroup $schedulingEmployeeGroup)
+    public function update(UpdateSchedulingEmployeeGroupRequest $request, SchedulingEmployeeGroup $schedulingEmployeeGroup): JsonResponse
     {
-        $this->authorize('update', $schedulingEmployeeGroup);
-
         $group = $this->groupService->update($schedulingEmployeeGroup, $request->validated());
-
         return $this->successResource(new SchedulingEmployeeGroupResource($group), 'Cập nhật nhóm nhân viên thành công!');
     }
 
     /**
-     * Xóa nhóm nhân viên.
+     * Xóa nhóm nhân viên lịch công tác.
      *
-     * @urlParam schedulingEmployeeGroup integer required ID nhóm nhân viên. Example: 1
+     * @urlParam schedulingEmployeeGroup integer required ID nhóm. Example: 1
      */
-    public function destroy(SchedulingEmployeeGroup $schedulingEmployeeGroup)
+    public function destroy(SchedulingEmployeeGroup $schedulingEmployeeGroup): JsonResponse
     {
-        $this->authorize('delete', $schedulingEmployeeGroup);
-
         $this->groupService->destroy($schedulingEmployeeGroup);
-
         return $this->success(null, 'Xóa nhóm nhân viên thành công!');
+    }
+
+    /**
+     * Xóa hàng loạt nhóm nhân viên.
+     *
+     * @bodyParam ids array required Danh sách ID nhóm cần xóa. Example: [1, 2]
+     */
+    public function bulkDestroy(BulkDestroySchedulingEmployeeGroupRequest $request): JsonResponse
+    {
+        $this->groupService->bulkDestroy($request->input('ids'));
+        return $this->success(null, 'Xóa nhiều nhóm nhân viên thành công!');
+    }
+
+    /**
+     * Cập nhật trạng thái hàng loạt nhóm nhân viên.
+     *
+     * @bodyParam ids array required Danh sách ID nhóm cần cập nhật. Example: [1, 2]
+     * @bodyParam status boolean required Trạng thái mới. Example: true
+     */
+    public function bulkUpdateStatus(BulkUpdateStatusSchedulingEmployeeGroupRequest $request): JsonResponse
+    {
+        $this->groupService->bulkUpdateStatus($request->input('ids'), $request->input('status'));
+        return $this->success(null, 'Cập nhật trạng thái nhiều nhóm nhân viên thành công!');
     }
 
     /**
      * Thay đổi trạng thái nhóm nhân viên nhanh.
      *
-     * @urlParam schedulingEmployeeGroup integer required ID nhóm nhân viên. Example: 1
+     * @urlParam schedulingEmployeeGroup integer required ID nhóm. Example: 1
+     * @bodyParam status boolean required Trạng thái mới. Example: true
      */
-    public function changeStatus(ChangeStatusSchedulingEmployeeGroupRequest $request, SchedulingEmployeeGroup $schedulingEmployeeGroup)
+    public function changeStatus(ChangeStatusSchedulingEmployeeGroupRequest $request, SchedulingEmployeeGroup $schedulingEmployeeGroup): JsonResponse
     {
-        $this->authorize('update', $schedulingEmployeeGroup);
-
-        $group = $this->groupService->changeStatus($schedulingEmployeeGroup, $request->status);
-
-        return $this->successResource(new SchedulingEmployeeGroupResource($group), 'Cập nhật trạng thái thành công!');
+        $group = $this->groupService->changeStatus($schedulingEmployeeGroup, $request->input('status'));
+        return $this->successResource(new SchedulingEmployeeGroupResource($group), 'Cập nhật trạng thái nhóm nhân viên thành công!');
     }
 
     /**
-     * Thay đổi trạng thái hàng loạt nhóm nhân viên.
+     * Đồng bộ thành viên của nhóm nhân viên lịch công tác.
+     *
+     * @urlParam schedulingEmployeeGroup integer required ID nhóm. Example: 1
+     * @bodyParam employee_ids array required Danh sách ID nhân viên. Example: [1, 2]
      */
-    public function bulkUpdateStatus(BulkUpdateStatusSchedulingEmployeeGroupRequest $request)
+    public function syncMembers(SyncMembersSchedulingEmployeeGroupRequest $request, SchedulingEmployeeGroup $schedulingEmployeeGroup): JsonResponse
     {
-        $this->authorize('bulkUpdateStatus', SchedulingEmployeeGroup::class);
-
-        $this->groupService->bulkUpdateStatus($request->ids, $request->status);
-
-        return $this->success(null, 'Cập nhật trạng thái hàng loạt thành công!');
-    }
-
-    /**
-     * Xóa hàng loạt nhóm nhân viên.
-     */
-    public function bulkDestroy(BulkDestroySchedulingEmployeeGroupRequest $request)
-    {
-        $this->authorize('bulkDestroy', SchedulingEmployeeGroup::class);
-
-        $this->groupService->bulkDestroy($request->ids);
-
-        return $this->success(null, 'Xóa hàng loạt nhóm nhân viên thành công!');
+        $this->groupService->syncMembers($schedulingEmployeeGroup, $request->input('employee_ids'));
+        return $this->success(null, 'Đồng bộ thành viên nhóm thành công!');
     }
 }

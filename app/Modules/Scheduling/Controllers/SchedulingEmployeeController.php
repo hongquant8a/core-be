@@ -5,15 +5,16 @@ namespace App\Modules\Scheduling\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
 use App\Modules\Scheduling\Models\SchedulingEmployee;
-use App\Modules\Scheduling\Requests\BulkDestroySchedulingEmployeeRequest;
-use App\Modules\Scheduling\Requests\BulkUpdateStatusSchedulingEmployeeRequest;
-use App\Modules\Scheduling\Requests\ChangeStatusSchedulingEmployeeRequest;
-use App\Modules\Scheduling\Requests\StoreSchedulingEmployeeRequest;
-use App\Modules\Scheduling\Requests\UpdateSchedulingEmployeeRequest;
-use App\Modules\Scheduling\Resources\SchedulingEmployeeCollection;
-use App\Modules\Scheduling\Resources\SchedulingEmployeeResource;
+use App\Modules\Scheduling\Requests\{
+    StoreSchedulingEmployeeRequest, UpdateSchedulingEmployeeRequest,
+    BulkDestroySchedulingEmployeeRequest, BulkUpdateStatusSchedulingEmployeeRequest,
+    ChangeStatusSchedulingEmployeeRequest, ImportSchedulingEmployeeRequest,
+    SyncGroupsSchedulingEmployeeRequest
+};
+use App\Modules\Scheduling\Resources\{SchedulingEmployeeCollection, SchedulingEmployeeResource};
 use App\Modules\Scheduling\Services\SchedulingEmployeeService;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 /**
  * @group Scheduling - Nhân viên lịch công tác
@@ -23,69 +24,53 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
  */
 class SchedulingEmployeeController extends Controller
 {
-    use AuthorizesRequests;
-
     public function __construct(private SchedulingEmployeeService $employeeService) {}
-
-    /**
-     * Danh sách nhân viên cho dropdown.
-     *
-     * Trả về danh sách rút gọn (id, user_id, name, email) — dùng để FE hiển thị dropdown chọn chủ trì khi tạo lịch công tác.
-     *
-     * @queryParam search string Tìm theo tên, email, user_name.
-     * @queryParam status string Lọc theo trạng thái: active, inactive. Example: active
-     * @queryParam sort_by string Sắp xếp theo: id, status, created_at, updated_at. Example: created_at
-     * @queryParam sort_order string Thứ tự: asc, desc. Example: asc
-     */
-    public function options(FilterRequest $request)
-    {
-        $items = $this->employeeService->publicOptions($request->all());
-
-        return $this->success($items->map(fn ($emp) => [
-            'id' => $emp->id,
-            'user_id' => $emp->user_id,
-            'name' => $emp->user?->name,
-            'email' => $emp->user?->email,
-            'user_name' => $emp->user?->user_name,
-            'status' => $emp->status,
-        ]));
-    }
 
     /**
      * Thống kê nhân viên lịch công tác.
      *
-     * @queryParam search string Tìm theo tên, email, user_name.
-     * @queryParam status string Lọc theo trạng thái: active, inactive.
-     * @queryParam from_date date Lọc từ ngày tạo (Y-m-d). Example: 2026-01-01
-     * @queryParam to_date date Lọc đến ngày tạo (Y-m-d). Example: 2026-12-31
-     *
-     * @response 200 {"success": true, "data": {"total": 30, "active": 28, "inactive": 2}}
+     * @queryParam search string Tìm theo tên, email.
+     * @queryParam status boolean Lọc theo trạng thái hoạt động (true/false).
      */
-    public function stats(FilterRequest $request)
+    public function stats(FilterRequest $request): JsonResponse
     {
-        $this->authorize('viewAny', SchedulingEmployee::class);
-
         return $this->success($this->employeeService->stats($request->all()));
+    }
+
+    /**
+     * Danh sách nhân viên cho dropdown.
+     *
+     * Trả về danh sách rút gọn (id, user_id, name) — dùng để FE hiển thị dropdown chọn chủ trì khi tạo lịch công tác.
+     */
+    public function options(): JsonResponse
+    {
+        $employees = SchedulingEmployee::with('user')
+            ->where('status', true)
+            ->get();
+
+        $res = $employees->map(fn ($emp) => [
+            'id' => $emp->id,
+            'user_id' => $emp->user_id,
+            'name' => $emp->user?->name,
+        ]);
+
+        return $this->success($res);
     }
 
     /**
      * Danh sách nhân viên lịch công tác.
      *
-     * @queryParam search string Tìm theo tên, email, user_name.
-     * @queryParam status string Lọc theo trạng thái: active, inactive.
-     * @queryParam from_date date Lọc từ ngày tạo (Y-m-d).
-     * @queryParam to_date date Lọc đến ngày tạo (Y-m-d).
-     * @queryParam sort_by string Sắp xếp theo: id, status, created_at, updated_at. Example: created_at
-     * @queryParam sort_order string Thứ tự: asc, desc. Example: desc
-     * @queryParam limit integer Số bản ghi mỗi trang (1-100). Example: 10
+     * @queryParam search string Tìm theo tên, email.
+     * @queryParam status boolean Lọc theo trạng thái hoạt động (true/false).
+     * @queryParam limit integer Số bản ghi mỗi trang. Example: 20
      */
-    public function index(FilterRequest $request)
+    public function index(FilterRequest $request): JsonResponse
     {
-        $this->authorize('viewAny', SchedulingEmployee::class);
-
-        $items = $this->employeeService->index($request->all(), (int) ($request->limit ?? 10));
-
-        return $this->successCollection(new SchedulingEmployeeCollection($items));
+        return $this->successCollection(
+            new SchedulingEmployeeCollection(
+                $this->employeeService->index($request->all(), (int)($request->limit ?? 20))
+            )
+        );
     }
 
     /**
@@ -93,27 +78,21 @@ class SchedulingEmployeeController extends Controller
      *
      * @urlParam schedulingEmployee integer required ID nhân viên. Example: 1
      */
-    public function show(SchedulingEmployee $schedulingEmployee)
+    public function show(SchedulingEmployee $schedulingEmployee): JsonResponse
     {
-        $this->authorize('view', $schedulingEmployee);
-
-        $loaded = $this->employeeService->show($schedulingEmployee);
-
-        return $this->successResource(new SchedulingEmployeeResource($loaded));
+        return $this->successResource(new SchedulingEmployeeResource($this->employeeService->show($schedulingEmployee)));
     }
 
     /**
      * Thêm nhân viên vào module lịch công tác.
+     *
+     * @bodyParam user_id integer required ID user (users table). Example: 3
+     * @bodyParam status boolean Trạng thái hoạt động. Example: true
+     * @bodyParam note string Ghi chú thêm. Example: Cán bộ phòng kỹ thuật
      */
-    public function store(StoreSchedulingEmployeeRequest $request)
+    public function store(StoreSchedulingEmployeeRequest $request): JsonResponse
     {
-        $this->authorize('create', SchedulingEmployee::class);
-
-        $validated = $request->validated();
-        $validated['organization_id'] = getPermissionsTeamId();
-
-        $employee = $this->employeeService->store($validated);
-
+        $employee = $this->employeeService->store($request->validated());
         return $this->successResource(new SchedulingEmployeeResource($employee), 'Thêm nhân viên thành công!', 201);
     }
 
@@ -121,13 +100,12 @@ class SchedulingEmployeeController extends Controller
      * Cập nhật thông tin nhân viên lịch công tác.
      *
      * @urlParam schedulingEmployee integer required ID nhân viên. Example: 1
+     * @bodyParam status boolean Trạng thái hoạt động. Example: true
+     * @bodyParam note string Ghi chú thêm. Example: Cán bộ phòng kỹ thuật
      */
-    public function update(UpdateSchedulingEmployeeRequest $request, SchedulingEmployee $schedulingEmployee)
+    public function update(UpdateSchedulingEmployeeRequest $request, SchedulingEmployee $schedulingEmployee): JsonResponse
     {
-        $this->authorize('update', $schedulingEmployee);
-
         $employee = $this->employeeService->update($schedulingEmployee, $request->validated());
-
         return $this->successResource(new SchedulingEmployeeResource($employee), 'Cập nhật nhân viên thành công!');
     }
 
@@ -136,50 +114,75 @@ class SchedulingEmployeeController extends Controller
      *
      * @urlParam schedulingEmployee integer required ID nhân viên. Example: 1
      */
-    public function destroy(SchedulingEmployee $schedulingEmployee)
+    public function destroy(SchedulingEmployee $schedulingEmployee): JsonResponse
     {
-        $this->authorize('delete', $schedulingEmployee);
-
         $this->employeeService->destroy($schedulingEmployee);
-
         return $this->success(null, 'Xóa nhân viên thành công!');
     }
 
     /**
-     * Thay đổi trạng thái nhân viên.
+     * Xóa hàng loạt nhân viên khỏi module lịch công tác.
      *
-     * @urlParam schedulingEmployee integer required ID nhân viên. Example: 1
+     * @bodyParam ids array required Danh sách ID nhân viên cần xóa. Example: [1, 2]
      */
-    public function changeStatus(ChangeStatusSchedulingEmployeeRequest $request, SchedulingEmployee $schedulingEmployee)
+    public function bulkDestroy(BulkDestroySchedulingEmployeeRequest $request): JsonResponse
     {
-        $this->authorize('update', $schedulingEmployee);
-
-        $employee = $this->employeeService->changeStatus($schedulingEmployee, $request->status);
-
-        return $this->successResource(new SchedulingEmployeeResource($employee), 'Cập nhật trạng thái thành công!');
+        $this->employeeService->bulkDestroy($request->input('ids'));
+        return $this->success(null, 'Xóa nhiều nhân viên thành công!');
     }
 
     /**
      * Cập nhật trạng thái hàng loạt nhân viên.
+     *
+     * @bodyParam ids array required Danh sách ID nhân viên cần cập nhật. Example: [1, 2]
+     * @bodyParam status boolean required Trạng thái mới. Example: true
      */
-    public function bulkUpdateStatus(BulkUpdateStatusSchedulingEmployeeRequest $request)
+    public function bulkUpdateStatus(BulkUpdateStatusSchedulingEmployeeRequest $request): JsonResponse
     {
-        $this->authorize('bulkUpdateStatus', SchedulingEmployee::class);
-
-        $this->employeeService->bulkUpdateStatus($request->ids, $request->status);
-
-        return $this->success(null, 'Cập nhật trạng thái hàng loạt thành công!');
+        $this->employeeService->bulkUpdateStatus($request->input('ids'), $request->input('status'));
+        return $this->success(null, 'Cập nhật trạng thái nhiều nhân viên thành công!');
     }
 
     /**
-     * Xóa hàng loạt nhân viên.
+     * Thay đổi trạng thái nhân viên lịch công tác nhanh.
+     *
+     * @urlParam schedulingEmployee integer required ID nhân viên. Example: 1
+     * @bodyParam status boolean required Trạng thái mới. Example: true
      */
-    public function bulkDestroy(BulkDestroySchedulingEmployeeRequest $request)
+    public function changeStatus(ChangeStatusSchedulingEmployeeRequest $request, SchedulingEmployee $schedulingEmployee): JsonResponse
     {
-        $this->authorize('bulkDestroy', SchedulingEmployee::class);
+        $employee = $this->employeeService->changeStatus($schedulingEmployee, $request->input('status'));
+        return $this->successResource(new SchedulingEmployeeResource($employee), 'Cập nhật trạng thái nhân viên thành công!');
+    }
 
-        $this->employeeService->bulkDestroy($request->ids);
+    /**
+     * Xuất danh sách nhân viên lịch công tác ra file Excel.
+     */
+    public function export(FilterRequest $request)
+    {
+        return $this->employeeService->export($request->all());
+    }
 
-        return $this->success(null, 'Xóa hàng loạt nhân viên thành công!');
+    /**
+     * Nhập danh sách nhân viên lịch công tác từ file Excel.
+     *
+     * @bodyParam file file required File Excel chứa danh sách nhân viên (.xlsx, .xls, .csv).
+     */
+    public function import(ImportSchedulingEmployeeRequest $request): JsonResponse
+    {
+        $res = $this->employeeService->import($request->file('file'));
+        return $this->success($res, 'Nhập danh sách nhân viên thành công!');
+    }
+
+    /**
+     * Đồng bộ danh sách nhóm của nhân viên lịch công tác.
+     *
+     * @urlParam schedulingEmployee integer required ID nhân viên. Example: 1
+     * @bodyParam group_ids array required Danh sách ID nhóm. Example: [1, 2]
+     */
+    public function syncGroups(SyncGroupsSchedulingEmployeeRequest $request, SchedulingEmployee $schedulingEmployee): JsonResponse
+    {
+        $this->employeeService->syncGroups($schedulingEmployee, $request->input('group_ids'));
+        return $this->success(null, 'Đồng bộ nhóm nhân viên thành công!');
     }
 }

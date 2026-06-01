@@ -4,6 +4,7 @@ namespace App\Services\Notification\Services;
 
 use App\Modules\Scheduling\Models\Schedule;
 use App\Modules\Scheduling\Models\ScheduleReminder;
+use App\Modules\Scheduling\Enums\ReminderStatusEnum;
 use App\Services\Notification\Jobs\SendScheduleReminderJob;
 use Carbon\Carbon;
 
@@ -24,7 +25,7 @@ class ScheduleReminderScheduler
             
             $reminder->update([
                 'remind_at' => $remindAt,
-                'status' => 0, // PENDING
+                'status' => ReminderStatusEnum::Pending->value,
             ]);
 
             $recipients = $this->resolveRecipients($schedule);
@@ -32,9 +33,9 @@ class ScheduleReminderScheduler
             if ($remindAt->isFuture()) {
                 foreach ($recipients as $user) {
                     SendScheduleReminderJob::dispatch(
-                        $schedule->id,
-                        $reminder->id,
-                        $user->id
+                         $schedule->id,
+                         $reminder->id,
+                         $user->id
                     )->delay($remindAt)->onQueue('notifications');
                 }
             }
@@ -46,8 +47,8 @@ class ScheduleReminderScheduler
      */
     public function cancelPending(Schedule $schedule): void
     {
-        $schedule->reminders()->where('status', 0)->update([
-            'status' => 3, // CANCELLED
+        $schedule->reminders()->where('status', ReminderStatusEnum::Pending->value)->update([
+            'status' => ReminderStatusEnum::Cancelled->value,
         ]);
     }
 

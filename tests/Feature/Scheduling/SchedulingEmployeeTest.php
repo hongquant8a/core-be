@@ -32,7 +32,7 @@ class SchedulingEmployeeTest extends TestCase
         $this->staff1 = User::factory()->create(['name' => 'Staff One', 'email' => 'staff1@example.com']);
         $this->staff2 = User::factory()->create(['name' => 'Staff Two', 'email' => 'staff2@example.com']);
 
-        // Set up role "Tổng hợp lịch" (which has full scheduling.employees permission)
+        // Set up role "Tổng hợp lịch" (which has full scheduling-employees permission)
         setPermissionsTeamId($this->orgA->id);
         $this->admin->assignRole('Tổng hợp lịch');
 
@@ -43,13 +43,12 @@ class SchedulingEmployeeTest extends TestCase
         setPermissionsTeamId($this->orgA->id);
     }
 
-    private function createEmployee(int $orgId, int $userId, string $status = 'active', ?string $note = null): SchedulingEmployee
+    private function createEmployee(int $orgId, int $userId, bool $status = true): SchedulingEmployee
     {
         return SchedulingEmployee::create([
             'organization_id' => $orgId,
             'user_id' => $userId,
             'status' => $status,
-            'note' => $note,
         ]);
     }
 
@@ -60,8 +59,8 @@ class SchedulingEmployeeTest extends TestCase
         // Clear existing backfilled employees for a clean test
         SchedulingEmployee::query()->delete();
 
-        $this->createEmployee($this->orgA->id, $this->staff1->id, 'active');
-        $this->createEmployee($this->orgA->id, $this->staff2->id, 'inactive');
+        $this->createEmployee($this->orgA->id, $this->staff1->id, true);
+        $this->createEmployee($this->orgA->id, $this->staff2->id, false);
 
         $res = $this->getJson('/api/scheduling-employees/options', ['X-Organization-Id' => $this->orgA->id]);
 
@@ -79,8 +78,8 @@ class SchedulingEmployeeTest extends TestCase
 
         SchedulingEmployee::query()->delete();
 
-        $this->createEmployee($this->orgA->id, $this->staff1->id, 'active');
-        $this->createEmployee($this->orgA->id, $this->staff2->id, 'inactive');
+        $this->createEmployee($this->orgA->id, $this->staff1->id, true);
+        $this->createEmployee($this->orgA->id, $this->staff2->id, false);
 
         $res = $this->getJson('/api/scheduling-employees/stats', ['X-Organization-Id' => $this->orgA->id]);
 
@@ -96,8 +95,8 @@ class SchedulingEmployeeTest extends TestCase
 
         SchedulingEmployee::query()->delete();
 
-        $this->createEmployee($this->orgA->id, $this->staff1->id, 'active');
-        $this->createEmployee($this->orgB->id, $this->staff2->id, 'active');
+        $this->createEmployee($this->orgA->id, $this->staff1->id, true);
+        $this->createEmployee($this->orgB->id, $this->staff2->id, true);
 
         $res = $this->getJson('/api/scheduling-employees', ['X-Organization-Id' => $this->orgA->id]);
 
@@ -116,16 +115,14 @@ class SchedulingEmployeeTest extends TestCase
 
         $res = $this->postJson('/api/scheduling-employees', [
             'user_id' => $this->staff1->id,
-            'status' => 'active',
-            'note' => 'Nhân sự mới bổ sung',
+            'status' => true,
         ], ['X-Organization-Id' => $this->orgA->id]);
 
         $res->assertCreated();
         $this->assertDatabaseHas('scheduling_employees', [
             'organization_id' => $this->orgA->id,
             'user_id' => $this->staff1->id,
-            'status' => 'active',
-            'note' => 'Nhân sự mới bổ sung',
+            'status' => true,
         ]);
     }
 
@@ -139,7 +136,7 @@ class SchedulingEmployeeTest extends TestCase
 
         $res = $this->postJson('/api/scheduling-employees', [
             'user_id' => $this->staff1->id,
-            'status' => 'active',
+            'status' => true,
         ], ['X-Organization-Id' => $this->orgA->id]);
 
         $res->assertUnprocessable();
@@ -158,16 +155,12 @@ class SchedulingEmployeeTest extends TestCase
         Schedule::create([
             'organization_id' => $this->orgA->id,
             'module_type' => 'EXECUTIVE',
-            'event_date' => '2026-06-01',
-            'start_time' => '08:00:00',
-            'end_time' => '10:00:00',
-            'session' => 'S',
+            'date' => '2026-06-01',
+            'session' => 'MORNING',
+            'title' => 'Họp giao ban',
             'content' => 'Họp điều hành',
-            'host_id' => $this->staff1->id,
-            'nature' => 'HOST',
-            'status' => 0,
-            'week_number' => 23,
-            'year' => 2026,
+            'host_user_id' => $this->staff1->id,
+            'status' => 'APPROVED',
             'created_by' => $this->admin->id,
         ]);
 
@@ -189,7 +182,7 @@ class SchedulingEmployeeTest extends TestCase
         $res = $this->deleteJson('/api/scheduling-employees/' . $emp->id, [], ['X-Organization-Id' => $this->orgA->id]);
 
         $res->assertOk();
-        $this->assertDatabaseMissing('scheduling_employees', ['id' => $emp->id]);
+        $this->assertSoftDeleted('scheduling_employees', ['id' => $emp->id]);
     }
 
     public function test_bulk_destroy_deletes_multiple_employees(): void
@@ -206,8 +199,8 @@ class SchedulingEmployeeTest extends TestCase
         ], ['X-Organization-Id' => $this->orgA->id]);
 
         $res->assertOk();
-        $this->assertDatabaseMissing('scheduling_employees', ['id' => $emp1->id]);
-        $this->assertDatabaseMissing('scheduling_employees', ['id' => $emp2->id]);
+        $this->assertSoftDeleted('scheduling_employees', ['id' => $emp1->id]);
+        $this->assertSoftDeleted('scheduling_employees', ['id' => $emp2->id]);
     }
 
     public function test_change_status_updates_employee_status(): void
@@ -216,16 +209,31 @@ class SchedulingEmployeeTest extends TestCase
 
         SchedulingEmployee::query()->delete();
 
-        $emp = $this->createEmployee($this->orgA->id, $this->staff1->id, 'active');
+        $emp = $this->createEmployee($this->orgA->id, $this->staff1->id, true);
 
         $res = $this->patchJson("/api/scheduling-employees/{$emp->id}/status", [
-            'status' => 'inactive',
+            'status' => false,
         ], ['X-Organization-Id' => $this->orgA->id]);
 
         $res->assertOk();
         $this->assertDatabaseHas('scheduling_employees', [
             'id' => $emp->id,
-            'status' => 'inactive',
+            'status' => false,
         ]);
+    }
+
+    public function test_export_downloads_excel(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        $res = $this->getJson('/api/scheduling-employees/export', ['X-Organization-Id' => $this->orgA->id]);
+
+        $res->assertOk();
+        $this->assertTrue(
+            str_contains(
+                $res->headers->get('content-type'),
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+        );
     }
 }
