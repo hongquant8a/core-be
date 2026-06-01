@@ -83,11 +83,49 @@ class SyncDeletedMigrationsCommand extends Command
             }
         }
 
+        // 3c. TỰ ĐỘNG PHÁT HIỆN LOG MIGRATION MA (Ghost logs)
+        // Tìm các log migration trong DB của module Scheduling nhưng bảng vật lý không tồn tại
+        $ghostMigrationLogs = [];
+        $allowedTables = [
+            'schedules', 
+            'schedule_attachments', 
+            'schedule_participants', 
+            'schedule_reminders', 
+            'schedule_notification_recipients',
+            'scheduling_employees', 
+            'scheduling_employee_groups', 
+            'scheduling_employee_group_members', 
+            'scheduling_settings', 
+            'scheduling_filter_presets', 
+            'notification_groups', 
+            'notification_group_members', 
+            'reminder_presets', 
+            'org_scheduling_settings', 
+            'filter_presets'
+        ];
+
+        foreach ($allowedTables as $tableName) {
+            if (!Schema::hasTable($tableName)) {
+                $matchedLogs = DB::table('migrations')
+                    ->where(function ($query) use ($tableName) {
+                        $query->where('migration', 'like', "%_create_{$tableName}_table%")
+                              ->orWhere('migration', 'like', "%_create_{$tableName}_tables%");
+                    })
+                    ->pluck('migration')
+                    ->toArray();
+                
+                if (!empty($matchedLogs)) {
+                    $ghostMigrationLogs = array_merge($ghostMigrationLogs, $matchedLogs);
+                }
+            }
+        }
+        $ghostMigrationLogs = array_unique($ghostMigrationLogs);
+
         // Gộp cả migration bị xóa và các migration bị xung đột bảng vật lý
         $allTargetMigrations = array_unique(array_merge(array_values($deletedMigrations), $conflictingMigrations));
 
-        if (empty($allTargetMigrations)) {
-            $this->info('Không phát hiện file migration nào của module Scheduling bị xóa hoặc xung đột bảng vật lý!');
+        if (empty($allTargetMigrations) && empty($ghostMigrationLogs)) {
+            $this->info('Không phát hiện file migration nào của module Scheduling bị xóa, xung đột bảng vật lý hoặc log ma!');
             return self::SUCCESS;
         }
 
@@ -211,6 +249,14 @@ class SyncDeletedMigrationsCommand extends Command
                           ->orWhere('migration', 'like', "%_create_{$table}_tables%");
                 }
             })->delete();
+        }
+
+        if (!empty($ghostMigrationLogs)) {
+            $this->comment('Đang dọn dẹp các log migration ma (bảng vật lý không tồn tại)...');
+            foreach ($ghostMigrationLogs as $ghostLog) {
+                $this->line("  - Xóa log: {$ghostLog}");
+            }
+            DB::table('migrations')->whereIn('migration', $ghostMigrationLogs)->delete();
         }
 
         Schema::enableForeignKeyConstraints();
