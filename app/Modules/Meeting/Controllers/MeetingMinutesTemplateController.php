@@ -185,7 +185,7 @@ class MeetingMinutesTemplateController extends Controller
             'template_id' => 'required|integer|exists:meeting_minutes_templates,id',
         ]);
 
-        Gate::authorize('operate', $meeting);
+        Gate::authorize('exportReports', $meeting);
 
         $template = MeetingMinutesTemplate::findOrFail((int) $request->input('template_id'));
 

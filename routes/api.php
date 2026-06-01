@@ -187,6 +187,10 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
     Route::prefix('meeting-minutes-templates')->middleware('ensure.route.org')->group(function () {
         require base_path('app/Modules/Meeting/Routes/meeting_minutes_template.php');
     });
+    // Template giấy mời (.docx) — mỗi tổ chức có template riêng.
+    Route::prefix('meeting-invitation-templates')->middleware('ensure.route.org')->group(function () {
+        require base_path('app/Modules/Meeting/Routes/meeting_invitation_template.php');
+    });
     // Cấu hình cuộc họp — singleton per org (auto find-or-create theo X-Organization-Id).
     Route::prefix('meeting-settings')->group(function () {
         require base_path('app/Modules/Meeting/Routes/meeting_setting.php');
@@ -202,16 +206,10 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
     Route::prefix('scheduling-employee-groups')->middleware('ensure.route.org')->group(function () {
         require base_path('app/Modules/Scheduling/Routes/scheduling_employee_group.php');
     });
-    Route::prefix('scheduling-notification-groups')->middleware('ensure.route.org')->group(function () {
-        require base_path('app/Modules/Scheduling/Routes/notification_group.php');
-    });
-    Route::prefix('scheduling-reminder-presets')->middleware('ensure.route.org')->group(function () {
-        require base_path('app/Modules/Scheduling/Routes/reminder_preset.php');
-    });
     Route::prefix('scheduling-settings')->group(function () {
-        require base_path('app/Modules/Scheduling/Routes/org_scheduling_settings.php');
+        require base_path('app/Modules/Scheduling/Routes/scheduling_setting.php');
     });
     Route::prefix('scheduling-filter-presets')->middleware('ensure.route.org')->group(function () {
-        require base_path('app/Modules/Scheduling/Routes/filter_preset.php');
+        require base_path('app/Modules/Scheduling/Routes/scheduling_filter_preset.php');
     });
 });
