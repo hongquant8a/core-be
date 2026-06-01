@@ -14,7 +14,7 @@ class SyncDeletedMigrationsCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'migrate:sync-deleted {--dry-run : Only list deleted migrations and tables to drop, without making changes}';
+    protected $signature = 'migrate:sync-deleted {--dry-run : Only list deleted migrations and tables to drop, without making changes} {--force : Force the operation to run without prompting for confirmation}';
 
     /**
      * The console command description.
@@ -31,6 +31,7 @@ class SyncDeletedMigrationsCommand extends Command
     public function handle(): int
     {
         $dryRun = (bool) $this->option('dry-run');
+        $force = (bool) $this->option('force');
 
         if ($dryRun) {
             $this->info('[DRY-RUN] Đang chạy ở chế độ giả lập. Không có thay đổi nào được thực thi.');
@@ -136,12 +137,12 @@ class SyncDeletedMigrationsCommand extends Command
             ? '⚠️ CẢNH BÁO cực kỳ quan trọng: Có bảng chứa dữ liệu thật! Bạn có chắc chắn muốn drop các bảng trên và xóa log migration không?'
             : 'Bạn có chắc chắn muốn drop các bảng trên và xóa bản ghi migration khỏi DB không?';
 
-        if (!$this->confirm($confirmMessage, false)) {
+        if (!$force && !$this->confirm($confirmMessage, false)) {
             $this->warn('Hủy bỏ hành động.');
             return self::SUCCESS;
         }
 
-        if ($hasDataWarning) {
+        if ($hasDataWarning && !$force) {
             $confirmText = 'DONG Y XOA';
             $input = $this->ask("Để xác nhận drop bảng ĐANG CÓ DỮ LIỆU, vui lòng gõ chính xác cụm từ '{$confirmText}':");
             if ($input !== $confirmText) {
