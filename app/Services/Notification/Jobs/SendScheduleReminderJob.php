@@ -6,6 +6,7 @@ use App\Modules\Core\Models\User;
 use App\Modules\Scheduling\Models\Schedule;
 use App\Modules\Scheduling\Models\ScheduleReminder;
 use App\Modules\Scheduling\Enums\ScheduleStatusEnum;
+use App\Modules\Scheduling\Enums\ReminderStatusEnum;
 use App\Services\Notification\Services\NotificationDispatcher;
 use App\Services\Notification\Services\ContentBuilderRegistry;
 use Illuminate\Bus\Queueable;
@@ -30,8 +31,12 @@ class SendScheduleReminderJob implements ShouldQueue
     ): void {
         // Load the schedule
         $schedule = Schedule::find($this->scheduleId);
-        if (!$schedule || $schedule->status->value !== ScheduleStatusEnum::Published->value) {
-            return; // Not published or deleted
+        if (!$schedule) {
+            return;
+        }
+        $statusVal = $schedule->status instanceof ScheduleStatusEnum ? $schedule->status->value : $schedule->status;
+        if ($statusVal !== ScheduleStatusEnum::Approved->value) {
+            return; // Not published/approved or deleted
         }
 
         // Load the reminder
@@ -77,9 +82,9 @@ class SendScheduleReminderJob implements ShouldQueue
             organizationId: $schedule->organization_id,
         );
 
-        if ($reminder->status !== 1) {
+        if ($reminder->status !== ReminderStatusEnum::Sent->value) {
             $reminder->update([
-                'status' => 1, // SENT
+                'status' => ReminderStatusEnum::Sent->value,
                 'sent_at' => now(),
             ]);
         }

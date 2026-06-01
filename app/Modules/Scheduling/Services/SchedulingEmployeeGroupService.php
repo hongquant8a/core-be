@@ -2,62 +2,47 @@
 
 namespace App\Modules\Scheduling\Services;
 
+use App\Modules\Core\Support\ExportFilename;
 use App\Modules\Scheduling\Models\SchedulingEmployeeGroup;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class SchedulingEmployeeGroupService
 {
-    public function options(array $filters = []): \Illuminate\Database\Eloquent\Collection
+    public function stats(array $filters): array
     {
-        return SchedulingEmployeeGroup::query()
-            ->where('status', 'active')
-            ->when($filters['search'] ?? null, fn ($q, $search) => $q->where('name', 'like', "%{$search}%"))
-            ->orderBy('name')
-            ->get(['id', 'name']);
-    }
-
-    public function stats(array $filters = []): array
-    {
-        $query = SchedulingEmployeeGroup::query();
-
-        if (isset($filters['search'])) {
-            $query->where('name', 'like', "%{$filters['search']}%");
-        }
-
-        $items = $query->get(['status']);
-
+        $base = SchedulingEmployeeGroup::filter($filters);
         return [
-            'total' => $items->count(),
-            'active' => $items->where('status', 'active')->count(),
-            'inactive' => $items->where('status', 'inactive')->count(),
+            'total'    => (clone $base)->count(),
+            'active'   => (clone $base)->where('status', true)->count(),
+            'inactive' => (clone $base)->where('status', false)->count(),
         ];
     }
 
-    public function index(array $filters = [], int $limit = 10): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    public function index(array $filters, int $limit)
     {
-        $query = SchedulingEmployeeGroup::query()->withCount('employees');
-
-        $query->filter($filters);
-
-        return $query->paginate($limit);
+        return SchedulingEmployeeGroup::withCount('members')
+            ->filter($filters)
+            ->paginate($limit);
     }
 
     public function show(SchedulingEmployeeGroup $group): SchedulingEmployeeGroup
     {
-        return $group->load(['employees.user', 'creator', 'editor']);
+        return $group->load(['members.user']);
     }
 
     public function store(array $data): SchedulingEmployeeGroup
     {
         return DB::transaction(function () use ($data) {
-            /** @var SchedulingEmployeeGroup $group */
+            $data['organization_id'] = getPermissionsTeamId();
             $group = SchedulingEmployeeGroup::create($data);
 
             if (isset($data['employee_ids'])) {
-                $this->syncEmployees($group, $data['employee_ids']);
+                $this->syncMembers($group, $data['employee_ids']);
             }
 
-            return $group;
+            return $this->show($group);
         });
     }
 
@@ -67,42 +52,40 @@ class SchedulingEmployeeGroupService
             $group->update($data);
 
             if (isset($data['employee_ids'])) {
-                $this->syncEmployees($group, $data['employee_ids']);
+                $this->syncMembers($group, $data['employee_ids']);
             }
 
-            return $group;
+            return $this->show($group);
         });
     }
 
     public function destroy(SchedulingEmployeeGroup $group): void
     {
+        $group->members()->detach();
         $group->delete();
     }
 
     public function bulkDestroy(array $ids): void
     {
-        SchedulingEmployeeGroup::query()->whereIn('id', $ids)->delete();
+        DB::transaction(function () use ($ids) {
+            DB::table('scheduling_employee_group_members')->whereIn('scheduling_employee_group_id', $ids)->delete();
+            SchedulingEmployeeGroup::whereIn('id', $ids)->delete();
+        });
     }
 
-    public function bulkUpdateStatus(array $ids, string $status): void
+    public function bulkUpdateStatus(array $ids, bool $status): void
     {
-        SchedulingEmployeeGroup::query()->whereIn('id', $ids)->update(['status' => $status]);
+        SchedulingEmployeeGroup::whereIn('id', $ids)->update(['status' => $status]);
     }
 
-    public function changeStatus(SchedulingEmployeeGroup $group, string $status): SchedulingEmployeeGroup
+    public function changeStatus(SchedulingEmployeeGroup $group, bool $status): SchedulingEmployeeGroup
     {
         $group->update(['status' => $status]);
-        return $group;
+        return $this->show($group);
     }
 
-    private function syncEmployees(SchedulingEmployeeGroup $group, array $employeeIds): void
+    public function syncMembers(SchedulingEmployeeGroup $group, array $employeeIds): void
     {
-        $syncData = [];
-        foreach ($employeeIds as $id) {
-            $syncData[$id] = [
-                'organization_id' => $group->organization_id ?? auth()->user()?->organization_id
-            ];
-        }
-        $group->employees()->sync($syncData);
+        $group->members()->sync($employeeIds);
     }
 }

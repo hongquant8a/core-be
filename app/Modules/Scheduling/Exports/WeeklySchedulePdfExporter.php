@@ -22,16 +22,16 @@ class WeeklySchedulePdfExporter
     public function generate(array $filters): string
     {
         $query = Schedule::with(['host', 'driver'])
-            ->orderBy('event_date', 'asc')
+            ->orderBy('date', 'asc')
             ->orderBy('session', 'asc')
             ->orderBy('sort_order', 'asc');
 
         // Apply filters
-        if (!empty($filters['week_number'])) {
-            $query->where('week_number', $filters['week_number']);
-        }
-        if (!empty($filters['year'])) {
-            $query->where('year', $filters['year']);
+        if (!empty($filters['week_number']) && !empty($filters['year'])) {
+            $carbon = Carbon::now()->setISODate($filters['year'], $filters['week_number']);
+            $start = $carbon->startOfWeek()->toDateString();
+            $end = $carbon->endOfWeek()->toDateString();
+            $query->whereBetween('date', [$start, $end]);
         }
         if (!empty($filters['module_type'])) {
             $query->where('module_type', $filters['module_type']);
@@ -55,10 +55,10 @@ class WeeklySchedulePdfExporter
         $formattedSchedules = [];
         foreach ($schedulesList as $item) {
             $dayLabel = 'N/A';
-            if ($item->event_date) {
-                $dayOfWeek = $item->event_date->dayOfWeek;
+            if ($item->date) {
+                $dayOfWeek = $item->date->dayOfWeek;
                 $dayName = self::$daysMap[$dayOfWeek] ?? '';
-                $dateStr = $item->event_date->format('d/m/Y');
+                $dateStr = $item->date->format('d/m/Y');
                 $dayLabel = "{$dayName}\n({$dateStr})";
             }
 

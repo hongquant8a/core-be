@@ -2,84 +2,62 @@
 
 namespace App\Modules\Scheduling\Services;
 
-use App\Modules\Core\Enums\StatusEnum;
 use App\Modules\Core\Support\ExportFilename;
-use App\Modules\Scheduling\Models\SchedulingEmployee;
+use App\Modules\Scheduling\Exports\SchedulingEmployeeExport;
+use App\Modules\Scheduling\Imports\SchedulingEmployeeImport;
 use App\Modules\Scheduling\Models\Schedule;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\Modules\Scheduling\Models\SchedulingEmployee;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class SchedulingEmployeeService
 {
-    public function publicOptions(array $filters)
-    {
-        $publicFilters = [
-            ...$filters,
-            'status' => StatusEnum::Active->value,
-            'sort_by' => $filters['sort_by'] ?? 'created_at',
-            'sort_order' => $filters['sort_order'] ?? 'asc',
-        ];
-
-        return SchedulingEmployee::with('user:id,name,email,user_name')
-            ->filter($publicFilters)
-            ->get();
-    }
-
     public function stats(array $filters): array
     {
         $base = SchedulingEmployee::filter($filters);
-
         return [
-            'total' => (clone $base)->count(),
-            'active' => (clone $base)->where('status', StatusEnum::Active->value)->count(),
-            'inactive' => (clone $base)->where('status', StatusEnum::Inactive->value)->count(),
+            'total'    => (clone $base)->count(),
+            'active'   => (clone $base)->where('status', true)->count(),
+            'inactive' => (clone $base)->where('status', false)->count(),
         ];
     }
 
     public function index(array $filters, int $limit)
     {
-        return SchedulingEmployee::with(['user.media', 'creator.media', 'editor.media'])
+        return SchedulingEmployee::with(['user', 'groups'])
             ->filter($filters)
             ->paginate($limit);
     }
 
     public function show(SchedulingEmployee $employee): SchedulingEmployee
     {
-        return $employee->load(['user.media', 'creator.media', 'editor.media']);
+        return $employee->load(['user', 'groups']);
     }
 
-    public function store(array $validated): SchedulingEmployee
+    public function store(array $data): SchedulingEmployee
     {
-        return SchedulingEmployee::create($validated)
-            ->load(['user.media', 'creator.media', 'editor.media']);
+        $data['organization_id'] = getPermissionsTeamId();
+        return SchedulingEmployee::create($data)->load(['user', 'groups']);
     }
 
-    public function update(SchedulingEmployee $employee, array $validated): SchedulingEmployee
+    public function update(SchedulingEmployee $employee, array $data): SchedulingEmployee
     {
-        $employee->update($validated);
-
-        return $employee->load(['user.media', 'creator.media', 'editor.media']);
+        $employee->update($data);
+        return $employee->load(['user', 'groups']);
     }
 
-    /**
-     * Xóa nhân viên — soft block (409) nếu vẫn đang chủ trì lịch họp/công tác nào.
-     */
     public function destroy(SchedulingEmployee $employee): void
     {
         $this->guardAgainstDeletion([$employee->user_id], $employee->organization_id);
         $employee->delete();
     }
 
-    /**
-     * Bulk delete — guard kiểm tra tất cả user_id 1 lượt để báo lỗi gộp.
-     */
     public function bulkDestroy(array $ids): void
     {
         $orgId = getPermissionsTeamId();
         $employees = SchedulingEmployee::whereIn('id', $ids)->get(['id', 'user_id']);
-        $userIds = $employees->pluck('user_id')->all();
+        $userIds = $employees->pluck('user_id')->filter()->all();
 
         if ($userIds) {
             $this->guardAgainstDeletion($userIds, $orgId);
@@ -88,33 +66,55 @@ class SchedulingEmployeeService
         SchedulingEmployee::whereIn('id', $ids)->delete();
     }
 
-    public function bulkUpdateStatus(array $ids, string $status): void
+    public function bulkUpdateStatus(array $ids, bool $status): void
     {
         SchedulingEmployee::whereIn('id', $ids)->update(['status' => $status]);
     }
 
-    public function changeStatus(SchedulingEmployee $employee, string $status): SchedulingEmployee
+    public function changeStatus(SchedulingEmployee $employee, bool $status): SchedulingEmployee
     {
         $employee->update(['status' => $status]);
+        return $employee->load(['user', 'groups']);
+    }
 
-        return $employee->load(['user.media', 'creator.media', 'editor.media']);
+    public function export(array $filters): BinaryFileResponse
+    {
+        return Excel::download(
+            new SchedulingEmployeeExport($filters),
+            ExportFilename::make('nhan-vien-lich-cong-tac')
+        );
+    }
+
+    public function import($file): array
+    {
+        $orgId = getPermissionsTeamId();
+        $importer = new SchedulingEmployeeImport($orgId);
+        Excel::import($importer, $file);
+
+        return [
+            'success' => true,
+            'imported_count' => $importer->getSuccessCount(),
+        ];
+    }
+
+    public function syncGroups(SchedulingEmployee $employee, array $groupIds): void
+    {
+        $employee->groups()->sync($groupIds);
     }
 
     /**
      * Kiểm tra user_id còn ràng buộc là chủ trì lịch công tác. Throw HttpResponseException 409.
-     *
-     * @param  array<int>  $userIds
      */
     private function guardAgainstDeletion(array $userIds, ?int $orgId): void
     {
         $orgId = $orgId ?? getPermissionsTeamId();
 
-        $scheduleUsages = Schedule::whereIn('host_id', $userIds)
+        $scheduleUsages = Schedule::whereIn('host_user_id', $userIds)
             ->when($orgId, fn ($q, $v) => $q->where('organization_id', $v))
-            ->select('host_id')
+            ->select('host_user_id')
             ->selectRaw('COUNT(*) as cnt')
-            ->groupBy('host_id')
-            ->pluck('cnt', 'host_id');
+            ->groupBy('host_user_id')
+            ->pluck('cnt', 'host_user_id');
 
         $blocking = [];
         foreach ($userIds as $userId) {

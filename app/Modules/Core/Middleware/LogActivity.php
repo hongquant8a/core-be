@@ -152,6 +152,11 @@ class LogActivity
             'highlight-discussion' => 'Chiếu phát biểu',
             'qr-token' => 'Xem QR điểm danh',
             'attendees' => 'Quản lý đại biểu nhóm',
+            'duplicate' => 'Sao chép',
+            'reorder' => 'Sắp xếp lại',
+            'week-matrix' => 'Xem ma trận tuần',
+            'sync-members' => 'Đồng bộ thành viên nhóm',
+            'driver-view' => 'Xem lịch của lái xe',
         ];
         if ($sub && isset($pathActions[$sub])) {
             return $pathActions[$sub].' '.$this->resourceLabel(str_replace('-', '_', $resource));
@@ -197,6 +202,10 @@ class LogActivity
             'destroyAll' => 'Xóa toàn bộ',
             'public' => 'Xem dữ liệu công khai',
             'updateProgress' => 'Cập nhật tiến độ',
+            'approve' => 'Duyệt',
+            'reject' => 'Từ chối',
+            'duplicate' => 'Sao chép',
+            'reorder' => 'Sắp xếp lại',
         ];
 
         $actionLabel = $actionLabels[$action] ?? $action;
@@ -221,6 +230,9 @@ class LogActivity
             ?? $params['taskAssignmentDocument']
             ?? $params['taskAssignmentItem']
             ?? $params['taskAssignmentItemReport']
+            ?? $params['schedule']
+            ?? $params['schedulingEmployee']
+            ?? $params['schedulingEmployeeGroup']
             ?? $params['id']
             ?? null;
         $suffix = $id ? ' #'.(is_object($id) ? $id->getKey() : $id) : '';
@@ -254,6 +266,11 @@ class LogActivity
             'task-assignment-documents' => 'Văn bản giao việc',
             'task-assignment-items' => 'Công việc',
             'task-assignment-item-reports' => 'Báo cáo công việc',
+            'schedules' => 'lịch công tác',
+            'scheduling-employees' => 'nhân sự lịch công tác',
+            'scheduling-employee-groups' => 'nhóm nhân sự',
+            'scheduling-settings' => 'cấu hình lịch công tác',
+            'scheduling-filter-presets' => 'bộ lọc cá nhân',
         ];
 
         return $labels[$resource] ?? str_replace('-', ' ', $resource);

@@ -24,11 +24,10 @@ use App\Modules\Meeting\Policies\MeetingPolicy;
 use App\Modules\Meeting\Policies\MeetingVoteResponsePolicy;
 use App\Modules\Meeting\Policies\MeetingVoteTopicPolicy;
 use App\Modules\Scheduling\Models\Schedule;
+use App\Modules\Scheduling\Observers\ScheduleObserver;
 use App\Modules\Scheduling\Policies\SchedulePolicy;
 use App\Modules\Scheduling\Models\NotificationGroup;
 use App\Modules\Scheduling\Policies\NotificationGroupPolicy;
-use App\Modules\Scheduling\Models\ReminderPreset;
-use App\Modules\Scheduling\Policies\ReminderPresetPolicy;
 use App\Modules\Scheduling\Models\FilterPreset;
 use App\Modules\Scheduling\Policies\FilterPresetPolicy;
 use App\Modules\Scheduling\Models\SchedulingEmployee;
@@ -60,6 +59,9 @@ class AppServiceProvider extends ServiceProvider
         // Auto-create UserProfile mỗi khi tạo User.
         User::observe(UserObserver::class);
 
+        // Track Schedule changes for notifications
+        Schedule::observe(ScheduleObserver::class);
+
         // Register policies cho in-meeting control + public/participant view actions.
         // Spatie permission vẫn giữ cho admin catalog/CRUD setup; Policy gate cho mọi action gắn meeting cụ thể.
         // KHÔNG có Gate::before Super Admin bypass — admin hệ thống phải có role thật (chair/operator/participant)
@@ -77,10 +79,11 @@ class AppServiceProvider extends ServiceProvider
         // Register Scheduling Policies
         Gate::policy(Schedule::class, SchedulePolicy::class);
         Gate::policy(NotificationGroup::class, NotificationGroupPolicy::class);
-        Gate::policy(ReminderPreset::class, ReminderPresetPolicy::class);
         Gate::policy(FilterPreset::class, FilterPresetPolicy::class);
         Gate::policy(SchedulingEmployee::class, SchedulingEmployeePolicy::class);
         Gate::policy(SchedulingEmployeeGroup::class, SchedulingEmployeeGroupPolicy::class);
+
+        $this->loadViewsFrom(resource_path('views/scheduling'), 'scheduling');
 
         // Giữ nguyên header Excel khi import (không lowercase/snake_case).
         // Cho phép import dùng header tiếng Việt giống hệt template export.

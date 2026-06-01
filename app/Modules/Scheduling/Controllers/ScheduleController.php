@@ -5,16 +5,16 @@ namespace App\Modules\Scheduling\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
 use App\Modules\Scheduling\Models\Schedule;
-use App\Modules\Scheduling\Requests\StoreScheduleRequest;
-use App\Modules\Scheduling\Requests\UpdateScheduleRequest;
-use App\Modules\Scheduling\Requests\BulkDestroyScheduleRequest;
-use App\Modules\Scheduling\Requests\BulkUpdateStatusScheduleRequest;
-use App\Modules\Scheduling\Requests\ChangeStatusScheduleRequest;
-use App\Modules\Scheduling\Requests\ImportScheduleRequest;
-use App\Modules\Scheduling\Resources\DriverScheduleResource;
-use App\Modules\Scheduling\Resources\ScheduleResource;
+use App\Modules\Scheduling\Requests\{
+    StoreScheduleRequest, UpdateScheduleRequest, ChangeStatusScheduleRequest,
+    BulkDestroyScheduleRequest, BulkUpdateStatusScheduleRequest,
+    DuplicateScheduleRequest, ReorderScheduleRequest, RejectScheduleRequest
+};
+use App\Modules\Scheduling\Resources\{ScheduleCollection, ScheduleResource, DriverScheduleResource};
 use App\Modules\Scheduling\Services\ScheduleService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 /**
  * @group Scheduling - Lịch công tác
@@ -37,13 +37,9 @@ class ScheduleController extends Controller
      * @queryParam to_date date Lọc đến ngày (Y-m-d). Example: 2026-06-07
      * @queryParam session string Lọc theo buổi (S: Sáng, C: Chiều, T: Tối). Example: S
      */
-    public function stats(FilterRequest $request)
+    public function stats(FilterRequest $request): JsonResponse
     {
-        $this->authorize('viewAny', Schedule::class);
-
-        $statistics = $this->scheduleService->stats($request->all());
-
-        return $this->success($statistics);
+        return $this->success($this->scheduleService->stats($request->all()));
     }
 
     /**
@@ -54,26 +50,19 @@ class ScheduleController extends Controller
      * @queryParam from_date date Lọc từ ngày (Y-m-d). Example: 2026-06-01
      * @queryParam to_date date Lọc đến ngày (Y-m-d). Example: 2026-06-07
      * @queryParam session string Lọc theo buổi (S: Sáng, C: Chiều, T: Tối). Example: S
-     * @queryParam status integer Lọc theo trạng thái (0: Nháp, 1: Chờ duyệt, 2: Đã duyệt/Công bố, 3: Đã hủy). Example: 2
+     * @queryParam status string Lọc theo trạng thái (DRAFT, PENDING, APPROVED, CANCELLED). Example: APPROVED
      * @queryParam view_type string Chế độ xem (personal: Cá nhân tôi chủ trì/tham dự, all: Tất cả lịch được xem, managed: Lịch tôi có quyền quản lý). Example: all
      * @queryParam sort_by string Sắp xếp theo trường (time: theo giờ, position: theo chức vụ chủ trì, manual: sắp xếp thủ công). Example: time
      * @queryParam sort_order string Thứ tự sắp xếp (asc/desc). Example: asc
      * @queryParam limit integer Số bản ghi mỗi trang. Example: 10
      */
-    public function index(FilterRequest $request)
+    public function index(FilterRequest $request): JsonResponse
     {
-        $this->authorize('viewAny', Schedule::class);
-
-        $limit = (int) ($request->limit ?? 10);
-        $schedules = $this->scheduleService->index($request->all(), $limit);
-
-        // Check if user is driver and transform appropriately
-        $user = auth()->user();
-        if ($user && $user->hasRole('Lái xe') && !$user->hasAnyRole(['Super Admin', 'Admin', 'Quản trị', 'Tổng hợp lịch', 'Thư ký', 'Lãnh đạo'])) {
-            return $this->successCollection(DriverScheduleResource::collection($schedules));
-        }
-
-        return $this->successCollection(ScheduleResource::collection($schedules));
+        return $this->successCollection(
+            new ScheduleCollection(
+                $this->scheduleService->index($request->all(), (int)($request->limit ?? 20))
+            )
+        );
     }
 
     /**
@@ -84,21 +73,21 @@ class ScheduleController extends Controller
      * @queryParam year integer Năm của tuần cần xem. Example: 2026
      * @queryParam from_date date Lọc từ ngày (Y-m-d) thay cho week_number. Example: 2026-06-01
      * @queryParam to_date date Lọc đến ngày (Y-m-d) thay cho week_number. Example: 2026-06-07
-     * @queryParam status integer Lọc theo trạng thái (0: Nháp, 1: Chờ duyệt, 2: Đã duyệt/Công bố, 3: Đã hủy). Example: 2
+     * @queryParam status string Lọc theo trạng thái (DRAFT, PENDING, APPROVED, CANCELLED). Example: APPROVED
      */
-    public function weeklyMatrix(FilterRequest $request)
+    public function weekMatrix(FilterRequest $request): JsonResponse
     {
-        $this->authorize('viewAny', Schedule::class);
+        return $this->success($this->scheduleService->weekMatrix($request->all()));
+    }
 
-        $schedules = $this->scheduleService->weeklyMatrix($request->all());
-
-        // Check if user is driver and transform appropriately
-        $user = auth()->user();
-        if ($user && $user->hasRole('Lái xe') && !$user->hasAnyRole(['Super Admin', 'Admin', 'Quản trị', 'Tổng hợp lịch', 'Thư ký', 'Lãnh đạo'])) {
-            return $this->success(DriverScheduleResource::collection($schedules));
-        }
-
-        return $this->success(ScheduleResource::collection($schedules));
+    /**
+     * Danh sách các tuần đã có lịch công tác (cho dropdown chọn nhanh).
+     *
+     * @queryParam module_type string Phân hệ (EXECUTIVE, OFFICE). Example: EXECUTIVE
+     */
+    public function weeks(FilterRequest $request): JsonResponse
+    {
+        return $this->success($this->scheduleService->getWeeks($request->all()));
     }
 
     /**
@@ -106,49 +95,38 @@ class ScheduleController extends Controller
      *
      * @urlParam schedule integer required ID lịch công tác. Example: 1
      */
-    public function show(Schedule $schedule)
+    public function show(Schedule $schedule): JsonResponse
     {
-        $this->authorize('view', $schedule);
-
-        $schedule = $this->scheduleService->show($schedule);
-
-        $user = auth()->user();
-        if ($user && $user->hasRole('Lái xe') && !$user->hasAnyRole(['Super Admin', 'Admin', 'Quản trị', 'Tổng hợp lịch', 'Thư ký', 'Lãnh đạo'])) {
-            return $this->successResource(new DriverScheduleResource($schedule));
-        }
-
-        return $this->successResource(new ScheduleResource($schedule));
+        return $this->successResource(new ScheduleResource($this->scheduleService->show($schedule)));
     }
 
     /**
      * Tạo mới lịch công tác.
      *
      * @bodyParam module_type string required Phân hệ (EXECUTIVE, OFFICE). Example: EXECUTIVE
-     * @bodyParam event_date date required Ngày diễn ra sự kiện (Y-m-d). Example: 2026-06-01
-     * @bodyParam start_time string required Giờ bắt đầu (H:i). Example: 08:00
-     * @bodyParam end_time string Giờ kết thúc (H:i). Example: 10:00
-     * @bodyParam session string Buổi diễn ra (S: Sáng, C: Chiều, T: Tối). Example: S
-     * @bodyParam content string required Nội dung lịch công tác. Example: Họp giao ban định kỳ tuần 23
-     * @bodyParam host_id integer ID người chủ trì (user). Example: 2
-     * @bodyParam host_text string Tên người chủ trì nếu không có host_id. Example: Lãnh đạo sở
-     * @bodyParam participants_text string Thành phần tham dự. Example: Toàn thể cán bộ công nhân viên
+     * @bodyParam date date required Ngày diễn ra sự kiện (Y-m-d). Example: 2026-06-01
+     * @bodyParam session string Buổi diễn ra (M: Sáng, A: Chiều, E: Tối). Example: M
+     * @bodyParam title string required Tiêu đề lịch công tác. Example: Họp giao ban định kỳ tuần 23
+     * @bodyParam content string Nội dung lịch công tác. Example: Nội dung chi tiết cuộc họp
+     * @bodyParam host_user_id integer ID người chủ trì (user). Example: 2
+     * @bodyParam host_text string Tên người chủ trì nếu không có host_user_id. Example: Lãnh đạo sở
      * @bodyParam location string required Địa điểm họp/công tác. Example: Phòng họp số 1
-     * @bodyParam driver_id integer ID lái xe (user). Example: 5
+     * @bodyParam driver_user_id integer ID lái xe (user). Example: 5
      * @bodyParam car_info string Thông tin xe phục vụ. Example: Xe BKS 29A-12345
-     * @bodyParam nature string required Tính chất công việc (HOST: Chủ trì, ATTEND: Tham dự). Example: HOST
      * @bodyParam is_important boolean Đánh dấu lịch quan trọng. Example: false
-     * @bodyParam reminder_preset_id integer ID mốc nhắc lịch mặc định. Example: 1
-     * @bodyParam attachments file[] Danh sách tài liệu đính kèm.
+     * @bodyParam status string Trạng thái lịch công tác (DRAFT, PENDING, APPROVED, CANCELLED). Example: DRAFT
+     * @bodyParam files file[] Danh sách tài liệu đính kèm.
+     * @bodyParam participants array Danh sách thành phần tham dự.
+     * @bodyParam reminders array Danh sách mốc nhắc lịch.
      */
-    public function store(StoreScheduleRequest $request)
+    public function store(StoreScheduleRequest $request): JsonResponse
     {
-        $this->authorize('create', Schedule::class);
-
         $schedule = $this->scheduleService->store(
             $request->validated(),
-            $request->file('attachments', [])
+            $request->file('files', []),
+            $request->input('participants', []),
+            $request->input('reminders', [])
         );
-
         return $this->successResource(new ScheduleResource($schedule), 'Tạo lịch công tác thành công!', 201);
     }
 
@@ -157,33 +135,33 @@ class ScheduleController extends Controller
      *
      * @urlParam schedule integer required ID lịch công tác cần sửa. Example: 1
      * @bodyParam module_type string Phân hệ (EXECUTIVE, OFFICE). Example: EXECUTIVE
-     * @bodyParam event_date date Ngày diễn ra sự kiện (Y-m-d). Example: 2026-06-01
-     * @bodyParam start_time string Giờ bắt đầu (H:i). Example: 08:00
-     * @bodyParam end_time string Giờ kết thúc (H:i). Example: 10:00
-     * @bodyParam session string Buổi diễn ra (S: Sáng, C: Chiều, T: Tối). Example: S
-     * @bodyParam content string Nội dung lịch công tác. Example: Họp giao ban định kỳ tuần 23
-     * @bodyParam host_id integer ID người chủ trì (user). Example: 2
-     * @bodyParam host_text string Tên người chủ trì nếu không có host_id. Example: Lãnh đạo sở
-     * @bodyParam participants_text string Thành phần tham dự. Example: Toàn thể cán bộ công nhân viên
+     * @bodyParam date date Ngày diễn ra sự kiện (Y-m-d). Example: 2026-06-01
+     * @bodyParam session string Buổi diễn ra (M: Sáng, A: Chiều, E: Tối). Example: M
+     * @bodyParam title string Tiêu đề lịch công tác. Example: Họp giao ban định kỳ tuần 23
+     * @bodyParam content string Nội dung lịch công tác. Example: Nội dung chi tiết cuộc họp
+     * @bodyParam host_user_id integer ID người chủ trì (user). Example: 2
+     * @bodyParam host_text string Tên người chủ trì nếu không có host_user_id. Example: Lãnh đạo sở
      * @bodyParam location string Địa điểm họp/công tác. Example: Phòng họp số 1
-     * @bodyParam driver_id integer ID lái xe (user). Example: 5
+     * @bodyParam driver_user_id integer ID lái xe (user). Example: 5
      * @bodyParam car_info string Thông tin xe phục vụ. Example: Xe BKS 29A-12345
-     * @bodyParam nature string Tính chất công việc (HOST: Chủ trì, ATTEND: Tham dự). Example: HOST
      * @bodyParam is_important boolean Đánh dấu lịch quan trọng. Example: false
-     * @bodyParam reminder_preset_id integer ID mốc nhắc lịch mặc định. Example: 1
-     * @bodyParam attachments file[] Danh sách tài liệu đính kèm mới.
+     * @bodyParam status string Trạng thái lịch công tác (DRAFT, PENDING, APPROVED, CANCELLED). Example: DRAFT
+     * @bodyParam files file[] Danh sách tài liệu đính kèm mới.
+     * @bodyParam participants array Danh sách thành phần tham dự mới.
+     * @bodyParam reminders array Danh sách mốc nhắc lịch mới.
+     * @bodyParam remove_media_ids array Danh sách ID tài liệu đính kèm cần xóa.
      */
-    public function update(UpdateScheduleRequest $request, Schedule $schedule)
+    public function update(UpdateScheduleRequest $request, Schedule $schedule): JsonResponse
     {
-        $this->authorize('update', $schedule);
-
-        $updatedSchedule = $this->scheduleService->update(
+        $schedule = $this->scheduleService->update(
             $schedule,
             $request->validated(),
-            $request->file('attachments', [])
+            $request->file('files', []),
+            $request->has('participants') ? $request->input('participants') : null,
+            $request->has('reminders') ? $request->input('reminders') : null,
+            $request->input('remove_media_ids', [])
         );
-
-        return $this->successResource(new ScheduleResource($updatedSchedule), 'Cập nhật lịch công tác thành công!');
+        return $this->successResource(new ScheduleResource($schedule), 'Cập nhật lịch thành công!');
     }
 
     /**
@@ -191,62 +169,10 @@ class ScheduleController extends Controller
      *
      * @urlParam schedule integer required ID lịch công tác cần xóa. Example: 1
      */
-    public function destroy(Schedule $schedule)
+    public function destroy(Schedule $schedule): JsonResponse
     {
-        $this->authorize('delete', $schedule);
-
         $this->scheduleService->destroy($schedule);
-
         return $this->success(null, 'Xóa lịch công tác thành công!');
-    }
-
-    /**
-     * Khôi phục lịch công tác đã xóa.
-     *
-     * @urlParam id integer required ID lịch công tác đã xóa cần khôi phục. Example: 1
-     */
-    public function restore(int $id)
-    {
-        $this->authorize('create', Schedule::class);
-
-        $schedule = $this->scheduleService->restore($id);
-
-        return $this->successResource(new ScheduleResource($schedule), 'Khôi phục lịch công tác thành công!');
-    }
-
-    /**
-     * Thay đổi trạng thái lịch công tác.
-     *
-     * @urlParam schedule integer required ID lịch công tác. Example: 1
-     * @bodyParam status integer required Trạng thái mới. Example: 2
-     */
-    public function changeStatus(ChangeStatusScheduleRequest $request, Schedule $schedule)
-    {
-        $this->authorize('update', $schedule);
-
-        $updatedSchedule = $this->scheduleService->changeStatus($schedule, $request->status);
-
-        return $this->successResource(new ScheduleResource($updatedSchedule), 'Cập nhật trạng thái thành công!');
-    }
-
-    /**
-     * Cập nhật trạng thái hàng loạt lịch công tác.
-     *
-     * @bodyParam ids array required Danh sách ID lịch công tác cần cập nhật. Example: [1, 2]
-     * @bodyParam status integer required Trạng thái mới. Example: 2
-     */
-    public function bulkUpdateStatus(BulkUpdateStatusScheduleRequest $request)
-    {
-        $this->authorize('updateStatus', Schedule::class);
-
-        $schedules = Schedule::whereIn('id', $request->ids)->get();
-        foreach ($schedules as $schedule) {
-            $this->authorize('update', $schedule);
-        }
-
-        $this->scheduleService->bulkUpdateStatus($request->ids, $request->status);
-
-        return $this->success(null, 'Cập nhật trạng thái hàng loạt thành công!');
     }
 
     /**
@@ -254,45 +180,147 @@ class ScheduleController extends Controller
      *
      * @bodyParam ids array required Danh sách ID lịch công tác cần xóa. Example: [1, 2]
      */
-    public function bulkDestroy(BulkDestroyScheduleRequest $request)
+    public function bulkDestroy(BulkDestroyScheduleRequest $request): JsonResponse
     {
-        $schedules = Schedule::whereIn('id', $request->ids)->get();
-        foreach ($schedules as $schedule) {
-            $this->authorize('delete', $schedule);
-        }
-
-        $this->scheduleService->bulkDestroy($request->ids);
-
-        return $this->success(null, 'Xóa hàng loạt lịch công tác thành công!');
+        $this->scheduleService->bulkDestroy($request->input('ids'));
+        return $this->success(null, 'Xóa nhiều lịch công tác thành công!');
     }
 
     /**
-     * Nhập dữ liệu lịch công tác từ Excel.
+     * Cập nhật trạng thái hàng loạt lịch công tác.
      *
-     * @bodyParam file file required File Excel chứa dữ liệu lịch công tác.
+     * @bodyParam ids array required Danh sách ID lịch công tác cần cập nhật. Example: [1, 2]
+     * @bodyParam status string required Trạng thái mới (DRAFT, PENDING, APPROVED, CANCELLED). Example: APPROVED
      */
-    public function import(ImportScheduleRequest $request)
+    public function bulkUpdateStatus(BulkUpdateStatusScheduleRequest $request): JsonResponse
     {
-        $this->authorize('create', Schedule::class);
-
-        $this->scheduleService->import($request->file('file'));
-
-        return $this->success(null, 'Nhập dữ liệu lịch công tác thành công.');
+        $this->scheduleService->bulkUpdateStatus($request->input('ids'), $request->input('status'));
+        return $this->success(null, 'Cập nhật trạng thái nhiều lịch công tác thành công!');
     }
 
     /**
-     * Tải file mẫu nhập dữ liệu lịch công tác.
+     * Thay đổi trạng thái lịch công tác.
+     *
+     * @urlParam schedule integer required ID lịch công tác. Example: 1
+     * @bodyParam status string required Trạng thái mới (DRAFT, PENDING, APPROVED, CANCELLED). Example: APPROVED
      */
-    public function importTemplate()
+    public function changeStatus(ChangeStatusScheduleRequest $request, Schedule $schedule): JsonResponse
     {
-        $this->authorize('create', Schedule::class);
+        $schedule = $this->scheduleService->changeStatus($schedule, $request->input('status'));
+        return $this->successResource(new ScheduleResource($schedule), 'Cập nhật trạng thái thành công!');
+    }
 
-        return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Modules\Core\Exports\ImportTemplateExport(
-                \App\Modules\Scheduling\Imports\ScheduleImport::TEMPLATE_LABELS,
-                \App\Modules\Scheduling\Imports\ScheduleImport::TEMPLATE_EXAMPLES
-            ),
-            'import-schedules-template.xlsx'
-        );
+    /**
+     * Duyệt lịch công tác.
+     *
+     * @urlParam schedule integer required ID lịch công tác. Example: 1
+     */
+    public function approve(Schedule $schedule): JsonResponse
+    {
+        $schedule = $this->scheduleService->approve($schedule);
+        return $this->successResource(new ScheduleResource($schedule), 'Duyệt lịch công tác thành công!');
+    }
+
+    /**
+     * Từ chối duyệt lịch công tác.
+     *
+     * @urlParam schedule integer required ID lịch công tác. Example: 1
+     * @bodyParam rejection_note string required Lý do từ chối duyệt. Example: Thiếu nội dung chi tiết
+     */
+    public function reject(RejectScheduleRequest $request, Schedule $schedule): JsonResponse
+    {
+        $schedule = $this->scheduleService->reject($schedule, $request->input('rejection_note'));
+        return $this->successResource(new ScheduleResource($schedule), 'Từ chối lịch công tác thành công!');
+    }
+
+    /**
+     * Sao chép lịch công tác sang ngày mới.
+     *
+     * @urlParam schedule integer required ID lịch công tác gốc. Example: 1
+     * @bodyParam date date required Ngày mới (Y-m-d). Example: 2026-06-08
+     */
+    public function duplicate(DuplicateScheduleRequest $request, Schedule $schedule): JsonResponse
+    {
+        $newSchedule = $this->scheduleService->duplicate($schedule, $request->input('date'));
+        return $this->successResource(new ScheduleResource($newSchedule), 'Sao chép lịch công tác thành công!', 201);
+    }
+
+    /**
+     * Thay đổi thứ tự sắp xếp của danh sách lịch công tác.
+     *
+     * @bodyParam ordered_ids array required Danh sách ID lịch công tác theo thứ tự mong muốn. Example: [3, 1, 2]
+     */
+    public function reorder(ReorderScheduleRequest $request): JsonResponse
+    {
+        $this->scheduleService->reorder($request->input('ordered_ids'));
+        return $this->success(null, 'Sắp xếp lịch công tác thành công!');
+    }
+
+    /**
+     * Xuất dữ liệu lịch công tác ra file Excel.
+     *
+     * @queryParam module_type string required Phân hệ (EXECUTIVE, OFFICE). Example: EXECUTIVE
+     * @queryParam week_number integer Số thứ tự tuần. Example: 23
+     * @queryParam year integer Năm. Example: 2026
+     */
+    public function export(FilterRequest $request)
+    {
+        return $this->scheduleService->export($request->all());
+    }
+
+    /**
+     * Xuất dữ liệu lịch công tác ra file PDF.
+     *
+     * @queryParam module_type string required Phân hệ (EXECUTIVE, OFFICE). Example: EXECUTIVE
+     * @queryParam week_number integer Số thứ tự tuần. Example: 23
+     * @queryParam year integer Năm. Example: 2026
+     */
+    public function exportPdf(FilterRequest $request)
+    {
+        return $this->scheduleService->exportPdf($request->all());
+    }
+
+    /**
+     * Xuất dữ liệu lịch công tác ra file Word (.docx).
+     *
+     * @queryParam module_type string required Phân hệ (EXECUTIVE, OFFICE). Example: EXECUTIVE
+     * @queryParam week_number integer Số thứ tự tuần. Example: 23
+     * @queryParam year integer Năm. Example: 2026
+     */
+    public function exportWord(FilterRequest $request)
+    {
+        return $this->scheduleService->exportWord($request->all());
+    }
+
+    /**
+     * Danh sách lịch công tác được gán riêng cho Lái xe hiện tại.
+     *
+     * @queryParam from date Ngày bắt đầu (Y-m-d). Example: 2026-06-01
+     * @queryParam to date Ngày kết thúc (Y-m-d). Example: 2026-06-07
+     * @queryParam limit integer Số bản ghi mỗi trang. Example: 20
+     */
+    public function driverIndex(FilterRequest $request): JsonResponse
+    {
+        $this->authorize('driverViewAny', Schedule::class);
+        $filters = $request->all();
+        $filters['status'] = \App\Modules\Scheduling\Enums\ScheduleStatusEnum::Approved->value;
+        $filters['driver_user_id'] = auth()->id();
+
+        $schedules = Schedule::with(['host'])
+            ->filter($filters)
+            ->paginate((int)($request->limit ?? 20));
+
+        return $this->successCollection(DriverScheduleResource::collection($schedules));
+    }
+
+    /**
+     * Chi tiết chuyến công tác phân công cho Lái xe.
+     *
+     * @urlParam schedule integer required ID lịch công tác. Example: 1
+     */
+    public function driverShow(Schedule $schedule): JsonResponse
+    {
+        $this->authorize('driverView', $schedule);
+        return $this->successResource(new DriverScheduleResource($schedule->load('host')));
     }
 }

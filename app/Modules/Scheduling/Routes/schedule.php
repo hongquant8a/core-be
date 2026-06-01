@@ -1,56 +1,29 @@
 <?php
 
 use App\Modules\Scheduling\Controllers\ScheduleController;
-use App\Modules\Scheduling\Controllers\ScheduleApprovalController;
-use App\Modules\Scheduling\Controllers\ScheduleReorderController;
-use App\Modules\Scheduling\Controllers\ScheduleDuplicateController;
-use App\Modules\Scheduling\Controllers\DriverScheduleController;
-use App\Modules\Scheduling\Controllers\ScheduleExportController;
 use Illuminate\Support\Facades\Route;
 
-// Driver schedules routes
-Route::get('/driver/my-schedules', [DriverScheduleController::class, 'index']);
-Route::get('/driver/my-schedules/{id}', [DriverScheduleController::class, 'show']);
+Route::get('/stats',        [ScheduleController::class, 'stats'])->middleware('permission:schedules.stats,web');
+Route::get('/week-matrix',  [ScheduleController::class, 'weekMatrix'])->middleware('permission:schedules.index,web');
+Route::get('/weeks',        [ScheduleController::class, 'weeks'])->middleware('permission:schedules.index,web');
+Route::get('/export',       [ScheduleController::class, 'export'])->middleware('permission:schedules.export,web');
+Route::get('/export-pdf',   [ScheduleController::class, 'exportPdf'])->middleware('permission:schedules.export,web');
+Route::get('/export-word',  [ScheduleController::class, 'exportWord'])->middleware('permission:schedules.export,web');
 
-// Export routes
-Route::get('/export/excel', [ScheduleExportController::class, 'excel']);
-Route::get('/export/pdf', [ScheduleExportController::class, 'pdf']);
-Route::get('/export/word', [ScheduleExportController::class, 'word']);
+// Driver views - authentication checks done at API group level
+Route::get('/driver-view',  [ScheduleController::class, 'driverIndex']);
+Route::get('/driver-view/{schedule}', [ScheduleController::class, 'driverShow']);
 
-
-// Weekly Matrix
-Route::get('/weekly-matrix', [ScheduleController::class, 'weeklyMatrix']);
-
-// Reorder schedules
-Route::post('/reorder', [ScheduleReorderController::class, 'reorder']);
-
-// Duplicate schedule
-Route::post('/{schedule}/duplicate', [ScheduleDuplicateController::class, 'duplicate']);
-
-// Approve / Reject
-Route::post('/{schedule}/approve', [ScheduleApprovalController::class, 'approve']);
-Route::post('/{schedule}/reject', [ScheduleApprovalController::class, 'reject']);
-
-// Restore soft deleted schedule
-Route::post('/{id}/restore', [ScheduleController::class, 'restore']);
-
-// Stats endpoint
-Route::get('/stats', [ScheduleController::class, 'stats']);
-
-// Bulk actions
-Route::delete('/bulk-delete', [ScheduleController::class, 'bulkDestroy']);
-Route::patch('/bulk-status', [ScheduleController::class, 'bulkUpdateStatus']);
-
-// Single status change
-Route::patch('/{schedule}/status', [ScheduleController::class, 'changeStatus']);
-
-// Import routes
-Route::post('/import', [ScheduleController::class, 'import']);
-Route::get('/import-template', [ScheduleController::class, 'importTemplate']);
-
-// Standard CRUD resource
-Route::get('/', [ScheduleController::class, 'index']);
-Route::post('/', [ScheduleController::class, 'store']);
-Route::get('/{schedule}', [ScheduleController::class, 'show']);
-Route::put('/{schedule}', [ScheduleController::class, 'update']);
-Route::delete('/{schedule}', [ScheduleController::class, 'destroy']);
+Route::delete('/bulk-delete',[ScheduleController::class, 'bulkDestroy'])->middleware('permission:schedules.destroy,web');
+Route::patch('/bulk-status', [ScheduleController::class, 'bulkUpdateStatus'])->middleware('permission:schedules.update,web');
+Route::patch('/reorder',    [ScheduleController::class, 'reorder'])->middleware('permission:schedules.update,web');
+Route::get('/',             [ScheduleController::class, 'index'])->middleware('permission:schedules.index,web');
+Route::post('/',            [ScheduleController::class, 'store'])->middleware('permission:schedules.store,web');
+Route::get('/{schedule}',   [ScheduleController::class, 'show'])->middleware('permission:schedules.show,web');
+Route::put('/{schedule}',   [ScheduleController::class, 'update'])->middleware('permission:schedules.update,web');
+Route::patch('/{schedule}', [ScheduleController::class, 'update'])->middleware('permission:schedules.update,web');
+Route::delete('/{schedule}',[ScheduleController::class, 'destroy'])->middleware('permission:schedules.destroy,web');
+Route::patch('/{schedule}/status',   [ScheduleController::class, 'changeStatus'])->middleware('permission:schedules.changeStatus,web');
+Route::patch('/{schedule}/approve',  [ScheduleController::class, 'approve'])->middleware('permission:schedules.approve,web');
+Route::patch('/{schedule}/reject',   [ScheduleController::class, 'reject'])->middleware('permission:schedules.approve,web');
+Route::post('/{schedule}/duplicate', [ScheduleController::class, 'duplicate'])->middleware('permission:schedules.store,web');

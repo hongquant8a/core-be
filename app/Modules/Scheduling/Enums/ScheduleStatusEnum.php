@@ -2,12 +2,24 @@
 
 namespace App\Modules\Scheduling\Enums;
 
-enum ScheduleStatusEnum: int
+enum ScheduleStatusEnum: string
 {
-    case Draft = 0;
-    case Pending = 1;
-    case Published = 2;
-    case Cancelled = 3;
+    case Draft     = 'DRAFT';
+    case Pending   = 'PENDING';
+    case Approved  = 'APPROVED';
+    case Rejected  = 'REJECTED';
+    case Cancelled = 'CANCELLED';
+
+    public function label(): string
+    {
+        return match($this) {
+            self::Draft     => 'Nháp',
+            self::Pending   => 'Chờ duyệt',
+            self::Approved  => 'Đã duyệt',
+            self::Rejected  => 'Từ chối',
+            self::Cancelled => 'Đã hủy',
+        };
+    }
 
     public static function values(): array
     {
@@ -17,15 +29,5 @@ enum ScheduleStatusEnum: int
     public static function rule(): string
     {
         return 'in:' . implode(',', self::values());
-    }
-
-    public function label(): string
-    {
-        return match ($this) {
-            self::Draft => 'Bản nháp',
-            self::Pending => 'Chờ duyệt',
-            self::Published => 'Đã duyệt/Công bố',
-            self::Cancelled => 'Đã hủy',
-        };
     }
 }
