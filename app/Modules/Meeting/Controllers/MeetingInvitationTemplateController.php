@@ -170,7 +170,7 @@ class MeetingInvitationTemplateController extends Controller
             $path = $this->generator->generateBatch($meeting, $template);
             
             $meetingSlug = Str::slug((string) $meeting->title) ?: ('meeting-'.$meeting->id);
-            $filename = ExportFilename::make('giay-moi-tap-the-'.$meetingSlug, 'zip');
+            $filename = ExportFilename::make('giay-moi-tap-the-'.$meetingSlug, 'docx');
             
             return response()->download($path, $filename)->deleteFileAfterSend(true);
         }

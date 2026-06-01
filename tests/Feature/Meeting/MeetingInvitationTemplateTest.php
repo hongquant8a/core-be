@@ -230,7 +230,7 @@ class MeetingInvitationTemplateTest extends TestCase
         ], ['X-Organization-Id' => $this->orgA->id]);
 
         $res->assertOk();
-        $this->assertSame('application/zip', $res->headers->get('content-type'));
+        $this->assertSame('application/vnd.openxmlformats-officedocument.wordprocessingml.document', $res->headers->get('content-type'));
         
         if (is_file($file->getPathname())) {
             unlink($file->getPathname());

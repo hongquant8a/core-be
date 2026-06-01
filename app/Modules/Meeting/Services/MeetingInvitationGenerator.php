@@ -141,7 +141,11 @@ class MeetingInvitationGenerator
     }
 
     /**
-     * Sinh tất cả giấy mời của các khách mời trong meeting và đóng gói thành file ZIP.
+     * Sinh tất cả giấy mời trong 1 file .docx duy nhất, mỗi khách mời 1 trang
+     * (phân cách bằng page break). Không dùng ZIP.
+     *
+     * Cơ chế: sinh .docx cho từng guest → extract body XML → nối vào 1 document
+     * gốc, chèn <w:br w:type="page"/> giữa các bản.
      */
     public function generateBatch(Meeting $meeting, MeetingInvitationTemplate $template): string
     {
@@ -151,31 +155,128 @@ class MeetingInvitationGenerator
             throw new \Exception('Cuộc họp chưa có khách mời nào để xuất giấy mời.');
         }
 
-        $zipPath = storage_path('app/'.uniqid('invitations_').'.zip');
-        $zip = new \ZipArchive();
-        if ($zip->open($zipPath, \ZipArchive::CREATE) !== true) {
-            throw new \Exception('Không thể khởi tạo tệp ZIP.');
-        }
-
+        // Sinh riêng từng file docx cho mỗi guest
         $tempFiles = [];
         foreach ($guests as $guest) {
-            $filePath = $this->generateSingle($meeting, $guest, $template);
-            $tempFiles[] = $filePath;
-
-            // Đặt tên file an toàn cho từng khách mời
-            $slugGuestName = Str::slug($guest->name, '_') ?: 'khach';
-            $zip->addFile($filePath, "Giay_moi_{$slugGuestName}.docx");
+            $tempFiles[] = $this->generateSingle($meeting, $guest, $template);
         }
-        $zip->close();
 
-        // Xóa các file docx tạm thời
+        // Lấy file đầu tiên làm base
+        $basePath = array_shift($tempFiles);
+
+        if (empty($tempFiles)) {
+            // Chỉ có 1 khách → trả luôn file đó, không cần merge
+            return $basePath;
+        }
+
+        // Merge các file còn lại vào base
+        $this->mergeDocxFiles($basePath, $tempFiles);
+
+        // Xóa các file tạm
         foreach ($tempFiles as $file) {
             if (is_file($file)) {
                 unlink($file);
             }
         }
 
-        return $zipPath;
+        return $basePath;
+    }
+
+    /**
+     * Merge N file .docx phụ vào 1 file .docx base.
+     * Mỗi file phụ sẽ bắt đầu ở trang mới (page break).
+     */
+    private function mergeDocxFiles(string $basePath, array $otherPaths): void
+    {
+        $baseZip = new \ZipArchive();
+        if ($baseZip->open($basePath) !== true) {
+            throw new \Exception('Không thể mở file base .docx.');
+        }
+        $baseXml = $baseZip->getFromName('word/document.xml');
+        $baseZip->close();
+
+        if ($baseXml === false) {
+            throw new \Exception('File base .docx không có document.xml.');
+        }
+
+        $baseDom = new \DOMDocument();
+        $baseDom->preserveWhiteSpace = false;
+        $baseDom->formatOutput = false;
+        if (! @$baseDom->loadXML($baseXml)) {
+            throw new \Exception('Không thể parse document.xml của base.');
+        }
+
+        $wNs = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+        $baseBody = $baseDom->getElementsByTagNameNS($wNs, 'body')->item(0);
+        if (! $baseBody) {
+            throw new \Exception('Không tìm thấy <w:body> trong base document.');
+        }
+
+        // Tách <w:sectPr> cuối body ra để append sau cùng
+        $baseSectPr = null;
+        $lastChild = $baseBody->lastChild;
+        while ($lastChild && $lastChild->nodeType !== XML_ELEMENT_NODE) {
+            $lastChild = $lastChild->previousSibling;
+        }
+        if ($lastChild && $lastChild->localName === 'sectPr') {
+            $baseSectPr = $baseBody->removeChild($lastChild);
+        }
+
+        foreach ($otherPaths as $otherPath) {
+            $otherZip = new \ZipArchive();
+            if ($otherZip->open($otherPath) !== true) {
+                continue;
+            }
+            $otherXml = $otherZip->getFromName('word/document.xml');
+            $otherZip->close();
+            if ($otherXml === false) {
+                continue;
+            }
+
+            $otherDom = new \DOMDocument();
+            $otherDom->preserveWhiteSpace = false;
+            $otherDom->formatOutput = false;
+            if (! @$otherDom->loadXML($otherXml)) {
+                continue;
+            }
+
+            $otherBody = $otherDom->getElementsByTagNameNS($wNs, 'body')->item(0);
+            if (! $otherBody) {
+                continue;
+            }
+
+            // Chèn page break trước nội dung của file phụ
+            $pageBreakP = $baseDom->createElementNS($wNs, 'w:p');
+            $pageBreakR = $baseDom->createElementNS($wNs, 'w:r');
+            $pageBreakBr = $baseDom->createElementNS($wNs, 'w:br');
+            $pageBreakBr->setAttribute('w:type', 'page');
+            $pageBreakR->appendChild($pageBreakBr);
+            $pageBreakP->appendChild($pageBreakR);
+            $baseBody->appendChild($pageBreakP);
+
+            // Copy tất cả children của <w:body> (trừ <w:sectPr>) sang base
+            foreach (iterator_to_array($otherBody->childNodes) as $child) {
+                if ($child instanceof \DOMElement && $child->localName === 'sectPr') {
+                    continue; // bỏ qua sectPr của file phụ
+                }
+                $imported = $baseDom->importNode($child, true);
+                $baseBody->appendChild($imported);
+            }
+        }
+
+        // Đặt lại sectPr cuối body
+        if ($baseSectPr) {
+            $baseBody->appendChild($baseSectPr);
+        }
+
+        // Ghi lại document.xml vào base file
+        $newXml = $baseDom->saveXML();
+        $baseZip = new \ZipArchive();
+        if ($baseZip->open($basePath) === true) {
+            $baseZip->deleteName('word/document.xml');
+            $baseZip->addFromString('word/document.xml', $newXml);
+            $baseZip->close();
+        }
     }
 
     private function fillInvitation(TemplateProcessor $tp, Meeting $m, MeetingGuest $g): void
