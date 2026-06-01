@@ -157,22 +157,26 @@ class MeetingInvitationTemplateController extends Controller
         $template = MeetingInvitationTemplate::findOrFail((int) $request->input('template_id'));
         $guestId = $request->input('guest_id');
 
-        if ($guestId) {
-            $guest = MeetingGuest::where('meeting_id', $meeting->id)->findOrFail((int) $guestId);
-            $path = $this->generator->generateSingle($meeting, $guest, $template);
-            
-            $guestSlug = Str::slug((string) $guest->name) ?: 'khach';
-            $meetingSlug = Str::slug((string) $meeting->title) ?: ('meeting-'.$meeting->id);
-            $filename = ExportFilename::make('giay-moi-'.$guestSlug.'-'.$meetingSlug, 'docx');
-            
-            return response()->download($path, $filename)->deleteFileAfterSend(true);
-        } else {
-            $path = $this->generator->generateBatch($meeting, $template);
-            
-            $meetingSlug = Str::slug((string) $meeting->title) ?: ('meeting-'.$meeting->id);
-            $filename = ExportFilename::make('giay-moi-tap-the-'.$meetingSlug, 'docx');
-            
-            return response()->download($path, $filename)->deleteFileAfterSend(true);
+        try {
+            if ($guestId) {
+                $guest = MeetingGuest::where('meeting_id', $meeting->id)->findOrFail((int) $guestId);
+                $path = $this->generator->generateSingle($meeting, $guest, $template);
+                
+                $guestSlug = Str::slug((string) $guest->name) ?: 'khach';
+                $meetingSlug = Str::slug((string) $meeting->title) ?: ('meeting-'.$meeting->id);
+                $filename = ExportFilename::make('giay-moi-'.$guestSlug.'-'.$meetingSlug, 'docx');
+                
+                return response()->download($path, $filename)->deleteFileAfterSend(true);
+            } else {
+                $path = $this->generator->generateBatch($meeting, $template);
+                
+                $meetingSlug = Str::slug((string) $meeting->title) ?: ('meeting-'.$meeting->id);
+                $filename = ExportFilename::make('giay-moi-tap-the-'.$meetingSlug, 'docx');
+                
+                return response()->download($path, $filename)->deleteFileAfterSend(true);
+            }
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage(), 400);
         }
     }
 }

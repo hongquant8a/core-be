@@ -194,8 +194,8 @@ class MeetingInvitationTemplateTest extends TestCase
             'template_id' => $template->id,
         ], ['X-Organization-Id' => $this->orgA->id]);
 
-        // Expect Exception because meeting has no guests.
-        $res->assertStatus(500);
+        // Expect 400 because meeting has no guests.
+        $res->assertStatus(400);
         
         if (is_file($file->getPathname())) {
             unlink($file->getPathname());

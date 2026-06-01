@@ -4,6 +4,7 @@ namespace App\Modules\Meeting\Services;
 
 use App\Modules\Meeting\Models\Meeting;
 use App\Modules\Meeting\Models\MeetingGuest;
+use App\Modules\Meeting\Models\MeetingParticipant;
 use App\Modules\Meeting\Models\MeetingInvitationTemplate;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use PhpOffice\PhpWord\TemplateProcessor;
@@ -109,9 +110,9 @@ class MeetingInvitationGenerator
     }
 
     /**
-     * Generate file .docx cho 1 guest → trả về path tạm.
+     * Generate file .docx cho 1 recipient (guest hoặc participant) → trả về path tạm.
      */
-    public function generateSingle(Meeting $meeting, MeetingGuest $guest, MeetingInvitationTemplate $template): string
+    public function generateSingle(Meeting $meeting, $recipient, MeetingInvitationTemplate $template): string
     {
         $template->loadMissing('mediaFile');
         if (! $template->mediaFile) {
@@ -130,7 +131,7 @@ class MeetingInvitationGenerator
             'chairperson.user',
         ]);
 
-        $this->fillInvitation($tp, $meeting, $guest);
+        $this->fillInvitation($tp, $meeting, $recipient);
 
         $outPath = storage_path('app/'.uniqid('invitation_').'.docx');
         $tp->saveAs($outPath);
@@ -141,31 +142,43 @@ class MeetingInvitationGenerator
     }
 
     /**
-     * Sinh tất cả giấy mời trong 1 file .docx duy nhất, mỗi khách mời 1 trang
+     * Sinh tất cả giấy mời trong 1 file .docx duy nhất, mỗi khách mời/đại biểu 1 trang
      * (phân cách bằng page break). Không dùng ZIP.
      *
-     * Cơ chế: sinh .docx cho từng guest → extract body XML → nối vào 1 document
+     * Cơ chế: sinh .docx cho từng guest/participant → extract body XML → nối vào 1 document
      * gốc, chèn <w:br w:type="page"/> giữa các bản.
      */
     public function generateBatch(Meeting $meeting, MeetingInvitationTemplate $template): string
     {
-        $meeting->loadMissing('guests');
-        $guests = $meeting->guests;
-        if ($guests->isEmpty()) {
-            throw new \Exception('Cuộc họp chưa có khách mời nào để xuất giấy mời.');
+        $meeting->loadMissing(['guests', 'participants']);
+        
+        $recipients = [];
+        
+        // Loop through participants (đại biểu)
+        foreach ($meeting->participants as $p) {
+            $recipients[] = $p;
+        }
+        
+        // Loop through guests (khách mời)
+        foreach ($meeting->guests as $g) {
+            $recipients[] = $g;
         }
 
-        // Sinh riêng từng file docx cho mỗi guest
+        if (empty($recipients)) {
+            throw new \Exception('Cuộc họp chưa có đại biểu hoặc khách mời nào để xuất giấy mời.');
+        }
+
+        // Sinh riêng từng file docx cho mỗi recipient
         $tempFiles = [];
-        foreach ($guests as $guest) {
-            $tempFiles[] = $this->generateSingle($meeting, $guest, $template);
+        foreach ($recipients as $recipient) {
+            $tempFiles[] = $this->generateSingle($meeting, $recipient, $template);
         }
 
         // Lấy file đầu tiên làm base
         $basePath = array_shift($tempFiles);
 
         if (empty($tempFiles)) {
-            // Chỉ có 1 khách → trả luôn file đó, không cần merge
+            // Chỉ có 1 recipient → trả luôn file đó, không cần merge
             return $basePath;
         }
 
@@ -279,17 +292,43 @@ class MeetingInvitationGenerator
         }
     }
 
-    private function fillInvitation(TemplateProcessor $tp, Meeting $m, MeetingGuest $g): void
+    private function fillInvitation(TemplateProcessor $tp, Meeting $m, $recipient): void
     {
         $start = $m->start_time;
         $end = $m->end_time;
 
+        $name = '';
+        $position = '';
+        $organization = '';
+        $phone = '';
+        $email = '';
+
+        if ($recipient instanceof MeetingGuest) {
+            $name = $recipient->name;
+            $position = $recipient->position_name;
+            $organization = $recipient->organization_name;
+            $phone = $recipient->phone;
+            $email = $recipient->email;
+        } elseif ($recipient instanceof MeetingParticipant) {
+            $name = $recipient->display_name;
+            $position = $recipient->position_name;
+            $organization = $recipient->department_name;
+            $phone = $recipient->phone;
+            $email = $recipient->email;
+        } elseif (is_array($recipient)) {
+            $name = $recipient['name'] ?? '';
+            $position = $recipient['position'] ?? '';
+            $organization = $recipient['organization'] ?? '';
+            $phone = $recipient['phone'] ?? '';
+            $email = $recipient['email'] ?? '';
+        }
+
         $scalars = [
-            'guest_name' => $this->cleanText($g->name),
-            'guest_position' => $this->cleanText($g->position),
-            'guest_organization' => $this->cleanText($g->organization),
-            'guest_phone' => $this->cleanText($g->phone),
-            'guest_email' => $this->cleanText($g->email),
+            'guest_name' => $this->cleanText($name),
+            'guest_position' => $this->cleanText($position),
+            'guest_organization' => $this->cleanText($organization),
+            'guest_phone' => $this->cleanText($phone),
+            'guest_email' => $this->cleanText($email),
             'meeting_title' => $this->cleanText($m->title),
             'dia_diem_hop' => $this->cleanText($m->meetingLocation?->name),
             'thoi_gian_bat_dau' => $start?->format('H:i') ?? '',
