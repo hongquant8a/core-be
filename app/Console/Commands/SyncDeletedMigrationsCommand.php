@@ -198,7 +198,20 @@ class SyncDeletedMigrationsCommand extends Command
         }
 
         $this->comment('Đang xóa log migration khỏi DB...');
-        DB::table('migrations')->whereIn('migration', array_values($deletedMigrations))->delete();
+        if (!empty($deletedMigrations)) {
+            DB::table('migrations')->whereIn('migration', array_values($deletedMigrations))->delete();
+        }
+
+        // Xóa log của các migration tương ứng với các bảng đã bị drop để Laravel chạy lại từ đầu
+        $droppedTables = array_values($tablesToDrop);
+        if (!empty($droppedTables)) {
+            DB::table('migrations')->where(function ($query) use ($droppedTables) {
+                foreach ($droppedTables as $table) {
+                    $query->orWhere('migration', 'like', "%_create_{$table}_table%")
+                          ->orWhere('migration', 'like', "%_create_{$table}_tables%");
+                }
+            })->delete();
+        }
 
         Schema::enableForeignKeyConstraints();
 
