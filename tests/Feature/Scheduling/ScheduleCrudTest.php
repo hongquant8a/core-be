@@ -52,19 +52,29 @@ class ScheduleCrudTest extends TestCase
 
     private function createSchedule(int $orgId, array $overrides = []): Schedule
     {
-        return Schedule::create(array_merge([
+        $defaults = [
             'organization_id' => $orgId,
             'module_type' => ScheduleModuleTypeEnum::Executive->value,
-            'date' => '2026-06-01',
+            'date_time' => '2026-06-01 08:00:00',
             'session' => ScheduleSessionEnum::Morning->value,
-            'title' => 'Họp giao ban định kỳ',
             'content' => 'Nội dung họp chi tiết',
-            'host_user_id' => $this->admin->id,
+            'host_id' => $this->admin->id,
             'location' => 'Phòng họp A',
             'status' => ScheduleStatusEnum::Draft->value,
             'sort_order' => 1,
             'created_by' => $this->admin->id,
-        ], $overrides));
+        ];
+
+        if (array_key_exists('title', $overrides)) {
+            $defaults['content'] = $overrides['title'];
+            unset($overrides['title']);
+        }
+        if (array_key_exists('date', $overrides)) {
+            $defaults['date_time'] = $overrides['date'] . ' 08:00:00';
+            unset($overrides['date']);
+        }
+
+        return Schedule::create(array_merge($defaults, $overrides));
     }
 
     public function test_schedules_index_requires_organization_header(): void
@@ -78,15 +88,15 @@ class ScheduleCrudTest extends TestCase
     {
         Sanctum::actingAs($this->admin);
 
-        $mine = $this->createSchedule($this->orgA->id, ['title' => 'Lịch Org A']);
-        $other = $this->createSchedule($this->orgB->id, ['title' => 'Lịch Org B']);
+        $mine = $this->createSchedule($this->orgA->id, ['content' => 'Lịch Org A']);
+        $other = $this->createSchedule($this->orgB->id, ['content' => 'Lịch Org B']);
 
         $res = $this->getJson('/api/schedules', ['X-Organization-Id' => $this->orgA->id]);
 
         $res->assertOk();
-        $titles = collect($res->json('data'))->pluck('title')->all();
-        $this->assertContains('Lịch Org A', $titles);
-        $this->assertNotContains('Lịch Org B', $titles);
+        $contents = collect($res->json('data'))->pluck('content')->all();
+        $this->assertContains('Lịch Org A', $contents);
+        $this->assertNotContains('Lịch Org B', $contents);
     }
 
     public function test_store_creates_schedule_successfully(): void
@@ -95,10 +105,10 @@ class ScheduleCrudTest extends TestCase
 
         $res = $this->postJson('/api/schedules', [
             'module_type' => ScheduleModuleTypeEnum::Executive->value,
-            'date' => '2026-06-01',
+            'date_time' => '2026-06-01 08:00:00',
             'session' => ScheduleSessionEnum::Morning->value,
-            'title' => 'Họp thông qua kế hoạch mới',
-            'host_user_id' => $this->staff->id,
+            'content' => 'Họp thông qua kế hoạch mới',
+            'host_id' => $this->staff->id,
             'location' => 'Hội trường lớn',
             'status' => ScheduleStatusEnum::Draft->value,
         ], ['X-Organization-Id' => $this->orgA->id]);
@@ -106,17 +116,17 @@ class ScheduleCrudTest extends TestCase
         $res->assertCreated();
         $this->assertDatabaseHas('schedules', [
             'organization_id' => $this->orgA->id,
-            'title' => 'Họp thông qua kế hoạch mới',
+            'content' => 'Họp thông qua kế hoạch mới',
             'location' => 'Hội trường lớn',
-            'status' => ScheduleStatusEnum::Draft->value,
+            'status' => 0,
         ]);
     }
 
     public function test_driver_view_contains_restricted_payload_only(): void
     {
         $schedule = $this->createSchedule($this->orgA->id, [
-            'driver_user_id' => $this->driver->id,
-            'title' => 'Nội dung tuyệt mật quốc gia',
+            'driver_id' => $this->driver->id,
+            'content' => 'Nội dung tuyệt mật quốc gia',
             'status' => ScheduleStatusEnum::Approved->value,
         ]);
 
@@ -128,13 +138,13 @@ class ScheduleCrudTest extends TestCase
 
         $this->assertEquals($schedule->id, $data['id']);
         $this->assertEquals('Phòng họp A', $data['location']);
-        $this->assertEquals($schedule->title, $data['title']);
+        $this->assertEquals($schedule->content, $data['content']);
     }
 
     public function test_admin_view_contains_full_payload(): void
     {
         $schedule = $this->createSchedule($this->orgA->id, [
-            'title' => 'Nội dung chi tiết lịch công tác',
+            'content' => 'Nội dung chi tiết lịch công tác',
         ]);
 
         Sanctum::actingAs($this->admin);
@@ -143,7 +153,7 @@ class ScheduleCrudTest extends TestCase
         $res->assertOk();
         $data = $res->json('data');
 
-        $this->assertEquals('Nội dung chi tiết lịch công tác', $data['title']);
+        $this->assertEquals('Nội dung chi tiết lịch công tác', $data['content']);
     }
 
     public function test_reorder_updates_sort_orders(): void
@@ -167,8 +177,8 @@ class ScheduleCrudTest extends TestCase
         Sanctum::actingAs($this->admin);
 
         $schedule = $this->createSchedule($this->orgA->id, [
-            'date' => '2026-06-01',
-            'title' => 'Lịch lặp lại hàng tuần',
+            'date_time' => '2026-06-01 08:00:00',
+            'content' => 'Lịch lặp lại hàng tuần',
         ]);
 
         $res = $this->postJson("/api/schedules/{$schedule->id}/duplicate", [
@@ -178,8 +188,8 @@ class ScheduleCrudTest extends TestCase
         $res->assertCreated();
         $this->assertDatabaseHas('schedules', [
             'organization_id' => $this->orgA->id,
-            'date' => '2026-06-08',
-            'title' => 'Lịch lặp lại hàng tuần',
+            'date_time' => '2026-06-08 08:00:00',
+            'content' => 'Lịch lặp lại hàng tuần',
         ]);
     }
 
@@ -210,51 +220,7 @@ class ScheduleCrudTest extends TestCase
         ]);
     }
 
-    public function test_filter_presets_crud(): void
-    {
-        Sanctum::actingAs($this->admin);
 
-        // 1. Create a filter preset
-        $resStore = $this->postJson('/api/scheduling-filter-presets', [
-            'name' => 'Bộ lọc tuần này',
-            'filters' => ['view' => 'personal', 'status' => 'APPROVED'],
-            'is_default' => true,
-        ], ['X-Organization-Id' => $this->orgA->id]);
-
-        $resStore->assertStatus(201);
-        $presetId = $resStore->json('data.id');
-
-        $this->assertDatabaseHas('scheduling_filter_presets', [
-            'id' => $presetId,
-            'user_id' => $this->admin->id,
-            'name' => 'Bộ lọc tuần này',
-            'is_default' => true,
-        ]);
-
-        // 2. Fetch the presets list
-        $resIndex = $this->getJson('/api/scheduling-filter-presets', ['X-Organization-Id' => $this->orgA->id]);
-        $resIndex->assertOk();
-        $resIndex->assertJsonFragment(['name' => 'Bộ lọc tuần này']);
-
-        // 3. Update the preset
-        $resUpdate = $this->putJson("/api/scheduling-filter-presets/{$presetId}", [
-            'name' => 'Bộ lọc tuần này đã sửa',
-            'filters' => ['view' => 'all'],
-            'is_default' => false,
-        ], ['X-Organization-Id' => $this->orgA->id]);
-
-        $resUpdate->assertOk();
-        $this->assertDatabaseHas('scheduling_filter_presets', [
-            'id' => $presetId,
-            'name' => 'Bộ lọc tuần này đã sửa',
-            'is_default' => false,
-        ]);
-
-        // 4. Delete the preset
-        $resDelete = $this->deleteJson("/api/scheduling-filter-presets/{$presetId}", [], ['X-Organization-Id' => $this->orgA->id]);
-        $resDelete->assertOk();
-        $this->assertDatabaseMissing('scheduling_filter_presets', ['id' => $presetId]);
-    }
 
     public function test_stats_endpoint_returns_correct_statistics(): void
     {
@@ -292,7 +258,7 @@ class ScheduleCrudTest extends TestCase
         $res->assertOk();
         $this->assertDatabaseHas('schedules', [
             'id' => $schedule->id,
-            'status' => ScheduleStatusEnum::Approved->value,
+            'status' => 2,
         ]);
     }
 
@@ -311,11 +277,11 @@ class ScheduleCrudTest extends TestCase
         $res->assertOk();
         $this->assertDatabaseHas('schedules', [
             'id' => $sch1->id,
-            'status' => ScheduleStatusEnum::Approved->value,
+            'status' => 2,
         ]);
         $this->assertDatabaseHas('schedules', [
             'id' => $sch2->id,
-            'status' => ScheduleStatusEnum::Approved->value,
+            'status' => 2,
         ]);
     }
 
@@ -371,5 +337,95 @@ class ScheduleCrudTest extends TestCase
         $this->assertEquals(23, $data['week_number']);
         $this->assertEquals(2026, $data['year']);
         $this->assertArrayHasKey('matrix', $data);
+    }
+
+    public function test_schedule_stores_and_returns_host_and_driver_text(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        $payload = [
+            'module_type' => ScheduleModuleTypeEnum::Executive->value,
+            'content' => 'Nội dung test',
+            'date_time' => '2026-06-01 08:00:00',
+            'session' => ScheduleSessionEnum::Morning->value,
+            'host_text' => 'Chủ tịch danh dự Nguyễn Văn A',
+            'driver_text' => 'Tài xế hợp đồng Trần Văn B',
+        ];
+
+        $res = $this->postJson('/api/schedules', $payload, ['X-Organization-Id' => $this->orgA->id]);
+
+        $res->assertStatus(201);
+        $res->assertJsonPath('data.host_text', 'Chủ tịch danh dự Nguyễn Văn A');
+        $res->assertJsonPath('data.driver_text', 'Tài xế hợp đồng Trần Văn B');
+
+        $scheduleId = $res->json('data.id');
+
+        $this->assertDatabaseHas('schedules', [
+            'id' => $scheduleId,
+            'host_text' => 'Chủ tịch danh dự Nguyễn Văn A',
+            'driver_text' => 'Tài xế hợp đồng Trần Văn B',
+        ]);
+    }
+
+    public function test_schedule_stores_and_syncs_is_important_and_attachments(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        // 1. Create schedule with is_important and files
+        $file1 = \Illuminate\Http\UploadedFile::fake()->create('doc1.pdf', 100);
+        $file2 = \Illuminate\Http\UploadedFile::fake()->create('doc2.docx', 200);
+
+        $payload = [
+            'module_type' => ScheduleModuleTypeEnum::Executive->value,
+            'content' => 'Nội dung test',
+            'date_time' => '2026-06-01 08:00:00',
+            'session' => ScheduleSessionEnum::Morning->value,
+            'is_important' => true,
+            'files' => [$file1, $file2]
+        ];
+
+        $res = $this->postJson('/api/schedules', $payload, ['X-Organization-Id' => $this->orgA->id]);
+
+        $res->assertStatus(201);
+        $res->assertJsonPath('data.is_important', true);
+
+        $scheduleId = $res->json('data.id');
+        $this->assertDatabaseHas('schedules', [
+            'id' => $scheduleId,
+            'is_important' => true,
+        ]);
+
+        $this->assertDatabaseCount('schedule_attachments', 2);
+        $attachments = $res->json('data.attachments');
+        $this->assertCount(2, $attachments);
+        $att1Id = $attachments[0]['id'];
+        $att2Id = $attachments[1]['id'];
+
+        // 2. Update schedule: change is_important, delete 1 attachment, keep 1 attachment, upload 1 new attachment
+        $file3 = \Illuminate\Http\UploadedFile::fake()->create('doc3.xlsx', 150);
+        $updatePayload = [
+            'is_important' => false,
+            // Send attachments list with only att1Id retained (att2Id is dropped/removed)
+            'attachments' => [
+                ['id' => $att1Id]
+            ],
+            // Upload new file
+            'files' => [$file3]
+        ];
+
+        $resUpdate = $this->putJson('/api/schedules/' . $scheduleId, $updatePayload, ['X-Organization-Id' => $this->orgA->id]);
+
+        $resUpdate->assertOk();
+        $resUpdate->assertJsonPath('data.is_important', false);
+
+        $this->assertDatabaseHas('schedules', [
+            'id' => $scheduleId,
+            'is_important' => false,
+        ]);
+
+        // Total attachments in database should be 2 (att1Id + new file3 attachment; att2Id deleted)
+        $this->assertDatabaseCount('schedule_attachments', 2);
+        $this->assertDatabaseHas('schedule_attachments', ['id' => $att1Id]);
+        $this->assertDatabaseMissing('schedule_attachments', ['id' => $att2Id]);
     }
 }

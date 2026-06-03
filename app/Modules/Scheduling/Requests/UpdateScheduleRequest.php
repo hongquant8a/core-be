@@ -2,8 +2,7 @@
 
 namespace App\Modules\Scheduling\Requests;
 
-use App\Modules\Scheduling\Enums\ScheduleModuleTypeEnum;
-use App\Modules\Scheduling\Enums\ScheduleSessionEnum;
+use App\Modules\Scheduling\Enums\ScheduleStatus;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateScheduleRequest extends FormRequest
@@ -16,45 +15,89 @@ class UpdateScheduleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'module_type' => ['nullable', ScheduleModuleTypeEnum::rule()],
-            'title'       => ['nullable', 'string', 'max:500'],
-            'content'     => ['nullable', 'string'],
-            'location'    => ['nullable', 'string', 'max:500'],
-            'session'     => ['nullable', ScheduleSessionEnum::rule()],
-            'date'        => ['nullable', 'date_format:Y-m-d'],
-            'start_time'  => ['nullable', 'date_format:H:i:s,H:i'],
-            'end_time'    => ['nullable', 'date_format:H:i:s,H:i'],
-            'status'      => ['nullable', 'string'],
-
-            'host_user_id'         => ['nullable', 'integer', 'exists:users,id'],
-            'driver_user_id'       => ['nullable', 'integer', 'exists:users,id'],
-            'preparation_location' => ['nullable', 'string', 'max:500'],
-
-            'sort_order'         => ['nullable', 'integer', 'min:0'],
-            'is_recurring'       => ['nullable', 'boolean'],
-            'recurrence_rule'    => ['nullable', 'array'],
-            'parent_schedule_id' => ['nullable', 'integer', 'exists:schedules,id'],
-
-            'participants'                  => ['nullable', 'array'],
-            'participants.*.user_id'        => ['nullable', 'integer', 'exists:users,id'],
-            'participants.*.display_name'   => ['nullable', 'string', 'max:255'],
-            'participants.*.position_name'  => ['nullable', 'string', 'max:255'],
-            'participants.*.is_external'    => ['nullable', 'boolean'],
-
-            'reminders'                  => ['nullable', 'array'],
-            'reminders.*.reminder_type'  => ['required_without:reminders.*.source', 'nullable', 'in:PRESET,CUSTOM'],
-            'reminders.*.source'         => ['required_without:reminders.*.reminder_type', 'nullable', 'in:preset,custom,PRESET,CUSTOM'],
-            'reminders.*.moment'         => ['nullable', 'in:BEFORE,ON,AFTER'],
-            'reminders.*.offset_minutes' => ['required_without:reminders.*.minutes_before', 'nullable', 'integer'],
-            'reminders.*.minutes_before' => ['required_without:reminders.*.offset_minutes', 'nullable', 'integer'],
-            'reminders.*.channels'       => ['required', 'array'],
-            'reminders.*.channels.*'     => ['string'],
-
-            'remove_media_ids'   => ['nullable', 'array'],
-            'remove_media_ids.*' => ['integer'],
-
-            'files'   => ['nullable', 'array'],
-            'files.*' => ['file', 'max:20480', 'mimes:pdf,doc,docx,xls,xlsx,png,jpg,jpeg'],
+            'module_type'          => ['nullable', 'string'],
+            'content'              => ['nullable', 'string'],
+            'location'             => ['nullable', 'string', 'max:500'],
+            'session'              => ['nullable', 'string'],
+            'date_time'            => ['nullable', 'string'],
+            'status'               => ['nullable'],
+            'host_id'              => ['nullable', 'integer', 'exists:users,id'],
+            'host_text'            => ['nullable', 'string', 'max:255'],
+            'driver_id'            => ['nullable', 'integer', 'exists:users,id'],
+            'driver_text'          => ['nullable', 'string', 'max:255'],
+            'preparation_unit'     => ['nullable', 'string', 'max:500'],
+            'departments_text'     => ['nullable', 'string'],
+            'participants'         => ['nullable', 'array'],
+            'participants.*.user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'participants.*.group_id' => ['nullable', 'integer', 'exists:notification_groups,id'],
+            'participants.*.display_name' => ['nullable', 'string', 'max:255'],
+            'reminders'            => ['nullable', 'array'],
+            'files'                => ['nullable', 'array'],
+            'remove_media_ids'     => ['nullable', 'array'],
+            'remove_media_ids.*'   => ['integer'],
+            'is_important'         => ['nullable', 'boolean'],
+            'participants_text'    => ['nullable', 'string'],
+            'participant_count'    => ['nullable', 'string', 'max:50'],
+            'nature'               => ['nullable', 'string'],
+            'attachments'          => ['nullable', 'array'],
         ];
+    }
+
+    public function validated($key = null, $default = null)
+    {
+        $validated = parent::validated($key, $default);
+        if (is_array($validated)) {
+            // Normalize title / content
+            if (array_key_exists('content', $validated) || array_key_exists('title', $validated)) {
+                $validated['content'] = ($validated['content'] ?? null) ?: ($validated['title'] ?? null) ?: '';
+            }
+
+            // Normalize date
+            if (array_key_exists('event_date', $validated) || array_key_exists('date', $validated)) {
+                $validated['event_date'] = ($validated['event_date'] ?? null) ?: ($validated['date'] ?? null);
+            }
+
+            // Normalize host & driver
+            if (array_key_exists('host_id', $validated) || array_key_exists('host_user_id', $validated)) {
+                $validated['host_id'] = ($validated['host_id'] ?? null) ?: ($validated['host_user_id'] ?? null);
+            }
+            if (array_key_exists('driver_id', $validated) || array_key_exists('driver_user_id', $validated)) {
+                $validated['driver_id'] = ($validated['driver_id'] ?? null) ?: ($validated['driver_user_id'] ?? null);
+            }
+
+            // Normalize preparation unit
+            if (array_key_exists('preparation_unit', $validated) || array_key_exists('preparation_location', $validated)) {
+                $validated['preparation_unit'] = ($validated['preparation_unit'] ?? null) ?: ($validated['preparation_location'] ?? null);
+            }
+
+            // Normalize status
+            if (array_key_exists('status', $validated)) {
+                $status = $validated['status'];
+                if (is_string($status)) {
+                    $status = strtoupper($status);
+                    $validated['status'] = match ($status) {
+                        'PENDING' => ScheduleStatus::PENDING->value,
+                        'APPROVED', 'PUBLISHED' => ScheduleStatus::PUBLISHED->value,
+                        'CANCELLED' => ScheduleStatus::CANCELLED->value,
+                        default => (int)$status,
+                    };
+                } else {
+                    $validated['status'] = (int)$status;
+                }
+            }
+
+            // Normalize session if it's legacy session name (e.g. MORNING)
+            if (array_key_exists('session', $validated)) {
+                $session = $validated['session'];
+                if (in_array($session, ['MORNING', 'AFTERNOON', 'EVENING'], true)) {
+                    $validated['session'] = match ($session) {
+                        'MORNING' => 'S',
+                        'AFTERNOON' => 'C',
+                        'EVENING' => 'T',
+                    };
+                }
+            }
+        }
+        return $validated;
     }
 }

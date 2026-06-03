@@ -15,14 +15,15 @@ class SchedulingEmployeeGroupService
         $base = SchedulingEmployeeGroup::filter($filters);
         return [
             'total'    => (clone $base)->count(),
-            'active'   => (clone $base)->where('status', true)->count(),
-            'inactive' => (clone $base)->where('status', false)->count(),
+            'active'   => (clone $base)->where('status', 'active')->count(),
+            'inactive' => (clone $base)->where('status', 'inactive')->count(),
         ];
     }
 
     public function index(array $filters, int $limit)
     {
         return SchedulingEmployeeGroup::withCount('members')
+            ->with(['members.user', 'updatedBy'])
             ->filter($filters)
             ->paginate($limit);
     }
@@ -73,12 +74,12 @@ class SchedulingEmployeeGroupService
         });
     }
 
-    public function bulkUpdateStatus(array $ids, bool $status): void
+    public function bulkUpdateStatus(array $ids, string $status): void
     {
         SchedulingEmployeeGroup::whereIn('id', $ids)->update(['status' => $status]);
     }
 
-    public function changeStatus(SchedulingEmployeeGroup $group, bool $status): SchedulingEmployeeGroup
+    public function changeStatus(SchedulingEmployeeGroup $group, string $status): SchedulingEmployeeGroup
     {
         $group->update(['status' => $status]);
         return $this->show($group);

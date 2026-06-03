@@ -14,7 +14,7 @@ class ChangeStatusSchedulingEmployeeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => ['required', 'boolean'],
+            'status' => ['required', \App\Modules\Core\Enums\StatusEnum::rule()],
         ];
     }
 }

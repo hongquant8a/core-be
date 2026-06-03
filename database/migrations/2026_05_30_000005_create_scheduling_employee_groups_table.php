@@ -13,7 +13,7 @@ return new class extends Migration
             $table->unsignedBigInteger('organization_id');
             $table->string('name', 255);
             $table->text('description')->nullable();
-            $table->boolean('status')->default(true);
+            $table->string('status', 30)->default('active');
             $table->unsignedSmallInteger('sort_order')->default(0);
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();

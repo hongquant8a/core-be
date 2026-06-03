@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Modules\Core\Models\Organization;
+use App\Modules\Scheduling\Models\OrgSchedulingSettings;
 use App\Modules\Scheduling\Models\SchedulingSetting;
 use Illuminate\Database\Seeder;
 
@@ -13,6 +14,16 @@ class OrgSchedulingSettingsSeeder extends Seeder
         $organizations = Organization::all();
 
         foreach ($organizations as $org) {
+            OrgSchedulingSettings::updateOrCreate(
+                ['organization_id' => $org->id],
+                [
+                    'executive_requires_approval' => false,
+                    'executive_approver_roles'    => [],
+                    'office_requires_approval'    => false,
+                    'office_approver_roles'       => [],
+                ]
+            );
+
             SchedulingSetting::updateOrCreate(
                 ['organization_id' => $org->id],
                 [

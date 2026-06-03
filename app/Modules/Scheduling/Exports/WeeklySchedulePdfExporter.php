@@ -22,16 +22,14 @@ class WeeklySchedulePdfExporter
     public function generate(array $filters): string
     {
         $query = Schedule::with(['host', 'driver'])
-            ->orderBy('date', 'asc')
+            ->orderBy('date_time', 'asc')
             ->orderBy('session', 'asc')
             ->orderBy('sort_order', 'asc');
 
         // Apply filters
         if (!empty($filters['week_number']) && !empty($filters['year'])) {
-            $carbon = Carbon::now()->setISODate($filters['year'], $filters['week_number']);
-            $start = $carbon->startOfWeek()->toDateString();
-            $end = $carbon->endOfWeek()->toDateString();
-            $query->whereBetween('date', [$start, $end]);
+            $query->where('year', (int)$filters['year'])
+                  ->where('week_number', (int)$filters['week_number']);
         }
         if (!empty($filters['module_type'])) {
             $query->where('module_type', $filters['module_type']);
@@ -55,10 +53,10 @@ class WeeklySchedulePdfExporter
         $formattedSchedules = [];
         foreach ($schedulesList as $item) {
             $dayLabel = 'N/A';
-            if ($item->date) {
-                $dayOfWeek = $item->date->dayOfWeek;
+            if ($item->date_time) {
+                $dayOfWeek = $item->date_time->dayOfWeek;
                 $dayName = self::$daysMap[$dayOfWeek] ?? '';
-                $dateStr = $item->date->format('d/m/Y');
+                $dateStr = $item->date_time->format('d/m/Y');
                 $dayLabel = "{$dayName}\n({$dateStr})";
             }
 
@@ -71,11 +69,8 @@ class WeeklySchedulePdfExporter
             }
 
             $timeLabel = '';
-            if ($item->start_time) {
-                $timeLabel = substr($item->start_time, 0, 5);
-                if ($item->end_time) {
-                    $timeLabel .= ' - ' . substr($item->end_time, 0, 5);
-                }
+            if ($item->date_time) {
+                $timeLabel = $item->date_time->format('H:i');
             }
 
             $hostName = $item->host ? $item->host->name : ($item->host_text ?? '');

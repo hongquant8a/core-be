@@ -33,6 +33,12 @@ class ScheduleNotificationTest extends TestCase
         setPermissionsTeamId($this->org->id);
         $this->admin->assignRole('Super Admin');
         $this->recipientUser->assignRole('Nhân viên');
+
+        \App\Modules\Scheduling\Models\OrgSchedulingSettings::create([
+            'organization_id' => $this->org->id,
+            'executive_requires_approval' => false,
+            'office_requires_approval' => false,
+        ]);
     }
 
     public function test_draft_schedule_does_not_dispatch_notifications()
@@ -60,7 +66,7 @@ class ScheduleNotificationTest extends TestCase
         ], ['X-Organization-Id' => $this->org->id]);
 
         $res->assertCreated();
-        $this->assertDatabaseCount('notifications', 0);
+        $this->assertDatabaseCount('schedule_notifications', 0);
     }
 
     public function test_publishing_schedule_dispatches_published_notification_and_schedules_reminders()
@@ -91,9 +97,9 @@ class ScheduleNotificationTest extends TestCase
         $res->assertCreated();
         
         // Assert Notification model entry created in database for recipient
-        $this->assertDatabaseHas('notifications', [
+        $this->assertDatabaseHas('schedule_notifications', [
             'user_id' => $this->recipientUser->id,
-            'event_key' => 'schedule_published',
+            'channel' => 'APP',
         ]);
     }
 
@@ -114,7 +120,7 @@ class ScheduleNotificationTest extends TestCase
             'created_by' => $this->admin->id,
         ]);
 
-        $schedule->participants()->create(['user_id' => $this->recipientUser->id, 'role' => 'PARTICIPANT']);
+        $schedule->recipients()->create(['user_id' => $this->recipientUser->id]);
         $reminder = $schedule->reminders()->create([
             'minutes_before' => 30,
             'channels' => ['fcm', 'inapp'],
@@ -129,9 +135,9 @@ class ScheduleNotificationTest extends TestCase
         $res->assertOk();
 
         // Verify update notification is generated
-        $this->assertDatabaseHas('notifications', [
+        $this->assertDatabaseHas('schedule_notifications', [
             'user_id' => $this->recipientUser->id,
-            'event_key' => 'schedule_updated',
+            'channel' => 'APP',
         ]);
     }
 
@@ -151,7 +157,7 @@ class ScheduleNotificationTest extends TestCase
             'created_by' => $this->admin->id,
         ]);
 
-        $schedule->participants()->create(['user_id' => $this->recipientUser->id, 'role' => 'PARTICIPANT']);
+        $schedule->recipients()->create(['user_id' => $this->recipientUser->id]);
         $reminder = $schedule->reminders()->create([
             'minutes_before' => 30,
             'channels' => ['fcm', 'inapp'],
@@ -166,9 +172,9 @@ class ScheduleNotificationTest extends TestCase
         $res->assertOk();
 
         // Verify cancellation notification is generated
-        $this->assertDatabaseHas('notifications', [
+        $this->assertDatabaseHas('schedule_notifications', [
             'user_id' => $this->recipientUser->id,
-            'event_key' => 'schedule_cancelled',
+            'channel' => 'APP',
         ]);
     }
 }

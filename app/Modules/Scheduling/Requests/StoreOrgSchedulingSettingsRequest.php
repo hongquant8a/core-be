@@ -4,7 +4,7 @@ namespace App\Modules\Scheduling\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateSchedulingFilterPresetRequest extends FormRequest
+class StoreOrgSchedulingSettingsRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -14,9 +14,7 @@ class UpdateSchedulingFilterPresetRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'       => ['nullable', 'string', 'max:255'],
-            'filters'    => ['nullable', 'array'],
-            'is_default' => ['nullable', 'boolean'],
+            'requires_approval' => ['required', 'boolean'],
         ];
     }
 }

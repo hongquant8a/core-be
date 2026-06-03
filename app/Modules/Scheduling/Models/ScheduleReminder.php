@@ -2,44 +2,33 @@
 
 namespace App\Modules\Scheduling\Models;
 
-use App\Modules\Core\Models\TenantModel;
-use App\Modules\Core\Models\NotificationSchedule;
+use Illuminate\Database\Eloquent\Model;
+use App\Modules\Scheduling\Enums\ReminderSource;
 
-class ScheduleReminder extends TenantModel
+class ScheduleReminder extends Model
 {
+    public $timestamps = false;
+
     protected $table = 'schedule_reminders';
 
     protected $fillable = [
-        'organization_id', 'schedule_id', 'notification_schedule_id',
-        'reminder_type', 'moment', 'offset_minutes', 'channels',
-        'scheduled_at', 'sent_at', 'status', 'message', 'created_by',
-        'minutes_before', 'source',
+        'schedule_id', 'minutes_before', 'channels', 'source', 'preset_id', 'created_at',
     ];
 
     protected $casts = [
-        'channels'     => 'array',
-        'scheduled_at' => 'datetime',
-        'sent_at'      => 'datetime',
+        'minutes_before' => 'integer',
+        'channels'       => 'array',
+        'source'         => ReminderSource::class,
+        'created_at'     => 'datetime',
     ];
 
-    public function getMinutesBeforeAttribute()
+    protected static function booted(): void
     {
-        return $this->offset_minutes;
-    }
-
-    public function setMinutesBeforeAttribute($value)
-    {
-        $this->attributes['offset_minutes'] = $value;
-    }
-
-    public function getSourceAttribute()
-    {
-        return strtolower($this->reminder_type ?? 'PRESET');
-    }
-
-    public function setSourceAttribute($value)
-    {
-        $this->attributes['reminder_type'] = strtoupper($value);
+        static::creating(function (ScheduleReminder $reminder) {
+            if (is_null($reminder->created_at)) {
+                $reminder->created_at = now();
+            }
+        });
     }
 
     public function schedule()
@@ -47,8 +36,47 @@ class ScheduleReminder extends TenantModel
         return $this->belongsTo(Schedule::class);
     }
 
-    public function notificationSchedule()
+    public function preset()
     {
-        return $this->belongsTo(NotificationSchedule::class, 'notification_schedule_id');
+        return $this->belongsTo(ReminderPreset::class, 'preset_id');
+    }
+
+    // ── Compatibility Accessors / Mutators ───────────────────────────────────────
+
+    public function getOffsetMinutesAttribute()
+    {
+        return $this->minutes_before;
+    }
+
+    public function setOffsetMinutesAttribute($value)
+    {
+        $this->minutes_before = (int)$value;
+    }
+
+    public function getReminderTypeAttribute()
+    {
+        return $this->source ? $this->source->value : 'CUSTOM';
+    }
+
+    public function setReminderTypeAttribute($value)
+    {
+        $value = strtoupper($value);
+        $this->source = ReminderSource::tryFrom($value) ?? ReminderSource::CUSTOM;
+    }
+
+    // Also support lowercase for source/reminder_type
+    public function getSourceAttribute($value)
+    {
+        return $value;
+    }
+
+    public function setSourceAttribute($value)
+    {
+        if (is_string($value)) {
+            $value = strtoupper($value);
+            $this->attributes['source'] = ReminderSource::tryFrom($value) ? $value : 'CUSTOM';
+        } elseif ($value instanceof ReminderSource) {
+            $this->attributes['source'] = $value->value;
+        }
     }
 }

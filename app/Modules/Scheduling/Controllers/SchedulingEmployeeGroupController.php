@@ -37,7 +37,7 @@ class SchedulingEmployeeGroupController extends Controller
 
     public function options(): JsonResponse
     {
-        $groups = SchedulingEmployeeGroup::where('status', true)
+        $groups = SchedulingEmployeeGroup::where('status', 'active')
             ->get(['id', 'name']);
 
         return $this->success($groups);

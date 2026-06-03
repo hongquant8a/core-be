@@ -42,7 +42,7 @@ class ScheduleExportTest extends TestCase
 
     private function createSchedule(array $overrides = []): Schedule
     {
-        return Schedule::create(array_merge([
+        $defaults = [
             'organization_id' => $this->orgA->id,
             'module_type' => ScheduleModuleTypeEnum::Executive->value,
             'date' => '2026-06-01',
@@ -54,7 +54,16 @@ class ScheduleExportTest extends TestCase
             'status' => ScheduleStatusEnum::Approved->value,
             'sort_order' => 1,
             'created_by' => $this->admin->id,
-        ], $overrides));
+        ];
+
+        if (array_key_exists('title', $overrides)) {
+            unset($defaults['content']);
+        }
+        if (array_key_exists('content', $overrides)) {
+            unset($defaults['title']);
+        }
+
+        return Schedule::create(array_merge($defaults, $overrides));
     }
 
     public function test_driver_can_view_own_assigned_published_schedules(): void

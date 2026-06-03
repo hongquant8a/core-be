@@ -43,7 +43,7 @@ class SchedulingEmployeeTest extends TestCase
         setPermissionsTeamId($this->orgA->id);
     }
 
-    private function createEmployee(int $orgId, int $userId, bool $status = true): SchedulingEmployee
+    private function createEmployee(int $orgId, int $userId, string $status = 'active'): SchedulingEmployee
     {
         return SchedulingEmployee::create([
             'organization_id' => $orgId,
@@ -59,8 +59,8 @@ class SchedulingEmployeeTest extends TestCase
         // Clear existing backfilled employees for a clean test
         SchedulingEmployee::query()->delete();
 
-        $this->createEmployee($this->orgA->id, $this->staff1->id, true);
-        $this->createEmployee($this->orgA->id, $this->staff2->id, false);
+        $this->createEmployee($this->orgA->id, $this->staff1->id, 'active');
+        $this->createEmployee($this->orgA->id, $this->staff2->id, 'inactive');
 
         $res = $this->getJson('/api/scheduling-employees/options', ['X-Organization-Id' => $this->orgA->id]);
 
@@ -78,8 +78,8 @@ class SchedulingEmployeeTest extends TestCase
 
         SchedulingEmployee::query()->delete();
 
-        $this->createEmployee($this->orgA->id, $this->staff1->id, true);
-        $this->createEmployee($this->orgA->id, $this->staff2->id, false);
+        $this->createEmployee($this->orgA->id, $this->staff1->id, 'active');
+        $this->createEmployee($this->orgA->id, $this->staff2->id, 'inactive');
 
         $res = $this->getJson('/api/scheduling-employees/stats', ['X-Organization-Id' => $this->orgA->id]);
 
@@ -95,8 +95,8 @@ class SchedulingEmployeeTest extends TestCase
 
         SchedulingEmployee::query()->delete();
 
-        $this->createEmployee($this->orgA->id, $this->staff1->id, true);
-        $this->createEmployee($this->orgB->id, $this->staff2->id, true);
+        $this->createEmployee($this->orgA->id, $this->staff1->id, 'active');
+        $this->createEmployee($this->orgB->id, $this->staff2->id, 'active');
 
         $res = $this->getJson('/api/scheduling-employees', ['X-Organization-Id' => $this->orgA->id]);
 
@@ -115,14 +115,14 @@ class SchedulingEmployeeTest extends TestCase
 
         $res = $this->postJson('/api/scheduling-employees', [
             'user_id' => $this->staff1->id,
-            'status' => true,
+            'status' => 'active',
         ], ['X-Organization-Id' => $this->orgA->id]);
 
         $res->assertCreated();
         $this->assertDatabaseHas('scheduling_employees', [
             'organization_id' => $this->orgA->id,
             'user_id' => $this->staff1->id,
-            'status' => true,
+            'status' => 'active',
         ]);
     }
 
@@ -136,7 +136,7 @@ class SchedulingEmployeeTest extends TestCase
 
         $res = $this->postJson('/api/scheduling-employees', [
             'user_id' => $this->staff1->id,
-            'status' => true,
+            'status' => 'active',
         ], ['X-Organization-Id' => $this->orgA->id]);
 
         $res->assertUnprocessable();
@@ -209,16 +209,16 @@ class SchedulingEmployeeTest extends TestCase
 
         SchedulingEmployee::query()->delete();
 
-        $emp = $this->createEmployee($this->orgA->id, $this->staff1->id, true);
+        $emp = $this->createEmployee($this->orgA->id, $this->staff1->id, 'active');
 
         $res = $this->patchJson("/api/scheduling-employees/{$emp->id}/status", [
-            'status' => false,
+            'status' => 'inactive',
         ], ['X-Organization-Id' => $this->orgA->id]);
 
         $res->assertOk();
         $this->assertDatabaseHas('scheduling_employees', [
             'id' => $emp->id,
-            'status' => false,
+            'status' => 'inactive',
         ]);
     }
 

@@ -5,71 +5,83 @@ namespace App\Modules\Scheduling\Models;
 use App\Modules\Core\Models\TenantModel;
 use App\Modules\Core\Models\User;
 use App\Modules\Core\Support\VietnameseSort;
-use App\Modules\Scheduling\Enums\{ScheduleStatusEnum, ScheduleSessionEnum, ScheduleModuleTypeEnum};
+use App\Modules\Scheduling\Enums\{ModuleType, SessionType, Nature, ScheduleStatus};
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Schedule extends TenantModel implements HasMedia
+class Schedule extends TenantModel
 {
-    use HasFactory, SoftDeletes, InteractsWithMedia;
-
-    public const COLLECTION_ATTACHMENTS = 'schedule-attachments';
+    use HasFactory, SoftDeletes;
 
     protected $table = 'schedules';
 
     protected $fillable = [
-        'organization_id', 'module_type', 'title', 'content', 'location',
-        'session', 'date', 'start_time', 'end_time',
-        'host_user_id', 'driver_user_id', 'preparation_location',
-        'status', 'approved_by', 'approved_at', 'rejection_note',
-        'sort_order', 'is_recurring', 'recurrence_rule', 'parent_schedule_id',
-        'created_by', 'updated_by',
+        'organization_id', 'module_type', 'date_time', 'session', 'content',
+        'host_id', 'host_text', 'location', 'preparation_unit', 'departments_text',
+        'participants_text', 'participant_count', 'nature', 'driver_id', 'driver_text',
+        'sort_order', 'status', 'week_number', 'year', 'approved_by', 'approved_at',
+        'created_by', 'updated_by', 'is_important'
     ];
 
     protected $casts = [
-        'date'            => 'date',
-        'approved_at'     => 'datetime',
-        'is_recurring'    => 'boolean',
-        'recurrence_rule' => 'array',
-        'sort_order'      => 'integer',
+        'date_time'     => 'datetime',
+        'module_type'   => ModuleType::class,
+        'session'       => SessionType::class,
+        'nature'        => Nature::class,
+        'status'        => ScheduleStatus::class,
+        'approved_at'   => 'datetime',
+        'sort_order'    => 'integer',
+        'week_number'   => 'integer',
+        'year'          => 'integer',
+        'is_important'  => 'boolean'
     ];
 
     protected static function booted(): void
     {
         parent::booted();
 
-        static::creating(function (Schedule $schedule) {
+        static::saving(function (Schedule $schedule) {
+            // Set auditors
             if (is_null($schedule->created_by)) {
-                $schedule->created_by = auth()->id();
+                $schedule->created_by = auth()->id() ?: User::value('id') ?: 1;
             }
-            if (is_null($schedule->updated_by)) {
-                $schedule->updated_by = auth()->id();
-            }
-        });
-        static::updating(function (Schedule $schedule) {
-            $schedule->updated_by = auth()->id();
-        });
-    }
+            $schedule->updated_by = auth()->id() ?: User::value('id') ?: 1;
 
-    public function registerMediaCollections(): void
-    {
-        $this->addMediaCollection(self::COLLECTION_ATTACHMENTS);
+            // Auto-calculate year, week_number, and session from date_time
+            if ($schedule->date_time) {
+                $carbon = \Carbon\Carbon::parse($schedule->date_time);
+                $schedule->year = $carbon->isoWeekYear;
+                $schedule->week_number = $carbon->isoWeek;
+
+                // Auto-calculate session based on the hour
+                $timeString = $carbon->format('H:i');
+                $schedule->session = SessionType::fromTime($timeString);
+            }
+        });
     }
 
     // ── Relations ────────────────────────────────────────────────────────────────
 
     public function creator()    { return $this->belongsTo(User::class, 'created_by'); }
     public function editor()     { return $this->belongsTo(User::class, 'updated_by'); }
-    public function host()       { return $this->belongsTo(User::class, 'host_user_id'); }
-    public function driver()     { return $this->belongsTo(User::class, 'driver_user_id'); }
+    public function host()       { return $this->belongsTo(User::class, 'host_id'); }
+    public function driver()     { return $this->belongsTo(User::class, 'driver_id'); }
     public function approver()   { return $this->belongsTo(User::class, 'approved_by'); }
-    public function parent()     { return $this->belongsTo(Schedule::class, 'parent_schedule_id'); }
+
+    public function attachments()
+    {
+        return $this->hasMany(ScheduleAttachment::class, 'schedule_id')->orderBy('sort_order');
+    }
+
+    public function recipients()
+    {
+        return $this->hasMany(ScheduleNotificationRecipient::class, 'schedule_id');
+    }
 
     public function participants()
     {
-        return $this->hasMany(ScheduleParticipant::class, 'schedule_id')->orderBy('sort_order');
+        return $this->belongsToMany(User::class, 'schedule_notification_recipients', 'schedule_id', 'user_id')
+            ->withPivot('group_id');
     }
 
     public function reminders()
@@ -77,14 +89,38 @@ class Schedule extends TenantModel implements HasMedia
         return $this->hasMany(ScheduleReminder::class, 'schedule_id');
     }
 
-    public function recipients()
+    public function notifications()
     {
-        return $this->participants();
+        return $this->hasMany(ScheduleNotification::class, 'schedule_id');
     }
 
-    public function getEventDateAttribute()
+    public function setStatusAttribute($value)
     {
-        return $this->date;
+        if (is_string($value) && !is_numeric($value)) {
+            $value = strtoupper($value);
+            $value = match ($value) {
+                'PENDING' => 1,
+                'APPROVED', 'PUBLISHED' => 2,
+                'CANCELLED' => 3,
+                default => 1,
+            };
+        } elseif ($value instanceof ScheduleStatus) {
+            $value = $value->value;
+        }
+        $this->attributes['status'] = $value;
+    }
+
+    public function setSessionAttribute($value)
+    {
+        if (is_string($value)) {
+            $value = strtoupper($value);
+            if ($value === 'MORNING') $value = 'S';
+            elseif ($value === 'AFTERNOON') $value = 'C';
+            elseif ($value === 'EVENING') $value = 'T';
+        } elseif ($value instanceof SessionType) {
+            $value = $value->value;
+        }
+        $this->attributes['session'] = $value;
     }
 
     // ── Scopes ───────────────────────────────────────────────────────────────────
@@ -92,50 +128,68 @@ class Schedule extends TenantModel implements HasMedia
     public function scopeFilter($query, array $filters): void
     {
         $query
-            ->when($filters['search'] ?? null,
-                fn ($q, $s) => $q->where('title', 'like', "%{$s}%"))
-            ->when($filters['module_type'] ?? null,
-                fn ($q, $v) => $q->where('module_type', $v))
-            ->when($filters['status'] ?? null,
-                fn ($q, $v) => $q->where('status', $v))
-            ->when($filters['session'] ?? null,
-                fn ($q, $v) => $q->where('session', $v))
-            ->when($filters['host_user_id'] ?? null,
-                fn ($q, $v) => $q->where('host_user_id', $v))
-            ->when($filters['driver_user_id'] ?? null,
-                fn ($q, $v) => $q->where('driver_user_id', $v))
-            ->when($filters['date'] ?? null,
-                fn ($q, $v) => $q->whereDate('date', $v))
-            ->when($filters['from_date'] ?? null,
-                fn ($q, $v) => $q->whereDate('date', '>=', $v))
-            ->when($filters['to_date'] ?? null,
-                fn ($q, $v) => $q->whereDate('date', '<=', $v))
+            ->when($filters['search'] ?? null, function ($q, $s) {
+                $q->where(function ($sub) use ($s) {
+                    $sub->where('content', 'like', "%{$s}%")
+                        ->orWhere('location', 'like', "%{$s}%")
+                        ->orWhere('preparation_unit', 'like', "%{$s}%")
+                        ->orWhere('departments_text', 'like', "%{$s}%");
+                });
+            })
+            ->when(isset($filters['module_type']), function ($q) use ($filters) {
+                $q->where('module_type', $filters['module_type']);
+            })
+            ->when(isset($filters['status']), function ($q) use ($filters) {
+                $q->where('status', $filters['status']);
+            })
+            ->when(isset($filters['session']), function ($q) use ($filters) {
+                $q->where('session', $filters['session']);
+            })
+            ->when($filters['host_id'] ?? null, function ($q, $v) {
+                $q->where('host_id', $v);
+            })
+            ->when($filters['driver_id'] ?? null, function ($q, $v) {
+                $q->where('driver_id', $v);
+            })
+            ->when($filters['date_time'] ?? $filters['date'] ?? null, function ($q, $v) {
+                $q->whereDate('date_time', $v);
+            })
+            ->when($filters['from_date'] ?? null, function ($q, $v) {
+                $q->whereDate('date_time', '>=', $v);
+            })
+            ->when($filters['to_date'] ?? null, function ($q, $v) {
+                $q->whereDate('date_time', '<=', $v);
+            })
             ->when($filters['week'] ?? null, function ($q, $week) {
-                // format: "2026-W22" → lọc theo tuần ISO
-                [$year, $w] = explode('-W', $week);
-                $start = now()->setISODate((int)$year, (int)$w)->startOfWeek()->toDateString();
-                $end   = now()->setISODate((int)$year, (int)$w)->endOfWeek()->toDateString();
-                $q->whereBetween('date', [$start, $end]);
+                if (str_contains($week, '-W')) {
+                    [$year, $w] = explode('-W', $week);
+                    $q->where('year', (int)$year)->where('week_number', (int)$w);
+                }
+            })
+            ->when(isset($filters['year']), function ($q) use ($filters) {
+                $q->where('year', (int)$filters['year']);
+            })
+            ->when(isset($filters['week_number']), function ($q) use ($filters) {
+                $q->where('week_number', (int)$filters['week_number']);
             })
             ->when($filters['view_mode'] ?? null, function ($q, $mode) {
-                // personal = chỉ lịch user tạo hoặc tham dự
-                // org      = toàn bộ org (mặc định)
-                // managed  = lịch user là host
                 if ($mode === 'personal') {
                     $userId = auth()->id();
                     $q->where(function ($sub) use ($userId) {
                         $sub->where('created_by', $userId)
-                            ->orWhereHas('participants', fn ($p) => $p->where('user_id', $userId));
+                            ->orWhere('host_id', $userId)
+                            ->orWhere('driver_id', $userId)
+                            ->orWhereHas('recipients', fn ($p) => $p->where('user_id', $userId));
                     });
                 } elseif ($mode === 'managed') {
-                    $q->where('host_user_id', auth()->id());
+                    $q->where('host_id', auth()->id());
                 }
             })
             ->when(
-                $filters['sort_by'] ?? 'date',
+                $filters['sort_by'] ?? 'date_time',
                 function ($q, $sortBy) use ($filters) {
-                    $allowed = ['id', 'date', 'session', 'sort_order', 'status', 'created_at', 'updated_at'];
-                    $col = in_array($sortBy, $allowed, true) ? $sortBy : 'date';
+                    $allowed = ['id', 'date_time', 'session', 'sort_order', 'status', 'created_at', 'updated_at'];
+                    $col = in_array($sortBy, $allowed, true) ? $sortBy : 'date_time';
                     VietnameseSort::apply($q, $col, $filters['sort_order'] ?? 'asc');
                 }
             );

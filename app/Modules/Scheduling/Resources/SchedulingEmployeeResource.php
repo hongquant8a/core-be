@@ -21,9 +21,10 @@ class SchedulingEmployeeResource extends JsonResource
             'phone'           => $this->phone,
             'email'           => $this->email,
             'priority_weight' => $this->priority_weight,
-            'status'          => (bool)$this->status,
+            'status'          => $this->status,
             'sort_order'      => $this->sort_order,
             'groups'          => SchedulingEmployeeGroupResource::collection($this->whenLoaded('groups')),
+            'updated_by'      => new UserResource($this->whenLoaded('updatedBy')),
             'created_at'      => $this->created_at?->toIso8601String(),
             'updated_at'      => $this->updated_at?->toIso8601String(),
         ];

@@ -26,16 +26,14 @@ class WeeklyScheduleExcelExport extends AbstractExcelExport implements FromColle
     public function collection()
     {
         $query = Schedule::with(['host', 'driver'])
-            ->orderBy('date', 'asc')
+            ->orderBy('date_time', 'asc')
             ->orderBy('session', 'asc')
             ->orderBy('sort_order', 'asc');
 
         // Apply filters (org scope is applied via tenant model boot)
         if (!empty($this->filters['week_number']) && !empty($this->filters['year'])) {
-            $carbon = \Carbon\Carbon::now()->setISODate($this->filters['year'], $this->filters['week_number']);
-            $start = $carbon->startOfWeek()->toDateString();
-            $end = $carbon->endOfWeek()->toDateString();
-            $query->whereBetween('date', [$start, $end]);
+            $query->where('year', (int)$this->filters['year'])
+                  ->where('week_number', (int)$this->filters['week_number']);
         }
         if (!empty($this->filters['module_type'])) {
             $query->where('module_type', $this->filters['module_type']);
@@ -49,10 +47,10 @@ class WeeklyScheduleExcelExport extends AbstractExcelExport implements FromColle
             ->map(function ($item, $i) {
                 // Vietnamese Day representation
                 $dayLabel = 'N/A';
-                if ($item->date) {
-                    $dayOfWeek = $item->date->dayOfWeek;
+                if ($item->date_time) {
+                    $dayOfWeek = $item->date_time->dayOfWeek;
                     $dayName = self::$daysMap[$dayOfWeek] ?? '';
-                    $dateStr = $item->date->format('d/m/Y');
+                    $dateStr = $item->date_time->format('d/m/Y');
                     $dayLabel = "{$dayName} ({$dateStr})";
                 }
 
@@ -67,11 +65,8 @@ class WeeklyScheduleExcelExport extends AbstractExcelExport implements FromColle
 
                 // Time representation
                 $timeLabel = '';
-                if ($item->start_time) {
-                    $timeLabel = substr($item->start_time, 0, 5);
-                    if ($item->end_time) {
-                        $timeLabel .= ' - ' . substr($item->end_time, 0, 5);
-                    }
+                if ($item->date_time) {
+                    $timeLabel = $item->date_time->format('H:i');
                 }
 
                 // Host
@@ -84,6 +79,9 @@ class WeeklyScheduleExcelExport extends AbstractExcelExport implements FromColle
                     $natureLabel = ($val === 'HOST') ? 'Chủ trì' : 'Tham dự';
                 }
 
+                // Driver
+                $driverName = $item->driver ? $item->driver->name : ($item->driver_text ?? '');
+
                 return [
                     'day' => $dayLabel,
                     'session' => $sessionLabel,
@@ -92,7 +90,7 @@ class WeeklyScheduleExcelExport extends AbstractExcelExport implements FromColle
                     'host' => $hostName,
                     'location' => $item->location ?? '',
                     'prep_unit' => $item->preparation_unit ?? '',
-                    'driver' => $item->driver ? $item->driver->name : '',
+                    'driver' => $driverName,
                     'notes' => $natureLabel,
                 ];
             });

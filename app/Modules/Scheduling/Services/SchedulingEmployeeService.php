@@ -18,14 +18,14 @@ class SchedulingEmployeeService
         $base = SchedulingEmployee::filter($filters);
         return [
             'total'    => (clone $base)->count(),
-            'active'   => (clone $base)->where('status', true)->count(),
-            'inactive' => (clone $base)->where('status', false)->count(),
+            'active'   => (clone $base)->where('status', 'active')->count(),
+            'inactive' => (clone $base)->where('status', 'inactive')->count(),
         ];
     }
 
     public function index(array $filters, int $limit)
     {
-        return SchedulingEmployee::with(['user', 'groups'])
+        return SchedulingEmployee::with(['user', 'groups', 'updatedBy'])
             ->filter($filters)
             ->paginate($limit);
     }
@@ -66,12 +66,12 @@ class SchedulingEmployeeService
         SchedulingEmployee::whereIn('id', $ids)->delete();
     }
 
-    public function bulkUpdateStatus(array $ids, bool $status): void
+    public function bulkUpdateStatus(array $ids, string $status): void
     {
         SchedulingEmployee::whereIn('id', $ids)->update(['status' => $status]);
     }
 
-    public function changeStatus(SchedulingEmployee $employee, bool $status): SchedulingEmployee
+    public function changeStatus(SchedulingEmployee $employee, string $status): SchedulingEmployee
     {
         $employee->update(['status' => $status]);
         return $employee->load(['user', 'groups']);
@@ -109,12 +109,12 @@ class SchedulingEmployeeService
     {
         $orgId = $orgId ?? getPermissionsTeamId();
 
-        $scheduleUsages = Schedule::whereIn('host_user_id', $userIds)
+        $scheduleUsages = Schedule::whereIn('host_id', $userIds)
             ->when($orgId, fn ($q, $v) => $q->where('organization_id', $v))
-            ->select('host_user_id')
+            ->select('host_id')
             ->selectRaw('COUNT(*) as cnt')
-            ->groupBy('host_user_id')
-            ->pluck('cnt', 'host_user_id');
+            ->groupBy('host_id')
+            ->pluck('cnt', 'host_id');
 
         $blocking = [];
         foreach ($userIds as $userId) {

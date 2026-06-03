@@ -18,7 +18,6 @@ class SchedulingEmployeeGroup extends TenantModel
     ];
 
     protected $casts = [
-        'status' => 'boolean',
         'sort_order' => 'integer',
     ];
 
@@ -37,6 +36,11 @@ class SchedulingEmployeeGroup extends TenantModel
         static::updating(function ($m) {
             $m->updated_by = auth()->id();
         });
+    }
+
+    public function updatedBy()
+    {
+        return $this->belongsTo(\App\Modules\Core\Models\User::class, 'updated_by');
     }
 
     public function members()
@@ -58,7 +62,7 @@ class SchedulingEmployeeGroup extends TenantModel
     {
         $query
             ->when($filters['search'] ?? null, fn ($q, $s) => $q->where('name', 'like', "%{$s}%"))
-            ->when(isset($filters['status']), fn ($q) => $q->where('status', (bool)$filters['status']))
+            ->when(isset($filters['status']), fn ($q) => $q->where('status', $filters['status']))
             ->when($filters['from_date'] ?? null, fn ($q, $v) => $q->whereDate('created_at', '>=', $v))
             ->when($filters['to_date'] ?? null,   fn ($q, $v) => $q->whereDate('created_at', '<=', $v))
             ->when($filters['sort_by'] ?? 'sort_order', function ($q, $sortBy) use ($filters) {

@@ -45,7 +45,7 @@ class SchedulingEmployeeController extends Controller
     public function options(): JsonResponse
     {
         $employees = SchedulingEmployee::with('user')
-            ->where('status', true)
+            ->where('status', 'active')
             ->get();
 
         $res = $employees->map(fn ($emp) => [

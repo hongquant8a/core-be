@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('phone', 30)->nullable();
             $table->string('email', 255)->nullable();
             $table->unsignedSmallInteger('priority_weight')->default(0);
-            $table->boolean('status')->default(true);
+            $table->string('status', 30)->default('active');
             $table->unsignedSmallInteger('sort_order')->default(0);
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();

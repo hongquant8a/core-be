@@ -35,12 +35,18 @@ class SchedulePolicy
 
     public function update(User $user, Schedule $schedule): bool
     {
-        return $user->hasPermissionTo('schedules.update');
+        if ($user->hasPermissionTo('schedules.update')) {
+            return true;
+        }
+        return $schedule->host_id === $user->id || $schedule->created_by === $user->id;
     }
 
     public function delete(User $user, Schedule $schedule): bool
     {
-        return $user->hasPermissionTo('schedules.delete');
+        if ($user->hasPermissionTo('schedules.delete')) {
+            return true;
+        }
+        return $schedule->host_id === $user->id || $schedule->created_by === $user->id;
     }
 
     public function deleteAny(User $user): bool
@@ -65,8 +71,13 @@ class SchedulePolicy
 
     public function driverView(User $user, Schedule $schedule): bool
     {
+        $statusVal = $schedule->status;
+        if ($statusVal instanceof \App\Modules\Scheduling\Enums\ScheduleStatus) {
+            $statusVal = $statusVal->value;
+        }
+
         return ($user->hasPermissionTo('schedules.driver-view') || $user->hasRole('Lái xe') || $user->hasRole('scheduling-lai-xe')) 
-            && $schedule->driver_user_id === $user->id
-            && $schedule->status === \App\Modules\Scheduling\Enums\ScheduleStatusEnum::Approved->value;
+            && $schedule->driver_id === $user->id
+            && ($statusVal === \App\Modules\Scheduling\Enums\ScheduleStatus::PUBLISHED->value || $statusVal === 2);
     }
 }

@@ -31,7 +31,7 @@ class WeeklyScheduleWordExporter
         $tp = new TemplateProcessor($templatePath);
 
         $query = Schedule::with(['host', 'driver'])
-            ->orderBy('event_date', 'asc')
+            ->orderBy('date_time', 'asc')
             ->orderBy('session', 'asc')
             ->orderBy('sort_order', 'asc');
 
@@ -64,10 +64,10 @@ class WeeklyScheduleWordExporter
         $formattedSchedules = [];
         foreach ($schedulesList as $item) {
             $dayLabel = 'N/A';
-            if ($item->event_date) {
-                $dayOfWeek = $item->event_date->dayOfWeek;
+            if ($item->date_time) {
+                $dayOfWeek = $item->date_time->dayOfWeek;
                 $dayName = self::$daysMap[$dayOfWeek] ?? '';
-                $dateStr = $item->event_date->format('d/m/Y');
+                $dateStr = $item->date_time->format('d/m/Y');
                 $dayLabel = "{$dayName} ({$dateStr})";
             }
 
@@ -80,11 +80,8 @@ class WeeklyScheduleWordExporter
             }
 
             $timeLabel = '';
-            if ($item->start_time) {
-                $timeLabel = substr($item->start_time, 0, 5);
-                if ($item->end_time) {
-                    $timeLabel .= ' - ' . substr($item->end_time, 0, 5);
-                }
+            if ($item->date_time) {
+                $timeLabel = $item->date_time->format('H:i');
             }
 
             $hostName = $item->host ? $item->host->name : ($item->host_text ?? '');

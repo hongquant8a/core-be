@@ -40,12 +40,12 @@ class SchedulingEmployeeGroupTest extends TestCase
         $this->emp1 = SchedulingEmployee::create([
             'organization_id' => $this->orgA->id,
             'user_id' => $user1->id,
-            'status' => true,
+            'status' => 'active',
         ]);
         $this->emp2 = SchedulingEmployee::create([
             'organization_id' => $this->orgA->id,
             'user_id' => $user2->id,
-            'status' => true,
+            'status' => 'active',
         ]);
 
         setPermissionsTeamId($this->orgB->id);
@@ -55,7 +55,7 @@ class SchedulingEmployeeGroupTest extends TestCase
         setPermissionsTeamId($this->orgA->id);
     }
 
-    private function createGroup(int $orgId, string $name, bool $status = true): SchedulingEmployeeGroup
+    private function createGroup(int $orgId, string $name, string $status = 'active'): SchedulingEmployeeGroup
     {
         return SchedulingEmployeeGroup::create([
             'organization_id' => $orgId,
@@ -69,8 +69,8 @@ class SchedulingEmployeeGroupTest extends TestCase
     {
         Sanctum::actingAs($this->admin);
 
-        $this->createGroup($this->orgA->id, 'Nhóm A', true);
-        $this->createGroup($this->orgA->id, 'Nhóm B', false);
+        $this->createGroup($this->orgA->id, 'Nhóm A', 'active');
+        $this->createGroup($this->orgA->id, 'Nhóm B', 'inactive');
 
         $res = $this->getJson('/api/scheduling-employee-groups/options', ['X-Organization-Id' => $this->orgA->id]);
 
@@ -85,8 +85,8 @@ class SchedulingEmployeeGroupTest extends TestCase
     {
         Sanctum::actingAs($this->admin);
 
-        $this->createGroup($this->orgA->id, 'Nhóm 1', true);
-        $this->createGroup($this->orgA->id, 'Nhóm 2', false);
+        $this->createGroup($this->orgA->id, 'Nhóm 1', 'active');
+        $this->createGroup($this->orgA->id, 'Nhóm 2', 'inactive');
 
         $res = $this->getJson('/api/scheduling-employee-groups/stats', ['X-Organization-Id' => $this->orgA->id]);
 
@@ -119,7 +119,7 @@ class SchedulingEmployeeGroupTest extends TestCase
         $res = $this->postJson('/api/scheduling-employee-groups', [
             'name' => 'Tổ Công Tác Đặc Biệt',
             'description' => 'Thành lập lâm thời',
-            'status' => true,
+            'status' => 'active',
             'employee_ids' => [$this->emp1->id, $this->emp2->id],
         ], ['X-Organization-Id' => $this->orgA->id]);
 
@@ -187,16 +187,16 @@ class SchedulingEmployeeGroupTest extends TestCase
     {
         Sanctum::actingAs($this->admin);
 
-        $group = $this->createGroup($this->orgA->id, 'Nhóm Hoạt Động', true);
+        $group = $this->createGroup($this->orgA->id, 'Nhóm Hoạt Động', 'active');
 
         $res = $this->patchJson("/api/scheduling-employee-groups/{$group->id}/status", [
-            'status' => false,
+            'status' => 'inactive',
         ], ['X-Organization-Id' => $this->orgA->id]);
 
         $res->assertOk();
         $this->assertDatabaseHas('scheduling_employee_groups', [
             'id' => $group->id,
-            'status' => false,
+            'status' => 'inactive',
         ]);
     }
 

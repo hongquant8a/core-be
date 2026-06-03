@@ -16,7 +16,7 @@ class StoreSchedulingEmployeeGroupRequest extends FormRequest
         return [
             'name'         => ['required', 'string', 'max:255'],
             'description'  => ['nullable', 'string'],
-            'status'       => ['nullable', 'boolean'],
+            'status'       => ['nullable', \App\Modules\Core\Enums\StatusEnum::rule()],
             'sort_order'   => ['nullable', 'integer', 'min:0'],
             'employee_ids'   => ['nullable', 'array'],
             'employee_ids.*' => ['integer', 'exists:scheduling_employees,id'],

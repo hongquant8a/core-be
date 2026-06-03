@@ -9,19 +9,20 @@ class ScheduleReminderResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $sourceVal = $this->source;
+        if (is_object($sourceVal) && method_exists($sourceVal, 'value')) {
+            $sourceVal = $sourceVal->value;
+        }
+
         return [
-            'id'                       => $this->id,
-            'organization_id'          => $this->organization_id,
-            'schedule_id'              => $this->schedule_id,
-            'notification_schedule_id' => $this->notification_schedule_id,
-            'reminder_type'            => $this->reminder_type,
-            'moment'                   => $this->moment,
-            'offset_minutes'           => $this->offset_minutes,
-            'channels'                 => $this->channels,
-            'scheduled_at'             => $this->scheduled_at?->toIso8601String(),
-            'sent_at'                  => $this->sent_at?->toIso8601String(),
-            'status'                   => $this->status,
-            'message'                  => $this->message,
+            'id'             => $this->id,
+            'schedule_id'    => $this->schedule_id,
+            'minutes_before' => $this->minutes_before,
+            'offset_minutes' => $this->minutes_before,
+            'channels'       => $this->channels,
+            'source'         => $sourceVal,
+            'reminder_type'  => strtoupper($sourceVal ?? 'CUSTOM'),
+            'preset_id'      => $this->preset_id,
         ];
     }
 }

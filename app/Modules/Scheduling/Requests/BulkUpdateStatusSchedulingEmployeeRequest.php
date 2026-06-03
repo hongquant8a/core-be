@@ -16,7 +16,7 @@ class BulkUpdateStatusSchedulingEmployeeRequest extends FormRequest
         return [
             'ids'    => ['required', 'array'],
             'ids.*'  => ['integer', 'exists:scheduling_employees,id'],
-            'status' => ['required', 'boolean'],
+            'status' => ['required', \App\Modules\Core\Enums\StatusEnum::rule()],
         ];
     }
 }

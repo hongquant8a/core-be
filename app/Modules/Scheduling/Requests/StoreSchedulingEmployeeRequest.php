@@ -29,7 +29,7 @@ class StoreSchedulingEmployeeRequest extends FormRequest
             'phone'           => ['nullable', 'string', 'max:30'],
             'email'           => ['nullable', 'email', 'max:255'],
             'priority_weight' => ['nullable', 'integer', 'min:0'],
-            'status'          => ['nullable', 'boolean'],
+            'status'          => ['nullable', \App\Modules\Core\Enums\StatusEnum::rule()],
             'sort_order'      => ['nullable', 'integer', 'min:0'],
         ];
     }

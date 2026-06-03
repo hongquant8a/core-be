@@ -209,7 +209,8 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
     Route::prefix('scheduling-settings')->group(function () {
         require base_path('app/Modules/Scheduling/Routes/scheduling_setting.php');
     });
-    Route::prefix('scheduling-filter-presets')->middleware('ensure.route.org')->group(function () {
-        require base_path('app/Modules/Scheduling/Routes/scheduling_filter_preset.php');
+    Route::prefix('scheduling')->middleware('ensure.route.org')->group(function () {
+        Route::get('/reminder-presets', [\App\Modules\Scheduling\Controllers\ReminderPresetController::class, 'index']);
+        Route::apiResource('/notification-groups', \App\Modules\Scheduling\Controllers\NotificationGroupController::class);
     });
 });

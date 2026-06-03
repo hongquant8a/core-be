@@ -20,7 +20,6 @@ class SchedulingEmployee extends TenantModel
     ];
 
     protected $casts = [
-        'status' => 'boolean',
         'priority_weight' => 'integer',
         'sort_order' => 'integer',
     ];
@@ -59,6 +58,11 @@ class SchedulingEmployee extends TenantModel
         return $this->belongsTo(User::class);
     }
 
+    public function updatedBy()
+    {
+        return $this->belongsTo(User::class, 'updated_by');
+    }
+
     public function groups()
     {
         return $this->belongsToMany(
@@ -73,7 +77,7 @@ class SchedulingEmployee extends TenantModel
     {
         $query
             ->when($filters['search'] ?? null, fn ($q, $s) => $q->where('name', 'like', "%{$s}%"))
-            ->when(isset($filters['status']), fn ($q) => $q->where('status', (bool)$filters['status']))
+            ->when(isset($filters['status']), fn ($q) => $q->where('status', $filters['status']))
             ->when($filters['from_date'] ?? null, fn ($q, $v) => $q->whereDate('created_at', '>=', $v))
             ->when($filters['to_date'] ?? null,   fn ($q, $v) => $q->whereDate('created_at', '<=', $v))
             ->when($filters['sort_by'] ?? 'sort_order', function ($q, $sortBy) use ($filters) {
