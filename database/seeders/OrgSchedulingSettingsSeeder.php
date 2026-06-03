@@ -17,10 +17,7 @@ class OrgSchedulingSettingsSeeder extends Seeder
             OrgSchedulingSettings::updateOrCreate(
                 ['organization_id' => $org->id],
                 [
-                    'executive_requires_approval' => false,
-                    'executive_approver_roles'    => [],
-                    'office_requires_approval'    => false,
-                    'office_approver_roles'       => [],
+                    'requires_approval' => false,
                 ]
             );
 
