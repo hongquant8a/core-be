@@ -49,6 +49,41 @@ class SettingService
     }
 
     /**
+     * Lấy danh sách các kênh thông báo khả dụng (đã bật trong cấu hình).
+     */
+    public function getAvailableChannels(): array
+    {
+        $all = $this->getAll();
+        
+        $flatSettings = [];
+        foreach ($all as $group => $items) {
+            foreach ($items as $k => $v) {
+                $flatSettings[$k] = $v;
+            }
+        }
+        
+        $channels = [];
+        
+        if (!empty($flatSettings['email_enabled'])) {
+            $channels[] = ['value' => 'mail', 'title' => 'Email', 'label' => 'Email'];
+        }
+        if (!empty($flatSettings['fcm_enabled'])) {
+            $channels[] = ['value' => 'fcm', 'title' => 'Thông báo đẩy (App)', 'label' => 'Thông báo đẩy (App)'];
+        }
+        if (!empty($flatSettings['sms_enabled'])) {
+            $channels[] = ['value' => 'sms', 'title' => 'SMS', 'label' => 'SMS'];
+        }
+        if (!empty($flatSettings['zalo_enabled'])) {
+            $channels[] = ['value' => 'zalo', 'title' => 'Zalo OA', 'label' => 'Zalo OA'];
+        }
+        if (!empty($flatSettings['zns_enabled'])) {
+            $channels[] = ['value' => 'zalo_zns', 'title' => 'Zalo ZNS', 'label' => 'Zalo ZNS'];
+        }
+        
+        return $channels;
+    }
+
+    /**
      * Lấy giá trị một key. Nếu private và không có quyền thì trả null.
      */
     public function getByKey(string $key): ?array

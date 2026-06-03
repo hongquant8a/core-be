@@ -18,7 +18,6 @@ class ScheduleReminder extends Model
     protected $casts = [
         'minutes_before' => 'integer',
         'channels'       => 'array',
-        'source'         => ReminderSource::class,
         'created_at'     => 'datetime',
     ];
 

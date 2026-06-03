@@ -72,6 +72,7 @@ class StoreScheduleRequest extends FormRequest
                 if (is_string($status)) {
                     $status = strtoupper($status);
                     $validated['status'] = match ($status) {
+                        'DRAFT' => ScheduleStatus::DRAFT->value,
                         'PENDING' => ScheduleStatus::PENDING->value,
                         'APPROVED', 'PUBLISHED' => ScheduleStatus::PUBLISHED->value,
                         'CANCELLED' => ScheduleStatus::CANCELLED->value,

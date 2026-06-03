@@ -50,7 +50,7 @@ class ScheduleController extends Controller
      * @queryParam from_date date Lọc từ ngày (Y-m-d). Example: 2026-06-01
      * @queryParam to_date date Lọc đến ngày (Y-m-d). Example: 2026-06-07
      * @queryParam session string Lọc theo buổi (S: Sáng, C: Chiều, T: Tối). Example: S
-     * @queryParam status string Lọc theo trạng thái (PENDING, APPROVED, CANCELLED). Example: APPROVED
+     * @queryParam status string Lọc theo trạng thái (DRAFT, PENDING, APPROVED, CANCELLED). Example: APPROVED
      * @queryParam view_type string Chế độ xem (personal: Cá nhân tôi chủ trì/tham dự, all: Tất cả lịch được xem, managed: Lịch tôi có quyền quản lý). Example: all
      * @queryParam sort_by string Sắp xếp theo trường (time: theo giờ, position: theo chức vụ chủ trì, manual: sắp xếp thủ công). Example: time
      * @queryParam sort_order string Thứ tự sắp xếp (asc/desc). Example: asc
@@ -73,7 +73,7 @@ class ScheduleController extends Controller
      * @queryParam year integer Năm của tuần cần xem. Example: 2026
      * @queryParam from_date date Lọc từ ngày (Y-m-d) thay cho week_number. Example: 2026-06-01
      * @queryParam to_date date Lọc đến ngày (Y-m-d) thay cho week_number. Example: 2026-06-07
-     * @queryParam status string Lọc theo trạng thái (PENDING, APPROVED, CANCELLED). Example: APPROVED
+     * @queryParam status string Lọc theo trạng thái (DRAFT, PENDING, APPROVED, CANCELLED). Example: APPROVED
      */
     public function weeklyMatrix(FilterRequest $request): JsonResponse
     {
@@ -114,7 +114,7 @@ class ScheduleController extends Controller
      * @bodyParam driver_user_id integer ID lái xe (user). Example: 5
      * @bodyParam car_info string Thông tin xe phục vụ. Example: Xe BKS 29A-12345
      * @bodyParam is_important boolean Đánh dấu lịch quan trọng. Example: false
-     * @bodyParam status string Trạng thái lịch công tác (PENDING, APPROVED, CANCELLED). Example: PENDING
+     * @bodyParam status string Trạng thái lịch công tác (DRAFT, PENDING, APPROVED, CANCELLED). Example: DRAFT
      * @bodyParam files file[] Danh sách tài liệu đính kèm.
      * @bodyParam participants array Danh sách thành phần tham dự.
      * @bodyParam reminders array Danh sách mốc nhắc lịch.
@@ -150,7 +150,7 @@ class ScheduleController extends Controller
      * @bodyParam driver_user_id integer ID lái xe (user). Example: 5
      * @bodyParam car_info string Thông tin xe phục vụ. Example: Xe BKS 29A-12345
      * @bodyParam is_important boolean Đánh dấu lịch quan trọng. Example: false
-     * @bodyParam status string Trạng thái lịch công tác (PENDING, APPROVED, CANCELLED). Example: PENDING
+     * @bodyParam status string Trạng thái lịch công tác (DRAFT, PENDING, APPROVED, CANCELLED). Example: DRAFT
      * @bodyParam files file[] Danh sách tài liệu đính kèm mới.
      * @bodyParam participants array Danh sách thành phần tham dự mới.
      * @bodyParam reminders array Danh sách mốc nhắc lịch mới.
@@ -200,7 +200,7 @@ class ScheduleController extends Controller
      * Cập nhật trạng thái hàng loạt lịch công tác.
      *
      * @bodyParam ids array required Danh sách ID lịch công tác cần cập nhật. Example: [1, 2]
-     * @bodyParam status string required Trạng thái mới (PENDING, APPROVED, CANCELLED). Example: APPROVED
+     * @bodyParam status string required Trạng thái mới (DRAFT, PENDING, APPROVED, CANCELLED). Example: APPROVED
      */
     public function bulkUpdateStatus(BulkUpdateStatusScheduleRequest $request): JsonResponse
     {
@@ -212,7 +212,7 @@ class ScheduleController extends Controller
      * Thay đổi trạng thái lịch công tác.
      *
      * @urlParam schedule integer required ID lịch công tác. Example: 1
-     * @bodyParam status string required Trạng thái mới (PENDING, APPROVED, CANCELLED). Example: APPROVED
+     * @bodyParam status string required Trạng thái mới (DRAFT, PENDING, APPROVED, CANCELLED). Example: APPROVED
      */
     public function changeStatus(ChangeStatusScheduleRequest $request, Schedule $schedule): JsonResponse
     {

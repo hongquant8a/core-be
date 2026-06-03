@@ -34,8 +34,8 @@ class SendScheduleReminderJob implements ShouldQueue
         if (!$schedule) {
             return;
         }
-        $statusVal = $schedule->status instanceof ScheduleStatusEnum ? $schedule->status->value : $schedule->status;
-        if ($statusVal !== ScheduleStatusEnum::Approved->value) {
+        $statusVal = $schedule->status instanceof \App\Modules\Scheduling\Enums\ScheduleStatus ? $schedule->status->value : (int)$schedule->status;
+        if ($statusVal !== \App\Modules\Scheduling\Enums\ScheduleStatus::PUBLISHED->value) {
             return; // Not published/approved or deleted
         }
 

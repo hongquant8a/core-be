@@ -3,7 +3,7 @@
 namespace App\Modules\Scheduling\Observers;
 
 use App\Modules\Scheduling\Models\Schedule;
-use App\Modules\Scheduling\Enums\ScheduleStatusEnum;
+use App\Modules\Scheduling\Enums\ScheduleStatus;
 use App\Services\Notification\Events\SchedulePublished;
 use App\Services\Notification\Events\ScheduleUpdated;
 use App\Services\Notification\Events\ScheduleCancelled;
@@ -26,12 +26,12 @@ class ScheduleObserver
         $status = $schedule->status;
         $originalStatus = $schedule->getOriginal('status');
 
-        // Extract raw string value from Enum if needed
-        $statusVal = $status instanceof ScheduleStatusEnum ? $status->value : $status;
-        $originalStatusVal = $originalStatus instanceof ScheduleStatusEnum ? $originalStatus->value : $originalStatus;
+        // Extract raw integer value from Enum if needed
+        $statusVal = $status instanceof ScheduleStatus ? $status->value : (int)$status;
+        $originalStatusVal = $originalStatus instanceof ScheduleStatus ? $originalStatus->value : (int)$originalStatus;
 
-        $isPublishedNow = $statusVal === ScheduleStatusEnum::Approved->value;
-        $wasPublishedBefore = $originalStatusVal === ScheduleStatusEnum::Approved->value;
+        $isPublishedNow = $statusVal === ScheduleStatus::PUBLISHED->value;
+        $wasPublishedBefore = $originalStatusVal === ScheduleStatus::PUBLISHED->value;
 
         // 1. Transition: Draft/Pending -> Published
         if ($isPublishedNow && (!$wasPublishedBefore || $schedule->wasRecentlyCreated)) {
@@ -62,9 +62,9 @@ class ScheduleObserver
     public function deleted(Schedule $schedule): void
     {
         $originalStatus = $schedule->getOriginal('status');
-        $originalStatusVal = $originalStatus instanceof ScheduleStatusEnum ? $originalStatus->value : $originalStatus;
+        $originalStatusVal = $originalStatus instanceof ScheduleStatus ? $originalStatus->value : (int)$originalStatus;
 
-        if ($originalStatusVal === ScheduleStatusEnum::Approved->value) {
+        if ($originalStatusVal === ScheduleStatus::PUBLISHED->value) {
             Event::dispatch(new ScheduleCancelled($schedule));
         } else {
             $this->scheduler->cancelPending($schedule);

@@ -27,6 +27,7 @@ class ScheduleService
         $base = Schedule::filter($filters);
         return [
             'total'     => (clone $base)->count(),
+            'draft'     => (clone $base)->where('status', ScheduleStatus::DRAFT->value)->count(),
             'pending'   => (clone $base)->where('status', ScheduleStatus::PENDING->value)->count(),
             'approved'  => (clone $base)->where('status', ScheduleStatus::PUBLISHED->value)->count(),
             'rejected'  => 0, // In standard spec, reject sets status to CANCELLED. We return 0 for compatibility.
@@ -76,7 +77,7 @@ class ScheduleService
             $filters['week'] = $weekId;
         }
 
-        $schedules = Schedule::with(['host', 'driver', 'recipients.user', 'recipients.group', 'attachments'])
+        $schedules = Schedule::with(['host', 'driver', 'recipients.user', 'recipients.group', 'attachments', 'reminders'])
             ->filter($filters)
             ->orderBy('date_time')
             ->orderBy('session')
@@ -161,13 +162,17 @@ class ScheduleService
                 $statusVal = (int)$data['status'];
             }
 
-            $orgSettings = OrgSchedulingSettings::firstOrCreate(['organization_id' => $orgId]);
-            $requiresApproval = (bool)$orgSettings->requires_approval;
-
-            if ($requiresApproval) {
-                $data['status'] = ScheduleStatus::PENDING->value;
+            if ($statusVal === ScheduleStatus::DRAFT->value) {
+                $data['status'] = ScheduleStatus::DRAFT->value;
             } else {
-                $data['status'] = ScheduleStatus::PUBLISHED->value;
+                $orgSettings = OrgSchedulingSettings::firstOrCreate(['organization_id' => $orgId]);
+                $requiresApproval = (bool)$orgSettings->requires_approval;
+
+                if ($requiresApproval) {
+                    $data['status'] = ScheduleStatus::PENDING->value;
+                } else {
+                    $data['status'] = ScheduleStatus::PUBLISHED->value;
+                }
             }
 
             $schedule = Schedule::create($data);
@@ -287,10 +292,11 @@ class ScheduleService
         if (is_string($status) && !is_numeric($status)) {
             $statusStr = strtoupper($status);
             $statusInt = match ($statusStr) {
+                'DRAFT' => ScheduleStatus::DRAFT->value,
                 'PENDING' => ScheduleStatus::PENDING->value,
                 'APPROVED', 'PUBLISHED' => ScheduleStatus::PUBLISHED->value,
                 'CANCELLED' => ScheduleStatus::CANCELLED->value,
-                default => 1,
+                default => 0,
             };
         }
 
@@ -306,10 +312,11 @@ class ScheduleService
         if (is_string($status) && !is_numeric($status)) {
             $statusStr = strtoupper($status);
             $statusInt = match ($statusStr) {
+                'DRAFT' => ScheduleStatus::DRAFT->value,
                 'PENDING' => ScheduleStatus::PENDING->value,
                 'APPROVED', 'PUBLISHED' => ScheduleStatus::PUBLISHED->value,
                 'CANCELLED' => ScheduleStatus::CANCELLED->value,
-                default => 1,
+                default => 0,
             };
         }
 
@@ -341,12 +348,12 @@ class ScheduleService
     }
 
     /**
-     * Từ chối lịch: trả về Cancelled.
+     * Từ chối lịch: trả về Draft.
      */
     public function reject(Schedule $schedule, string $note): Schedule
     {
         $schedule->update([
-            'status' => ScheduleStatus::CANCELLED->value,
+            'status' => ScheduleStatus::DRAFT->value,
         ]);
         return $this->show($schedule->fresh());
     }
@@ -360,7 +367,7 @@ class ScheduleService
             $new = $schedule->replicate(['approved_by', 'approved_at', 'created_by', 'updated_by']);
             $timePart = $schedule->date_time ? $schedule->date_time->format('H:i:s') : '08:00:00';
             $new->date_time = "{$date} {$timePart}";
-            $new->status     = ScheduleStatus::PENDING->value;
+            $new->status     = ScheduleStatus::DRAFT->value;
             $new->save();
 
             // Clone recipients
@@ -379,6 +386,26 @@ class ScheduleService
                     'channels'       => $reminder->channels,
                     'source'         => $reminder->source,
                     'preset_id'      => $reminder->preset_id,
+                ]);
+            }
+
+            // Clone attachments
+            foreach ($schedule->attachments as $attachment) {
+                $newPath = $attachment->file_path;
+                if (\Illuminate\Support\Facades\Storage::disk('public')->exists($attachment->file_path)) {
+                    $ext = pathinfo($attachment->file_name, PATHINFO_EXTENSION);
+                    $newPath = 'schedules/' . now()->format('Y/m') . '/' . \Illuminate\Support\Str::uuid()->toString() . '.' . $ext;
+                    \Illuminate\Support\Facades\Storage::disk('public')->copy($attachment->file_path, $newPath);
+                }
+
+                $new->attachments()->create([
+                    'title'       => $attachment->title,
+                    'file_name'   => $attachment->file_name,
+                    'file_path'   => $newPath,
+                    'file_size'   => $attachment->file_size,
+                    'mime_type'   => $attachment->mime_type,
+                    'sort_order'  => $attachment->sort_order,
+                    'uploaded_by' => \Illuminate\Support\Facades\Auth::id() ?? 1,
                 ]);
             }
 
@@ -450,15 +477,11 @@ class ScheduleService
             $minutes = $r['minutes_before'] ?? $r['offset_minutes'] ?? 0;
             $source = $r['source'] ?? $r['reminder_type'] ?? 'CUSTOM';
             
-            // Ensure APP is always included as the default base channel
             $channels = $r['channels'] ?? [];
             if (!is_array($channels)) {
                 $channels = [$channels];
             }
             $channels = array_map('strtoupper', $channels);
-            if (!in_array('APP', $channels)) {
-                $channels[] = 'APP';
-            }
             
             $schedule->reminders()->create([
                 'minutes_before' => (int)$minutes,

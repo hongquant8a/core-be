@@ -99,10 +99,11 @@ class Schedule extends TenantModel
         if (is_string($value) && !is_numeric($value)) {
             $value = strtoupper($value);
             $value = match ($value) {
+                'DRAFT' => 0,
                 'PENDING' => 1,
                 'APPROVED', 'PUBLISHED' => 2,
                 'CANCELLED' => 3,
-                default => 1,
+                default => 0,
             };
         } elseif ($value instanceof ScheduleStatus) {
             $value = $value->value;

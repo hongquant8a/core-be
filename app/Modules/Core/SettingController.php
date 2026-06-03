@@ -44,6 +44,18 @@ class SettingController extends Controller
     }
 
     /**
+     * Lấy danh sách các kênh thông báo khả dụng (đã bật trong cấu hình).
+     *
+     * Trả về mảng các kênh có thể sử dụng (ví dụ: MAIL, SMS, FCM, ZALO)
+     *
+     * @response 200 {"success": true, "data": [{"value": "MAIL", "title": "Email"}, ...]}
+     */
+    public function availableChannels()
+    {
+        return $this->success($this->settingService->getAvailableChannels());
+    }
+
+    /**
      * Lấy một key
      *
      * Nếu key public: không cần auth. Nếu key private: cần auth và quyền settings.show.

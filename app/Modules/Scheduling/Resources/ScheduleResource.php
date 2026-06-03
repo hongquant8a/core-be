@@ -96,12 +96,14 @@ class ScheduleResource extends JsonResource
             'reminders'            => ScheduleReminderResource::collection($this->whenLoaded('reminders')),
             'attachments'          => $this->whenLoaded('attachments', function () {
                 return $this->attachments->map(fn ($m) => [
-                    'id'        => $m->id,
-                    'title'     => $m->title,
-                    'file_name' => $m->file_name,
-                    'file_url'  => asset('storage/' . $m->file_path),
-                    'mime_type' => $m->mime_type,
-                    'size'      => $m->file_size,
+                    'id'            => $m->id,
+                    'media_id'      => null,
+                    'file_name'     => $m->title ?: $m->file_name,
+                    'sort_order'    => $m->sort_order ?? 0,
+                    'url'           => '/storage/' . $m->file_path,
+                    'original_name' => $m->file_name,
+                    'mime_type'     => $m->mime_type,
+                    'size'          => $m->file_size,
                 ]);
             }),
 
