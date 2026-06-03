@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
         $this->call(NotificationEventConfigSeeder::class);
         $this->call(NotificationScheduleSeeder::class);
         $this->call(OrgSchedulingSettingsSeeder::class);
+        $this->call(SchedulingModuleSeeder::class);
     }
 
     /**
