@@ -49,10 +49,15 @@ class Schedule extends TenantModel
 
     /**
      * Accessor: hỗ trợ cả column 'date_time' (dev) và 'date' (production cũ).
+     * Luôn trả về Carbon instance.
      */
-    public function getDateTimeAttribute(): mixed
+    public function getDateTimeAttribute(): ?\Carbon\Carbon
     {
-        return $this->attributes['date_time'] ?? $this->attributes['date'] ?? null;
+        $val = $this->attributes['date_time'] ?? $this->attributes['date'] ?? null;
+        if (!$val) {
+            return null;
+        }
+        return $val instanceof \Carbon\Carbon ? $val : \Carbon\Carbon::parse($val);
     }
 
     protected static function booted(): void
