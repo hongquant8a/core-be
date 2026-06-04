@@ -181,7 +181,7 @@ class SyncDeletedMigrationsCommand extends Command
                         break;
                     }
                 }
-                $key = $associatedMigration ?: $allTargetMigrations[0];
+                $key = $associatedMigration ?: ($allTargetMigrations[0] ?? 'unknown');
                 $tablesToDrop[$key . '.' . $tableName] = $tableName;
             }
         }
