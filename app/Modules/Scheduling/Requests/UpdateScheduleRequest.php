@@ -38,6 +38,7 @@ class UpdateScheduleRequest extends FormRequest
             'is_important'         => ['nullable', 'boolean'],
             'participants_text'    => ['nullable', 'string'],
             'participant_count'    => ['nullable', 'string', 'max:50'],
+            'sort_order'           => ['nullable', 'integer', 'min:0'],
             'nature'               => ['nullable', 'string'],
             'attachments'          => ['nullable', 'array'],
         ];

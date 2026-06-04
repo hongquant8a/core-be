@@ -65,6 +65,10 @@ Route::prefix('public')->middleware('log.activity')->group(function () {
     Route::get('/meeting-documents', [\App\Modules\Meeting\Controllers\MeetingDocumentController::class, 'public']);
     Route::get('/meeting-documents/{meetingDocument}', [\App\Modules\Meeting\Controllers\MeetingDocumentController::class, 'publicShow'])->middleware('count.meeting.view');
     Route::get('/meeting-documents/{meetingDocument}/download', [\App\Modules\Meeting\Controllers\MeetingDocumentController::class, 'publicDownload']);
+
+    // Scheduling — dropdown options cho grid lịch công tác (chủ trì, thành phần, lái xe)
+    Route::get('/scheduling-employees/options', [\App\Modules\Scheduling\Controllers\SchedulingEmployeeController::class, 'options']);
+
 });
 
 // Route yêu cầu đăng nhập (Bearer token) và đặt ngữ cảnh team cho Spatie Permission
@@ -135,6 +139,11 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
     // Notification config scoped cho module Meeting
     Route::prefix('meeting/notification-config')->group(function () {
         require base_path('app/Modules/Meeting/Routes/notification_config.php');
+    });
+
+    // Notification config scoped cho module Scheduling (Lịch công tác)
+    Route::prefix('schedules/notification-config')->group(function () {
+        require base_path('app/Modules/Scheduling/Routes/notification_config.php');
     });
 
     // Meeting module — route phẳng cho admin catalog/CRUD setup (Spatie permission).
@@ -208,9 +217,5 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
     });
     Route::prefix('scheduling-settings')->group(function () {
         require base_path('app/Modules/Scheduling/Routes/scheduling_setting.php');
-    });
-    Route::prefix('scheduling')->middleware('ensure.route.org')->group(function () {
-        Route::get('/reminder-presets', [\App\Modules\Scheduling\Controllers\ReminderPresetController::class, 'index']);
-        Route::apiResource('/notification-groups', \App\Modules\Scheduling\Controllers\NotificationGroupController::class);
     });
 });

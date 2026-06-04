@@ -14,6 +14,11 @@ Route::get('/export-word',  [ScheduleController::class, 'exportWord'])->middlewa
 Route::get('/driver-view',  [ScheduleController::class, 'driverIndex']);
 Route::get('/driver-view/{schedule}', [ScheduleController::class, 'driverShow']);
 
+// General views cho toàn bộ nhân viên (cần Auth, nhưng không check permission quản trị)
+Route::get('/general', [ScheduleController::class, 'general']);
+Route::get('/general/weekly-matrix', [ScheduleController::class, 'generalWeeklyMatrix']);
+Route::get('/general/weeks', [ScheduleController::class, 'generalWeeks']);
+
 Route::delete('/bulk-delete',[ScheduleController::class, 'bulkDestroy'])->middleware('permission:schedules.destroy,web');
 Route::patch('/bulk-status', [ScheduleController::class, 'bulkUpdateStatus'])->middleware('permission:schedules.update,web');
 Route::patch('/reorder',    [ScheduleController::class, 'reorder'])->middleware('permission:schedules.update,web');

@@ -12,7 +12,7 @@ class ScheduleNotificationRecipient extends Model
     protected $table = 'schedule_notification_recipients';
 
     protected $fillable = [
-        'schedule_id', 'user_id', 'group_id', 'display_name', 'created_at',
+        'schedule_id', 'user_id', 'display_name', 'created_at',
     ];
 
     protected $casts = [
@@ -27,10 +27,5 @@ class ScheduleNotificationRecipient extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
-    }
-
-    public function group()
-    {
-        return $this->belongsTo(NotificationGroup::class, 'group_id');
     }
 }

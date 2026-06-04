@@ -91,6 +91,60 @@ class ScheduleController extends Controller
     }
 
     /**
+     * Danh sách lịch công tác chung cho mọi nhân viên (đã Auth).
+     *
+     * @queryParam module_type string Lọc theo phân hệ (EXECUTIVE, OFFICE). Example: EXECUTIVE
+     * @queryParam search string Tìm kiếm theo nội dung lịch. Example: họp
+     * @queryParam from_date date Lọc từ ngày (Y-m-d). Example: 2026-06-01
+     * @queryParam to_date date Lọc đến ngày (Y-m-d). Example: 2026-06-07
+     * @queryParam session string Lọc theo buổi (S, C, T). Example: S
+     * @queryParam sort_by string Sắp xếp theo trường. Example: date_time
+     * @queryParam sort_order string Thứ tự sắp xếp (asc/desc). Example: asc
+     * @queryParam limit integer Số bản ghi mỗi trang. Example: 10
+     */
+    public function general(FilterRequest $request): JsonResponse
+    {
+        $filters = $request->all();
+        $filters['general_visibility'] = true;
+
+        return $this->successCollection(
+            new ScheduleCollection(
+                $this->scheduleService->index($filters, (int)($request->limit ?? 20))
+            )
+        );
+    }
+
+    /**
+     * Ma trận lịch công tác chung theo tuần (Weekly Matrix).
+     *
+     * @queryParam module_type string required Phân hệ (EXECUTIVE, OFFICE). Example: EXECUTIVE
+     * @queryParam week_number integer Số thứ tự tuần trong năm. Example: 23
+     * @queryParam year integer Năm của tuần cần xem. Example: 2026
+     * @queryParam from_date date Lọc từ ngày thay cho week_number. Example: 2026-06-01
+     * @queryParam to_date date Lọc đến ngày thay cho week_number. Example: 2026-06-07
+     */
+    public function generalWeeklyMatrix(FilterRequest $request): JsonResponse
+    {
+        $filters = $request->all();
+        $filters['general_visibility'] = true;
+
+        return $this->success($this->scheduleService->weekMatrix($filters));
+    }
+
+    /**
+     * Danh sách các tuần đã có lịch công tác (dành cho dropdown chung).
+     *
+     * @queryParam module_type string Phân hệ (EXECUTIVE, OFFICE). Example: EXECUTIVE
+     */
+    public function generalWeeks(FilterRequest $request): JsonResponse
+    {
+        $filters = $request->all();
+        $filters['general_visibility'] = true;
+
+        return $this->success($this->scheduleService->getWeeks($filters));
+    }
+
+    /**
      * Chi tiết lịch công tác.
      *
      * @urlParam schedule integer required ID lịch công tác. Example: 1

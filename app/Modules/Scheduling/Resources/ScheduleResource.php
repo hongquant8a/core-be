@@ -70,16 +70,11 @@ class ScheduleResource extends JsonResource
                 return $this->recipients->map(fn ($r) => [
                     'id'           => $r->id,
                     'user_id'      => $r->user_id,
-                    'group_id'     => $r->group_id,
                     'display_name' => $r->display_name,
                     'user'     => $r->user ? [
                         'id'    => $r->user->id,
                         'name'  => $r->user->name,
                         'email' => $r->user->email,
-                    ] : null,
-                    'group'    => $r->group ? [
-                        'id'   => $r->group->id,
-                        'name' => $r->group->name,
                     ] : null,
                 ]);
             }),
@@ -87,8 +82,7 @@ class ScheduleResource extends JsonResource
                 return $this->recipients->map(fn ($r) => [
                     'id'            => $r->id,
                     'user_id'       => $r->user_id,
-                    'group_id'      => $r->group_id,
-                    'display_name'  => $r->display_name ?? $r->user?->name ?? $r->group?->name,
+                    'display_name'  => $r->display_name ?? $r->user?->name,
                     'position_name' => $r->user?->position_name,
                     'is_external'   => empty($r->user_id),
                 ]);

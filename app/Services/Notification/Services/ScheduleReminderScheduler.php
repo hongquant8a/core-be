@@ -95,10 +95,6 @@ class ScheduleReminderScheduler
         foreach ($schedule->recipients as $recipient) {
             if ($recipient->user) {
                 $users[$recipient->user->id] = $recipient->user;
-            } elseif ($recipient->group) {
-                foreach ($recipient->group->users as $user) {
-                    $users[$user->id] = $user;
-                }
             }
         }
 

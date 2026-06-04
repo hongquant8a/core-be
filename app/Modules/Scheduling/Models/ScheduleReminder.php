@@ -12,7 +12,7 @@ class ScheduleReminder extends Model
     protected $table = 'schedule_reminders';
 
     protected $fillable = [
-        'schedule_id', 'minutes_before', 'channels', 'source', 'preset_id', 'created_at',
+        'schedule_id', 'minutes_before', 'channels', 'source', 'created_at',
     ];
 
     protected $casts = [
@@ -33,11 +33,6 @@ class ScheduleReminder extends Model
     public function schedule()
     {
         return $this->belongsTo(Schedule::class);
-    }
-
-    public function preset()
-    {
-        return $this->belongsTo(ReminderPreset::class, 'preset_id');
     }
 
     // ── Compatibility Accessors / Mutators ───────────────────────────────────────

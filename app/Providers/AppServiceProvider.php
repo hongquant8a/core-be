@@ -26,8 +26,6 @@ use App\Modules\Meeting\Policies\MeetingVoteTopicPolicy;
 use App\Modules\Scheduling\Models\Schedule;
 use App\Modules\Scheduling\Observers\ScheduleObserver;
 use App\Modules\Scheduling\Policies\SchedulePolicy;
-use App\Modules\Scheduling\Models\NotificationGroup;
-use App\Modules\Scheduling\Policies\NotificationGroupPolicy;
 use App\Modules\Scheduling\Models\FilterPreset;
 use App\Modules\Scheduling\Policies\FilterPresetPolicy;
 use App\Modules\Scheduling\Models\SchedulingEmployee;
@@ -78,7 +76,6 @@ class AppServiceProvider extends ServiceProvider
 
         // Register Scheduling Policies
         Gate::policy(Schedule::class, SchedulePolicy::class);
-        Gate::policy(NotificationGroup::class, NotificationGroupPolicy::class);
         Gate::policy(FilterPreset::class, FilterPresetPolicy::class);
         Gate::policy(SchedulingEmployee::class, SchedulingEmployeePolicy::class);
         Gate::policy(SchedulingEmployeeGroup::class, SchedulingEmployeeGroupPolicy::class);

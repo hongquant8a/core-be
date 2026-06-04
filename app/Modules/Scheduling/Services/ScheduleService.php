@@ -29,8 +29,7 @@ class ScheduleService
             'total'     => (clone $base)->count(),
             'draft'     => (clone $base)->where('status', ScheduleStatus::DRAFT->value)->count(),
             'pending'   => (clone $base)->where('status', ScheduleStatus::PENDING->value)->count(),
-            'approved'  => (clone $base)->where('status', ScheduleStatus::PUBLISHED->value)->count(),
-            'rejected'  => 0, // In standard spec, reject sets status to CANCELLED. We return 0 for compatibility.
+            'published' => (clone $base)->where('status', ScheduleStatus::PUBLISHED->value)->count(),
             'cancelled' => (clone $base)->where('status', ScheduleStatus::CANCELLED->value)->count(),
         ];
     }
@@ -45,7 +44,7 @@ class ScheduleService
             $filters['driver_id'] = Auth::id();
         }
 
-        return Schedule::with(['creator', 'editor', 'host', 'driver', 'recipients.user', 'recipients.group', 'attachments', 'reminders'])
+        return Schedule::with(['creator', 'editor', 'host', 'driver', 'recipients.user', 'attachments', 'reminders'])
             ->filter($filters)
             ->paginate($limit);
     }
@@ -77,11 +76,14 @@ class ScheduleService
             $filters['week'] = $weekId;
         }
 
-        $schedules = Schedule::with(['host', 'driver', 'recipients.user', 'recipients.group', 'attachments', 'reminders'])
+        $schedules = Schedule::with(['host', 'driver', 'recipients.user', 'attachments', 'reminders'])
             ->filter($filters)
-            ->orderBy('date_time')
-            ->orderBy('session')
-            ->orderBy('sort_order')
+            // Sửa lỗi FE: Ưu tiên sort_order để FE có thể moveUp/moveDown/chèn dòng.
+            // Phải order theo ngày -> buổi -> sort_order -> time
+            ->orderByRaw('DATE(date_time) ASC')
+            ->orderBy('session', 'ASC')
+            ->orderBy('sort_order', 'ASC')
+            ->orderBy('date_time', 'ASC')
             ->get();
 
         $matrix = $schedules->groupBy(fn($item) => $item->date_time ? $item->date_time->format('Y-m-d') : '')->map(function ($day) {
@@ -103,11 +105,20 @@ class ScheduleService
      */
     public function getWeeks(array $filters): array
     {
-        $dates = Schedule::filter($filters)
+        // Tránh lỗi MySQL strict mode: scopeFilter tự động append orderBy('date_time', 'asc')
+        // khi không truyền sort_by. Khi dùng DISTINCT + SELECT DATE(date_time), việc order
+        // bằng cột raw date_time sẽ gây lỗi 3065.
+        $filters['sort_by'] = ''; // Truyền chuỗi rỗng để scopeFilter không dùng 'date_time' mặc định
+
+        $query = Schedule::filter($filters)
             ->selectRaw('DATE(date_time) as date_val')
             ->whereNotNull('date_time')
-            ->distinct()
-            ->orderBy('date_val', 'asc')
+            ->distinct();
+
+        // Xóa mọi order by có sẵn từ scope (nếu có)
+        $query->getQuery()->orders = null;
+
+        $dates = $query->orderBy('date_val', 'asc')
             ->pluck('date_val');
 
         $weeks = [];
@@ -141,7 +152,7 @@ class ScheduleService
     {
         return $schedule->load([
             'creator', 'editor', 'host', 'driver', 'approver',
-            'recipients.user', 'recipients.group', 'attachments', 'reminders',
+            'recipients.user', 'attachments', 'reminders',
         ]);
     }
 
@@ -158,9 +169,7 @@ class ScheduleService
             $data['organization_id'] = $orgId;
             
             // Check approval setting
-            if (isset($data['status'])) {
-                $statusVal = (int)$data['status'];
-            }
+            $statusVal = isset($data['status']) ? (int)$data['status'] : null;
 
             if ($statusVal === ScheduleStatus::DRAFT->value) {
                 $data['status'] = ScheduleStatus::DRAFT->value;
@@ -173,6 +182,18 @@ class ScheduleService
                 } else {
                     $data['status'] = ScheduleStatus::PUBLISHED->value;
                 }
+            }
+
+            // Khi FE chèn dòng mới với sort_order cụ thể, đẩy các dòng cùng ngày + cùng buổi
+            // có sort_order >= vị trí chèn lên 1 đơn vị (insert behavior, không overwrite).
+            if (!empty($data['sort_order']) && !empty($data['date_time']) && !empty($data['session'])) {
+                $carbon = \Carbon\Carbon::parse($data['date_time']);
+                Schedule::where('organization_id', $orgId)
+                    ->where('module_type', $data['module_type'])
+                    ->whereDate('date_time', $carbon->toDateString())
+                    ->where('session', $data['session'])
+                    ->where('sort_order', '>=', (int) $data['sort_order'])
+                    ->increment('sort_order');
             }
 
             $schedule = Schedule::create($data);
@@ -195,8 +216,7 @@ class ScheduleService
             }
 
             if ($statusVal === ScheduleStatus::PUBLISHED->value) {
-                // Call job to compile notifications and reminders
-                app(NotificationService::class)->publish($schedule);
+                // Observer sẽ tự động fire SchedulePublished event
             }
 
             return $this->show($schedule);
@@ -266,7 +286,7 @@ class ScheduleService
                 $statusVal = (int)$statusVal;
             }
             if ($statusVal === ScheduleStatus::PUBLISHED->value) {
-                app(NotificationService::class)->update($schedule);
+                // Observer tự động fire SchedulePublished hoặc ScheduleUpdated
             }
 
             return $this->show($schedule->fresh());
@@ -321,12 +341,6 @@ class ScheduleService
         }
 
         $schedule->update(['status' => $statusInt]);
-        
-        if ($statusInt === ScheduleStatus::PUBLISHED->value) {
-            app(NotificationService::class)->publish($schedule);
-        } elseif ($statusInt === ScheduleStatus::CANCELLED->value) {
-            app(NotificationService::class)->cancel($schedule);
-        }
 
         return $this->show($schedule->fresh());
     }
@@ -342,7 +356,7 @@ class ScheduleService
             'approved_at' => now(),
         ]);
 
-        app(NotificationService::class)->publish($schedule);
+        // Observer tự động fire SchedulePublished event
 
         return $this->show($schedule->fresh());
     }
@@ -374,7 +388,6 @@ class ScheduleService
             foreach ($schedule->recipients as $recipient) {
                 $new->recipients()->create([
                     'user_id'      => $recipient->user_id,
-                    'group_id'     => $recipient->group_id,
                     'display_name' => $recipient->display_name,
                 ]);
             }
@@ -385,7 +398,6 @@ class ScheduleService
                     'minutes_before' => $reminder->minutes_before,
                     'channels'       => $reminder->channels,
                     'source'         => $reminder->source,
-                    'preset_id'      => $reminder->preset_id,
                 ]);
             }
 
@@ -457,13 +469,11 @@ class ScheduleService
             if (is_scalar($recipient)) {
                 $schedule->recipients()->create([
                     'user_id'      => $recipient,
-                    'group_id'     => null,
                     'display_name' => null,
                 ]);
             } else {
                 $schedule->recipients()->create([
                     'user_id'      => $recipient['user_id'] ?? $recipient['id'] ?? null,
-                    'group_id'     => $recipient['group_id'] ?? null,
                     'display_name' => $recipient['display_name'] ?? null,
                 ]);
             }
@@ -487,7 +497,6 @@ class ScheduleService
                 'minutes_before' => (int)$minutes,
                 'channels'       => array_values(array_unique($channels)),
                 'source'         => $source,
-                'preset_id'      => $r['preset_id'] ?? null,
             ]);
         }
     }

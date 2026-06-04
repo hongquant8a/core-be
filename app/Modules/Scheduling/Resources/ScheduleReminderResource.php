@@ -22,7 +22,6 @@ class ScheduleReminderResource extends JsonResource
             'channels'       => $this->channels,
             'source'         => $sourceVal,
             'reminder_type'  => strtoupper($sourceVal ?? 'CUSTOM'),
-            'preset_id'      => $this->preset_id,
         ];
     }
 }

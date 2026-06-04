@@ -53,9 +53,12 @@ class Schedule extends TenantModel
                 $schedule->year = $carbon->isoWeekYear;
                 $schedule->week_number = $carbon->isoWeek;
 
-                // Auto-calculate session based on the hour
-                $timeString = $carbon->format('H:i');
-                $schedule->session = SessionType::fromTime($timeString);
+                // Auto-calculate session based on the hour,
+                // NHƯNG ưu tiên giá trị session do Frontend gửi lên nếu có sự thay đổi rõ ràng.
+                if (!$schedule->isDirty('session') || empty($schedule->session)) {
+                    $timeString = $carbon->format('H:i');
+                    $schedule->session = SessionType::fromTime($timeString);
+                }
             }
         });
     }
@@ -184,6 +187,19 @@ class Schedule extends TenantModel
                     });
                 } elseif ($mode === 'managed') {
                     $q->where('host_id', auth()->id());
+                }
+            })
+            ->when($filters['general_visibility'] ?? false, function ($q) {
+                // Với màn hình chung của nhân viên (general view), chỉ xem được lịch PUBLISHED
+                // HOẶC lịch DRAFT/PENDING do chính user hiện tại tạo ra.
+                $userId = auth()->id();
+                if ($userId) {
+                    $q->where(function ($sub) use ($userId) {
+                        $sub->where('status', \App\Modules\Scheduling\Enums\ScheduleStatus::PUBLISHED->value)
+                            ->orWhere('created_by', $userId);
+                    });
+                } else {
+                    $q->where('status', \App\Modules\Scheduling\Enums\ScheduleStatus::PUBLISHED->value);
                 }
             })
             ->when(

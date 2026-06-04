@@ -38,6 +38,7 @@ class StoreScheduleRequest extends FormRequest
             'participant_count'    => ['nullable', 'string', 'max:50'],
             'nature'               => ['nullable', 'string'],
             'attachments'          => ['nullable', 'array'],
+            'sort_order'           => ['nullable', 'integer', 'min:0'],
         ];
     }
 
