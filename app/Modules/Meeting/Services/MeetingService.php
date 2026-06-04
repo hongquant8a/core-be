@@ -322,6 +322,108 @@ class MeetingService
         }
     }
 
+    /**
+     * Sao chép cuộc họp — tạo bản copy với tiêu đề có đuôi "(sao chép)".
+     *
+     * KHÔNG sao chép: tài liệu (documents), chương trình biểu quyết (vote topics).
+     * Còn lại sao chép hết.
+     *
+     * Meeting mới ở trạng thái draft, checkin_token sinh mới qua booted.
+     */
+    public function duplicate(Meeting $meeting): Meeting
+    {
+        $copyTitle = $meeting->title . ' (sao chép)';
+
+        return DB::transaction(function () use ($meeting, $copyTitle) {
+            // 1. Tạo meeting copy
+            $copy = Meeting::create([
+                'organization_id' => $this->resolveCurrentOrganizationId(),
+                'meeting_type_id' => $meeting->meeting_type_id,
+                'meeting_location_id' => $meeting->meeting_location_id,
+                'chairperson_meeting_attendee_id' => $meeting->chairperson_meeting_attendee_id,
+                'operator_meeting_attendee_id' => $meeting->operator_meeting_attendee_id,
+                'title' => $copyTitle,
+                'is_public' => $meeting->is_public,
+                'content' => $meeting->content,
+                'start_time' => $meeting->start_time,
+                'end_time' => $meeting->end_time,
+                'attendance_open_at' => $meeting->attendance_open_at,
+                'attendance_close_at' => $meeting->attendance_close_at,
+                'qr_manager_user_id' => $meeting->qr_manager_user_id,
+                'projector_image_media_id' => $meeting->projector_image_media_id,
+                // Reset runtime fields
+                'status' => MeetingStatusEnum::Draft->value,
+                'view_count' => 0,
+                'published_at' => null,
+                'attendance_locked' => false,
+                'current_meeting_agenda_id' => null,
+                'current_meeting_discussion_registration_id' => null,
+            ]);
+
+            // 2. Sao chép khách mời (guests)
+            $guests = $meeting->guests()->get();
+            foreach ($guests as $g) {
+                \App\Modules\Meeting\Models\MeetingGuest::create([
+                    'organization_id' => $copy->organization_id,
+                    'meeting_id' => $copy->id,
+                    'name' => $g->name,
+                    'position_name' => $g->position_name,
+                    'phone' => $g->phone,
+                    'email' => $g->email,
+                    'zalo_user_id' => $g->zalo_user_id,
+                    'organization_name' => $g->organization_name,
+                ]);
+            }
+
+            // 3. Sao chép đại biểu (participants)
+            $participants = $meeting->participants()->get();
+            foreach ($participants as $p) {
+                MeetingParticipant::create([
+                    'organization_id' => $copy->organization_id,
+                    'meeting_id' => $copy->id,
+                    'meeting_attendee_id' => $p->meeting_attendee_id,
+                    'display_name' => $p->display_name,
+                    'position_name' => $p->position_name,
+                    'department_name' => $p->department_name,
+                    'email' => $p->email,
+                    'phone' => $p->phone,
+                ]);
+            }
+
+            // 4. Sao chép chương trình họp (agendas) — giữ nguyên cấu trúc cây parent_id
+            $agendas = $meeting->agendas()->orderBy('sort_order')->orderBy('id')->get();
+            $parentMap = [];
+            foreach ($agendas as $a) {
+                $newAgenda = \App\Modules\Meeting\Models\MeetingAgenda::create([
+                    'organization_id' => $copy->organization_id,
+                    'meeting_id' => $copy->id,
+                    'start_time' => $a->start_time,
+                    'end_time' => $a->end_time,
+                    'content' => $a->content,
+                    'person_in_charge' => $a->person_in_charge,
+                    'allow_discussion_registration' => $a->allow_discussion_registration,
+                    'discussion_duration_minutes' => $a->discussion_duration_minutes,
+                    'allow_question_registration' => $a->allow_question_registration,
+                    'question_duration_minutes' => $a->question_duration_minutes,
+                    'allow_vote_registration' => $a->allow_vote_registration,
+                    'parent_id' => null,
+                    'sort_order' => $a->sort_order,
+                ]);
+                $parentMap[$a->id] = $newAgenda->id;
+            }
+
+            foreach ($parentMap as $oldId => $newId) {
+                $original = $agendas->firstWhere('id', $oldId);
+                if ($original && $original->parent_id && isset($parentMap[$original->parent_id])) {
+                    \App\Modules\Meeting\Models\MeetingAgenda::where('id', $newId)
+                        ->update(['parent_id' => $parentMap[$original->parent_id]]);
+                }
+            }
+
+            return $copy->load(['meetingType', 'meetingLocation', 'chairperson.user', 'operator.user', 'creator.media', 'editor.media']);
+        });
+    }
+
     public function update(Meeting $meeting, array $validated, ?UploadedFile $projectorImage = null, ?array $guests = null): Meeting
     {
         unset($validated['guests']);

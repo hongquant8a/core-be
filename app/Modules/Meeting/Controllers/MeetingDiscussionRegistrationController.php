@@ -247,7 +247,7 @@ class MeetingDiscussionRegistrationController extends Controller
     {
         $filters = array_merge($request->all(), ['meeting_id' => $meeting->id]);
 
-        return $this->success($this->meetingDiscussionRegistrationService->stats($filters));
+        return $this->success($this->meetingDiscussionRegistrationService->stats($filters, $meeting));
     }
 
     /**
@@ -263,7 +263,7 @@ class MeetingDiscussionRegistrationController extends Controller
     public function indexInMeeting(Meeting $meeting, FilterRequest $request)
     {
         $filters = array_merge($request->all(), ['meeting_id' => $meeting->id]);
-        $items = $this->meetingDiscussionRegistrationService->index($filters, (int) ($request->limit ?? 100));
+        $items = $this->meetingDiscussionRegistrationService->index($filters, (int) ($request->limit ?? 100), $meeting);
 
         return $this->successCollection(MeetingDiscussionRegistrationResource::collection($items));
     }

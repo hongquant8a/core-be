@@ -163,6 +163,21 @@ class MeetingController extends Controller
     }
 
     /**
+     * Sao chép cuộc họp.
+     *
+     * Tạo bản sao với tiêu đề có đuôi "(sao chép)". Sao chép tất cả trừ tài liệu và
+     * chương trình biểu quyết. Meeting mới ở trạng thái draft.
+     *
+     * @urlParam meeting integer required ID cuộc họp cần sao chép. Example: 1
+     */
+    public function duplicate(Meeting $meeting)
+    {
+        $copy = $this->meetingService->duplicate($meeting);
+
+        return $this->successResource(new MeetingResource($copy), 'Sao chép cuộc họp thành công!', 201);
+    }
+
+    /**
      * Cập nhật cuộc họp.
      *
      * @urlParam meeting integer required ID cuộc họp. Example: 1

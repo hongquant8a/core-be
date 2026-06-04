@@ -23,12 +23,14 @@ class MeetingDiscussionRegistration extends TenantModel implements HasMedia
         'answer_content',
         'media_id',
         'status',
+        'is_public',
         'completed_at',
         'highlighted_at',
         'sort_order',
     ];
 
     protected $casts = [
+        'is_public' => 'boolean',
         'completed_at' => 'datetime',
         'highlighted_at' => 'datetime',
     ];

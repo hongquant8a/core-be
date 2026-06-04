@@ -46,8 +46,9 @@ Route::patch('/bulk-status', [MeetingController::class, 'bulkUpdateStatus'])->mi
 Route::get('/export', [MeetingController::class, 'export'])->middleware('permission:meetings.export,web');
 Route::get('/stats', [MeetingController::class, 'stats'])->middleware('permission:meetings.stats,web');
 Route::get('/', [MeetingController::class, 'index'])->middleware('permission:meetings.index,web');
-Route::get('/{meeting}', [MeetingController::class, 'show'])->middleware(['permission:meetings.show,web', 'count.meeting.view']);
 Route::post('/', [MeetingController::class, 'store'])->middleware('permission:meetings.store,web');
+Route::post('/{meeting}/duplicate', [MeetingController::class, 'duplicate'])->middleware('permission:meetings.store,web');
+Route::get('/{meeting}', [MeetingController::class, 'show'])->middleware(['permission:meetings.show,web', 'count.meeting.view']);
 Route::put('/{meeting}', [MeetingController::class, 'update'])->middleware('permission:meetings.update,web');
 Route::patch('/{meeting}', [MeetingController::class, 'update'])->middleware('permission:meetings.update,web');
 Route::delete('/{meeting}', [MeetingController::class, 'destroy'])->middleware('permission:meetings.destroy,web');

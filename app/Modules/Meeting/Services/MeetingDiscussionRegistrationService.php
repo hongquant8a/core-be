@@ -5,6 +5,7 @@ namespace App\Modules\Meeting\Services;
 use App\Modules\Core\Services\MediaService;
 use App\Modules\Meeting\Enums\MeetingDiscussionStatusEnum;
 use App\Modules\Meeting\Enums\MeetingDiscussionTypeEnum;
+use App\Modules\Meeting\Models\Meeting;
 use App\Modules\Meeting\Models\MeetingAgenda;
 use App\Modules\Meeting\Models\MeetingDiscussionRegistration;
 use App\Modules\Meeting\Models\MeetingParticipant;
@@ -25,9 +26,13 @@ class MeetingDiscussionRegistrationService
 {
     public function __construct(private MediaService $mediaService) {}
 
-    public function stats(array $filters): array
+    public function stats(array $filters, ?Meeting $meeting = null): array
     {
         $base = MeetingDiscussionRegistration::filter($filters);
+
+        if ($meeting) {
+            $this->applyVisibilityScope($base, $meeting);
+        }
 
         $countByType = function (string $type) use ($base) {
             $scoped = (clone $base)->where('type', $type);
@@ -48,11 +53,16 @@ class MeetingDiscussionRegistrationService
         ];
     }
 
-    public function index(array $filters, int $limit)
+    public function index(array $filters, int $limit, ?Meeting $meeting = null)
     {
-        return MeetingDiscussionRegistration::with(['participant', 'agenda', 'mediaFile', 'attachments.mediaFile'])
-            ->filter($filters)
-            ->paginate($limit);
+        $query = MeetingDiscussionRegistration::with(['participant', 'agenda', 'mediaFile', 'attachments.mediaFile'])
+            ->filter($filters);
+
+        if ($meeting) {
+            $this->applyVisibilityScope($query, $meeting);
+        }
+
+        return $query->paginate($limit);
     }
 
     public function show(MeetingDiscussionRegistration $meetingDiscussionRegistration): MeetingDiscussionRegistration
@@ -107,6 +117,7 @@ class MeetingDiscussionRegistrationService
                     'content' => $validated['content'],
                     'sort_order' => $validated['sort_order'] ?? $this->nextSortOrder($meetingId, $agendaId, $type),
                     'status' => $validated['status'] ?? MeetingDiscussionStatusEnum::Registered->value,
+                    'is_public' => $validated['is_public'] ?? true,
                 ];
 
                 $created = MeetingDiscussionRegistration::create($payload);
@@ -286,6 +297,40 @@ class MeetingDiscussionRegistrationService
             ->max('sort_order')) + 1;
     }
 
+    /**
+     * Giới hạn visibility theo role của user trong meeting.
+     *   - Chair/Operator → thấy tất cả (public + private).
+     *   - Participant (đại biểu) → thấy is_public=true HOẶC của chính mình (owner).
+     *   - Không có role → chỉ thấy is_public=true.
+     */
+    private function applyVisibilityScope($query, Meeting $meeting): void
+    {
+        $user = $this->resolveCurrentUser();
+        if (! $user) {
+            $query->where('is_public', true);
+
+            return;
+        }
+
+        if ($meeting->isChairperson($user) || $meeting->isOperator($user)) {
+            return; // thấy tất cả
+        }
+
+        $participant = MeetingParticipant::query()
+            ->where('meeting_id', $meeting->id)
+            ->whereHas('attendee', fn ($q) => $q->where('user_id', $user->id))
+            ->first();
+
+        if ($participant) {
+            $query->where(function ($q) use ($participant) {
+                $q->where('is_public', true)
+                    ->orWhere('meeting_participant_id', $participant->id);
+            });
+        } else {
+            $query->where('is_public', true);
+        }
+    }
+
     private function resolveCurrentOrganizationId(): int
     {
         $organizationId = function_exists('getPermissionsTeamId') ? getPermissionsTeamId() : null;
@@ -295,6 +340,11 @@ class MeetingDiscussionRegistrationService
         }
 
         return (int) $organizationId;
+    }
+
+    private function resolveCurrentUser(): ?\App\Modules\Core\Models\User
+    {
+        return auth()->user();
     }
 
     private function resolveCurrentUserId(): int
