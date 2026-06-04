@@ -11,10 +11,26 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('org_scheduling_settings', function (Blueprint $table) {
-            $table->dropColumn(['executive_requires_approval', 'office_requires_approval']);
-            $table->boolean('requires_approval')->default(false)->after('organization_id');
-        });
+        if (!Schema::hasTable('org_scheduling_settings')) {
+            return;
+        }
+
+        // Drop columns chỉ khi chúng tồn tại
+        $columns = Schema::getColumnListing('org_scheduling_settings');
+        if (in_array('executive_requires_approval', $columns) || in_array('office_requires_approval', $columns)) {
+            Schema::table('org_scheduling_settings', function (Blueprint $table) {
+                $cols = array_intersect(['executive_requires_approval', 'office_requires_approval'], Schema::getColumnListing('org_scheduling_settings'));
+                if (!empty($cols)) {
+                    $table->dropColumn($cols);
+                }
+            });
+        }
+
+        if (!in_array('requires_approval', $columns)) {
+            Schema::table('org_scheduling_settings', function (Blueprint $table) {
+                $table->boolean('requires_approval')->default(false)->after('organization_id');
+            });
+        }
     }
 
     /**

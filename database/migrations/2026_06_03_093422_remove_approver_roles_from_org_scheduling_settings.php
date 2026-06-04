@@ -11,9 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('org_scheduling_settings', function (Blueprint $table) {
-            $table->dropColumn(['executive_approver_roles', 'office_approver_roles']);
-        });
+        if (!Schema::hasTable('org_scheduling_settings')) {
+            Schema::create('org_scheduling_settings', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('organization_id')->unique();
+                $table->boolean('requires_approval')->default(false);
+                $table->timestamps();
+                $table->foreign('organization_id')->references('id')->on('organizations')->cascadeOnDelete();
+            });
+            return;
+        }
+
+        try {
+            Schema::table('org_scheduling_settings', function (Blueprint $table) {
+                $table->dropColumn(['executive_approver_roles', 'office_approver_roles']);
+            });
+        } catch (\Exception $e) {}
     }
 
     /**
