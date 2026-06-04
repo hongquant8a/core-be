@@ -76,14 +76,16 @@ class ScheduleService
             $filters['week'] = $weekId;
         }
 
+        $dateCol = Schedule::dateColumn();
+
         $schedules = Schedule::with(['host', 'driver', 'recipients.user', 'attachments', 'reminders'])
             ->filter($filters)
             // Sửa lỗi FE: Ưu tiên sort_order để FE có thể moveUp/moveDown/chèn dòng.
             // Phải order theo ngày -> buổi -> sort_order -> time
-            ->orderByRaw('DATE(date_time) ASC')
+            ->orderByRaw("DATE({$dateCol}) ASC")
             ->orderBy('session', 'ASC')
             ->orderBy('sort_order', 'ASC')
-            ->orderBy('date_time', 'ASC')
+            ->orderBy($dateCol, 'ASC')
             ->get();
 
         $matrix = $schedules->groupBy(fn($item) => $item->date_time ? $item->date_time->format('Y-m-d') : '')->map(function ($day) {
@@ -105,14 +107,16 @@ class ScheduleService
      */
     public function getWeeks(array $filters): array
     {
+        $dateCol = \App\Modules\Scheduling\Models\Schedule::dateColumn();
+
         // Tránh lỗi MySQL strict mode: scopeFilter tự động append orderBy('date_time', 'asc')
         // khi không truyền sort_by. Khi dùng DISTINCT + SELECT DATE(date_time), việc order
         // bằng cột raw date_time sẽ gây lỗi 3065.
         $filters['sort_by'] = ''; // Truyền chuỗi rỗng để scopeFilter không dùng 'date_time' mặc định
 
         $query = Schedule::filter($filters)
-            ->selectRaw('DATE(date_time) as date_val')
-            ->whereNotNull('date_time')
+            ->selectRaw("DATE({$dateCol}) as date_val")
+            ->whereNotNull($dateCol)
             ->distinct();
 
         // Xóa mọi order by có sẵn từ scope (nếu có)
@@ -186,11 +190,11 @@ class ScheduleService
 
             // Khi FE chèn dòng mới với sort_order cụ thể, đẩy các dòng cùng ngày + cùng buổi
             // có sort_order >= vị trí chèn lên 1 đơn vị (insert behavior, không overwrite).
-            if (!empty($data['sort_order']) && !empty($data['date_time']) && !empty($data['session'])) {
-                $carbon = \Carbon\Carbon::parse($data['date_time']);
+            if (!empty($data['sort_order']) && !empty($data[Schedule::dateColumn()]) && !empty($data['session'])) {
+                $carbon = \Carbon\Carbon::parse($data[Schedule::dateColumn()]);
                 Schedule::where('organization_id', $orgId)
                     ->where('module_type', $data['module_type'])
-                    ->whereDate('date_time', $carbon->toDateString())
+                    ->whereDate(Schedule::dateColumn(), $carbon->toDateString())
                     ->where('session', $data['session'])
                     ->where('sort_order', '>=', (int) $data['sort_order'])
                     ->increment('sort_order');
