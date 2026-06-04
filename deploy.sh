@@ -91,12 +91,12 @@ deploy_be() {
   # Seed (add data, NOT fresh — seeder checks duplicates)
   log "  [BE] Running seeders (chỉ chạy seed cấu hình/quyền, không seed data mẫu)..."
   for seeder in PermissionSeeder MeetingPermissionSeeder SettingSeeder NotificationEventConfigSeeder OrgSchedulingSettingsSeeder; do
-    sudo -u quandh $PHP_BIN artisan db:seed --class=$seeder --force --ansi 2>&1 | grep -E "DONE|Seeding" | tail -1
+    { sudo -u quandh $PHP_BIN artisan db:seed --class=$seeder --force --ansi 2>&1 | grep -E "DONE|Seeding" | tail -1; } || true
   done
 
   # Cleanup orphan permissions/settings
   log "  [BE] Cleanup obsolete..."
-  sudo -u quandh $PHP_BIN artisan seed:cleanup-obsolete --ansi 2>&1 | tail -2
+  sudo -u quandh $PHP_BIN artisan seed:cleanup-obsolete --ansi 2>&1 | tail -2 || true
   sudo -u quandh $PHP_BIN artisan optimize 2>/dev/null || true
 
   log "  [BE] Fixing storage permissions..."
