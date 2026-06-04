@@ -104,6 +104,7 @@ class MeetingVoteTopic extends TenantModel
     public function scopeFilter($query, array $filters)
     {
         $query->when($filters['meeting_id'] ?? null, fn ($q, $meetingId) => $q->where('meeting_id', $meetingId))
+            ->when($filters['meeting_agenda_id'] ?? null, fn ($q, $agendaId) => $q->where('meeting_agenda_id', $agendaId))
             // Status đã bỏ field — derive từ opened_at + closed_at + duration_minutes (timeout):
             //  draft  = opened_at IS NULL
             //  opened = opened_at IS NOT NULL AND closed_at IS NULL AND chưa hết duration
