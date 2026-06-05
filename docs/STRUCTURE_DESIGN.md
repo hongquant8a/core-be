@@ -2,10 +2,12 @@
 
 Tài liệu mô tả cấu trúc thư mục hiện tại của hệ thống theo hướng modular.
 
+Cập nhật: 2026-06-05.
+
 ## 1) Tổng quan thư mục gốc
 
 ```text
-quandh-core/
+qlcv/
 ├── app/
 ├── bootstrap/
 ├── config/
@@ -20,6 +22,7 @@ quandh-core/
 ├── compose.yaml
 ├── composer.json
 ├── package.json
+├── deploy.sh
 └── phpunit.xml
 ```
 
@@ -28,39 +31,38 @@ quandh-core/
 ```text
 app/
 ├── Console/
-│   └── Commands/          # Artisan commands (cleanup seeds, simulate notifications/reminders)
+│   └── Commands/          # Artisan commands (cleanup seeds, sync migrations, simulate notifications)
 ├── Http/
-│   └── Controllers/       # Controller chung (DeployController, ...)
-├── Modules/               # Xem mục 2b
-├── Providers/             # AppServiceProvider, HorizonServiceProvider, NotificationServiceProvider
+│   ├── Controllers/       # Controller chung (DeployController)
+│   └── Middleware/
+├── Modules/               # Xem mục 3
+├── Providers/             # AppServiceProvider, EventServiceProvider, NotificationServiceProvider
 └── Services/
-    ├── Notification/      # Engine notification xuyên module (dispatcher, job, channel senders)
-    └── Zalo/              # Zalo OA integration service
+    └── Notification/      # Engine notification xuyên module (dispatcher, job, channel senders, content builders)
 ```
 
-## 2b) Cấu trúc module trong `app/Modules`
+## 3) Cấu trúc module trong `app/Modules`
 
 ```text
 app/Modules/
 ├── Auth/
-│   ├── AuthController.php   # Controller ở root (lịch sử)
+│   ├── AuthController.php
 │   ├── SsoController.php
 │   ├── Jobs/
 │   ├── Requests/
 │   ├── Routes/
 │   └── Services/
 ├── Core/
-│   ├── *Controller.php      # Controllers đặt thẳng ở root Core (lịch sử, không phải lỗi)
+│   ├── *Controller.php      # Controllers dùng chung (NotificationConfig, NotificationLog, User, Setting, ...)
 │   ├── Enums/
 │   ├── Exports/
 │   ├── Imports/
-│   ├── Middleware/
-│   ├── Models/              # User, Organization, UserPreference, …
-│   ├── Observers/
+│   ├── Middleware/           # SetNotificationModule, EnsureRouteModelsBelongToOrganization, LogActivity
+│   ├── Models/               # User, Organization, UserProfile, Setting, Notification*, LogActivity, ...
 │   ├── Requests/
-│   ├── Resources/
+│   ├── Resources/            # PublicOptionResource, UserResource, NotificationLogResource
 │   ├── Routes/
-│   ├── Services/
+│   ├── Services/             # UserService, OrganizationService, LookupService, MediaService, LogActivityService
 │   ├── Support/
 │   └── Traits/
 ├── TaskAssignment/
@@ -74,26 +76,37 @@ app/Modules/
 │   ├── Resources/
 │   ├── Routes/
 │   └── Services/
-└── Meeting/                 # Module phức tạp — có thêm folder tùy chọn
-    ├── Controllers/
-    ├── Concerns/            # Trait dùng chung nội bộ module
-    ├── Enums/
-    ├── Events/              # Domain events
+├── Meeting/                  # Module phức tạp - có thêm folder tùy chọn
+│   ├── Controllers/
+│   ├── Concerns/             # Trait dùng chung nội bộ module
+│   ├── Enums/
+│   ├── Events/               # Domain events (WS: discussion-registration.*, vote-topic.*, ...)
+│   ├── Exports/
+│   ├── Imports/
+│   ├── Middleware/
+│   ├── Models/
+│   ├── Observers/
+│   ├── Policies/             # Laravel authorization policies (MeetingPolicy, MeetingDiscussionRegistrationPolicy, ...)
+│   ├── Requests/
+│   ├── Resources/
+│   ├── Routes/
+│   └── Services/
+└── Scheduling/
+    ├── Controllers/          # Schedule, SchedulingEmployee, SchedulingEmployeeGroup, SchedulingSetting
+    ├── Enums/                # ScheduleStatus, ModuleType, SessionType, Nature, NotificationChannel, NotificationStatus, ReminderSource
     ├── Exports/
-    ├── Imports/
-    ├── Middleware/
-    ├── Models/
-    ├── Observers/
-    ├── Policies/            # Laravel authorization policies
+    ├── Jobs/                 # SendScheduleNotificationJob
+    ├── Models/               # Schedule, ScheduleReminder, ScheduleAttachment, ScheduleNotification, ScheduleNotificationRecipient, SchedulingEmployee, SchedulingEmployeeGroup, OrgSchedulingSettings, SchedulingSetting
+    ├── Observers/            # ScheduleObserver
     ├── Requests/
-    ├── Resources/
+    ├── Resources/            # ScheduleResource, ScheduleCollection, ScheduleReminderResource
     ├── Routes/
-    └── Services/
+    └── Services/             # ScheduleService
 ```
 
 > Các folder tùy chọn (`Concerns/`, `Events/`, `Middleware/`, `Policies/`) chỉ tạo khi thực sự cần — không bắt buộc cho mọi module.
 
-## 3) Quy ước luồng xử lý
+## 4) Quy ước luồng xử lý
 
 - `Controller`: nhận request, gọi `FormRequest` validate, điều phối `Service`, trả response chuẩn.
 - `Service`: xử lý nghiệp vụ và transaction.
@@ -101,28 +114,37 @@ app/Modules/
 - `Resource`: chuẩn hóa output API.
 - `Routes`: tách riêng theo module và resource.
 
-## 4) Vị trí tài liệu liên quan
+## 5) Vị trí tài liệu liên quan
 
 - Tài liệu API (generate): `docs/api/`
 - Phân tích nghiệp vụ/đề xuất: `docs/answer/`
-- Thiết kế cơ sở dữ liệu: `docs/DATABASE_DESIGN.md`
-- Changelog cho FE khi BE đổi API: `docs/changelogs/` (format `.md` hoặc `.txt`)
+- Thiết kế cơ sở dữ liệu: [docs/DATABASE_DESIGN.md](DATABASE_DESIGN.md) (index) + các file per-module
+- Changelog cho FE khi BE đổi API: `docs/changelogs/`
 - Hướng dẫn flow notification: `docs/guides/`
 - Specs + plans cho feature lớn: `docs/superpowers/specs/` và `docs/superpowers/plans/`
 - Onboarding dev mới: `docs/ONBOARDING.md`
 
-## 5) Kiểm tra cập nhật tài liệu khi thay đổi kiến trúc
-
-Khi thêm module mới hoặc thay đổi cấu trúc lớn, cần cập nhật đồng thời:
-
-- `docs/STRUCTURE_DESIGN.md` (file này).
-- `docs/DATABASE_DESIGN.md` nếu có migration mới.
-- `docs/api/*.md` và tài liệu Scribe nếu thay đổi controller/endpoint API.
-
 ## 6) Quy ước multi-tenant theo tổ chức
 
-- Các module nghiệp vụ có dữ liệu theo tổ chức (hiện tại: `TaskAssignment`, `Meeting`) phải có cột `organization_id` trên bảng chính.
+- Các module nghiệp vụ có dữ liệu theo tổ chức (Core, Meeting, TaskAssignment, Scheduling) có cột `organization_id` trên bảng chính.
 - Mọi truy vấn CRUD/bulk/index/stats/export/import phải scope theo tổ chức hiện tại được middleware `set.permissions.team` thiết lập từ header `X-Organization-Id`.
-- Model dùng trait `HasOrganizationScope` để tự động scope query và gán `organization_id` khi create — không cần `where('organization_id', ...)` thủ công trong service.
+- Model kế thừa `TenantModel` để tự động scope query và gán `organization_id` khi create.
 - Không cho phép truy cập chéo tổ chức khi thao tác theo ID; khi không cùng tổ chức phải trả lỗi tương đương không tìm thấy/không có quyền.
-- Middleware dùng chung: `Core/Middleware/EnsureRouteModelsBelongToOrganization.php` để kiểm tra đồng loạt model route (`{meeting}`, `{taskAssignmentItem}`, ...) thuộc đúng `organization_id` hiện tại.
+
+## 7) Hệ thống Notification (dùng chung)
+
+```
+app/Services/Notification/
+├── Channels/              # FcmChannel, MailChannel, ZaloChannel, ZaloZnsChannel, SmsChannel
+├── Console/               # ProcessRemindersCommand (cron)
+├── ContentBuilders/       # Per-event: SchedulePublishedContentBuilder, MeetingPublishedContentBuilder, ...
+├── DTOs/                  # NotificationPayload, Recipient, SendResult
+├── Enums/                 # NotificationEventEnum, NotificationModuleEnum, NotificationDeliveryStatusEnum, ...
+├── Events/                # SchedulePublished, ScheduleUpdated, ScheduleCancelled, MeetingPublished, ...
+├── Jobs/                  # SendDeliveryJob, SendScheduleReminderJob
+├── Listeners/             # SendSchedulePublishedNotifications, SendMeetingPublishedNotifications, ...
+├── NotificationService.php
+└── Services/              # NotificationDispatcher, ContentBuilderRegistry, ReminderScheduler, ScheduleReminderScheduler, MeetingReminderScheduler
+```
+
+Mỗi module đăng ký events + listeners trong `NotificationServiceProvider`.
