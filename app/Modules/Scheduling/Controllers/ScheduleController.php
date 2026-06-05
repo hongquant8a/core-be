@@ -20,7 +20,12 @@ use Illuminate\Http\Request;
  * @group Scheduling - Lịch công tác
  * @header X-Organization-Id ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1
  *
- * Quản lý lịch công tác tuần/ngày, hỗ trợ phân hệ Thường trực/Văn phòng, duyệt trạng thái và phân quyền lái xe.
+ * Quản lý lịch công tác tuần/ngày, hỗ trợ phân hệ Thường trực (EXECUTIVE) và Lãnh đạo (OFFICE).
+ *
+ * ## Phân quyền theo phân hệ
+ * Tất cả endpoint (trừ general*, driver*) yêu cầu `module_type` và kiểm tra quyền động
+ * `schedules-{executive|office}.{action}`. Middleware `schedule.module` map EXECUTIVE →
+ * schedules-executive, OFFICE → schedules-office. Fallback: schedules.{action} (cũ).
  */
 class ScheduleController extends Controller
 {
@@ -31,7 +36,7 @@ class ScheduleController extends Controller
     /**
      * Thống kê số lượng lịch công tác theo các trạng thái.
      *
-     * @queryParam module_type string Lọc theo phân hệ (EXECUTIVE, OFFICE). Example: EXECUTIVE
+     * @queryParam module_type string required Phân hệ (EXECUTIVE, OFFICE). Example: EXECUTIVE
      * @queryParam search string Tìm kiếm theo nội dung lịch công tác. Example: họp giao ban
      * @queryParam from_date date Lọc từ ngày (Y-m-d). Example: 2026-06-01
      * @queryParam to_date date Lọc đến ngày (Y-m-d). Example: 2026-06-07
@@ -45,7 +50,7 @@ class ScheduleController extends Controller
     /**
      * Danh sách lịch công tác.
      *
-     * @queryParam module_type string Lọc theo phân hệ (EXECUTIVE, OFFICE). Example: EXECUTIVE
+     * @queryParam module_type string required Phân hệ (EXECUTIVE, OFFICE). Example: EXECUTIVE
      * @queryParam search string Tìm kiếm theo nội dung, địa điểm, đơn vị chuẩn bị, thành phần. Example: họp giao ban
      * @queryParam status int Lọc theo trạng thái ban hành (0: DRAFT, 1: PUBLISHED). Example: 1
      * @queryParam approval_status string Lọc theo trạng thái duyệt (pending, approved, rejected). Example: approved
@@ -91,7 +96,7 @@ class ScheduleController extends Controller
     /**
      * Danh sách các tuần đã có lịch công tác (cho dropdown chọn nhanh).
      *
-     * @queryParam module_type string Phân hệ (EXECUTIVE, OFFICE). Example: EXECUTIVE
+     * @queryParam module_type string required Phân hệ (EXECUTIVE, OFFICE). Example: EXECUTIVE
      */
     public function weeks(FilterRequest $request): JsonResponse
     {
@@ -155,6 +160,7 @@ class ScheduleController extends Controller
     /**
      * Chi tiết lịch công tác.
      *
+     * @queryParam module_type string required Phân hệ (EXECUTIVE, OFFICE). Example: EXECUTIVE
      * @urlParam schedule integer required ID lịch công tác. Example: 1
      */
     public function show(Schedule $schedule): JsonResponse
@@ -239,6 +245,7 @@ class ScheduleController extends Controller
     /**
      * Xóa lịch công tác (Soft Delete).
      *
+     * @queryParam module_type string required Phân hệ (EXECUTIVE, OFFICE). Example: EXECUTIVE
      * @urlParam schedule integer required ID lịch công tác cần xóa. Example: 1
      */
     public function destroy(Schedule $schedule): JsonResponse
@@ -250,6 +257,7 @@ class ScheduleController extends Controller
     /**
      * Xóa hàng loạt lịch công tác.
      *
+     * @queryParam module_type string required Phân hệ (EXECUTIVE, OFFICE). Example: EXECUTIVE
      * @bodyParam ids array required Danh sách ID lịch công tác cần xóa. Example: [1, 2]
      */
     public function bulkDestroy(BulkDestroyScheduleRequest $request): JsonResponse
@@ -261,6 +269,7 @@ class ScheduleController extends Controller
     /**
      * Cập nhật trạng thái hàng loạt lịch công tác.
      *
+     * @queryParam module_type string required Phân hệ (EXECUTIVE, OFFICE). Example: EXECUTIVE
      * @bodyParam ids array required Danh sách ID lịch công tác cần cập nhật. Example: [1, 2]
      * @bodyParam status string required Trạng thái ban hành mới (DRAFT, PUBLISHED). Example: PUBLISHED
      */
@@ -273,6 +282,7 @@ class ScheduleController extends Controller
     /**
      * Thay đổi trạng thái lịch công tác.
      *
+     * @queryParam module_type string required Phân hệ (EXECUTIVE, OFFICE). Example: EXECUTIVE
      * @urlParam schedule integer required ID lịch công tác. Example: 1
      * @bodyParam status string required Trạng thái ban hành mới (DRAFT, PUBLISHED). Example: PUBLISHED
      */
@@ -285,6 +295,7 @@ class ScheduleController extends Controller
     /**
      * Gửi duyệt lịch công tác — set approval_status từ null → pending.
      *
+     * @queryParam module_type string required Phân hệ (EXECUTIVE, OFFICE). Example: EXECUTIVE
      * @urlParam schedule integer required ID lịch công tác. Example: 1
      */
     public function submitForApproval(Schedule $schedule): JsonResponse
@@ -296,6 +307,7 @@ class ScheduleController extends Controller
     /**
      * Duyệt lịch công tác.
      *
+     * @queryParam module_type string required Phân hệ (EXECUTIVE, OFFICE). Example: EXECUTIVE
      * @urlParam schedule integer required ID lịch công tác. Example: 1
      */
     public function approve(Schedule $schedule): JsonResponse
@@ -307,6 +319,7 @@ class ScheduleController extends Controller
     /**
      * Từ chối duyệt lịch công tác.
      *
+     * @queryParam module_type string required Phân hệ (EXECUTIVE, OFFICE). Example: EXECUTIVE
      * @urlParam schedule integer required ID lịch công tác. Example: 1
      * @bodyParam rejection_note string required Lý do từ chối duyệt. Example: Thiếu nội dung chi tiết
      */
@@ -319,6 +332,7 @@ class ScheduleController extends Controller
     /**
      * Sao chép lịch công tác sang ngày mới.
      *
+     * @queryParam module_type string required Phân hệ (EXECUTIVE, OFFICE). Example: EXECUTIVE
      * @urlParam schedule integer required ID lịch công tác gốc. Example: 1
      * @bodyParam date date required Ngày mới (Y-m-d). Example: 2026-06-08
      */
@@ -331,6 +345,7 @@ class ScheduleController extends Controller
     /**
      * Thay đổi thứ tự sắp xếp của danh sách lịch công tác.
      *
+     * @queryParam module_type string required Phân hệ (EXECUTIVE, OFFICE). Example: EXECUTIVE
      * @bodyParam ordered_ids array required Danh sách ID lịch công tác theo thứ tự mong muốn. Example: [3, 1, 2]
      */
     public function reorder(ReorderScheduleRequest $request): JsonResponse

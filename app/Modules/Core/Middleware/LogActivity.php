@@ -267,6 +267,8 @@ class LogActivity
             'task-assignment-items' => 'Công việc',
             'task-assignment-item-reports' => 'Báo cáo công việc',
             'schedules' => 'lịch công tác',
+            'schedules-executive' => 'lịch công tác - Thường trực',
+            'schedules-office'    => 'lịch công tác - Lãnh đạo',
             'scheduling-employees' => 'nhân sự lịch công tác',
             'scheduling-employee-groups' => 'nhóm nhân sự',
             'scheduling-settings' => 'cấu hình lịch công tác',

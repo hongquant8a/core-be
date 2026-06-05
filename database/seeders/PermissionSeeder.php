@@ -219,6 +219,16 @@ class PermissionSeeder extends Seeder
             'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
             'approve', 'duplicate', 'reorder', 'driver-view',
         ],
+        'schedules-executive' => [
+            'stats', 'index', 'show', 'store', 'update', 'destroy',
+            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
+            'approve', 'duplicate', 'reorder',
+        ],
+        'schedules-office' => [
+            'stats', 'index', 'show', 'store', 'update', 'destroy',
+            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
+            'approve', 'duplicate', 'reorder',
+        ],
         'scheduling-employees' => [
             'stats', 'index', 'show', 'store', 'update', 'destroy',
             'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
@@ -308,6 +318,8 @@ class PermissionSeeder extends Seeder
         'meeting-invitation-templates' => 'Template giấy mời họp',
         'meeting-settings' => 'Cấu hình cuộc họp',
         'schedules' => 'Lịch công tác',
+        'schedules-executive' => 'Lịch công tác - Thường trực',
+        'schedules-office'    => 'Lịch công tác - Lãnh đạo',
         'scheduling-employees' => 'Nhân viên lịch công tác',
         'scheduling-employee-groups' => 'Nhóm nhân viên lịch công tác',
         'scheduling-settings' => 'Cấu hình lịch công tác',
@@ -715,7 +727,7 @@ class PermissionSeeder extends Seeder
     protected function getTongHopPermissionNames(): array
     {
         $names = [];
-        foreach (['schedules', 'scheduling-employees', 'scheduling-employee-groups', 'scheduling-settings'] as $resource) {
+        foreach (['schedules', 'schedules-executive', 'schedules-office', 'scheduling-employees', 'scheduling-employee-groups', 'scheduling-settings'] as $resource) {
             foreach (self::$PERMISSIONS[$resource] as $action) {
                 $names[] = "{$resource}.{$action}";
             }
@@ -726,25 +738,31 @@ class PermissionSeeder extends Seeder
     protected function getThuKyPermissionNames(): array
     {
         return [
-            'schedules.index',
-            'schedules.show',
-            'schedules.store',
-            'schedules.update',
-            'schedules.destroy',
-            'schedules.export',
-            'schedules.stats',
-            'schedules.reorder',
+            // Lịch Thường trực — full quyền
+            'schedules-executive.stats',
+            'schedules-executive.index',
+            'schedules-executive.show',
+            'schedules-executive.store',
+            'schedules-executive.update',
+            'schedules-executive.destroy',
+            'schedules-executive.bulkDestroy',
+            'schedules-executive.bulkUpdateStatus',
+            'schedules-executive.changeStatus',
+            'schedules-executive.export',
+            'schedules-executive.duplicate',
+            'schedules-executive.reorder',
         ];
     }
 
     protected function getLanhDaoPermissionNames(): array
     {
         return [
-            'schedules.index',
-            'schedules.show',
-            'schedules.export',
-            'schedules.stats',
-            'schedules.approve',
+            // Lịch Lãnh đạo — chỉ xem
+            'schedules-office.index',
+            'schedules-office.show',
+            'schedules-office.export',
+            'schedules-office.stats',
+            'schedules-office.approve',
         ];
     }
 

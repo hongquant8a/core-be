@@ -8,7 +8,7 @@ use App\Modules\Scheduling\Enums\ApprovalStatus;
 use App\Modules\Scheduling\Enums\SessionType;
 use App\Modules\Scheduling\Models\Schedule;
 use App\Modules\Scheduling\Models\ScheduleAttachment;
-use App\Modules\Scheduling\Models\ScheduleNotificationRecipient;
+
 use App\Modules\Scheduling\Models\ScheduleReminder;
 use App\Modules\Scheduling\Models\OrgSchedulingSettings;
 use App\Modules\Core\Models\User;

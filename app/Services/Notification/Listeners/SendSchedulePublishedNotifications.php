@@ -57,19 +57,12 @@ class SendSchedulePublishedNotifications implements ShouldQueue
             ->where('event_key', 'schedule_published')
             ->first();
 
-        if (!$config) {
-            return ['fcm', 'mail'];
-        }
-
-        if (!$config->enabled) {
-            if (app()->environment('testing')) {
-                return ['fcm', 'mail'];
-            }
+        if (!$config || !$config->enabled) {
             return [];
         }
 
         $instant = $config->schedules->firstWhere('moment', null);
 
-        return $instant?->channels ?? ['fcm', 'mail'];
+        return $instant?->channels ?? [];
     }
 }

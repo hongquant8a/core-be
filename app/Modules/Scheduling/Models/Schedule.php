@@ -117,11 +117,6 @@ class Schedule extends TenantModel
         return $this->hasMany(ScheduleReminder::class, 'schedule_id');
     }
 
-    public function notifications()
-    {
-        return $this->hasMany(ScheduleNotification::class, 'schedule_id');
-    }
-
     public function setStatusAttribute($value)
     {
         if (is_string($value) && !is_numeric($value)) {
