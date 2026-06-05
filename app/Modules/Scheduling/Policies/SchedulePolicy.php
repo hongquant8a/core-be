@@ -78,6 +78,6 @@ class SchedulePolicy
 
         return ($user->hasPermissionTo('schedules.driver-view') || $user->hasRole('Lái xe') || $user->hasRole('scheduling-lai-xe')) 
             && $schedule->driver_id === $user->id
-            && ($statusVal === \App\Modules\Scheduling\Enums\ScheduleStatus::PUBLISHED->value || $statusVal === 2);
+            && $statusVal === \App\Modules\Scheduling\Enums\ScheduleStatus::PUBLISHED->value;
     }
 }

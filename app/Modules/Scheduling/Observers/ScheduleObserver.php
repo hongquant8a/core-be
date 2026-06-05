@@ -33,7 +33,7 @@ class ScheduleObserver
         $isPublishedNow = $statusVal === ScheduleStatus::PUBLISHED->value;
         $wasPublishedBefore = $originalStatusVal === ScheduleStatus::PUBLISHED->value;
 
-        // 1. Transition: Draft/Pending -> Published
+        // 1. Transition: Draft -> Published
         if ($isPublishedNow && (!$wasPublishedBefore || $schedule->wasRecentlyCreated)) {
             Event::dispatch(new SchedulePublished($schedule));
             return;

@@ -29,6 +29,7 @@ Route::put('/{schedule}',   [ScheduleController::class, 'update'])->middleware('
 Route::patch('/{schedule}', [ScheduleController::class, 'update'])->middleware('can:update,schedule');
 Route::delete('/{schedule}',[ScheduleController::class, 'destroy'])->middleware('can:delete,schedule');
 Route::patch('/{schedule}/status',   [ScheduleController::class, 'changeStatus'])->middleware('permission:schedules.changeStatus,web');
+Route::patch('/{schedule}/submit-for-approval', [ScheduleController::class, 'submitForApproval'])->middleware('permission:schedules.update,web');
 Route::patch('/{schedule}/approve',  [ScheduleController::class, 'approve'])->middleware('permission:schedules.approve,web');
 Route::patch('/{schedule}/reject',   [ScheduleController::class, 'reject'])->middleware('permission:schedules.approve,web');
 Route::post('/{schedule}/duplicate', [ScheduleController::class, 'duplicate'])->middleware('permission:schedules.store,web');

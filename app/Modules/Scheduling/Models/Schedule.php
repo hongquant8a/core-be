@@ -30,8 +30,8 @@ class Schedule extends TenantModel
         'organization_id', 'module_type', 'date_time', 'session', 'content',
         'host_id', 'host_text', 'location', 'preparation_unit', 'departments_text',
         'participants_text', 'participant_count', 'nature', 'driver_id', 'driver_text',
-        'sort_order', 'status', 'week_number', 'year', 'approved_by', 'approved_at',
-        'created_by', 'updated_by', 'is_important'
+        'sort_order', 'status', 'approval_status', 'week_number', 'year',
+        'approved_by', 'approved_at', 'created_by', 'updated_by', 'is_important'
     ];
 
     protected $casts = [
@@ -128,9 +128,7 @@ class Schedule extends TenantModel
             $value = strtoupper($value);
             $value = match ($value) {
                 'DRAFT' => 0,
-                'PENDING' => 1,
-                'APPROVED', 'PUBLISHED' => 2,
-                'CANCELLED' => 3,
+                'PUBLISHED' => 1,
                 default => 0,
             };
         } elseif ($value instanceof ScheduleStatus) {
@@ -170,6 +168,9 @@ class Schedule extends TenantModel
             })
             ->when(isset($filters['status']), function ($q) use ($filters) {
                 $q->where('status', $filters['status']);
+            })
+            ->when(isset($filters['approval_status']), function ($q) use ($filters) {
+                $q->where('approval_status', $filters['approval_status']);
             })
             ->when(isset($filters['session']), function ($q) use ($filters) {
                 $q->where('session', $filters['session']);
@@ -216,7 +217,7 @@ class Schedule extends TenantModel
             })
             ->when($filters['general_visibility'] ?? false, function ($q) {
                 // Với màn hình chung của nhân viên (general view), chỉ xem được lịch PUBLISHED
-                // HOẶC lịch DRAFT/PENDING do chính user hiện tại tạo ra.
+                // HOẶC lịch DRAFT do chính user hiện tại tạo ra.
                 $userId = auth()->id();
                 if ($userId) {
                     $q->where(function ($sub) use ($userId) {

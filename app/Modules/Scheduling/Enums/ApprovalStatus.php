@@ -2,16 +2,18 @@
 
 namespace App\Modules\Scheduling\Enums;
 
-enum ScheduleStatusEnum: string
+enum ApprovalStatus: string
 {
-    case Draft    = 'DRAFT';
-    case Published = 'PUBLISHED';
+    case PENDING  = 'pending';
+    case APPROVED = 'approved';
+    case REJECTED = 'rejected';
 
     public function label(): string
     {
         return match($this) {
-            self::Draft     => 'Nháp',
-            self::Published => 'Đã ban hành',
+            self::PENDING  => 'Chờ duyệt',
+            self::APPROVED => 'Đã duyệt',
+            self::REJECTED => 'Không duyệt',
         };
     }
 

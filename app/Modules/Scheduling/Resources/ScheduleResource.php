@@ -57,6 +57,7 @@ class ScheduleResource extends JsonResource
             
             // Approval fields
             'status'               => $statusVal,
+            'approval_status'      => $this->approval_status,
             'approved_by'          => $this->approved_by,
             'approved_at'          => $this->approved_at?->toIso8601String(),
             'approver'             => new UserResource($this->whenLoaded('approver')),
@@ -92,10 +93,10 @@ class ScheduleResource extends JsonResource
                 return $this->attachments->map(fn ($m) => [
                     'id'            => $m->id,
                     'media_id'      => null,
-                    'file_name'     => $m->title ?: $m->file_name,
+                    'name'          => $m->title ?: $m->file_name,
+                    'file_name'     => $m->file_name,
                     'sort_order'    => $m->sort_order ?? 0,
                     'url'           => '/storage/' . $m->file_path,
-                    'original_name' => $m->file_name,
                     'mime_type'     => $m->mime_type,
                     'size'          => $m->file_size,
                 ]);

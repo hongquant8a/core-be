@@ -27,7 +27,8 @@ Lịch công tác chính.
 | `participant_count` | varchar(50) | Yes | NULL | Số lượng người tham dự |
 | `nature` | enum | No | 'HOST' | HOST (chủ trì) / ATTEND (tham dự) |
 | `is_important` | boolean | No | false | Đánh dấu lịch quan trọng |
-| `status` | int | No | 0 | 0=DRAFT, 1=PENDING, 2=PUBLISHED, 3=CANCELLED |
+| `status` | int | No | 0 | 0=DRAFT, 1=PUBLISHED |
+| `approval_status` | varchar(20) | Yes | NULL | NULL=không cần duyệt, pending=đợi duyệt, approved=đã duyệt, rejected=từ chối |
 | `sort_order` | int | No | 0 | Thứ tự trong ngày + buổi |
 | `week_number` | int | Yes | NULL | ISO week (auto từ date_time) |
 | `year` | int | Yes | NULL | ISO year (auto từ date_time) |
@@ -45,7 +46,9 @@ Lịch công tác chính.
 - `idx_org_driver_datetime` (organization_id, driver_id, date_time)
 - `idx_sort_datetime` (organization_id, date_time, session, sort_order)
 
-**Status state machine:** `0 DRAFT → 1 PENDING → 2 PUBLISHED → 3 CANCELLED`
+**Status (publish status):** `0 DRAFT → 1 PUBLISHED`, có thể quay lại DRAFT.
+
+**Approval status:** `null → pending → approved` hoặc `pending → rejected → pending`. Chỉ áp dụng khi `org_scheduling_settings.requires_approval = true`.
 
 ---
 

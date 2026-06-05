@@ -38,6 +38,7 @@ class StoreScheduleRequest extends FormRequest
             'participant_count'    => ['nullable', 'string', 'max:50'],
             'nature'               => ['nullable', 'string'],
             'attachments'          => ['nullable', 'array'],
+            'attachment_names'     => ['nullable', 'array'],
             'sort_order'           => ['nullable', 'integer', 'min:0'],
         ];
     }
@@ -74,9 +75,7 @@ class StoreScheduleRequest extends FormRequest
                     $status = strtoupper($status);
                     $validated['status'] = match ($status) {
                         'DRAFT' => ScheduleStatus::DRAFT->value,
-                        'PENDING' => ScheduleStatus::PENDING->value,
-                        'APPROVED', 'PUBLISHED' => ScheduleStatus::PUBLISHED->value,
-                        'CANCELLED' => ScheduleStatus::CANCELLED->value,
+                        'PUBLISHED' => ScheduleStatus::PUBLISHED->value,
                         default => (int)$status,
                     };
                 } else {

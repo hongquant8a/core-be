@@ -4,6 +4,7 @@ namespace App\Modules\Scheduling\Services;
 
 use App\Modules\Core\Support\ExportFilename;
 use App\Modules\Scheduling\Enums\ScheduleStatus;
+use App\Modules\Scheduling\Enums\ApprovalStatus;
 use App\Modules\Scheduling\Enums\SessionType;
 use App\Modules\Scheduling\Models\Schedule;
 use App\Modules\Scheduling\Models\ScheduleAttachment;
@@ -20,17 +21,19 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 class ScheduleService
 {
     /**
-     * Thống kê: total, draft, pending, approved, rejected, cancelled.
+     * Thống kê: total, draft, pending_approval, approved, rejected, published.
+     * Mỗi schedule nằm trong đúng 1 bucket.
      */
     public function stats(array $filters): array
     {
         $base = Schedule::filter($filters);
         return [
-            'total'     => (clone $base)->count(),
-            'draft'     => (clone $base)->where('status', ScheduleStatus::DRAFT->value)->count(),
-            'pending'   => (clone $base)->where('status', ScheduleStatus::PENDING->value)->count(),
-            'published' => (clone $base)->where('status', ScheduleStatus::PUBLISHED->value)->count(),
-            'cancelled' => (clone $base)->where('status', ScheduleStatus::CANCELLED->value)->count(),
+            'total'            => (clone $base)->count(),
+            'draft'            => (clone $base)->where('status', ScheduleStatus::DRAFT->value)->whereNull('approval_status')->count(),
+            'pending_approval' => (clone $base)->where('status', ScheduleStatus::DRAFT->value)->where('approval_status', ApprovalStatus::PENDING->value)->count(),
+            'approved'         => (clone $base)->where('status', ScheduleStatus::DRAFT->value)->where('approval_status', ApprovalStatus::APPROVED->value)->count(),
+            'rejected'         => (clone $base)->where('status', ScheduleStatus::DRAFT->value)->where('approval_status', ApprovalStatus::REJECTED->value)->count(),
+            'published'        => (clone $base)->where('status', ScheduleStatus::PUBLISHED->value)->count(),
         ];
     }
 
@@ -171,24 +174,9 @@ class ScheduleService
         return DB::transaction(function () use ($data, $files, $participants, $reminders) {
             $orgId = getPermissionsTeamId();
             $data['organization_id'] = $orgId;
-            
-            // Check approval setting
-            $statusVal = isset($data['status']) ? (int)$data['status'] : null;
 
-            if ($statusVal === ScheduleStatus::DRAFT->value) {
-                $data['status'] = ScheduleStatus::DRAFT->value;
-            } else {
-                $orgSettings = OrgSchedulingSettings::firstOrCreate(['organization_id' => $orgId]);
-                $requiresApproval = (bool)$orgSettings->requires_approval;
-
-                if ($requiresApproval) {
-                    $data['status'] = ScheduleStatus::PENDING->value;
-                } else {
-                    $data['status'] = ScheduleStatus::PUBLISHED->value;
-                }
-            }
-
-            // Khi FE chèn dòng mới với sort_order cụ thể, đẩy các dòng cùng ngày + cùng buổi
+            // Luôn tạo ở trạng thái DRAFT, approval_status để null
+            $data['status'] = ScheduleStatus::DRAFT->value;
             // có sort_order >= vị trí chèn lên 1 đơn vị (insert behavior, không overwrite).
             if (!empty($data['sort_order']) && !empty($data[Schedule::dateColumn()]) && !empty($data['session'])) {
                 $carbon = \Carbon\Carbon::parse($data[Schedule::dateColumn()]);
@@ -206,21 +194,11 @@ class ScheduleService
             $this->syncReminders($schedule, $reminders);
 
             if ($files) {
+                $attachmentNames = $data['attachment_names'] ?? [];
                 foreach ($files as $index => $file) {
-                    $this->uploadAttachment($schedule, $file, $index);
+                    $customName = $attachmentNames[$index] ?? null;
+                    $this->uploadAttachment($schedule, $file, $index, $customName);
                 }
-            }
-
-            // Auto-trigger notifications queue if published
-            $statusVal = $schedule->status;
-            if ($statusVal instanceof ScheduleStatus) {
-                $statusVal = $statusVal->value;
-            } else {
-                $statusVal = (int)$statusVal;
-            }
-
-            if ($statusVal === ScheduleStatus::PUBLISHED->value) {
-                // Observer sẽ tự động fire SchedulePublished event
             }
 
             return $this->show($schedule);
@@ -252,12 +230,18 @@ class ScheduleService
                 $this->syncReminders($schedule, $reminders);
             }
             
-            // Sync attachments by deleting removed ones
+            // Sync attachments by deleting removed ones + update title
             if (isset($data['attachments']) && is_array($data['attachments'])) {
                 $keepIds = [];
                 foreach ($data['attachments'] as $att) {
                     if (is_array($att) && isset($att['id']) && is_numeric($att['id'])) {
                         $keepIds[] = (int)$att['id'];
+                        // Cho phép FE gửi name để đổi tên hiển thị
+                        if (!empty($att['name'])) {
+                            ScheduleAttachment::where('id', (int)$att['id'])
+                                ->where('schedule_id', $schedule->id)
+                                ->update(['title' => $att['name']]);
+                        }
                     }
                 }
                 $attachmentsToDelete = ScheduleAttachment::where('schedule_id', $schedule->id)
@@ -277,8 +261,10 @@ class ScheduleService
                 }
             }
             if ($files) {
+                $attachmentNames = $data['attachment_names'] ?? [];
                 foreach ($files as $index => $file) {
-                    $this->uploadAttachment($schedule, $file, $index);
+                    $customName = $attachmentNames[$index] ?? null;
+                    $this->uploadAttachment($schedule, $file, $index, $customName);
                 }
             }
 
@@ -317,9 +303,7 @@ class ScheduleService
             $statusStr = strtoupper($status);
             $statusInt = match ($statusStr) {
                 'DRAFT' => ScheduleStatus::DRAFT->value,
-                'PENDING' => ScheduleStatus::PENDING->value,
-                'APPROVED', 'PUBLISHED' => ScheduleStatus::PUBLISHED->value,
-                'CANCELLED' => ScheduleStatus::CANCELLED->value,
+                'PUBLISHED' => ScheduleStatus::PUBLISHED->value,
                 default => 0,
             };
         }
@@ -328,7 +312,7 @@ class ScheduleService
     }
 
     /**
-     * Đổi trạng thái đơn lẻ.
+     * Đổi trạng thái publish (DRAFT ↔ PUBLISHED).
      */
     public function changeStatus(Schedule $schedule, string|int $status): Schedule
     {
@@ -337,41 +321,65 @@ class ScheduleService
             $statusStr = strtoupper($status);
             $statusInt = match ($statusStr) {
                 'DRAFT' => ScheduleStatus::DRAFT->value,
-                'PENDING' => ScheduleStatus::PENDING->value,
-                'APPROVED', 'PUBLISHED' => ScheduleStatus::PUBLISHED->value,
-                'CANCELLED' => ScheduleStatus::CANCELLED->value,
+                'PUBLISHED' => ScheduleStatus::PUBLISHED->value,
                 default => 0,
             };
         }
 
-        $schedule->update(['status' => $statusInt]);
+        // Publish (DRAFT → PUBLISHED): xử lý logic duyệt theo flag
+        $updateData = ['status' => $statusInt];
+        if ($statusInt === ScheduleStatus::PUBLISHED->value && $schedule->status !== ScheduleStatus::PUBLISHED) {
+            $orgSettings = OrgSchedulingSettings::firstOrCreate(['organization_id' => $schedule->organization_id]);
+            if ((bool)$orgSettings->requires_approval) {
+                if ($schedule->approval_status !== ApprovalStatus::APPROVED->value) {
+                    abort(422, 'Lịch công tác chưa được duyệt, không thể ban hành.');
+                }
+            } else {
+                // Không cần duyệt → tự động set approved
+                $updateData['approval_status'] = ApprovalStatus::APPROVED->value;
+            }
+        }
+
+        $schedule->update($updateData);
 
         return $this->show($schedule->fresh());
     }
 
     /**
-     * Duyệt lịch.
+     * Gửi duyệt — set approval_status từ null → pending.
+     */
+    public function submitForApproval(Schedule $schedule): Schedule
+    {
+        if ($schedule->approval_status !== null) {
+            abort(422, 'Lịch công tác đã được gửi duyệt hoặc đã được xử lý.');
+        }
+        $schedule->update([
+            'approval_status' => ApprovalStatus::PENDING->value,
+        ]);
+        return $this->show($schedule->fresh());
+    }
+
+    /**
+     * Duyệt lịch — set approval_status = approved.
      */
     public function approve(Schedule $schedule): Schedule
     {
         $schedule->update([
-            'status'      => ScheduleStatus::PUBLISHED->value,
-            'approved_by' => Auth::id(),
-            'approved_at' => now(),
+            'approval_status' => ApprovalStatus::APPROVED->value,
+            'approved_by'     => Auth::id(),
+            'approved_at'     => now(),
         ]);
-
-        // Observer tự động fire SchedulePublished event
 
         return $this->show($schedule->fresh());
     }
 
     /**
-     * Từ chối lịch: trả về Draft.
+     * Từ chối duyệt lịch — set approval_status = rejected.
      */
     public function reject(Schedule $schedule, string $note): Schedule
     {
         $schedule->update([
-            'status' => ScheduleStatus::DRAFT->value,
+            'approval_status' => ApprovalStatus::REJECTED->value,
         ]);
         return $this->show($schedule->fresh());
     }
@@ -385,7 +393,8 @@ class ScheduleService
             $new = $schedule->replicate(['approved_by', 'approved_at', 'created_by', 'updated_by']);
             $timePart = $schedule->date_time ? $schedule->date_time->format('H:i:s') : '08:00:00';
             $new->date_time = "{$date} {$timePart}";
-            $new->status     = ScheduleStatus::DRAFT->value;
+            $new->status          = ScheduleStatus::DRAFT->value;
+            $new->approval_status = null;
             $new->save();
 
             // Clone recipients
@@ -444,7 +453,7 @@ class ScheduleService
     /**
      * Phục vụ upload attachment.
      */
-    private function uploadAttachment(Schedule $schedule, $file, int $sortOrder): void
+    private function uploadAttachment(Schedule $schedule, $file, int $sortOrder, ?string $customName = null): void
     {
         $uuid = Str::uuid()->toString();
         $ext = $file->getClientOriginalExtension();
@@ -456,7 +465,7 @@ class ScheduleService
 
         ScheduleAttachment::create([
             'schedule_id' => $schedule->id,
-            'title'       => pathinfo($fileName, PATHINFO_FILENAME),
+            'title'       => $customName ?: pathinfo($fileName, PATHINFO_FILENAME),
             'file_name'   => $fileName,
             'file_path'   => $path,
             'file_size'   => $fileSize,

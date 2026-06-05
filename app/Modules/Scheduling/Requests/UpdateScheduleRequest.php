@@ -40,7 +40,10 @@ class UpdateScheduleRequest extends FormRequest
             'participant_count'    => ['nullable', 'string', 'max:50'],
             'sort_order'           => ['nullable', 'integer', 'min:0'],
             'nature'               => ['nullable', 'string'],
-            'attachments'          => ['nullable', 'array'],
+            'attachments'            => ['nullable', 'array'],
+            'attachments.*.id'       => ['nullable', 'integer'],
+            'attachments.*.name'     => ['nullable', 'string', 'max:255'],
+            'attachment_names'       => ['nullable', 'array'],
         ];
     }
 
@@ -78,9 +81,7 @@ class UpdateScheduleRequest extends FormRequest
                     $status = strtoupper($status);
                     $validated['status'] = match ($status) {
                         'DRAFT' => ScheduleStatus::DRAFT->value,
-                        'PENDING' => ScheduleStatus::PENDING->value,
-                        'APPROVED', 'PUBLISHED' => ScheduleStatus::PUBLISHED->value,
-                        'CANCELLED' => ScheduleStatus::CANCELLED->value,
+                        'PUBLISHED' => ScheduleStatus::PUBLISHED->value,
                         default => (int)$status,
                     };
                 } else {
