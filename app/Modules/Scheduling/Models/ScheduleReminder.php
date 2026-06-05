@@ -2,6 +2,7 @@
 
 namespace App\Modules\Scheduling\Models;
 
+use App\Modules\Core\Models\NotificationSchedule;
 use Illuminate\Database\Eloquent\Model;
 use App\Modules\Scheduling\Enums\ReminderSource;
 
@@ -12,12 +13,15 @@ class ScheduleReminder extends Model
     protected $table = 'schedule_reminders';
 
     protected $fillable = [
-        'schedule_id', 'minutes_before', 'channels', 'source', 'created_at',
+        'schedule_id', 'moment', 'offset_minutes', 'remind_at', 'channels',
+        'notification_schedule_id', 'status', 'fired_at', 'source', 'created_at',
     ];
 
     protected $casts = [
-        'minutes_before' => 'integer',
+        'offset_minutes' => 'integer',
         'channels'       => 'array',
+        'remind_at'      => 'datetime',
+        'fired_at'       => 'datetime',
         'created_at'     => 'datetime',
     ];
 
@@ -35,30 +39,35 @@ class ScheduleReminder extends Model
         return $this->belongsTo(Schedule::class);
     }
 
-    // ── Compatibility Accessors / Mutators ───────────────────────────────────────
-
-    public function getOffsetMinutesAttribute()
+    public function notificationSchedule()
     {
-        return $this->minutes_before;
+        return $this->belongsTo(NotificationSchedule::class, 'notification_schedule_id');
     }
 
-    public function setOffsetMinutesAttribute($value)
+    // ── Compatibility ──────────────────────────────────────────────────────
+
+    /** @deprecated Dùng moment thay thế. */
+    public function getTriggerAttribute()
     {
-        $this->minutes_before = (int)$value;
+        return $this->moment;
+    }
+
+    /** @deprecated Dùng offset_minutes thay thế. */
+    public function getMinutesBeforeAttribute()
+    {
+        return $this->offset_minutes;
     }
 
     public function getReminderTypeAttribute()
     {
-        return $this->source ? $this->source->value : 'CUSTOM';
+        return $this->source instanceof ReminderSource ? $this->source->value : 'CUSTOM';
     }
 
     public function setReminderTypeAttribute($value)
     {
-        $value = strtoupper($value);
-        $this->source = ReminderSource::tryFrom($value) ?? ReminderSource::CUSTOM;
+        $this->source = ReminderSource::tryFrom(strtoupper($value)) ?? ReminderSource::CUSTOM;
     }
 
-    // Also support lowercase for source/reminder_type
     public function getSourceAttribute($value)
     {
         return $value;

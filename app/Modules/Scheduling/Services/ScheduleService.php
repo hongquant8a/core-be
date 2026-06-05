@@ -408,9 +408,11 @@ class ScheduleService
             // Clone reminders
             foreach ($schedule->reminders as $reminder) {
                 $new->reminders()->create([
-                    'minutes_before' => $reminder->minutes_before,
-                    'channels'       => $reminder->channels,
-                    'source'         => $reminder->source,
+                    'moment'                   => $reminder->moment,
+                    'offset_minutes'           => $reminder->offset_minutes,
+                    'channels'                 => $reminder->channels,
+                    'source'                   => $reminder->source,
+                    'notification_schedule_id' => $reminder->notification_schedule_id,
                 ]);
             }
 
@@ -497,17 +499,20 @@ class ScheduleService
     {
         $schedule->reminders()->delete();
         foreach ($reminders as $r) {
-            $minutes = $r['minutes_before'] ?? $r['offset_minutes'] ?? 0;
+            $moment = $r['moment'] ?? $r['trigger'] ?? 'before';
+            $offset = (int) ($r['offset_minutes'] ?? $r['minutes_before'] ?? 0);
+
             $source = $r['source'] ?? $r['reminder_type'] ?? 'CUSTOM';
-            
+
             $channels = $r['channels'] ?? [];
             if (!is_array($channels)) {
                 $channels = [$channels];
             }
             $channels = array_map('strtoupper', $channels);
-            
+
             $schedule->reminders()->create([
-                'minutes_before' => (int)$minutes,
+                'moment'         => $moment,
+                'offset_minutes' => $offset,
                 'channels'       => array_values(array_unique($channels)),
                 'source'         => $source,
             ]);

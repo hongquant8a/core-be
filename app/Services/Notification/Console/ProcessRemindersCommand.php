@@ -4,6 +4,7 @@ namespace App\Services\Notification\Console;
 
 use App\Modules\Core\Models\User;
 use App\Modules\Meeting\Models\MeetingReminder;
+use App\Modules\Scheduling\Models\ScheduleReminder;
 use App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum;
 use App\Modules\TaskAssignment\Models\TaskAssignmentReminder;
 use App\Services\Notification\Services\ContentBuilderRegistry;
@@ -37,6 +38,16 @@ class ProcessRemindersCommand extends Command
             ->chunkById(100, function ($reminders) use ($dispatcher, $registry, &$count) {
                 foreach ($reminders as $reminder) {
                     $this->fireMeetingReminder($reminder, $dispatcher, $registry);
+                    $count++;
+                }
+            });
+
+        ScheduleReminder::with('schedule')
+            ->where('status', 'pending')
+            ->where('remind_at', '<=', now())
+            ->chunkById(100, function ($reminders) use ($dispatcher, $registry, &$count) {
+                foreach ($reminders as $reminder) {
+                    $this->fireScheduleReminder($reminder, $dispatcher, $registry);
                     $count++;
                 }
             });
@@ -156,6 +167,57 @@ class ProcessRemindersCommand extends Command
                 eventKey: $eventKey,
                 recipient: $user,
                 notifiable: $item,
+                channels: $channels,
+                builder: $builder,
+                organizationId: $organizationId,
+            );
+        }
+
+        $reminder->update(['status' => 'fired', 'fired_at' => now()]);
+    }
+
+    private function fireScheduleReminder(ScheduleReminder $reminder, NotificationDispatcher $dispatcher, ContentBuilderRegistry $registry): void
+    {
+        $schedule = $reminder->schedule;
+        if (! $schedule) {
+            $reminder->update(['status' => 'cancelled', 'fired_at' => now()]);
+            return;
+        }
+
+        $statusVal = $schedule->status instanceof \App\Modules\Scheduling\Enums\ScheduleStatus
+            ? $schedule->status->value
+            : (int) $schedule->status;
+
+        if ($statusVal !== \App\Modules\Scheduling\Enums\ScheduleStatus::PUBLISHED->value) {
+            $reminder->update(['status' => 'cancelled', 'fired_at' => now()]);
+            return;
+        }
+
+        $organizationId = (int) $schedule->organization_id;
+        if ($organizationId === 0) {
+            $reminder->update(['status' => 'cancelled', 'fired_at' => now()]);
+            return;
+        }
+
+        $channels = array_map(fn($c) => strtolower(trim($c)), $reminder->channels ?? []);
+        if (empty($channels)) {
+            $reminder->update(['status' => 'cancelled', 'fired_at' => now()]);
+            return;
+        }
+
+        $builder = $registry->for('schedule_reminder');
+
+        $schedule->loadMissing('recipients.user');
+        foreach ($schedule->recipients as $recipient) {
+            $user = $recipient->user;
+            if (! $user) {
+                continue;
+            }
+
+            $dispatcher->dispatch(
+                eventKey: 'schedule_reminder',
+                recipient: $user,
+                notifiable: $schedule,
                 channels: $channels,
                 builder: $builder,
                 organizationId: $organizationId,

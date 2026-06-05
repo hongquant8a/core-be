@@ -17,11 +17,16 @@ class ScheduleReminderResource extends JsonResource
         return [
             'id'             => $this->id,
             'schedule_id'    => $this->schedule_id,
-            'minutes_before' => $this->minutes_before,
-            'offset_minutes' => $this->minutes_before,
+            'moment'         => $this->moment,
+            'offset_minutes' => $this->offset_minutes,
             'channels'       => $this->channels,
+            'status'         => $this->status,
+            'fired_at'       => $this->fired_at?->format('H:i:s d/m/Y'),
             'source'         => $sourceVal,
             'reminder_type'  => strtoupper($sourceVal ?? 'CUSTOM'),
+            // Deprecated
+            'minutes_before' => $this->offset_minutes,
+            'trigger'        => $this->moment,
         ];
     }
 }

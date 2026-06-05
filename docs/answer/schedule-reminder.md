@@ -1,8 +1,32 @@
 # Lịch công tác — Schedule Reminder (cấu hình nhắc lịch)
 
-## Dữ liệu reminder trong response
+## Mô hình 3 tầng nhắc lịch
 
-Mỗi schedule có thể có 0-n reminder, trả về trong field `reminders`:
+```
+[Tầng 1: Hệ thống] → Mở/Khóa kênh (Zalo, SMS, Email, FCM, ...)
+       ↓
+[Tầng 2: Module] → Cấu hình template nhắc cho toàn Module (notification_schedules)
+       ↓
+[Tầng 3: Từng Schedule] → Bản ghi schedule_reminders, compute remind_at khi publish
+```
+
+Pattern đồng bộ với TaskAssignment: reminder được tính `remind_at` khi publish, cron `ProcessRemindersCommand` poll và fire.
+
+**Nguyên tắc:** Nếu cả tầng 2 (module) và tầng 3 (per-schedule) cùng được cấu hình → **cả 2 cùng bắn**, không loại trừ nhau.
+
+## 4 loại thời điểm nhắc (moment)
+
+| moment | Ý nghĩa | `offset_minutes` | Có trong preset? |
+|--------|---------|-------------------|-------------------|
+| `immediate` | Bắn **ngay khi schedule được duyệt** (publish) | Không dùng | Không |
+| `before` | Nhắc **trước** thời gian sự kiện N phút | Số phút trước | Có |
+| `on` | Nhắc **đúng** thời điểm sự kiện | Không dùng | Có |
+| `after` | Nhắc **sau** thời gian sự kiện N phút | Số phút sau | Có |
+
+- `immediate` chỉ dùng ở tầng per-schedule — khi publish, `remind_at = now()`, cron bắn ngay
+- Module-level instant notification (qua `schedule_published` event) và per-schedule `immediate` reminder cùng bắn nếu cả 2 được cấu hình
+
+## Dữ liệu reminder trong response
 
 ```json
 {
@@ -10,23 +34,31 @@ Mỗi schedule có thể có 0-n reminder, trả về trong field `reminders`:
     {
       "id": 15,
       "schedule_id": 42,
-      "minutes_before": 30,
-      "offset_minutes": 30,
-      "channels": ["fcm", "mail"],
+      "moment": "immediate",
+      "offset_minutes": 0,
+      "channels": ["fcm"],
+      "status": "pending",
+      "fired_at": null,
       "source": "CUSTOM",
-      "reminder_type": "CUSTOM"
+      "reminder_type": "CUSTOM",
+      "minutes_before": 0
     }
   ]
 }
 ```
 
 | Field | Kiểu | Mô tả |
-|---|---|---|
-| `minutes_before` | int | Số phút nhắc trước thời điểm `date_time` của schedule |
-| `offset_minutes` | int | Alias của `minutes_before` (backward-compatible) |
-| `channels` | string[] | Danh sách kênh gửi thông báo |
-| `source` | string | `CUSTOM` (người dùng tự chọn) hoặc `PRESET` (theo cấu hình mặc định) |
+|-------|------|-------|
+| `id` | int | ID reminder |
+| `schedule_id` | int | ID schedule |
+| `moment` | string | `immediate`, `before`, `on`, `after` |
+| `offset_minutes` | int | Số phút offset (có nghĩa với `before` và `after`) |
+| `channels` | string[] | Kênh gửi: `fcm`, `mail`, `zalo`, `zalo_zns`, `sms` |
+| `status` | string | `pending`, `fired`, `cancelled` |
+| `fired_at` | string\|null | Thời điểm fire (`H:i:s d/m/Y`) |
+| `source` | string | `CUSTOM` (tự chọn) hoặc `PRESET` (theo mẫu) |
 | `reminder_type` | string | Alias của `source` |
+| `minutes_before` | int | **Deprecated** — dùng `offset_minutes` |
 
 ## Gửi reminder khi tạo/sửa schedule
 
@@ -35,19 +67,20 @@ Mỗi schedule có thể có 0-n reminder, trả về trong field `reminders`:
 ```json
 {
   "reminders": [
-    { "minutes_before": 30, "channels": ["fcm", "mail"] },
-    { "minutes_before": 1440, "channels": ["zalo"] }
+    { "moment": "immediate", "channels": ["fcm"] },
+    { "moment": "before", "offset_minutes": 30, "channels": ["fcm"] },
+    { "moment": "on", "channels": ["zalo"] },
+    { "moment": "after", "offset_minutes": 60, "channels": ["mail"] }
   ]
 }
 ```
 
-| Field | Bắt buộc | Ghi chú |
-|---|---|---|
-| `minutes_before` | Không | Số phút nhắc trước giờ diễn ra. Mặc định: `0` (nhắc ngay lúc bắt đầu) |
-| `offset_minutes` | Không | Alias của `minutes_before`, FE có thể dùng thay thế |
-| `channels` | Không | Mảng kênh. Mặc định: `[]`. Giá trị hợp lệ: `fcm`, `mail`, `zalo`, `zalo_zns`, `sms` |
-| `source` | Không | `CUSTOM` hoặc `PRESET`. Mặc định: `CUSTOM` |
-| `reminder_type` | Không | Alias của `source` |
+| Field | Bắt buộc | Mặc định | Ghi chú |
+|-------|----------|----------|---------|
+| `moment` | Không | `"before"` | `immediate`, `before`, `on`, `after` |
+| `offset_minutes` | Không | `0` | Chỉ có nghĩa với `before` và `after` |
+| `channels` | Không | `[]` | `fcm`, `mail`, `zalo`, `zalo_zns`, `sms` |
+| `source` | Không | `"CUSTOM"` | `CUSTOM` hoặc `PRESET` |
 
 ### Ví dụ
 
@@ -60,39 +93,50 @@ Mỗi schedule có thể có 0-n reminder, trả về trong field `reminders`:
   "session": "S",
   "location": "Phòng họp 1",
   "reminders": [
-    { "minutes_before": 15, "channels": ["fcm"] },
-    { "minutes_before": 1440, "channels": ["fcm", "mail"] }
+    { "moment": "immediate", "channels": ["fcm"] },
+    { "moment": "before", "offset_minutes": 30, "channels": ["fcm", "mail"] },
+    { "moment": "on", "channels": ["zalo"] },
+    { "moment": "after", "offset_minutes": 120, "channels": ["mail"] }
   ]
 }
 ```
 
-Giải thích:
-- `minutes_before: 15` → gửi thông báo lúc 07:45 (15 phút trước 08:00)
-- `minutes_before: 1440` → gửi thông báo 1 ngày trước (1440 phút = 24 giờ), lúc 08:00 ngày 09/06
-
-## Các giá trị `minutes_before` thường dùng
-
-| Phút | Ý nghĩa |
-|---|---|
-| `0` | Nhắc đúng giờ bắt đầu |
-| `5` | Nhắc 5 phút trước |
-| `15` | Nhắc 15 phút trước |
-| `30` | Nhắc 30 phút trước |
-| `60` | Nhắc 1 giờ trước |
-| `120` | Nhắc 2 giờ trước |
-| `1440` | Nhắc 1 ngày trước |
-| `10080` | Nhắc 1 tuần trước |
+- `immediate` → bắn ngay khi schedule được duyệt (cùng lúc với module-level event nếu có)
+- `before + 30` → gửi lúc 07:30 (30 phút trước 08:00)
+- `on` → gửi đúng 08:00
+- `after + 120` → gửi lúc 10:00 (2 giờ sau khi bắt đầu)
 
 ## Luồng xử lý
 
-1. FE gửi `reminders[]` trong body `POST` (tạo) hoặc `PUT|PATCH` (sửa)
-2. Service xóa toàn bộ reminder cũ, tạo lại danh sách mới từ `reminders[]`
-3. Cron job `ProcessRemindersCommand` quét `schedule_reminders`, tính `remind_at = schedule.date_time - minutes_before`, gửi qua các `channels` đã chọn
-4. Reminder chỉ thực sự được gửi nếu schedule đang ở trạng thái `PUBLISHED`
+1. FE gửi `reminders[]` trong body `POST`/`PUT`/`PATCH`
+2. `ScheduleService::syncReminders()` xóa reminder cũ, tạo mới
+3. Khi schedule được publish (Observer `saved`):
+   - Event `SchedulePublished` → gửi thông báo tức thời theo module-level config
+   - `ScheduleReminderScheduler::scheduleFor()` tính `remind_at`:
+     - `immediate` → `remind_at = now()`
+     - `before`/`on`/`after` → tính từ `date_time` + `moment` + `offset_minutes`
+   - Set `status = pending`
+4. Khi schedule bị cancel → `cancelPending()` set `status = cancelled`
+5. Khi schedule được update → `cancelPending()` + `scheduleFor()` (re-schedule)
+6. Cron `notifications:process-reminders` poll `remind_at <= now()` và fire qua `NotificationDispatcher`
+7. Sau khi fire → `status = fired`, `fired_at = now()`
+
+## So sánh với TaskAssignment
+
+| | TaskAssignment | Scheduling |
+|---|---|---|
+| Bảng reminder | `task_assignment_reminders` | `schedule_reminders` |
+| Cột thời điểm | `moment` (before/on/after) | `moment` (immediate/before/on/after) |
+| Cột thời gian fire | `remind_at` | `remind_at` |
+| Cột trạng thái | `status` (pending/fired/cancelled) | `status` (pending/fired/cancelled) |
+| Xử lý | Cron poll `remind_at <= now()` | Cron poll `remind_at <= now()` |
+| Kênh | Từ `notification_schedules` | Lưu trực tiếp trên reminder |
+| immediate | Không có | Có (per-schedule, bắn cùng publish) |
 
 ## Lưu ý
 
-- Khi sửa schedule (`PATCH`), nếu không gửi field `reminders` → giữ nguyên reminder cũ (không xóa)
-- Khi gửi `reminders: []` (mảng rỗng) → xóa tất cả reminder
-- `channels` được normalize về uppercase khi lưu DB, FE có thể gửi lowercase
+- `channels` được normalize về UPPERCASE khi lưu DB, FE có thể gửi lowercase
 - Kênh `fcm` = push notification qua Firebase Cloud Messaging
+- Không gửi `reminders` → giữ nguyên reminder cũ
+- Gửi `reminders: []` → xóa tất cả reminder
+- `preset` không có `immediate` — immediate chỉ tồn tại ở per-schedule và module-level event config

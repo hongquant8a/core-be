@@ -22,225 +22,202 @@ class PermissionSeeder extends Seeder
     protected const GUARD = 'web';
 
     /**
-     * Danh sách đầy đủ permission theo module và resource.
-     * Định dạng: 'resource.action' — resource trùng prefix API (users, permissions, roles, organizations, posts, post-categories).
+     * Danh sách đầy đủ permission theo nhóm module (Core, TaskAssignment, Meeting, Scheduling).
+     * Định dạng: 'Module' => ['resource' => ['action', ...]] — resource trùng prefix API.
      * Khi thêm module/chức năng: bổ sung vào đúng nhóm và chạy sail artisan db:seed --class=PermissionSeeder.
      */
     protected static array $PERMISSIONS = [
-        // Core - Users
-        'users' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
+        'Core' => [
+            'users' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
+            ],
+            'permissions' => [
+                'stats', 'index', 'tree', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'export', 'import',
+            ],
+            'roles' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'export', 'import',
+            ],
+            'organizations' => [
+                'stats', 'index', 'tree', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
+            ],
+            'log-activities' => [
+                'stats', 'index', 'show', 'export', 'destroy', 'bulkDestroy',
+                'destroyByDate', 'destroyAll',
+            ],
+            'settings' => [
+                'index', 'show', 'update',
+            ],
+            'sso-settings' => [
+                'index', 'update',
+            ],
+            'dashboard' => [
+                'systemOverview',
+            ],
+            'notifications' => [
+                'test',
+            ],
+            'notifications.event-configs' => [
+                'index', 'update',
+            ],
+            'notifications.schedules' => [
+                'index', 'store', 'update', 'destroy',
+            ],
+            'notifications.logs' => [
+                'index', 'show', 'destroy', 'bulkDestroy', 'export',
+            ],
         ],
-        // Core - Permissions (có description, sort_order, parent_id để nhóm frontend)
-        'permissions' => [
-            'stats', 'index', 'tree', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'export', 'import',
+        'TaskAssignment' => [
+            'task-assignment-departments' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
+                'users', 'syncUsers', 'removeUser',
+            ],
+            'task-assignment-employees' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
+            ],
+            'task-assignment-types' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
+            ],
+            'task-assignment-item-types' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
+            ],
+            'task-assignment-documents' => [
+                'stats', 'statsByTime', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
+            ],
+            'presentation' => [
+                'index',
+            ],
+            'task-assignment-items' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
+                'updateProgress', 'markDone',
+                'statsByDepartment', 'statsByUser', 'statsByTime', 'overdue', 'upcomingDeadline',
+                'statsByItemType', 'statsByDocument', 'exportMonthlyReport',
+            ],
+            'task-assignment-item-reports' => [
+                'index', 'show', 'store', 'update', 'destroy', 'confirm',
+            ],
+            'task-assignment-item-transfers' => [
+                'index', 'store',
+            ],
+            'task-assignment-item-notes' => [
+                'store',
+            ],
+            'my-received-tasks' => [
+                'index',
+            ],
+            'my-assigned-tasks' => [
+                'index',
+            ],
         ],
-        // Core - Roles (bảng roles chuẩn Spatie, không có cột status)
-        'roles' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'export', 'import',
+        'Meeting' => [
+            'meetings' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
+                'exportReports',
+            ],
+            'meeting-types' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
+            ],
+            'meeting-locations' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
+            ],
+            'meeting-document-types' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
+            ],
+            'meeting-attendee-groups' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
+                'attendees',
+            ],
+            'meeting-attendees' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
+            ],
+            'meeting-agendas' => [
+                'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
+            ],
+            'meeting-documents' => [
+                'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
+            ],
+            'meeting-participants' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
+            ],
+            'meeting-attendances' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
+            ],
+            'meeting-vote-topics' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
+            ],
+            'meeting-vote-responses' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
+            ],
+            'meeting-discussion-registrations' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+            ],
+            'meeting-personal-notes' => [
+                'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
+            ],
+            'meeting-personal-note-attachments' => [
+                'index', 'store', 'update', 'destroy',
+            ],
+            'meeting-minutes-templates' => [
+                'index', 'show', 'store', 'update', 'destroy',
+            ],
+            'meeting-invitation-templates' => [
+                'index', 'show', 'store', 'update', 'destroy',
+            ],
+            'meeting-settings' => [
+                'show', 'update',
+            ],
         ],
-        // Core - Organizations (cấu trúc cây parent_id)
-        'organizations' => [
-            'stats', 'index', 'tree', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
-        ],
-        // Core - Nhật ký truy cập
-        'log-activities' => [
-            'stats', 'index', 'show', 'export', 'destroy', 'bulkDestroy',
-            'destroyByDate', 'destroyAll',
-        ],
-        // TaskAssignment - Phòng ban giao việc
-        'task-assignment-departments' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
-            'users', 'syncUsers', 'removeUser',
-        ],
-        // TaskAssignment - Nhân viên giao việc
-        'task-assignment-employees' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
-        ],
-        // TaskAssignment - Loại văn bản giao việc
-        'task-assignment-types' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
-        ],
-        // TaskAssignment - Loại công việc
-        'task-assignment-item-types' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
-        ],
-        // TaskAssignment - Văn bản giao việc
-        'task-assignment-documents' => [
-            'stats', 'statsByTime', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
-        ],
-        // Trình chiếu tổng quan công việc
-        'presentation' => [
-            'index',
-        ],
-        // TaskAssignment - Công việc
-        'task-assignment-items' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
-            'updateProgress', 'markDone',
-            'statsByDepartment', 'statsByUser', 'statsByTime', 'overdue', 'upcomingDeadline',
-            'statsByItemType', 'statsByDocument', 'exportMonthlyReport',
-        ],
-        // TaskAssignment - Báo cáo công việc
-        'task-assignment-item-reports' => [
-            'index', 'show', 'store', 'update', 'destroy', 'confirm',
-        ],
-        // TaskAssignment - Điều chuyển công việc
-        'task-assignment-item-transfers' => [
-            'index', 'store',
-        ],
-        // TaskAssignment - Ghi chú công việc
-        'task-assignment-item-notes' => [
-            'store',
-        ],
-        // Core - Cấu hình hệ thống
-        'settings' => [
-            'index', 'show', 'update',
-        ],
-        // Core - Cấu hình SSO (quản trị OAuth providers)
-        'sso-settings' => [
-            'index', 'update',
-        ],
-        // Core - Dashboard
-        'dashboard' => [
-            'systemOverview',
-        ],
-        // Core - Thông báo kiểm thử (SMS/Mail/Zalo)
-        'notifications' => [
-            'test',
-        ],
-        // Core - Cấu hình sự kiện thông báo
-        'notifications.event-configs' => [
-            'index', 'update',
-        ],
-        // Core - Cấu hình lịch nhắc
-        'notifications.schedules' => [
-            'index', 'store', 'update', 'destroy',
-        ],
-        // Core - Nhật ký gửi thông báo (admin)
-        'notifications.logs' => [
-            'index', 'show', 'destroy', 'bulkDestroy', 'export',
-        ],
-        // TaskAssignment - Công việc được giao (cho nhân viên xem task của mình)
-        'my-received-tasks' => [
-            'index',
-        ],
-        // TaskAssignment - Công việc đang giao (cho quản trị xem task mình đã giao)
-        'my-assigned-tasks' => [
-            'index',
-        ],
-        // Meeting - Cuộc họp
-        // Toàn bộ in-meeting control actions (lockAttendance/unlockAttendance/endEarly/
-        // highlightAgenda/highlightDiscussion + vote-topics open/close + showQrCode) đã
-        // chuyển sang MeetingPolicy gate (phân quyền theo khóa ngoại của meeting:
-        // chairperson_meeting_attendee_id / operator_meeting_attendee_id / qr_manager_user_id).
-        // KHÔNG còn dùng Spatie permission cho các action gắn meeting cụ thể.
-        'meetings' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
-            // Báo cáo tổng hợp 1 cuộc họp (docx biên bản + xlsx thảo luận/chất vấn/biểu quyết/điểm danh).
-            // Admin trang quản trị có quyền này → export bất kỳ meeting nào. Chair/op vẫn có sẵn qua Gate.
-            'exportReports',
-        ],
-        // Meeting - Loại cuộc họp
-        'meeting-types' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
-        ],
-        // Meeting - Địa điểm họp
-        'meeting-locations' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
-        ],
-        // Meeting - Loại tài liệu họp
-        'meeting-document-types' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
-        ],
-        'meeting-attendee-groups' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
-            'attendees',
-        ],
-        'meeting-attendees' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
-        ],
-        'meeting-agendas' => [
-            'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
-        ],
-        'meeting-documents' => [
-            'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
-        ],
-        // In-meeting actions đã chuyển sang nested + Gate Policy → các permission
-        // `respond`/`checkin`/`markAbsent`/`approve`/`reject` không còn dùng → drop.
-        'meeting-participants' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
-        ],
-        'meeting-attendances' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
-        ],
-        'meeting-vote-topics' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
-        ],
-        'meeting-vote-responses' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
-        ],
-        'meeting-discussion-registrations' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy',
-        ],
-        'meeting-personal-notes' => [
-            'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
-        ],
-        'meeting-personal-note-attachments' => [
-            'index', 'store', 'update', 'destroy',
-        ],
-        'meeting-minutes-templates' => [
-            'index', 'show', 'store', 'update', 'destroy',
-        ],
-        'meeting-invitation-templates' => [
-            'index', 'show', 'store', 'update', 'destroy',
-        ],
-        'meeting-settings' => [
-            'show', 'update',
-        ],
-        // Scheduling - Lịch công tác
-        'schedules' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
-            'approve', 'duplicate', 'reorder', 'driver-view',
-        ],
-        'schedules-executive' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
-            'approve', 'duplicate', 'reorder',
-        ],
-        'schedules-office' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
-            'approve', 'duplicate', 'reorder',
-        ],
-        'scheduling-employees' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
-        ],
-        'scheduling-employee-groups' => [
-            'stats', 'index', 'show', 'store', 'update', 'destroy',
-            'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
-        ],
-        'scheduling-settings' => [
-            'show', 'update',
+        'Scheduling' => [
+            'schedules-executive' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
+                'approve', 'duplicate', 'reorder', 'driver-view',
+            ],
+            'schedules-office' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
+                'approve', 'duplicate', 'reorder', 'driver-view',
+            ],
+            'scheduling-employees' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
+            ],
+            'scheduling-employee-groups' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
+            ],
+            'scheduling-settings' => [
+                'show', 'update',
+            ],
         ],
     ];
+
+    /** Trả về danh sách permission dạng phẳng [resource => actions] từ cấu trúc module. */
+    private static function getFlatPermissions(): array
+    {
+        $flat = [];
+        foreach (self::$PERMISSIONS as $resources) {
+            foreach ($resources as $resource => $actions) {
+                $flat[$resource] = $actions;
+            }
+        }
+        return $flat;
+    }
 
     public function run(): void
     {
@@ -272,6 +249,14 @@ class PermissionSeeder extends Seeder
             ]
         );
     }
+
+    /** Nhãn tiếng Việt cho module. */
+    protected static array $MODULE_LABELS = [
+        'Core'           => 'Hệ thống',
+        'TaskAssignment' => 'Quản lý công việc',
+        'Meeting'        => 'Phòng họp không giấy',
+        'Scheduling'     => 'Lịch công tác',
+    ];
 
     /** Nhãn nhóm permission theo resource (để description). */
     protected static array $RESOURCE_LABELS = [
@@ -317,7 +302,6 @@ class PermissionSeeder extends Seeder
         'meeting-minutes-templates' => 'Template biên bản họp',
         'meeting-invitation-templates' => 'Template giấy mời họp',
         'meeting-settings' => 'Cấu hình cuộc họp',
-        'schedules' => 'Lịch công tác',
         'schedules-executive' => 'Lịch công tác - Thường trực',
         'schedules-office'    => 'Lịch công tác - Lãnh đạo',
         'scheduling-employees' => 'Nhân viên lịch công tác',
@@ -367,29 +351,40 @@ class PermissionSeeder extends Seeder
         'driver-view' => 'Xem lịch phân công lái xe',
     ];
 
-    /** Tạo đầy đủ permission từ danh sách PERMISSIONS (kèm description, sort_order, parent_id). */
+    /** Tạo đầy đủ permission từ danh sách PERMISSIONS (kèm description, sort_order, parent_id).
+     * Cây 3 tầng: module → group:resource → resource.action. */
     protected function seedPermissions(): void
     {
         $sortOrder = 0;
-        $parentIds = [];
 
-        foreach (self::$PERMISSIONS as $resource => $actions) {
-            $groupName = "group:{$resource}";
-            $groupLabel = self::$RESOURCE_LABELS[$resource] ?? ucfirst($resource);
-            $group = Permission::firstOrCreate(
-                ['name' => $groupName, 'guard_name' => self::GUARD],
-                ['name' => $groupName, 'guard_name' => self::GUARD, 'description' => $groupLabel, 'sort_order' => $sortOrder++, 'parent_id' => null]
+        foreach (self::$PERMISSIONS as $module => $resources) {
+            // Tầng 1: nhóm module (Hệ thống, Giao việc, Cuộc họp, Lịch công tác)
+            $moduleGroupName = "module:{$module}";
+            $moduleLabel = self::$MODULE_LABELS[$module] ?? $module;
+            $moduleGroup = Permission::updateOrCreate(
+                ['name' => $moduleGroupName, 'guard_name' => self::GUARD],
+                ['description' => $moduleLabel, 'sort_order' => $sortOrder++, 'parent_id' => null]
             );
-            $parentIds[$resource] = $group->id;
 
-            foreach ($actions as $idx => $action) {
-                $name = "{$resource}.{$action}";
-                $actionLabel = self::$ACTION_LABELS[$action] ?? $action;
-                $desc = ($groupLabel ?? '').' - '.$actionLabel;
-                Permission::updateOrCreate(
-                    ['name' => $name, 'guard_name' => self::GUARD],
-                    ['description' => $desc, 'sort_order' => $idx, 'parent_id' => $group->id]
+            foreach ($resources as $resource => $actions) {
+                // Tầng 2: nhóm resource (group:users, group:roles, ...)
+                $groupName = "group:{$resource}";
+                $groupLabel = self::$RESOURCE_LABELS[$resource] ?? ucfirst($resource);
+                $group = Permission::updateOrCreate(
+                    ['name' => $groupName, 'guard_name' => self::GUARD],
+                    ['description' => $groupLabel, 'sort_order' => $sortOrder++, 'parent_id' => $moduleGroup->id]
                 );
+
+                // Tầng 3: action (users.stats, users.index, ...)
+                foreach ($actions as $idx => $action) {
+                    $name = "{$resource}.{$action}";
+                    $actionLabel = self::$ACTION_LABELS[$action] ?? $action;
+                    $desc = ($groupLabel ?? '').' - '.$actionLabel;
+                    Permission::updateOrCreate(
+                        ['name' => $name, 'guard_name' => self::GUARD],
+                        ['description' => $desc, 'sort_order' => $idx, 'parent_id' => $group->id]
+                    );
+                }
             }
         }
 
@@ -587,7 +582,8 @@ class PermissionSeeder extends Seeder
     protected function getAllPermissionNames(): array
     {
         $names = [];
-        foreach (self::$PERMISSIONS as $resource => $actions) {
+        $flat = self::getFlatPermissions();
+        foreach ($flat as $resource => $actions) {
             foreach ($actions as $action) {
                 $names[] = "{$resource}.{$action}";
             }
@@ -600,10 +596,11 @@ class PermissionSeeder extends Seeder
     protected function getQuanTriPermissionNames(): array
     {
         $names = [];
+        $flat = self::getFlatPermissions();
 
         // Full quyền trên danh mục
         foreach (['task-assignment-departments', 'task-assignment-employees', 'task-assignment-types', 'task-assignment-item-types'] as $resource) {
-            foreach (self::$PERMISSIONS[$resource] as $action) {
+            foreach ($flat[$resource] as $action) {
                 $names[] = "{$resource}.{$action}";
             }
         }
@@ -727,8 +724,9 @@ class PermissionSeeder extends Seeder
     protected function getTongHopPermissionNames(): array
     {
         $names = [];
-        foreach (['schedules', 'schedules-executive', 'schedules-office', 'scheduling-employees', 'scheduling-employee-groups', 'scheduling-settings'] as $resource) {
-            foreach (self::$PERMISSIONS[$resource] as $action) {
+        $flat = self::getFlatPermissions();
+        foreach (['schedules-executive', 'schedules-office', 'scheduling-employees', 'scheduling-employee-groups', 'scheduling-settings'] as $resource) {
+            foreach ($flat[$resource] as $action) {
                 $names[] = "{$resource}.{$action}";
             }
         }
@@ -769,9 +767,12 @@ class PermissionSeeder extends Seeder
     protected function getLaiXePermissionNames(): array
     {
         return [
-            'schedules.index',
-            'schedules.show',
-            'schedules.driver-view',
+            'schedules-executive.index',
+            'schedules-executive.show',
+            'schedules-executive.driver-view',
+            'schedules-office.index',
+            'schedules-office.show',
+            'schedules-office.driver-view',
         ];
     }
 }

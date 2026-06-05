@@ -3,95 +3,95 @@
 namespace App\Services\Notification\Services;
 
 use App\Modules\Scheduling\Models\Schedule;
-use App\Modules\Scheduling\Models\ScheduleReminder;
-use App\Modules\Scheduling\Enums\ReminderStatusEnum;
-use App\Services\Notification\Jobs\SendScheduleReminderJob;
+use App\Modules\Scheduling\Enums\SessionType;
 use Carbon\Carbon;
 
 class ScheduleReminderScheduler
 {
     /**
-     * Recompute and schedule reminders for a published schedule.
+     * Tạo pending reminders cho schedule khi được publish.
+     * Pattern giống TaskAssignment: tính remind_at, lưu DB, cron sẽ poll và fire.
      */
     public function scheduleFor(Schedule $schedule): void
     {
         $eventDatetime = $this->getEventDatetime($schedule);
-
-        // Load reminders if not loaded
         $schedule->load('reminders');
 
         foreach ($schedule->reminders as $reminder) {
-            $remindAt = $eventDatetime->copy()->subMinutes($reminder->minutes_before);
-            
-            $reminder->update([
-                'remind_at' => $remindAt,
-                'status' => ReminderStatusEnum::Pending->value,
-            ]);
+            $remindAt = $this->computeRemindAt($eventDatetime, $reminder->moment, (int) $reminder->offset_minutes);
 
-            $recipients = $this->resolveRecipients($schedule);
-
-            if ($remindAt->isFuture()) {
-                foreach ($recipients as $user) {
-                    SendScheduleReminderJob::dispatch(
-                         $schedule->id,
-                         $reminder->id,
-                         $user->id
-                    )->delay($remindAt)->onQueue('notifications');
-                }
+            if ($remindAt === null || !$remindAt->isFuture()) {
+                // Đã qua hoặc không tính được — fire ngay khi cron chạy
+                $reminder->update([
+                    'remind_at' => now(),
+                    'status'    => 'pending',
+                ]);
+            } else {
+                $reminder->update([
+                    'remind_at' => $remindAt,
+                    'status'    => 'pending',
+                ]);
             }
         }
     }
 
     /**
-     * Cancel pending reminders for a schedule.
+     * Hủy pending reminders của schedule.
      */
     public function cancelPending(Schedule $schedule): void
     {
-        $schedule->reminders()->where('status', ReminderStatusEnum::Pending->value)->update([
-            'status' => ReminderStatusEnum::Cancelled->value,
-        ]);
+        $schedule->reminders()
+            ->where('status', 'pending')
+            ->update(['status' => 'cancelled']);
     }
 
     /**
-     * Helper to get event datetime.
+     * Tính remind_at từ event time + moment + offset_minutes.
+     */
+    public function computeRemindAt(Carbon $eventTime, string $moment, int $offsetMinutes): ?Carbon
+    {
+        return match ($moment) {
+            'immediate' => now(),
+            'before'    => $offsetMinutes ? $eventTime->copy()->subMinutes($offsetMinutes) : $eventTime,
+            'on'        => $eventTime->copy(),
+            'after'     => $offsetMinutes ? $eventTime->copy()->addMinutes($offsetMinutes) : null,
+            default     => null,
+        };
+    }
+
+    /**
+     * Lấy thời gian sự kiện từ schedule.
      */
     public function getEventDatetime(Schedule $schedule): Carbon
     {
-        $date = $schedule->event_date;
-        $timeStr = $schedule->start_time;
-
-        if (!$timeStr) {
-            $sessionVal = $schedule->session instanceof \App\Modules\Scheduling\Enums\SessionTypeEnum
-                ? $schedule->session->value
-                : $schedule->session;
-
-            $timeStr = match ($sessionVal) {
-                'S' => '07:30:00',
-                'C' => '13:30:00',
-                'T' => '19:30:00',
-                default => '08:00:00',
-            };
+        $dateTime = $schedule->date_time;
+        if ($dateTime instanceof Carbon) {
+            return $dateTime;
         }
 
-        if ($date instanceof Carbon) {
-            $dateStr = $date->format('Y-m-d');
-        } else {
-            $dateStr = Carbon::parse($date)->format('Y-m-d');
-        }
+        $dateStr = Carbon::parse($dateTime)->format('Y-m-d');
+        $sessionVal = $schedule->session instanceof SessionType
+            ? $schedule->session->value
+            : $schedule->session;
+
+        $timeStr = match ($sessionVal) {
+            'S' => '07:30:00',
+            'C' => '13:30:00',
+            'T' => '19:30:00',
+            default => '08:00:00',
+        };
 
         return Carbon::parse("{$dateStr} {$timeStr}");
     }
 
     /**
-     * Resolve all recipient users of a schedule, expanding groups.
-     * Returns an array of User models.
+     * Lấy danh sách User nhận reminder từ recipients của schedule.
      */
     public function resolveRecipients(Schedule $schedule): array
     {
         $schedule->load(['recipients.user', 'recipients.group.users']);
 
         $users = [];
-
         foreach ($schedule->recipients as $recipient) {
             if ($recipient->user) {
                 $users[$recipient->user->id] = $recipient->user;
