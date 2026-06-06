@@ -108,7 +108,7 @@ Cập nhật nội dung, không đổi `status`/`approval_status`. Hỗ trợ c�
 
 Set `approval_status` từ `null` → `"pending"`.
 
-> Permission: `schedules.update`. Chỉ gọi được khi `approval_status` đang là `null`. Nếu đã gửi duyệt rồi → lỗi 422.
+> Permission: `schedules-{executive|office}.update` (qua middleware `schedule.module`). Chỉ gọi được khi `approval_status` đang là `null`. Nếu đã gửi duyệt rồi → lỗi 422.
 
 ```json
 // Response 200
@@ -128,7 +128,7 @@ Set `approval_status` từ `null` → `"pending"`.
 
 Set `approval_status="approved"` + ghi `approved_by`/`approved_at`.
 
-> Permission: `schedules.approve`.
+> Permission: `schedules-{executive|office}.approve` (qua middleware `schedule.module`).
 
 ```json
 // Response 200
@@ -150,7 +150,7 @@ Set `approval_status="approved"` + ghi `approved_by`/`approved_at`.
 
 Set `approval_status="rejected"`. Nhận `rejection_note` (hiện chỉ log, không lưu DB).
 
-> Permission: `schedules.approve`.
+> Permission: `schedules-{executive|office}.approve` (qua middleware `schedule.module`).
 
 ```json
 // Request
@@ -178,7 +178,7 @@ Set `approval_status="rejected"`. Nhận `rejection_note` (hiện chỉ log, kh�
 - DRAFT → PUBLISHED: nếu `requires_approval=true` thì bắt buộc `approval_status=approved`, nếu chưa → lỗi 422. Nếu `requires_approval=false` thì tự động set `approval_status=approved`.
 - PUBLISHED → DRAFT: cho phép (rút lại).
 
-> Permission: `schedules.changeStatus`.
+> Permission: `schedules-{executive|office}.changeStatus` (qua middleware `schedule.module`).
 
 ```json
 // Request
@@ -207,7 +207,7 @@ Set `approval_status="rejected"`. Nhận `rejection_note` (hiện chỉ log, kh�
 
 ### 7. Bulk cập nhật trạng thái — `PATCH /api/schedules/bulk-status`
 
-> Permission: `schedules.update`.
+> Permission: `schedules-{executive|office}.update` (qua middleware `schedule.module`).
 
 ```json
 // Request
@@ -219,7 +219,7 @@ Set `approval_status="rejected"`. Nhận `rejection_note` (hiện chỉ log, kh�
 
 ### 8. Thống kê — `GET /api/schedules/stats`
 
-> Permission: `schedules.stats`. Hỗ trợ đầy đủ filter giống index.
+> Permission: `schedules-{executive|office}.stats` (qua middleware `schedule.module`). Hỗ trợ đầy đủ filter giống index.
 
 ```json
 // Response
@@ -319,16 +319,16 @@ Chỉ xem được lịch PUBLISHED được gán cho mình.
 ### Export
 | Endpoint | Permission | Định dạng |
 |---|---|---|
-| `GET /api/schedules/export` | `schedules.export` | Excel (.xlsx) |
-| `GET /api/schedules/export-pdf` | `schedules.export` | PDF |
-| `GET /api/schedules/export-word` | `schedules.export` | Word (.docx) |
+| `GET /api/schedules/export` | `schedules-{executive|office}.export` | Excel (.xlsx) |
+| `GET /api/schedules/export-pdf` | `schedules-{executive|office}.export` | PDF |
+| `GET /api/schedules/export-word` | `schedules-{executive|office}.export` | Word (.docx) |
 
 ### Khác
 | Endpoint | Method | Permission |
 |---|---|---|
-| `/api/schedules/reorder` | PATCH | `schedules.update` |
-| `/api/schedules/{id}/duplicate` | POST | `schedules.store` |
-| `/api/schedules/bulk-delete` | DELETE | `schedules.destroy` |
+| `/api/schedules/reorder` | PATCH | `schedules-{executive|office}.update` |
+| `/api/schedules/{id}/duplicate` | POST | `schedules-{executive|office}.store` |
+| `/api/schedules/bulk-delete` | DELETE | `schedules-{executive|office}.destroy` |
 | `/api/schedules/weeks` | GET | `schedules.index` |
 
 ---

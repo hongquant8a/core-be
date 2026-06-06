@@ -64,22 +64,23 @@ File đính kèm của lịch.
 | `file_name` | varchar(255) | No | Tên file |
 | `file_path` | varchar(500) | No | Đường dẫn storage |
 | `mime_type` | varchar(100) | Yes | |
-| `size` | bigint | Yes | Bytes |
+| `file_size` | bigint | Yes | Bytes |
 | `sort_order` | int | No | 0 |
+| `uploaded_by` | bigint FK | Yes | → users.id |
 | `created_at` | datetime | Yes | |
-| `updated_at` | datetime | Yes | |
 
 ---
 
 ## 3. Bảng `schedule_notification_recipients`
 
-Người nhận thông báo của lịch.
+Người nhận thông báo của lịch (hoặc cá nhân hoặc nhóm).
 
 | Column | Type | Nullable | Ghi chú |
 |---|---|---|---|
 | `id` | bigint PK | No | |
 | `schedule_id` | bigint FK | No | → schedules.id |
-| `user_id` | bigint FK | Yes | → users.id |
+| `user_id` | bigint FK | Yes | → users.id (cá nhân) |
+| `group_id` | bigint FK | Yes | → scheduling_employee_groups.id (nhóm) |
 | `display_name` | varchar(255) | Yes | Tên hiển thị |
 | `created_at` | datetime | Yes | |
 
@@ -89,14 +90,21 @@ Người nhận thông báo của lịch.
 
 Nhắc lịch per-item (tầng 3). User chọn khi tạo/sửa từng schedule.
 
-| Column | Type | Nullable | Ghi chú |
-|---|---|---|---|
-| `id` | bigint PK | No | |
-| `schedule_id` | bigint FK | No | → schedules.id |
-| `minutes_before` | int | No | 0 | Nhắc trước N phút |
+| Column | Type | Nullable | Default | Ghi chú |
+|---|---|---|---|---|
+| `id` | bigint PK | No | auto | |
+| `schedule_id` | bigint FK | No | | → schedules.id |
+| `moment` | enum | No | 'before' | immediate / before / on / after |
+| `offset_minutes` | int | Yes | 0 | Số phút offset (có nghĩa với before & after) |
+| `remind_at` | datetime | Yes | NULL | Thời điểm fire thực tế (tính khi publish) |
+| `notification_schedule_id` | bigint FK | Yes | NULL | → notification_schedules.id (nếu dùng preset) |
+| `status` | enum | No | 'pending' | pending / fired / cancelled |
+| `fired_at` | datetime | Yes | NULL | Thời điểm cron đã fire |
 | `channels` | json | No | [] | ["fcm","mail","zalo"] |
 | `source` | varchar(50) | No | 'CUSTOM' | CUSTOM / PRESET |
-| `created_at` | datetime | Yes | |
+| `created_at` | datetime | Yes | | |
+
+**moment:** `immediate` = bắn ngay khi schedule được publish; `before`/`on`/`after` = tính từ event_time + offset_minutes.
 
 ---
 
@@ -127,8 +135,12 @@ Người tham dự lịch (backup/reference, không dùng chính trong code hi�
 |---|---|---|---|
 | `id` | bigint PK | No | |
 | `schedule_id` | bigint FK | No | → schedules.id |
+| `organization_id` | bigint FK | No | → organizations.id |
 | `user_id` | bigint FK | Yes | → users.id |
 | `display_name` | varchar(255) | Yes | |
+| `position_name` | varchar(255) | Yes | Chức vụ |
+| `is_external` | boolean | No | false |
+| `sort_order` | int | No | 0 |
 
 ---
 
@@ -143,13 +155,17 @@ Nhân viên trong module lịch công tác (chỉ user trong bảng này mới �
 | `user_id` | bigint FK | No | → users.id |
 | `name` | varchar(255) | No | |
 | `position_name` | varchar(255) | Yes | Chức vụ |
-| `department_name` | varchar(255) | Yes | Phòng ban |
+| `department` | varchar(255) | Yes | Phòng ban |
 | `email` | varchar(255) | Yes | |
 | `phone` | varchar(20) | Yes | |
+| `priority_weight` | int | No | 0 | Trọng số ưu tiên |
 | `status` | varchar(50) | No | 'active' | active / inactive |
 | `sort_order` | int | No | 0 |
+| `created_by` | bigint FK | Yes | → users.id |
+| `updated_by` | bigint FK | Yes | → users.id |
 | `created_at` | datetime | Yes | |
 | `updated_at` | datetime | Yes | |
+| `deleted_at` | datetime | Yes | Soft delete |
 
 ---
 
@@ -165,12 +181,17 @@ Nhóm nhân viên lịch công tác (N:N).
 | `description` | varchar(500) | |
 | `status` | varchar(50) | active / inactive |
 | `sort_order` | int | |
+| `created_by` | bigint FK | → users.id |
+| `updated_by` | bigint FK | → users.id |
+| `created_at` | datetime | |
+| `updated_at` | datetime | |
+| `deleted_at` | datetime | Soft delete |
 
 | `scheduling_employee_group_members` | Type | Ghi chú |
 |---|---|---|
 | `id` | bigint PK | |
-| `group_id` | bigint FK | → scheduling_employee_groups.id |
-| `employee_id` | bigint FK | → scheduling_employees.id |
+| `scheduling_employee_group_id` | bigint FK | → scheduling_employee_groups.id |
+| `scheduling_employee_id` | bigint FK | → scheduling_employees.id |
 
 ---
 
@@ -216,6 +237,7 @@ Bộ lọc nhanh đã lưu.
 | `user_id` | bigint FK | → users.id |
 | `name` | varchar(255) | Tên bộ lọc |
 | `filters` | json | JSON filter params |
+| `is_default` | boolean | false | Đánh dấu mặc định cho user |
 | `created_at` | datetime | |
 | `updated_at` | datetime | |
 

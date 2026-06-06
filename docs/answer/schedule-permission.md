@@ -9,12 +9,12 @@ Module Scheduling có 2 phân hệ, phân biệt qua `module_type`:
 | `EXECUTIVE` | Lịch Thường trực | `schedules-executive.{action}` |
 | `OFFICE` | Lịch Lãnh đạo | `schedules-office.{action}` |
 
-Mỗi phân hệ có bộ permission riêng (13 action):
+Mỗi phân hệ có bộ permission riêng (14 action):
 
 ```
 stats, index, show, store, update, destroy,
 bulkDestroy, bulkUpdateStatus, changeStatus, export,
-approve, duplicate, reorder
+approve, duplicate, reorder, driver-view
 ```
 
 ## Cách hoạt động
@@ -88,7 +88,7 @@ Vẫn tồn tại để backward-compatible. Nếu user có `schedules.index` nh
 | **Lãnh đạo** | OFFICE | `index, show, stats, export, approve` |
 | **Tổng hợp** | Cả 2 | Toàn bộ `schedules-executive.*` + `schedules-office.*` |
 | **Quản trị** | Cả 2 | Full (qua role Admin/Super Admin, bỏ qua Policy) |
-| **Lái xe** | Không phân hệ | `schedules.index, schedules.show, schedules.driver-view` (xem lịch được gán) |
+| **Lái xe** | Cả 2 | `schedules-executive.{index,show,driver-view}` + `schedules-office.{index,show,driver-view}` (xem lịch được gán) |
 
 ## Ví dụ
 
