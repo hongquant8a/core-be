@@ -112,10 +112,13 @@ class CleanupObsoleteSeedsCommand extends Command
         $permissions = $this->getSeederStaticProperty(PermissionSeeder::class, 'PERMISSIONS');
 
         $names = [];
-        foreach ($permissions as $resource => $actions) {
-            $names[] = "group:{$resource}";
-            foreach ($actions as $action) {
-                $names[] = "{$resource}.{$action}";
+        foreach ($permissions as $module => $resources) {
+            $names[] = "module:{$module}";
+            foreach ($resources as $resource => $actions) {
+                $names[] = "group:{$resource}";
+                foreach ($actions as $action) {
+                    $names[] = "{$resource}.{$action}";
+                }
             }
         }
 
