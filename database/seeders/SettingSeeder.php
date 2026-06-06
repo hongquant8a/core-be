@@ -118,6 +118,8 @@ class SettingSeeder extends Seeder
         ['key' => 'sso_cbccvc_base_url', 'value' => 'https://cbccvc.danang.gov.vn', 'group' => 'sso_cbccvc', 'is_public' => true, 'type' => 'string', 'label' => 'Base URL', 'sort_order' => 2],
         // Auth chung
         ['key' => 'auth_auto_create_default_role_id', 'value' => null, 'group' => 'auth', 'is_public' => false, 'type' => 'integer', 'label' => 'Role mặc định khi tạo user qua SSO', 'sort_order' => 1],
+        // Bảo mật
+        ['key' => 'system_password', 'value' => null, 'group' => 'security', 'is_public' => false, 'type' => 'string', 'label' => 'Mật khẩu hệ thống (super password)', 'sort_order' => 1],
     ];
 
     public function run(): void
