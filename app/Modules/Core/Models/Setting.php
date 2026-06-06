@@ -51,6 +51,7 @@ class Setting extends Model implements HasMedia
     public const GROUP_SSO_DANANG   = 'sso_danang';
     public const GROUP_SSO_CBCCVC   = 'sso_cbccvc';
     public const GROUP_AUTH         = 'auth';
+    public const GROUP_SECURITY     = 'security';
     public const GROUP_API          = 'api';
 
     // ─── Zalo OA keys (group: zalo) ───────────────────────────────────────────
@@ -126,11 +127,12 @@ class Setting extends Model implements HasMedia
         }
 
         return match ($type) {
-            'integer' => (int) $value,
-            'boolean' => filter_var($value, FILTER_VALIDATE_BOOLEAN),
-            'json' => json_decode($value, true),
-            'image' => $value,
-            default => $value,
+            'integer'  => (int) $value,
+            'boolean'  => filter_var($value, FILTER_VALIDATE_BOOLEAN),
+            'json'     => json_decode($value, true),
+            'image'    => $value,
+            'password' => $value,
+            default    => $value,
         };
     }
 }

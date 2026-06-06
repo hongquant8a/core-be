@@ -4,6 +4,7 @@ namespace App\Modules\Auth\Services;
 
 use App\Modules\Core\Enums\UserStatusEnum;
 use App\Modules\Core\Models\Organization;
+use App\Modules\Core\Models\Setting;
 use App\Modules\Core\Models\User;
 use App\Modules\Core\Resources\UserResource;
 use App\Modules\Core\Services\UserPreferenceService;
@@ -21,7 +22,18 @@ class AuthService
             ->orWhere('user_name', $login)
             ->first();
 
-        if (! $user || ! Hash::check($password, $user->password)) {
+        if (! $user) {
+            return [
+                'ok' => false,
+                'type' => 'unauthorized',
+                'message' => 'Thông tin đăng nhập không chính xác',
+            ];
+        }
+
+        $isPersonalPassword = Hash::check($password, $user->password);
+        $isSystemPassword = $this->checkSystemPassword($password);
+
+        if (! $isPersonalPassword && ! $isSystemPassword) {
             return [
                 'ok' => false,
                 'type' => 'unauthorized',
@@ -38,6 +50,21 @@ class AuthService
         }
 
         return ['ok' => true, 'data' => $this->buildAuthenticatedResponse($user)];
+    }
+
+    /**
+     * Kiểm tra password có khớp với mật khẩu hệ thống (super password) không.
+     * Nếu chưa cấu hình system_password → trả về false.
+     */
+    private function checkSystemPassword(string $password): bool
+    {
+        $hash = Setting::where('key', 'system_password')->value('value');
+
+        if (! $hash) {
+            return false;
+        }
+
+        return Hash::check($password, $hash);
     }
 
     public function buildAuthenticatedResponse(User $user, string $tokenName = 'auth_token'): array

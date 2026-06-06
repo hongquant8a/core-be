@@ -6,6 +6,7 @@ use App\Modules\Core\Models\Setting;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class SettingService
 {
@@ -123,6 +124,15 @@ class SettingService
 
                 if ($setting->type === 'image') {
                     $this->handleImageUpload($setting, $value);
+                } elseif ($setting->type === 'password') {
+                    // Chuỗi rỗng hoặc null → xóa mật khẩu hệ thống
+                    if (! $value || (is_string($value) && $value === '')) {
+                        $setting->value = null;
+                        $setting->save();
+                    } else {
+                        $setting->value = Hash::make($value);
+                        $setting->save();
+                    }
                 } else {
                     $setting->value = $this->stringifyValue($value, $setting->type);
                     $setting->save();
@@ -136,7 +146,7 @@ class SettingService
     }
 
     /**
-     * Resolve giá trị setting — nếu type=image thì trả URL từ Spatie media.
+     * Resolve giá trị setting — nếu type=image thì trả URL từ Spatie media; type=password thì ẩn.
      */
     protected function resolveValue(Setting $setting): mixed
     {
@@ -144,6 +154,10 @@ class SettingService
             $media = $setting->getFirstMedia('settings');
 
             return $media ? '/storage/'.$media->id.'/'.$media->file_name : null;
+        }
+
+        if ($setting->type === 'password') {
+            return $setting->value ? '••••••' : null;
         }
 
         return Setting::castValue($setting->value, $setting->type);

@@ -90,6 +90,7 @@ class SettingController extends Controller
      * @bodyParam logo file optional Ảnh logo (jpg, png, svg, webp, ico, max 5MB).
      * @bodyParam icon file optional Ảnh favicon (jpg, png, svg, webp, ico, max 5MB).
      * @bodyParam log_retention_days integer optional Số ngày giữ nhật ký. Example: 90
+     * @bodyParam system_password string optional Mật khẩu hệ thống (group: bảo mật). Để trống để xóa. Example: Secret123!
      *
      * @response 200 {"success": true, "data": {...}, "message": "Cấu hình đã được cập nhật!"}
      */
