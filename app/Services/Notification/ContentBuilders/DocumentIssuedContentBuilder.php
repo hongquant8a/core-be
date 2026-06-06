@@ -5,6 +5,7 @@ namespace App\Services\Notification\ContentBuilders;
 use App\Modules\Core\Models\User;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Services\Notification\Contracts\ContentBuilder;
+use App\Services\Notification\ContentBuilders\Concerns\BuildZns;
 use App\Services\Notification\DTOs\NotificationPayload;
 use App\Services\Notification\DTOs\Recipient;
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +13,7 @@ use Illuminate\Support\Str;
 
 class DocumentIssuedContentBuilder implements ContentBuilder
 {
+    use BuildZns;
     public function build(string $channelKey, User $recipient, Model $notifiable, mixed ...$extraArgs): ?NotificationPayload
     {
         if (! $notifiable instanceof TaskAssignmentItem) {
@@ -23,6 +25,7 @@ class DocumentIssuedContentBuilder implements ContentBuilder
             'sms' => $this->toSms($recipient, $notifiable, $document),
             'mail' => $this->toMail($recipient, $notifiable, $document),
             'zalo' => $this->toZalo($recipient, $notifiable, $document),
+            'zalo_zns' => $this->buildZnsPayload($recipient, $notifiable),
             'fcm' => $this->toFcm($recipient, $notifiable, $document),
             default => null,
         };
@@ -54,7 +57,35 @@ class DocumentIssuedContentBuilder implements ContentBuilder
         return [];
     }
 
-    private function toSms(User $recipient, TaskAssignmentItem $item, $document): ?NotificationPayload
+    
+    public function znsContext(User $recipient, Model $notifiable, mixed ...$extraArgs): array
+    {
+        if (! $notifiable instanceof TaskAssignmentItem) return [];
+        $document = $notifiable->document;
+        return [
+            'customer_name' => $recipient->name,
+            'gender' => $recipient->gender ?? 'Anh/Chị',
+            'task_name' => $notifiable->name,
+            'document_name' => $document?->name ?? '',
+            'deadline' => $notifiable->end_at?->format('H:i d/m/Y') ?? '',
+            'code_id' => (string) $notifiable->id,
+            'event' => 'Văn bản được ban hành',
+            'title' => $this->title($recipient, $notifiable, ...$extraArgs),
+        ];
+    }
+
+    public function znsVariables(): array
+    {
+        return [
+            'customer_name' => 'Tên người nhận',
+            'gender' => 'Giới tính',
+            'task_name' => 'Tên công việc',
+            'document_name' => 'Tên văn bản',
+            'deadline' => 'Thời hạn',
+            'code_id' => 'Mã công việc',
+        ];
+    }
+private function toSms(User $recipient, TaskAssignmentItem $item, $document): ?NotificationPayload
     {
         if (! $recipient->phone) {
             return null;
@@ -101,29 +132,6 @@ class DocumentIssuedContentBuilder implements ContentBuilder
         return new NotificationPayload(
             channels: ['zalo'],
             recipient: new Recipient(zaloId: $recipient->zalo_user_id, name: $recipient->name),
-            content: $text,
-            context: [
-                'customer_name' => $recipient->name,
-                'task_name' => $item->name,
-                'document_name' => $document?->name ?? '',
-                'deadline' => $item->end_at?->format('d/m/Y H:i') ?? '',
-            ],
-        );
-    }
-
-private function toZaloZns(User $recipient, TaskAssignmentItem $item, $document): ?NotificationPayload
-    {
-        if (! $recipient->phone) {
-            return null;
-        }
-
-        $documentName = $document?->name ?? '';
-        $deadline = $item->end_at ? " (hạn {$item->end_at->format('d/m/Y H:i')})" : '';
-        $text = "Văn bản đã ban hành: {$documentName}. Công việc: {$item->name}{$deadline}.";
-
-        return new NotificationPayload(
-            channels: ['zalo_zns'],
-            recipient: new Recipient(phone: $recipient->phone, name: $recipient->name),
             content: $text,
             context: [
                 'customer_name' => $recipient->name,

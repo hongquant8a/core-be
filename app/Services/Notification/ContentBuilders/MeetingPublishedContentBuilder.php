@@ -5,6 +5,7 @@ namespace App\Services\Notification\ContentBuilders;
 use App\Modules\Core\Models\User;
 use App\Modules\Meeting\Models\Meeting;
 use App\Services\Notification\Contracts\ContentBuilder;
+use App\Services\Notification\ContentBuilders\Concerns\BuildZns;
 use App\Services\Notification\ContentBuilders\Concerns\BuildsFrontendUrl;
 use App\Services\Notification\DTOs\NotificationPayload;
 use App\Services\Notification\DTOs\Recipient;
@@ -13,6 +14,7 @@ use Illuminate\Support\Str;
 
 class MeetingPublishedContentBuilder implements ContentBuilder
 {
+    use BuildZns;
     use BuildsFrontendUrl;
 
     public function build(string $channelKey, User $recipient, Model $notifiable, mixed ...$extraArgs): ?NotificationPayload
@@ -25,6 +27,7 @@ class MeetingPublishedContentBuilder implements ContentBuilder
             'sms' => $this->toSms($recipient, $notifiable),
             'mail' => $this->toMail($recipient, $notifiable),
             'zalo' => $this->toZalo($recipient, $notifiable),
+            'zalo_zns' => $this->buildZnsPayload($recipient, $notifiable),
             'fcm' => $this->toFcm($recipient, $notifiable),
             default => null,
         };
@@ -50,14 +53,40 @@ class MeetingPublishedContentBuilder implements ContentBuilder
             return [
                 'url' => $this->meetingFrontendUrl($notifiable),
                 'meeting_id' => $notifiable->id,
-                'event' => 'meeting_published',
+                'event' => 'Cuộc họp được phát hành',
             ];
         }
 
         return [];
     }
 
-    private function toSms(User $recipient, Meeting $meeting): ?NotificationPayload
+    
+    public function znsContext(User $recipient, Model $notifiable, mixed ...$extraArgs): array
+    {
+        if (! $notifiable instanceof Meeting) return [];
+        return [
+            'customer_name' => $recipient->name,
+            'gender' => $recipient->gender ?? 'Anh/Chị',
+            'meeting_title' => $notifiable->title,
+            'start_time' => $notifiable->start_time?->format('H:i d/m/Y') ?? '',
+            'code_id' => (string) $notifiable->id,
+            'event' => 'Cuộc họp được phát hành',
+            'title' => $this->title($recipient, $notifiable, ...$extraArgs),
+        ];
+    }
+
+    public function znsVariables(): array
+    {
+        return [
+            'customer_name' => 'Tên người nhận',
+            'gender' => 'Giới tính',
+            'meeting_title' => 'Tiêu đề cuộc họp',
+            'start_time' => 'Thời gian bắt đầu',
+            'event' => 'Loại sự kiện',
+            'code_id' => 'Mã phiên họp',
+        ];
+    }
+private function toSms(User $recipient, Meeting $meeting): ?NotificationPayload
     {
         if (! $recipient->phone) {
             return null;
@@ -113,29 +142,7 @@ class MeetingPublishedContentBuilder implements ContentBuilder
                 'customer_name' => $recipient->name,
                 'meeting_title' => $meeting->title,
                 'url' => $url,
-                'event' => 'meeting_published',
-            ],
-        );
-    }
-
-private function toZaloZns(User $recipient, Meeting $meeting): ?NotificationPayload
-    {
-        if (! $recipient->phone) {
-            return null;
-        }
-        $start = $meeting->start_time?->format('d/m/Y H:i') ?? '';
-        $url = $this->meetingFrontendUrl($meeting);
-        $text = "Bạn được mời tham dự cuộc họp: {$meeting->title}.".($start ? " Thời gian: {$start}." : '')." Xem chi tiết: {$url}";
-
-        return new NotificationPayload(
-            channels: ['zalo_zns'],
-            recipient: new Recipient(phone: $recipient->phone, name: $recipient->name),
-            content: $text,
-            context: [
-                'customer_name' => $recipient->name,
-                'meeting_title' => $meeting->title,
-                'url' => $url,
-                'event' => 'meeting_published',
+                'event' => 'Cuộc họp được phát hành',
             ],
         );
     }

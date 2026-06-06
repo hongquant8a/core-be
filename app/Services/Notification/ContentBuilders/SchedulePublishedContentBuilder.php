@@ -5,6 +5,7 @@ namespace App\Services\Notification\ContentBuilders;
 use App\Modules\Core\Models\User;
 use App\Modules\Scheduling\Models\Schedule;
 use App\Services\Notification\Contracts\ContentBuilder;
+use App\Services\Notification\ContentBuilders\Concerns\BuildZns;
 use App\Services\Notification\DTOs\NotificationPayload;
 use App\Services\Notification\DTOs\Recipient;
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +13,7 @@ use Illuminate\Support\Str;
 
 class SchedulePublishedContentBuilder implements ContentBuilder
 {
+    use BuildZns;
     public function build(string $channelKey, User $recipient, Model $notifiable, mixed ...$extraArgs): ?NotificationPayload
     {
         if (! $notifiable instanceof Schedule) {
@@ -22,6 +24,7 @@ class SchedulePublishedContentBuilder implements ContentBuilder
             'sms' => $this->toSms($recipient, $notifiable),
             'mail' => $this->toMail($recipient, $notifiable),
             'zalo' => $this->toZalo($recipient, $notifiable),
+            'zalo_zns' => $this->buildZnsPayload($recipient, $notifiable),
             'fcm' => $this->toFcm($recipient, $notifiable),
             default => null,
         };
@@ -47,11 +50,37 @@ class SchedulePublishedContentBuilder implements ContentBuilder
             return [
                 'url' => $this->scheduleFrontendUrl($notifiable),
                 'schedule_id' => $notifiable->id,
-                'event' => 'schedule_published',
+                'event' => 'Lịch công tác được ban hành',
             ];
         }
 
         return [];
+    }
+
+    public function znsContext(User $recipient, Model $notifiable, mixed ...$extraArgs): array
+    {
+        if (! $notifiable instanceof Schedule) return [];
+        return [
+            'customer_name' => $recipient->name,
+            'gender' => $recipient->gender ?? 'Anh/Chị',
+            'schedule_content' => $notifiable->content,
+            'event_date' => $notifiable->date_time?->format('d/m/Y') ?? '',
+            'code_id' => (string) $notifiable->id,
+            'event' => 'Lịch công tác được ban hành',
+            'title' => $this->title($recipient, $notifiable, ...$extraArgs),
+        ];
+    }
+
+    public function znsVariables(): array
+    {
+        return [
+            'customer_name' => 'Tên người nhận',
+            'gender' => 'Giới tính',
+            'schedule_content' => 'Nội dung lịch',
+            'event_date' => 'Ngày diễn ra',
+            'event' => 'Loại sự kiện',
+            'code_id' => 'Mã lịch',
+        ];
     }
 
     private function scheduleFrontendUrl(Schedule $schedule): string
@@ -115,29 +144,7 @@ class SchedulePublishedContentBuilder implements ContentBuilder
                 'customer_name' => $recipient->name,
                 'schedule_content' => $schedule->content,
                 'url' => $url,
-                'event' => 'schedule_published',
-            ],
-        );
-    }
-
-private function toZaloZns(User $recipient, Schedule $schedule): ?NotificationPayload
-    {
-        if (! $recipient->phone) {
-            return null;
-        }
-        $dateStr = $schedule->event_date;
-        $url = $this->scheduleFrontendUrl($schedule);
-        $text = "Bạn có lịch công tác mới: {$schedule->content} vào ngày {$dateStr}. Xem chi tiết: {$url}";
-
-        return new NotificationPayload(
-            channels: ['zalo_zns'],
-            recipient: new Recipient(phone: $recipient->phone, name: $recipient->name),
-            content: $text,
-            context: [
-                'customer_name' => $recipient->name,
-                'schedule_content' => $schedule->content,
-                'url' => $url,
-                'event' => 'schedule_published',
+                'event' => 'Lịch công tác được ban hành',
             ],
         );
     }

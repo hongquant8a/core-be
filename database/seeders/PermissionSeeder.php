@@ -69,6 +69,9 @@ class PermissionSeeder extends Seeder
             'notifications.logs' => [
                 'index', 'show', 'destroy', 'bulkDestroy', 'export',
             ],
+            'notifications.templates' => [
+                'index', 'store', 'update', 'destroy', 'variables',
+            ],
         ],
         'TaskAssignment' => [
             'task-assignment-departments' => [
@@ -282,6 +285,7 @@ class PermissionSeeder extends Seeder
         'notifications.event-configs' => 'Cấu hình sự kiện thông báo',
         'notifications.schedules' => 'Cấu hình lịch nhắc',
         'notifications.logs' => 'Nhật ký gửi thông báo',
+        'notifications.templates' => 'Cấu hình ZNS template thông báo',
         'my-received-tasks' => 'Công việc được giao',
         'my-assigned-tasks' => 'Công việc đang giao',
         'meetings' => 'Cuộc họp',

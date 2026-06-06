@@ -8,9 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 
 interface ContentBuilder
 {
-    /**
-     * Build a payload for a specific channel, or null to skip (e.g. recipient missing field).
-     */
     public function build(string $channelKey, User $recipient, Model $notifiable, mixed ...$extraArgs): ?NotificationPayload;
 
     public function title(User $recipient, Model $notifiable, mixed ...$extraArgs): string;
@@ -18,4 +15,15 @@ interface ContentBuilder
     public function shortBody(User $recipient, Model $notifiable, mixed ...$extraArgs): string;
 
     public function inAppContext(User $recipient, Model $notifiable, mixed ...$extraArgs): array;
+
+    /**
+     * Dữ liệu flat key-value cho ZNS template.
+     * Lấy từ cùng data truyền vào email blade.
+     */
+    public function znsContext(User $recipient, Model $notifiable, mixed ...$extraArgs): array;
+
+    /**
+     * Map { key => "Mô tả tiếng Việt" } cho FE cấu hình variable_mapping.
+     */
+    public function znsVariables(): array;
 }

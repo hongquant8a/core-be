@@ -5,6 +5,7 @@ namespace App\Services\Notification\ContentBuilders;
 use App\Modules\Core\Models\User;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Services\Notification\Contracts\ContentBuilder;
+use App\Services\Notification\ContentBuilders\Concerns\BuildZns;
 use App\Services\Notification\DTOs\NotificationPayload;
 use App\Services\Notification\DTOs\Recipient;
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +13,7 @@ use Illuminate\Support\Str;
 
 class TaskConfirmedContentBuilder implements ContentBuilder
 {
+    use BuildZns;
     public function build(string $channelKey, User $recipient, Model $notifiable, mixed ...$extraArgs): ?NotificationPayload
     {
         if (! $notifiable instanceof TaskAssignmentItem) {
@@ -22,6 +24,7 @@ class TaskConfirmedContentBuilder implements ContentBuilder
             'sms' => $this->toSms($recipient, $notifiable),
             'mail' => $this->toMail($recipient, $notifiable),
             'zalo' => $this->toZalo($recipient, $notifiable),
+            'zalo_zns' => $this->buildZnsPayload($recipient, $notifiable),
             'fcm' => $this->toFcm($recipient, $notifiable),
             default => null,
         };
@@ -52,7 +55,33 @@ class TaskConfirmedContentBuilder implements ContentBuilder
         return [];
     }
 
-    private function toSms(User $recipient, TaskAssignmentItem $item): ?NotificationPayload
+    
+    public function znsContext(User $recipient, Model $notifiable, mixed ...$extraArgs): array
+    {
+        if (! $notifiable instanceof TaskAssignmentItem) return [];
+        return [
+            'customer_name' => $recipient->name,
+            'gender' => $recipient->gender ?? 'Anh/Chị',
+            'task_name' => $notifiable->name,
+            'deadline' => $notifiable->end_at?->format('H:i d/m/Y') ?? '',
+            'code_id' => (string) $notifiable->id,
+            'event' => 'Công việc được xác nhận',
+            'title' => $this->title($recipient, $notifiable, ...$extraArgs),
+        ];
+    }
+
+    public function znsVariables(): array
+    {
+        return [
+            'customer_name' => 'Tên người nhận',
+            'gender' => 'Giới tính',
+            'task_name' => 'Tên công việc',
+            'deadline' => 'Thời hạn',
+            'event' => 'Loại sự kiện',
+            'code_id' => 'Mã công việc',
+        ];
+    }
+private function toSms(User $recipient, TaskAssignmentItem $item): ?NotificationPayload
     {
         if (! $recipient->phone) {
             return null;
@@ -99,27 +128,7 @@ class TaskConfirmedContentBuilder implements ContentBuilder
             context: [
                 'customer_name' => $recipient->name,
                 'task_name' => $item->name,
-                'event' => 'task_confirmed',
-            ],
-        );
-    }
-
-private function toZaloZns(User $recipient, TaskAssignmentItem $item): ?NotificationPayload
-    {
-        if (! $recipient->phone) {
-            return null;
-        }
-
-        $text = "Công việc đã được xác nhận: {$item->name}.";
-
-        return new NotificationPayload(
-            channels: ['zalo_zns'],
-            recipient: new Recipient(phone: $recipient->phone, name: $recipient->name),
-            content: $text,
-            context: [
-                'customer_name' => $recipient->name,
-                'task_name' => $item->name,
-                'event' => 'task_confirmed',
+                'event' => 'Công việc được xác nhận',
             ],
         );
     }

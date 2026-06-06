@@ -112,6 +112,15 @@ class User extends Authenticatable implements HasMedia
         return $this->profile?->phone;
     }
 
+    public function getGenderAttribute(): ?string
+    {
+        return match ($this->profile?->gender) {
+            'male' => 'Anh',
+            'female' => 'Chị',
+            default => 'Anh/Chị',
+        };
+    }
+
     /**
      * Lần đăng nhập gần nhất — derive từ personal_access_tokens.created_at max.
      * Mỗi lần Sanctum issue token mới = 1 lần login. Không có token = chưa từng login.

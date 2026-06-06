@@ -47,6 +47,7 @@ use App\Services\Notification\Listeners\SendScheduleUpdatedNotifications;
 use App\Services\Notification\Listeners\SendScheduleCancelledNotifications;
 use App\Services\Notification\NotificationService;
 use App\Services\Notification\Services\ContentBuilderRegistry;
+use App\Services\Notification\Services\NotificationTemplateService;
 use App\Services\Notification\SmsClient;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
@@ -56,6 +57,8 @@ class NotificationServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(ContentBuilderRegistry::class);
+
+        $this->app->singleton(NotificationTemplateService::class);
 
         $this->app->singleton(NotificationService::class, function ($app) {
             $settings = $app->make(SettingService::class);

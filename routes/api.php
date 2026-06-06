@@ -146,6 +146,20 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
         require base_path('app/Modules/Scheduling/Routes/notification_config.php');
     });
 
+    // Notification Templates — ZNS template per module (query param: ?module=meeting|scheduling|task_assignment)
+    Route::prefix('notification-templates')->group(function () {
+        Route::get('/variables', [\App\Modules\Core\NotificationTemplateController::class, 'variables'])
+            ->middleware('permission:notifications.templates.variables,web');
+        Route::get('/', [\App\Modules\Core\NotificationTemplateController::class, 'index'])
+            ->middleware('permission:notifications.templates.index,web');
+        Route::post('/', [\App\Modules\Core\NotificationTemplateController::class, 'store'])
+            ->middleware('permission:notifications.templates.store,web');
+        Route::put('/{template}', [\App\Modules\Core\NotificationTemplateController::class, 'update'])
+            ->middleware('permission:notifications.templates.update,web');
+        Route::delete('/{template}', [\App\Modules\Core\NotificationTemplateController::class, 'destroy'])
+            ->middleware('permission:notifications.templates.destroy,web');
+    });
+
     // Meeting module — route phẳng cho admin catalog/CRUD setup (Spatie permission).
     Route::prefix('meetings')->middleware('ensure.route.org')->group(function () {
         require base_path('app/Modules/Meeting/Routes/meeting.php');

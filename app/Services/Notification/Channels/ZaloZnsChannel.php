@@ -50,10 +50,6 @@ class ZaloZnsChannel implements NotificationChannel
             return $this->fail('Thiếu Zalo OA Sender ID (zns_sender).');
         }
 
-        if (! $cfg['template_id']) {
-            return $this->fail('Thiếu Zalo ZNS Template ID (zns_template_id).');
-        }
-
         $phone = $recipient->phone;
         if (! $phone) {
             return $this->fail('Missing phone');
@@ -64,12 +60,19 @@ class ZaloZnsChannel implements NotificationChannel
             return $this->fail('Số điện thoại không hợp lệ (cần format 84xxxxxxxxx).');
         }
 
-        $templateData = array_merge($cfg['extra_params'], $payload->context ?? []);
+        $context = $payload->context ?? [];
+        $templateId = $context['_template_id'] ?? $cfg['template_id'];
+
+        if (! $templateId) {
+            return $this->fail('Thiếu template_id (không có trong config lẫn context).');
+        }
+
+        $templateData = array_merge($cfg['extra_params'], array_diff_key($context, ['_template_id' => true]));
 
         $body = [
             'from'          => $cfg['sender'],
             'to'            => $phone,
-            'template_id'   => $cfg['template_id'],
+            'template_id'   => $templateId,
             'template_data' => $templateData ?: (object) [],
             'client_req_id' => Str::uuid()->toString(),
             'dlr'           => 0,

@@ -26,6 +26,11 @@ enum NotificationModuleEnum: string
         return array_column(self::cases(), 'value');
     }
 
+    public static function rule(): string
+    {
+        return 'in:' . implode(',', self::values());
+    }
+
     /**
      * List event_keys thuộc module này.
      */

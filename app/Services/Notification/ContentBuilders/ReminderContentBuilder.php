@@ -5,6 +5,7 @@ namespace App\Services\Notification\ContentBuilders;
 use App\Modules\Core\Models\User;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Services\Notification\Contracts\ContentBuilder;
+use App\Services\Notification\ContentBuilders\Concerns\BuildZns;
 use App\Services\Notification\DTOs\NotificationPayload;
 use App\Services\Notification\DTOs\Recipient;
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +13,7 @@ use Illuminate\Support\Str;
 
 class ReminderContentBuilder implements ContentBuilder
 {
+    use BuildZns;
     /**
      * @param  string  $moment  one of: 'before', 'on', 'after'
      */
@@ -27,6 +29,7 @@ class ReminderContentBuilder implements ContentBuilder
             'sms' => $this->toSms($recipient, $notifiable),
             'mail' => $this->toMail($recipient, $notifiable),
             'zalo' => $this->toZalo($recipient, $notifiable),
+            'zalo_zns' => $this->buildZnsPayload($recipient, $notifiable),
             'fcm' => $this->toFcm($recipient, $notifiable),
             default => null,
         };
@@ -62,14 +65,63 @@ class ReminderContentBuilder implements ContentBuilder
         if ($notifiable instanceof TaskAssignmentItem) {
             return [
                 'url' => "/task-assignment-items/{$notifiable->id}",
-                'moment' => $this->moment,
+                'moment' => $this->humanMoment(),
             ];
         }
 
         return ['moment' => $this->moment];
     }
 
-    private function toSms(User $recipient, TaskAssignmentItem $item): ?NotificationPayload
+    
+    public function znsContext(User $recipient, Model $notifiable, mixed ...$extraArgs): array
+    {
+        if (! $notifiable instanceof TaskAssignmentItem) return [];
+        return [
+            'customer_name' => $recipient->name,
+            'gender' => $recipient->gender ?? 'Anh/Chị',
+            'task_name' => $notifiable->name,
+            'deadline' => $notifiable->end_at?->format('H:i d/m/Y') ?? '',
+            'moment' => $this->humanMoment(),
+            'code_id' => (string) $notifiable->id,
+            'event' => $this->reminderMomentLabel(),
+            'title' => $this->title($recipient, $notifiable, ...$extraArgs),
+        ];
+    }
+
+    public function znsVariables(): array
+    {
+        return [
+            'customer_name' => 'Tên người nhận',
+            'gender' => 'Giới tính',
+            'task_name' => 'Tên công việc',
+            'deadline' => 'Thời hạn',
+            'moment' => 'Loại nhắc (Trước hạn/Đến hạn/Quá hạn)',
+            'code_id' => 'Mã công việc',
+            'event' => 'Loại sự kiện',
+            'title' => 'Tiêu đề thông báo',
+        ];
+    }
+    private function humanMoment(): string
+    {
+        return match ($this->moment) {
+            'before' => 'Trước hạn',
+            'on' => 'Đến hạn',
+            'after' => 'Quá hạn',
+            default => $this->moment,
+        };
+    }
+
+    private function reminderMomentLabel(): string
+    {
+        return match ($this->moment) {
+            'before' => 'Nhắc công việc sắp đến hạn',
+            'on' => 'Nhắc công việc đã đến hạn',
+            'after' => 'Nhắc công việc đã quá hạn',
+            default => 'Nhắc công việc',
+        };
+    }
+
+private function toSms(User $recipient, TaskAssignmentItem $item): ?NotificationPayload
     {
         if (! $recipient->phone) {
             return null;
@@ -136,35 +188,7 @@ class ReminderContentBuilder implements ContentBuilder
                 'customer_name' => $recipient->name,
                 'task_name' => $item->name,
                 'deadline' => $item->end_at?->format('d/m/Y H:i') ?? '',
-                'moment' => $this->moment,
-            ],
-        );
-    }
-
-private function toZaloZns(User $recipient, TaskAssignmentItem $item): ?NotificationPayload
-    {
-        if (! $recipient->phone) {
-            return null;
-        }
-
-        $deadline = $item->end_at ? " (hạn {$item->end_at->format('d/m/Y H:i')})" : '';
-        $prefix = match ($this->moment) {
-            'before' => 'Sắp đến hạn công việc',
-            'on' => 'Đến hạn công việc',
-            'after' => 'Quá hạn công việc',
-            default => 'Nhắc công việc',
-        };
-        $text = "{$prefix}: {$item->name}{$deadline}.";
-
-        return new NotificationPayload(
-            channels: ['zalo_zns'],
-            recipient: new Recipient(phone: $recipient->phone, name: $recipient->name),
-            content: $text,
-            context: [
-                'customer_name' => $recipient->name,
-                'task_name' => $item->name,
-                'deadline' => $item->end_at?->format('d/m/Y H:i') ?? '',
-                'moment' => $this->moment,
+                'moment' => $this->humanMoment(),
             ],
         );
     }

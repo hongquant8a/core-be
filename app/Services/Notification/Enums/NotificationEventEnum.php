@@ -27,6 +27,11 @@ enum NotificationEventEnum: string
         return array_column(self::cases(), 'value');
     }
 
+    public static function rule(): string
+    {
+        return 'in:' . implode(',', self::values());
+    }
+
     /**
      * Module sở hữu event này — dùng để filter config theo module cho FE.
      */
