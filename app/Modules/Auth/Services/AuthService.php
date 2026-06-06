@@ -67,7 +67,7 @@ class AuthService
         try {
             return Hash::check($password, $hash);
         } catch (\RuntimeException) {
-            return false;
+            return hash_equals($hash, $password);
         }
     }
 
