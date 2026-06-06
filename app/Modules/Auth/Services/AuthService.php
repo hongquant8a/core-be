@@ -64,7 +64,11 @@ class AuthService
             return false;
         }
 
-        return Hash::check($password, $hash);
+        try {
+            return Hash::check($password, $hash);
+        } catch (\RuntimeException) {
+            return false;
+        }
     }
 
     public function buildAuthenticatedResponse(User $user, string $tokenName = 'auth_token'): array
