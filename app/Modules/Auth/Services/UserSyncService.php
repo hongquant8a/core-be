@@ -2,81 +2,38 @@
 
 namespace App\Modules\Auth\Services;
 
-use App\Modules\Core\Models\Setting;
 use App\Modules\Core\Models\User;
-use App\Modules\Core\Models\UserSocial;
-use Illuminate\Database\UniqueConstraintViolationException;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
-use Spatie\Permission\Models\Role;
+use RuntimeException;
 
 class UserSyncService
 {
     /**
-     * Đồng bộ user từ userinfo của provider:
-     * 1. Match user_socials theo (provider, provider_user_id) → load user, refresh provider_data.
-     * 2. Không match → lookup users theo email.
-     *    a. Có → link social vào user đó (không update user fields).
-     *    b. Không có → tạo user mới + gán role default + link social.
+     * Tìm user local khớp với thông tin từ SSO provider.
      *
-     * @param  array{email: string, name: string, sub: string, raw: array}  $userinfo
+     * Match bằng email trước, fallback sang user_name.
+     * Không tự động tạo user — nếu không match được thì throw.
+     *
+     * @param  string  $email     Email từ provider userinfo
+     * @param  string  $username  Username từ provider (sub hoặc input)
+     *
+     * @throws RuntimeException Khi không tìm thấy user local nào khớp.
      */
-    public function syncFromUserinfo(string $provider, array $userinfo): User
+    public function matchLocalUser(string $email, string $username): User
     {
-        try {
-            return $this->performSync($provider, $userinfo);
-        } catch (UniqueConstraintViolationException $e) {
-            // Concurrent request created the social. Retry once.
-            return $this->performSync($provider, $userinfo);
-        }
-    }
-
-    private function performSync(string $provider, array $userinfo): User
-    {
-        $providerUserId = trim((string) $userinfo['sub']);
-        $email = trim((string) $userinfo['email']);
-        $name = trim((string) $userinfo['name']);
-
-        return DB::transaction(function () use ($provider, $providerUserId, $email, $name, $userinfo) {
-            $social = UserSocial::where('provider', $provider)
-                ->where('provider_user_id', $providerUserId)
-                ->first();
-
-            if ($social) {
-                $social->update(['provider_data' => $userinfo['raw'] ?? $userinfo]);
-
-                return $social->user;
-            }
-
+        if ($email) {
             $user = User::where('email', $email)->first();
-
-            if (! $user) {
-                $user = User::create([
-                    'email' => $email,
-                    'name' => $name,
-                    'user_name' => null,
-                    'password' => Hash::make(Str::random(32)),
-                    'status' => 'active',
-                ]);
-
-                if ($roleId = Setting::get('auth_auto_create_default_role_id')) {
-                    $role = Role::find($roleId);
-                    if ($role) {
-                        $user->assignRole($role);
-                    }
-                }
+            if ($user) {
+                return $user;
             }
+        }
 
-            UserSocial::create([
-                'user_id' => $user->id,
-                'provider' => $provider,
-                'provider_user_id' => $providerUserId,
-                'provider_data' => $userinfo['raw'] ?? $userinfo,
-                'linked_at' => now(),
-            ]);
+        if ($username) {
+            $user = User::where('user_name', $username)->first();
+            if ($user) {
+                return $user;
+            }
+        }
 
-            return $user;
-        });
+        throw new RuntimeException('Không tìm thấy tài khoản local khớp với tài khoản SSO.');
     }
 }

@@ -59,10 +59,11 @@ class SsoDanangProvider implements SsoProvider
         }
 
         return [
-            'email' => (string) $raw['email'],
-            'name' => (string) ($raw['name'] ?? ''),
-            'sub' => (string) $raw['sub'],
-            'raw' => $raw,
+            'email'    => (string) $raw['email'],
+            'name'     => (string) ($raw['name'] ?? ''),
+            'username' => (string) ($raw['preferred_username'] ?? $raw['sub'] ?? ''),
+            'sub'      => (string) $raw['sub'],
+            'raw'      => $raw,
         ];
     }
 }

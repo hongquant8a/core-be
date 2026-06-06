@@ -78,7 +78,7 @@ class SsoController extends Controller
     }
 
     /**
-     * Map provider key (from user_socials.provider convention) → settings `enabled` key.
+     * Map provider key → settings `enabled` key.
      * SSO Đà Nẵng: provider='sso_danang' → setting 'sso_danang_enabled'
      * CBCCVC:      provider='cbccvc'     → setting 'sso_cbccvc_enabled'
      */
@@ -108,9 +108,13 @@ class SsoController extends Controller
     {
         try {
             $userinfo = $fetchUserinfo();
+            $user = $this->userSyncService->matchLocalUser(
+                $userinfo['email'] ?? '',
+                $userinfo['username'] ?? ''
+            );
         } catch (RuntimeException $e) {
             $msg = $e->getMessage();
-            Log::warning('SSO provider error', ['provider' => $provider, 'error' => $msg]);
+            Log::warning('SSO error', ['provider' => $provider, 'error' => $msg]);
 
             if (str_contains($msg, 'invalid_grant')) {
                 return $this->error('Mã xác thực không hợp lệ hoặc đã hết hạn. Vui lòng thử lại.', $invalidCredentialsStatus);
@@ -120,10 +124,12 @@ class SsoController extends Controller
                 return $this->error('Tài khoản hoặc mật khẩu không đúng.', $invalidCredentialsStatus);
             }
 
+            if (str_contains($msg, 'Không tìm thấy tài khoản')) {
+                return $this->error($msg, 401);
+            }
+
             return $this->error('Cổng đăng nhập không phản hồi. Vui lòng thử lại sau.', 502);
         }
-
-        $user = $this->userSyncService->syncFromUserinfo($provider, $userinfo);
 
         if ($user->status !== UserStatusEnum::Active->value) {
             return $this->forbidden('Tài khoản của bạn đã bị khóa');

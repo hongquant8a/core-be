@@ -46,10 +46,11 @@ class CbccvcProvider implements SsoProvider
         }
 
         return [
-            'email' => (string) $user['email'],
-            'name' => (string) ($user['fullname'] ?? $user['name'] ?? ''),
-            'sub' => (string) $user['id'],
-            'raw' => $resp->json('data'),
+            'email'    => (string) $user['email'],
+            'name'     => (string) ($user['fullname'] ?? $user['name'] ?? ''),
+            'username' => $username,
+            'sub'      => (string) $user['id'],
+            'raw'      => $resp->json('data'),
         ];
     }
 }

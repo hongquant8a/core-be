@@ -151,11 +151,6 @@ class User extends Authenticatable implements HasMedia
         return $this->hasMany(FcmToken::class);
     }
 
-    public function socials()
-    {
-        return $this->hasMany(UserSocial::class);
-    }
-
     public function taskAssignmentUser()
     {
         return $this->hasOne(TaskAssignmentUser::class, 'user_id');
