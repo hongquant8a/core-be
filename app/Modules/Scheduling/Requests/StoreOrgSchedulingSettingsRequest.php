@@ -14,7 +14,8 @@ class StoreOrgSchedulingSettingsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'requires_approval' => ['required', 'boolean'],
+            'executive_requires_approval' => ['required', 'boolean'],
+            'office_requires_approval'    => ['required', 'boolean'],
         ];
     }
 }

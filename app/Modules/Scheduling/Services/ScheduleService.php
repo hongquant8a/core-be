@@ -79,7 +79,7 @@ class ScheduleService
             $filters['week'] = $weekId;
         }
 
-        $dateCol = Schedule::dateColumn();
+        $dateCol = 'date_time';
 
         $schedules = Schedule::with(['host', 'driver', 'recipients.user', 'attachments', 'reminders'])
             ->filter($filters)
@@ -110,7 +110,7 @@ class ScheduleService
      */
     public function getWeeks(array $filters): array
     {
-        $dateCol = \App\Modules\Scheduling\Models\Schedule::dateColumn();
+        $dateCol = 'date_time';
 
         // Tránh lỗi MySQL strict mode: scopeFilter tự động append orderBy('date_time', 'asc')
         // khi không truyền sort_by. Khi dùng DISTINCT + SELECT DATE(date_time), việc order
@@ -178,11 +178,11 @@ class ScheduleService
             // Luôn tạo ở trạng thái DRAFT, approval_status để null
             $data['status'] = ScheduleStatus::DRAFT->value;
             // có sort_order >= vị trí chèn lên 1 đơn vị (insert behavior, không overwrite).
-            if (!empty($data['sort_order']) && !empty($data[Schedule::dateColumn()]) && !empty($data['session'])) {
-                $carbon = \Carbon\Carbon::parse($data[Schedule::dateColumn()]);
+            if (!empty($data['sort_order']) && !empty($data['date_time']) && !empty($data['session'])) {
+                $carbon = \Carbon\Carbon::parse($data['date_time']);
                 Schedule::where('organization_id', $orgId)
                     ->where('module_type', $data['module_type'])
-                    ->whereDate(Schedule::dateColumn(), $carbon->toDateString())
+                    ->whereDate('date_time', $carbon->toDateString())
                     ->where('session', $data['session'])
                     ->where('sort_order', '>=', (int) $data['sort_order'])
                     ->increment('sort_order');
@@ -330,7 +330,10 @@ class ScheduleService
         $updateData = ['status' => $statusInt];
         if ($statusInt === ScheduleStatus::PUBLISHED->value && $schedule->status !== ScheduleStatus::PUBLISHED) {
             $orgSettings = OrgSchedulingSettings::firstOrCreate(['organization_id' => $schedule->organization_id]);
-            if ((bool)$orgSettings->requires_approval) {
+            $requiresApproval = $schedule->module_type === 'EXECUTIVE'
+                ? $orgSettings->executive_requires_approval
+                : $orgSettings->office_requires_approval;
+            if ((bool) $requiresApproval) {
                 if ($schedule->approval_status !== ApprovalStatus::APPROVED->value) {
                     abort(422, 'Lịch công tác chưa được duyệt, không thể ban hành.');
                 }

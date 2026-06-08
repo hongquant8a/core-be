@@ -125,7 +125,7 @@ class PermissionSeeder extends Seeder
             'meetings' => [
                 'stats', 'index', 'show', 'store', 'update', 'destroy',
                 'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
-                'exportReports',
+                'exportReports', 'home',
             ],
             'meeting-types' => [
                 'stats', 'index', 'show', 'store', 'update', 'destroy',
@@ -189,12 +189,12 @@ class PermissionSeeder extends Seeder
             'schedules-executive' => [
                 'stats', 'index', 'show', 'store', 'update', 'destroy',
                 'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
-                'approve', 'duplicate', 'reorder', 'driver-view',
+                'approve', 'duplicate', 'reorder', 'driver-view', 'home',
             ],
             'schedules-office' => [
                 'stats', 'index', 'show', 'store', 'update', 'destroy',
                 'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
-                'approve', 'duplicate', 'reorder', 'driver-view',
+                'approve', 'duplicate', 'reorder', 'driver-view', 'home',
             ],
             'scheduling-employees' => [
                 'stats', 'index', 'show', 'store', 'update', 'destroy',
@@ -327,6 +327,7 @@ class PermissionSeeder extends Seeder
         'changeStatus' => 'Đổi trạng thái',
         'export' => 'Xuất Excel',
         'import' => 'Nhập Excel',
+        'home' => 'Truy cập trang chủ',
         'destroyByDate' => 'Xóa theo khoảng thời gian',
         'destroyAll' => 'Xóa toàn bộ',
         'updateProgress' => 'Cập nhật tiến độ',

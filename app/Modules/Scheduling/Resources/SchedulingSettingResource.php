@@ -12,10 +12,7 @@ class SchedulingSettingResource extends JsonResource
         return [
             'id'                    => $this->id,
             'organization_id'       => $this->organization_id,
-            'approval_enabled'      => (bool)$this->approval_enabled,
-            'approval_module_types' => $this->approval_module_types,
             'default_channels'      => $this->default_channels,
-            'working_sessions'      => $this->working_sessions,
         ];
     }
 }

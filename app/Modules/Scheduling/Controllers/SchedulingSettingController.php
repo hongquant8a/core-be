@@ -20,34 +20,26 @@ class SchedulingSettingController extends Controller
         
         $legacy = SchedulingSetting::firstOrCreate(
             ['organization_id' => $orgId],
-            [
-                'approval_enabled'      => false,
-                'approval_module_types' => [],
-                'default_channels'      => ['inapp'],
-                'working_sessions'      => [
-                    'MORNING'   => ['start' => '07:30', 'end' => '11:30'],
-                    'AFTERNOON' => ['start' => '13:30', 'end' => '17:00'],
-                    'EVENING'   => ['start' => '19:00', 'end' => '21:00'],
-                ],
-            ]
+            ['default_channels' => ['inapp']]
         );
 
         $newSettings = OrgSchedulingSettings::firstOrCreate(
             ['organization_id' => $orgId],
             [
-                'requires_approval' => false,
+                'executive_requires_approval' => false,
+                'office_requires_approval'    => false,
+                'executive_working_sessions'  => null,
+                'office_working_sessions'     => null,
             ]
         );
 
         return $this->success([
-            'organization_id'             => $orgId,
-            'approval_enabled'            => $legacy->approval_enabled,
-            'approval_module_types'       => $legacy->approval_module_types,
-            'default_channels'            => $legacy->default_channels,
-            'working_sessions'            => $legacy->working_sessions,
-            
-            // New settings fields
-            'requires_approval'           => (bool)$newSettings->requires_approval,
+            'organization_id'              => $orgId,
+            'default_channels'             => $legacy->default_channels,
+            'executive_requires_approval'  => (bool) $newSettings->executive_requires_approval,
+            'office_requires_approval'     => (bool) $newSettings->office_requires_approval,
+            'executive_working_sessions'   => $newSettings->executive_working_sessions,
+            'office_working_sessions'      => $newSettings->office_working_sessions,
         ]);
     }
 
@@ -58,28 +50,26 @@ class SchedulingSettingController extends Controller
         $legacy = SchedulingSetting::firstOrCreate(['organization_id' => $orgId]);
         $newSettings = OrgSchedulingSettings::firstOrCreate(['organization_id' => $orgId]);
 
-        // If new settings are passed in request, update them
         $newSettingsData = [];
-        if ($request->has('requires_approval')) {
-            $newSettingsData['requires_approval'] = $request->boolean('requires_approval');
+        if ($request->has('executive_requires_approval')) {
+            $newSettingsData['executive_requires_approval'] = $request->boolean('executive_requires_approval');
+        }
+        if ($request->has('office_requires_approval')) {
+            $newSettingsData['office_requires_approval'] = $request->boolean('office_requires_approval');
+        }
+        if ($request->has('executive_working_sessions')) {
+            $newSettingsData['executive_working_sessions'] = $request->input('executive_working_sessions');
+        }
+        if ($request->has('office_working_sessions')) {
+            $newSettingsData['office_working_sessions'] = $request->input('office_working_sessions');
         }
         if ($newSettingsData) {
             $newSettings->update($newSettingsData);
         }
 
-        // If legacy settings are passed in request, update them
         $legacyData = [];
-        if ($request->has('approval_enabled')) {
-            $legacyData['approval_enabled'] = $request->boolean('approval_enabled');
-        }
-        if ($request->has('approval_module_types')) {
-            $legacyData['approval_module_types'] = $request->input('approval_module_types');
-        }
         if ($request->has('default_channels')) {
             $legacyData['default_channels'] = $request->input('default_channels');
-        }
-        if ($request->has('working_sessions')) {
-            $legacyData['working_sessions'] = $request->input('working_sessions');
         }
         if ($legacyData) {
             $legacy->update($legacyData);

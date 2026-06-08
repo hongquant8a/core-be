@@ -15,17 +15,6 @@ class Schedule extends TenantModel
 
     protected $table = 'schedules';
 
-    /** @var string|null Cache tên cột ngày giờ (tránh gọi Schema mỗi query). */
-    private static ?string $dateColumnCache = null;
-
-    /**
-     * Tên cột ngày giờ thực tế trong DB (production có thể là 'date', dev là 'date_time').
-     */
-    public static function dateColumn(): string
-    {
-        return self::$dateColumnCache ??= (\Illuminate\Support\Facades\Schema::hasColumn('schedules', 'date_time') ? 'date_time' : 'date');
-    }
-
     protected $fillable = [
         'organization_id', 'module_type', 'date_time', 'session', 'content',
         'host_id', 'host_text', 'location', 'preparation_unit', 'departments_text',
@@ -47,18 +36,7 @@ class Schedule extends TenantModel
         'is_important'  => 'boolean'
     ];
 
-    /**
-     * Accessor: hỗ trợ cả column 'date_time' (dev) và 'date' (production cũ).
-     * Luôn trả về Carbon instance.
-     */
-    public function getDateTimeAttribute(): ?\Carbon\Carbon
-    {
-        $val = $this->attributes['date_time'] ?? $this->attributes['date'] ?? null;
-        if (!$val) {
-            return null;
-        }
-        return $val instanceof \Carbon\Carbon ? $val : \Carbon\Carbon::parse($val);
-    }
+
 
     protected static function booted(): void
     {
@@ -176,14 +154,14 @@ class Schedule extends TenantModel
             ->when($filters['driver_id'] ?? null, function ($q, $v) {
                 $q->where('driver_id', $v);
             })
-            ->when($filters['date_time'] ?? $filters['date'] ?? null, function ($q, $v) {
-                $q->whereDate(self::dateColumn(), $v);
+            ->when($filters['date_time'] ?? null, function ($q, $v) {
+                $q->whereDate('date_time', $v);
             })
             ->when($filters['from_date'] ?? null, function ($q, $v) {
-                $q->whereDate(self::dateColumn(), '>=', $v);
+                $q->whereDate('date_time', '>=', $v);
             })
             ->when($filters['to_date'] ?? null, function ($q, $v) {
-                $q->whereDate(self::dateColumn(), '<=', $v);
+                $q->whereDate('date_time', '<=', $v);
             })
             ->when($filters['week'] ?? null, function ($q, $week) {
                 if (str_contains($week, '-W')) {
@@ -224,9 +202,9 @@ class Schedule extends TenantModel
                 }
             })
             ->when(
-                $filters['sort_by'] ?? self::dateColumn(),
+                $filters['sort_by'] ?? 'date_time',
                 function ($q, $sortBy) use ($filters) {
-                    $dateCol = self::dateColumn();
+                    $dateCol = 'date_time';
                     $allowed = ['id', $dateCol, 'session', 'sort_order', 'status', 'created_at', 'updated_at'];
                     $col = in_array($sortBy, $allowed, true) ? $sortBy : $dateCol;
                     VietnameseSort::apply($q, $col, $filters['sort_order'] ?? 'asc');

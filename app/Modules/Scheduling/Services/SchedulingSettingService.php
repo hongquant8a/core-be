@@ -10,16 +10,7 @@ class SchedulingSettingService
     {
         return SchedulingSetting::firstOrCreate(
             ['organization_id' => $orgId],
-            [
-                'approval_enabled'      => false,
-                'approval_module_types' => [],
-                'default_channels'      => ['inapp'],
-                'working_sessions'      => [
-                    'MORNING'   => ['start' => '07:30', 'end' => '11:30'],
-                    'AFTERNOON' => ['start' => '13:30', 'end' => '17:00'],
-                    'EVENING'   => ['start' => '19:00', 'end' => '21:00'],
-                ],
-            ]
+            ['default_channels' => ['inapp']]
         );
     }
 
