@@ -183,16 +183,13 @@ class ScheduleController extends Controller
      * @bodyParam car_info string Thông tin xe phục vụ. Example: Xe BKS 29A-12345
      * @bodyParam is_important boolean Đánh dấu lịch quan trọng. Example: false
      * @bodyParam status string Trạng thái ban hành (DRAFT, PUBLISHED). Example: DRAFT
-     * @bodyParam files file[] Danh sách tài liệu đính kèm.
+     * @bodyParam attachments file[] Danh sách tài liệu đính kèm.
      * @bodyParam participants array Danh sách thành phần tham dự.
      * @bodyParam reminders array Danh sách mốc nhắc lịch.
      */
     public function store(StoreScheduleRequest $request): JsonResponse
     {
-        $files = array_merge(
-            is_array($request->file('files')) ? $request->file('files') : ($request->hasFile('files') ? [$request->file('files')] : []),
-            is_array($request->file('attachments')) ? $request->file('attachments') : ($request->hasFile('attachments') ? [$request->file('attachments')] : [])
-        );
+        $files = $request->file('attachments') ?? [];
 
         $schedule = $this->scheduleService->store(
             $request->validated(),
@@ -219,17 +216,14 @@ class ScheduleController extends Controller
      * @bodyParam car_info string Thông tin xe phục vụ. Example: Xe BKS 29A-12345
      * @bodyParam is_important boolean Đánh dấu lịch quan trọng. Example: false
      * @bodyParam status string Trạng thái ban hành (DRAFT, PUBLISHED). Example: DRAFT
-     * @bodyParam files file[] Danh sách tài liệu đính kèm mới.
+     * @bodyParam attachments file[] Danh sách tài liệu đính kèm mới.
      * @bodyParam participants array Danh sách thành phần tham dự mới.
      * @bodyParam reminders array Danh sách mốc nhắc lịch mới.
      * @bodyParam remove_media_ids array Danh sách ID tài liệu đính kèm cần xóa.
      */
     public function update(UpdateScheduleRequest $request, Schedule $schedule): JsonResponse
     {
-        $files = array_merge(
-            is_array($request->file('files')) ? $request->file('files') : ($request->hasFile('files') ? [$request->file('files')] : []),
-            is_array($request->file('attachments')) ? $request->file('attachments') : ($request->hasFile('attachments') ? [$request->file('attachments')] : [])
-        );
+        $files = $request->file('attachments') ?? [];
 
         $schedule = $this->scheduleService->update(
             $schedule,

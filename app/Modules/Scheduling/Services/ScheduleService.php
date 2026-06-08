@@ -9,7 +9,7 @@ use App\Modules\Scheduling\Enums\ApprovalStatus;
 use App\Modules\Scheduling\Enums\SessionType;
 use App\Modules\Scheduling\Models\Schedule;
 use App\Modules\Scheduling\Models\ScheduleAttachment;
-
+use App\Modules\Core\Services\MediaService;
 use App\Modules\Scheduling\Models\ScheduleReminder;
 use App\Modules\Scheduling\Models\OrgSchedulingSettings;
 use App\Modules\Core\Models\User;
@@ -21,6 +21,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ScheduleService
 {
+    public function __construct(private MediaService $mediaService) {}
     /**
      * Thống kê: total, draft, pending_approval, approved, rejected, published.
      * Mỗi schedule nằm trong đúng 1 bucket.
@@ -113,20 +114,13 @@ class ScheduleService
     {
         $dateCol = 'date_time';
 
-        // Tránh lỗi MySQL strict mode: scopeFilter tự động append orderBy('date_time', 'asc')
-        // khi không truyền sort_by. Khi dùng DISTINCT + SELECT DATE(date_time), việc order
-        // bằng cột raw date_time sẽ gây lỗi 3065.
-        $filters['sort_by'] = ''; // Truyền chuỗi rỗng để scopeFilter không dùng 'date_time' mặc định
+        $filters['sort_by'] = '';
 
-        $query = Schedule::filter($filters)
+        $dates = Schedule::filter($filters)
             ->selectRaw("DATE({$dateCol}) as date_val")
             ->whereNotNull($dateCol)
-            ->distinct();
-
-        // Xóa mọi order by có sẵn từ scope (nếu có)
-        $query->getQuery()->orders = null;
-
-        $dates = $query->orderBy('date_val', 'asc')
+            ->distinct()
+            ->orderBy('date_val', 'asc')
             ->pluck('date_val');
 
         $weeks = [];
@@ -171,39 +165,44 @@ class ScheduleService
     {
         $participants = !empty($participants) ? $participants : ($data['participants'] ?? $data['recipients'] ?? []);
         $reminders = !empty($reminders) ? $reminders : ($data['reminders'] ?? []);
+        $storedFiles = [];
 
-        return DB::transaction(function () use ($data, $files, $participants, $reminders) {
-            $orgId = getPermissionsTeamId();
-            $data['organization_id'] = $orgId;
+        try {
+            return DB::transaction(function () use ($data, $files, $participants, $reminders, &$storedFiles) {
+                $orgId = getPermissionsTeamId();
+                $data['organization_id'] = $orgId;
 
-            // Luôn tạo ở trạng thái DRAFT, approval_status để null
-            $data['status'] = ScheduleStatus::DRAFT->value;
-            // có sort_order >= vị trí chèn lên 1 đơn vị (insert behavior, không overwrite).
-            if (!empty($data['sort_order']) && !empty($data['date_time']) && !empty($data['session'])) {
-                $carbon = \Carbon\Carbon::parse($data['date_time']);
-                Schedule::where('organization_id', $orgId)
-                    ->where('module_type', $data['module_type'])
-                    ->whereDate('date_time', $carbon->toDateString())
-                    ->where('session', $data['session'])
-                    ->where('sort_order', '>=', (int) $data['sort_order'])
-                    ->increment('sort_order');
-            }
-
-            $schedule = Schedule::create($data);
-
-            $this->syncRecipients($schedule, $participants);
-            $this->syncReminders($schedule, $reminders);
-
-            if ($files) {
-                $attachmentNames = $data['attachment_names'] ?? [];
-                foreach ($files as $index => $file) {
-                    $customName = $attachmentNames[$index] ?? null;
-                    $this->uploadAttachment($schedule, $file, $index, $customName);
+                $data['status'] = ScheduleStatus::DRAFT->value;
+                if (!empty($data['sort_order']) && !empty($data['date_time']) && !empty($data['session'])) {
+                    $carbon = \Carbon\Carbon::parse($data['date_time']);
+                    Schedule::where('organization_id', $orgId)
+                        ->where('module_type', $data['module_type'])
+                        ->whereDate('date_time', $carbon->toDateString())
+                        ->where('session', $data['session'])
+                        ->where('sort_order', '>=', (int) $data['sort_order'])
+                        ->lockForUpdate()
+                        ->increment('sort_order');
                 }
-            }
 
-            return $this->show($schedule);
-        });
+                $schedule = Schedule::create($data);
+
+                $this->syncRecipients($schedule, $participants);
+                $this->syncReminders($schedule, $reminders);
+
+                if ($files) {
+                    $attachmentNames = $data['attachment_names'] ?? [];
+                    foreach ($files as $index => $file) {
+                        $customName = $attachmentNames[$index] ?? null;
+                        $this->uploadAttachment($schedule, $file, $index, $customName, $storedFiles);
+                    }
+                }
+
+                return $this->show($schedule);
+            });
+        } catch (\Throwable $exception) {
+            $this->mediaService->cleanupStoredFiles($storedFiles);
+            throw $exception;
+        }
     }
 
     /**
@@ -220,68 +219,67 @@ class ScheduleService
         if ($reminders === null && isset($data['reminders'])) {
             $reminders = $data['reminders'];
         }
+        $storedFiles = [];
 
-        return DB::transaction(function () use ($schedule, $data, $files, $participants, $reminders, $removeMediaIds) {
-            $schedule->update($data);
+        try {
+            return DB::transaction(function () use ($schedule, $data, $files, $participants, $reminders, $removeMediaIds, &$storedFiles) {
+                $schedule->update($data);
 
-            if ($participants !== null) {
-                $this->syncRecipients($schedule, $participants);
-            }
-            if ($reminders !== null) {
-                $this->syncReminders($schedule, $reminders);
-            }
-            
-            // Sync attachments by deleting removed ones + update title
-            if (isset($data['attachments']) && is_array($data['attachments'])) {
-                $keepIds = [];
-                foreach ($data['attachments'] as $att) {
-                    if (is_array($att) && isset($att['id']) && is_numeric($att['id'])) {
-                        $keepIds[] = (int)$att['id'];
-                        // Cho phép FE gửi name để đổi tên hiển thị
-                        if (!empty($att['name'])) {
-                            ScheduleAttachment::where('id', (int)$att['id'])
-                                ->where('schedule_id', $schedule->id)
-                                ->update(['title' => $att['name']]);
+                if ($participants !== null) {
+                    $this->syncRecipients($schedule, $participants);
+                }
+                if ($reminders !== null) {
+                    $this->syncReminders($schedule, $reminders);
+                }
+
+                if (isset($data['attachments']) && is_array($data['attachments'])) {
+                    $keepIds = [];
+                    foreach ($data['attachments'] as $att) {
+                        if (is_array($att) && isset($att['id']) && is_numeric($att['id'])) {
+                            $keepIds[] = (int)$att['id'];
+                            if (!empty($att['name'])) {
+                                ScheduleAttachment::where('id', (int)$att['id'])
+                                    ->where('schedule_id', $schedule->id)
+                                    ->update(['title' => $att['name']]);
+                            }
                         }
                     }
+                    $attachmentsToDelete = ScheduleAttachment::where('schedule_id', $schedule->id)
+                        ->whereNotIn('id', $keepIds)
+                        ->get();
+                    foreach ($attachmentsToDelete as $att) {
+                        Storage::disk('public')->delete($att->file_path);
+                        $att->delete();
+                    }
                 }
-                $attachmentsToDelete = ScheduleAttachment::where('schedule_id', $schedule->id)
-                    ->whereNotIn('id', $keepIds)
-                    ->get();
-                foreach ($attachmentsToDelete as $att) {
-                    Storage::disk('public')->delete($att->file_path);
-                    $att->delete();
-                }
-            }
 
-            if (!empty($removeMediaIds)) {
-                $attachments = ScheduleAttachment::whereIn('id', $removeMediaIds)->where('schedule_id', $schedule->id)->get();
-                foreach ($attachments as $att) {
-                    Storage::disk('public')->delete($att->file_path);
-                    $att->delete();
+                if (!empty($removeMediaIds)) {
+                    $attachments = ScheduleAttachment::whereIn('id', $removeMediaIds)->where('schedule_id', $schedule->id)->get();
+                    foreach ($attachments as $att) {
+                        Storage::disk('public')->delete($att->file_path);
+                        $att->delete();
+                    }
                 }
-            }
-            if ($files) {
-                $attachmentNames = $data['attachment_names'] ?? [];
-                foreach ($files as $index => $file) {
-                    $customName = $attachmentNames[$index] ?? null;
-                    $this->uploadAttachment($schedule, $file, $index, $customName);
+                if ($files) {
+                    $attachmentNames = $data['attachment_names'] ?? [];
+                    foreach ($files as $index => $file) {
+                        $customName = $attachmentNames[$index] ?? null;
+                        $this->uploadAttachment($schedule, $file, $index, $customName, $storedFiles);
+                    }
                 }
-            }
 
-            // If updated status to published, queue notifications
-            $statusVal = $schedule->fresh()->status;
-            if ($statusVal instanceof ScheduleStatus) {
-                $statusVal = $statusVal->value;
-            } else {
-                $statusVal = (int)$statusVal;
-            }
-            if ($statusVal === ScheduleStatus::PUBLISHED->value) {
-                // Observer tự động fire SchedulePublished hoặc ScheduleUpdated
-            }
-
-            return $this->show($schedule->fresh());
-        });
+                $statusVal = $schedule->fresh()->status;
+                if ($statusVal instanceof ScheduleStatus) {
+                    $statusVal = $statusVal->value;
+                } else {
+                    $statusVal = (int)$statusVal;
+                }
+                return $this->show($schedule->fresh());
+            });
+        } catch (\Throwable $exception) {
+            $this->mediaService->cleanupStoredFiles($storedFiles);
+            throw $exception;
+        }
     }
 
     /**
@@ -294,7 +292,7 @@ class ScheduleService
 
     public function bulkDestroy(array $ids): void
     {
-        Schedule::whereIn('id', $ids)->delete();
+        Schedule::where('organization_id', getPermissionsTeamId())->whereIn('id', $ids)->delete();
     }
 
     public function bulkUpdateStatus(array $ids, string|int $status): void
@@ -309,7 +307,7 @@ class ScheduleService
             };
         }
 
-        Schedule::whereIn('id', $ids)->update(['status' => $statusInt]);
+        Schedule::where('organization_id', getPermissionsTeamId())->whereIn('id', $ids)->update(['status' => $statusInt]);
     }
 
     /**
@@ -365,6 +363,7 @@ class ScheduleService
     {
         $schedule->update([
             'approval_status' => ApprovalStatus::REJECTED->value,
+            'rejection_note'  => $note,
         ]);
         return $this->show($schedule->fresh());
     }
@@ -440,7 +439,7 @@ class ScheduleService
     /**
      * Phục vụ upload attachment.
      */
-    private function uploadAttachment(Schedule $schedule, $file, int $sortOrder, ?string $customName = null): void
+    private function uploadAttachment(Schedule $schedule, $file, int $sortOrder, ?string $customName = null, array &$storedFiles = []): void
     {
         $uuid = Str::uuid()->toString();
         $ext = $file->getClientOriginalExtension();
@@ -449,6 +448,8 @@ class ScheduleService
         $fileSize = $file->getSize();
         $yearMonth = now()->format('Y/m');
         $path = $file->storeAs("schedules/{$yearMonth}", "{$uuid}.{$ext}", 'public');
+
+        $storedFiles[] = ['disk' => 'public', 'path' => $path];
 
         ScheduleAttachment::create([
             'schedule_id' => $schedule->id,

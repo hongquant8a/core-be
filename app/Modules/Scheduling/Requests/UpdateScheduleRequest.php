@@ -32,7 +32,6 @@ class UpdateScheduleRequest extends FormRequest
             'participants.*.group_id' => ['nullable', 'integer', 'exists:notification_groups,id'],
             'participants.*.display_name' => ['nullable', 'string', 'max:255'],
             'reminders'            => ['nullable', 'array'],
-            'files'                => ['nullable', 'array'],
             'remove_media_ids'     => ['nullable', 'array'],
             'remove_media_ids.*'   => ['integer'],
             'is_important'         => ['nullable', 'boolean'],

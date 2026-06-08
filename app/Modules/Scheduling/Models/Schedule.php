@@ -20,7 +20,7 @@ class Schedule extends TenantModel
         'host_id', 'host_text', 'location', 'preparation_unit', 'departments_text',
         'participants_text', 'participant_count', 'nature', 'driver_id', 'driver_text',
         'sort_order', 'status', 'approval_status', 'week_number', 'year',
-        'approved_by', 'approved_at', 'created_by', 'updated_by', 'is_important'
+        'approved_by', 'approved_at', 'rejection_note', 'created_by', 'updated_by', 'is_important'
     ];
 
     protected $casts = [
@@ -202,12 +202,18 @@ class Schedule extends TenantModel
                 }
             })
             ->when(
-                $filters['sort_by'] ?? 'date_time',
-                function ($q, $sortBy) use ($filters) {
+                ($filters['sort_by'] ?? '') !== '',
+                function ($q) use ($filters) {
                     $dateCol = 'date_time';
                     $allowed = ['id', $dateCol, 'session', 'sort_order', 'status', 'created_at', 'updated_at'];
+                    $sortBy = $filters['sort_by'] ?? $dateCol;
                     $col = in_array($sortBy, $allowed, true) ? $sortBy : $dateCol;
                     VietnameseSort::apply($q, $col, $filters['sort_order'] ?? 'asc');
+                },
+                function ($q) use ($filters) {
+                    if (! array_key_exists('sort_by', $filters)) {
+                        VietnameseSort::apply($q, 'date_time', $filters['sort_order'] ?? 'asc');
+                    }
                 }
             );
     }

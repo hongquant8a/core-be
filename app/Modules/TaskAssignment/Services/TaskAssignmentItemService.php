@@ -180,21 +180,12 @@ class TaskAssignmentItemService
 
     public function bulkDestroy(array $ids): void
     {
-        TaskAssignmentItem::whereIn('id', $ids)->delete();
+        TaskAssignmentItem::where('organization_id', getPermissionsTeamId())->whereIn('id', $ids)->delete();
     }
 
     public function bulkUpdateStatus(array $ids, string $status): void
     {
-        $data = $this->buildStatusUpdateData($status);
-        TaskAssignmentItem::whereIn('id', $ids)->update($data);
-
-        // Nếu chuyển từ done sang trạng thái khác, clear completed_at
-        if ($status !== TaskProgressStatusEnum::Done->value) {
-            TaskAssignmentItem::whereIn('id', $ids)
-                ->whereNotNull('completed_at')
-                ->where('processing_status', '!=', TaskProgressStatusEnum::Done->value)
-                ->update(['completed_at' => null]);
-        }
+        TaskAssignmentItem::where('organization_id', getPermissionsTeamId())->whereIn('id', $ids)->update($this->buildStatusUpdateData($status));
     }
 
     public function changeStatus(TaskAssignmentItem $item, string $status): TaskAssignmentItem
@@ -267,6 +258,8 @@ class TaskAssignmentItemService
         if ($status === TaskProgressStatusEnum::Done->value) {
             $data['completion_percent'] = 100;
             $data['completed_at'] = now();
+        } else {
+            $data['completed_at'] = null;
         }
 
         return $data;
@@ -359,10 +352,12 @@ class TaskAssignmentItemService
         }
     }
 
+    private const ADMIN_ROLES = ['Quản trị', 'Super Admin', 'Admin'];
+
     private function applyDepartmentRestriction(array $filters): array
     {
         $user = auth()->user();
-        if (! $user->hasAnyRole(['Quản trị', 'Super Admin', 'Admin'])) {
+        if (! $user->hasAnyRole(self::ADMIN_ROLES)) {
             $taskAssignmentUser = $user->taskAssignmentUser;
             $filters['department_id'] = $taskAssignmentUser?->task_assignment_department_id;
         }
