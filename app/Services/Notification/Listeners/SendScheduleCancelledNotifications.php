@@ -26,6 +26,9 @@ class SendScheduleCancelledNotifications implements ShouldQueue
             return;
         }
 
+        // Luôn hủy pending reminders, bất kể có instant channels hay không.
+        $this->scheduler->cancelPending($schedule);
+
         $channels = $this->resolveChannels($organizationId);
         if (empty($channels)) {
             return;
@@ -44,9 +47,6 @@ class SendScheduleCancelledNotifications implements ShouldQueue
                 organizationId: $organizationId,
             );
         }
-
-        // Cancel pending reminders
-        $this->scheduler->cancelPending($schedule);
     }
 
     private function resolveChannels(int $organizationId): array

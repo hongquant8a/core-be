@@ -26,6 +26,9 @@ class SendSchedulePublishedNotifications implements ShouldQueue
             return;
         }
 
+        // Luôn schedule reminders — remind_at phải được set bất kể có instant channels hay không.
+        $this->scheduler->scheduleFor($schedule);
+
         $channels = $this->resolveChannels($organizationId);
         if (empty($channels)) {
             return;
@@ -44,9 +47,6 @@ class SendSchedulePublishedNotifications implements ShouldQueue
                 organizationId: $organizationId,
             );
         }
-
-        // Trigger reminder scheduling
-        $this->scheduler->scheduleFor($schedule);
     }
 
     private function resolveChannels(int $organizationId): array

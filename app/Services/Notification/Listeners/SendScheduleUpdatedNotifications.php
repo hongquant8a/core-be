@@ -26,6 +26,10 @@ class SendScheduleUpdatedNotifications implements ShouldQueue
             return;
         }
 
+        // Luôn sync reminders — hủy cũ + tạo mới, bất kể có instant channels hay không.
+        $this->scheduler->cancelPending($schedule);
+        $this->scheduler->scheduleFor($schedule);
+
         $channels = $this->resolveChannels($organizationId);
         if (empty($channels)) {
             return;
@@ -44,10 +48,6 @@ class SendScheduleUpdatedNotifications implements ShouldQueue
                 organizationId: $organizationId,
             );
         }
-
-        // Cancel previous reminders, and schedule new ones
-        $this->scheduler->cancelPending($schedule);
-        $this->scheduler->scheduleFor($schedule);
     }
 
     private function resolveChannels(int $organizationId): array
