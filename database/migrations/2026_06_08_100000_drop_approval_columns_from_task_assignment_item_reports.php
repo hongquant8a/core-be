@@ -9,6 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('task_assignment_item_reports', function (Blueprint $table) {
+            $table->dropForeign(['manager_confirmed_by']);
+            $table->dropForeign(['locked_by']);
             $table->dropColumn([
                 'manager_confirmed',
                 'manager_confirmed_by',
@@ -31,6 +33,9 @@ return new class extends Migration
             $table->boolean('is_locked')->default(false)->after('manager_confirm_note');
             $table->timestamp('locked_at')->nullable()->after('is_locked');
             $table->unsignedBigInteger('locked_by')->nullable()->after('locked_at');
+
+            $table->foreign('manager_confirmed_by')->references('id')->on('users')->nullOnDelete();
+            $table->foreign('locked_by')->references('id')->on('users')->nullOnDelete();
         });
     }
 };
