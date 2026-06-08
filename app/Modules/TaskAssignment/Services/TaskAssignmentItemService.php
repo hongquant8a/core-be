@@ -373,25 +373,58 @@ class TaskAssignmentItemService
 
         $done = TaskProgressStatusEnum::Done->value;
         $cancelled = TaskProgressStatusEnum::Cancelled->value;
+        $todo = TaskProgressStatusEnum::Todo->value;
+        $inProgress = TaskProgressStatusEnum::InProgress->value;
+        $paused = TaskProgressStatusEnum::Paused->value;
         $hasDeadline = TaskDeadlineTypeEnum::HasDeadline->value;
 
-        return $itemTypes->map(function ($type) use ($filters, $done, $cancelled, $hasDeadline) {
-            $base = TaskAssignmentItem::where('task_assignment_item_type_id', $type->id)
-                ->when($filters['department_id'] ?? null, fn ($q, $v) => $q->whereHas('users', fn ($uq) => $uq->where('task_assignment_item_user.department_id', $v)))
-                ->when($filters['priority'] ?? null, fn ($q, $v) => $q->where('priority', $v))
-                ->when($filters['from_date'] ?? null, fn ($q, $v) => $q->where('created_at', '>=', $v))
-                ->when($filters['to_date'] ?? null, fn ($q, $v) => $q->where('created_at', '<=', Carbon::parse($v)->endOfDay()));
+        $query = DB::table('task_assignment_items as ti')
+            ->join('task_assignment_item_types as tit', 'tit.id', '=', 'ti.task_assignment_item_type_id')
+            ->where('tit.status', 'active')
+            ->when($filters['department_id'] ?? null, fn ($q, $v) => $q->whereExists(function ($sub) use ($v) {
+                $sub->select(DB::raw(1))
+                    ->from('task_assignment_item_user')
+                    ->whereColumn('task_assignment_item_user.task_assignment_item_id', 'ti.id')
+                    ->where('task_assignment_item_user.department_id', $v);
+            }))
+            ->when($filters['priority'] ?? null, fn ($q, $v) => $q->where('ti.priority', $v))
+            ->when($filters['from_date'] ?? null, fn ($q, $v) => $q->where('ti.created_at', '>=', $v))
+            ->when($filters['to_date'] ?? null, fn ($q, $v) => $q->where('ti.created_at', '<=', Carbon::parse($v)->endOfDay()))
+            ->groupBy('ti.task_assignment_item_type_id', 'tit.name')
+            ->selectRaw('ti.task_assignment_item_type_id as item_type_id, tit.name as item_type_name')
+            ->selectRaw('COUNT(*) as total')
+            ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$todo}' THEN 1 ELSE 0 END) as todo")
+            ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$inProgress}' THEN 1 ELSE 0 END) as in_progress")
+            ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$paused}' THEN 1 ELSE 0 END) as paused")
+            ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' THEN 1 ELSE 0 END) as done")
+            ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$cancelled}' THEN 1 ELSE 0 END) as cancelled")
+            ->selectRaw("SUM(CASE WHEN ti.processing_status NOT IN ('{$done}','{$cancelled}') AND (ti.deadline_type != '{$hasDeadline}' OR ti.end_at IS NULL OR ti.end_at >= NOW()) THEN 1 ELSE 0 END) as upcoming")
+            ->selectRaw("SUM(CASE WHEN ti.deadline_type = '{$hasDeadline}' AND ti.end_at < NOW() AND ti.processing_status IN ('{$todo}','{$inProgress}','{$paused}') THEN 1 ELSE 0 END) as overdue")
+            ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' AND ti.deadline_type = '{$hasDeadline}' AND ti.completed_at > ti.end_at THEN 1 ELSE 0 END) as late")
+            ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' AND ti.deadline_type = '{$hasDeadline}' AND DATE(ti.completed_at) < DATE(ti.end_at) THEN 1 ELSE 0 END) as early")
+            ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' AND (ti.deadline_type != '{$hasDeadline}' OR ti.end_at IS NULL OR DATE(ti.completed_at) = DATE(ti.end_at)) THEN 1 ELSE 0 END) as on_time");
 
+        $rows = $query->get()->keyBy('item_type_id');
+
+        return $itemTypes->map(function ($type) use ($rows) {
+            $row = $rows->get($type->id);
             return [
                 'item_type_id' => $type->id,
                 'item_type_name' => $type->name,
-                'total' => (clone $base)->count(),
-                'todo' => (clone $base)->where('processing_status', TaskProgressStatusEnum::Todo->value)->count(),
-                'in_progress' => (clone $base)->where('processing_status', TaskProgressStatusEnum::InProgress->value)->count(),
-                'paused' => (clone $base)->where('processing_status', TaskProgressStatusEnum::Paused->value)->count(),
-                'done' => (clone $base)->where('processing_status', $done)->count(),
-                'cancelled' => (clone $base)->where('processing_status', $cancelled)->count(),
-                'timing_stats' => $this->getTimingStats($base),
+                'total' => (int) ($row->total ?? 0),
+                'todo' => (int) ($row->todo ?? 0),
+                'in_progress' => (int) ($row->in_progress ?? 0),
+                'paused' => (int) ($row->paused ?? 0),
+                'done' => (int) ($row->done ?? 0),
+                'cancelled' => (int) ($row->cancelled ?? 0),
+                'timing_stats' => [
+                    'upcoming' => (int) ($row->upcoming ?? 0),
+                    'overdue' => (int) ($row->overdue ?? 0),
+                    'late' => (int) ($row->late ?? 0),
+                    'early' => (int) ($row->early ?? 0),
+                    'on_time' => (int) ($row->on_time ?? 0),
+                    'cancelled' => (int) ($row->cancelled ?? 0),
+                ],
             ];
         })->all();
     }
@@ -400,54 +433,79 @@ class TaskAssignmentItemService
     {
         $filters = $this->applyDepartmentRestriction($filters);
 
-        // Iterate ALL departments (active + inactive) — task gắn với inactive dept vẫn hiển thị.
         $departments = TaskAssignmentDepartment::query()
             ->when($filters['department_id'] ?? null, fn ($q, $id) => $q->where('id', $id))
             ->get(['id', 'name', 'status']);
 
         $done = TaskProgressStatusEnum::Done->value;
         $cancelled = TaskProgressStatusEnum::Cancelled->value;
-
-        $applyCommonFilters = fn ($base) => $base
-            ->when($filters['processing_status'] ?? null, fn ($q, $v) => $q->where('processing_status', $v))
-            ->when($filters['priority'] ?? null, fn ($q, $v) => $q->where('priority', $v))
-            ->when($filters['deadline_type'] ?? null, fn ($q, $v) => $q->where('deadline_type', $v))
-            ->when($filters['task_assignment_item_type_id'] ?? null, fn ($q, $v) => $q->where('task_assignment_item_type_id', $v))
-            ->when($filters['from_date'] ?? null, fn ($q, $v) => $q->where('created_at', '>=', $v))
-            ->when($filters['to_date'] ?? null, fn ($q, $v) => $q->where('created_at', '<=', Carbon::parse($v)->endOfDay()));
+        $todo = TaskProgressStatusEnum::Todo->value;
+        $inProgress = TaskProgressStatusEnum::InProgress->value;
+        $paused = TaskProgressStatusEnum::Paused->value;
+        $hasDeadline = TaskDeadlineTypeEnum::HasDeadline->value;
 
         $fromDate = $filters['from_date'] ?? null;
         $toDate = $filters['to_date'] ?? null;
         $toDateEnd = $toDate ? Carbon::parse($toDate)->endOfDay() : null;
 
-        $rows = $departments->map(function ($dept) use ($applyCommonFilters, $done, $cancelled, $fromDate, $toDate, $toDateEnd) {
-            $base = $applyCommonFilters(
-                TaskAssignmentItem::whereHas('users', fn ($q) => $q->where('task_assignment_item_user.department_id', $dept->id))
-            );
+        $query = DB::table('task_assignment_items as ti')
+            ->join(DB::raw('(SELECT DISTINCT task_assignment_item_id, department_id FROM task_assignment_item_user) as tiu'),
+                'tiu.task_assignment_item_id', '=', 'ti.id')
+            ->join('task_assignment_departments as td', 'td.id', '=', 'tiu.department_id')
+            ->when($filters['department_id'] ?? null, fn ($q, $v) => $q->where('tiu.department_id', $v))
+            ->when($filters['processing_status'] ?? null, fn ($q, $v) => $q->where('ti.processing_status', $v))
+            ->when($filters['priority'] ?? null, fn ($q, $v) => $q->where('ti.priority', $v))
+            ->when($filters['deadline_type'] ?? null, fn ($q, $v) => $q->where('ti.deadline_type', $v))
+            ->when($filters['task_assignment_item_type_id'] ?? null, fn ($q, $v) => $q->where('ti.task_assignment_item_type_id', $v))
+            ->when($fromDate, fn ($q, $v) => $q->where('ti.created_at', '>=', $v))
+            ->when($toDate, fn ($q, $v) => $q->where('ti.created_at', '<=', $toDateEnd))
+            ->groupBy('tiu.department_id', 'td.name')
+            ->selectRaw('tiu.department_id, td.name as department_name')
+            ->selectRaw('COUNT(*) as total')
+            ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$todo}' THEN 1 ELSE 0 END) as todo")
+            ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$inProgress}' THEN 1 ELSE 0 END) as in_progress")
+            ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$paused}' THEN 1 ELSE 0 END) as paused")
+            ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' THEN 1 ELSE 0 END) as done")
+            ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$cancelled}' THEN 1 ELSE 0 END) as cancelled")
+            ->selectRaw("SUM(CASE WHEN ti.processing_status NOT IN ('{$done}','{$cancelled}') AND (ti.deadline_type != '{$hasDeadline}' OR ti.end_at IS NULL OR ti.end_at >= NOW()) THEN 1 ELSE 0 END) as upcoming")
+            ->selectRaw("SUM(CASE WHEN ti.deadline_type = '{$hasDeadline}' AND ti.end_at < NOW() AND ti.processing_status IN ('{$todo}','{$inProgress}','{$paused}') THEN 1 ELSE 0 END) as overdue")
+            ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' AND ti.deadline_type = '{$hasDeadline}' AND ti.completed_at > ti.end_at THEN 1 ELSE 0 END) as late")
+            ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' AND ti.deadline_type = '{$hasDeadline}' AND DATE(ti.completed_at) < DATE(ti.end_at) THEN 1 ELSE 0 END) as early")
+            ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' AND (ti.deadline_type != '{$hasDeadline}' OR ti.end_at IS NULL OR DATE(ti.completed_at) = DATE(ti.end_at)) THEN 1 ELSE 0 END) as on_time");
 
-            // 6 buckets mutually exclusive (overdue tách riêng, không phải attribute) — sum = total.
+        if ($fromDate && $toDate) {
+            $query->selectRaw('SUM(CASE WHEN ti.created_at >= ? AND ti.created_at <= ? THEN 1 ELSE 0 END) as new_in_period', [$fromDate, $toDateEnd])
+                ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' AND ti.completed_at >= ? AND ti.completed_at <= ? THEN 1 ELSE 0 END) as done_in_period", [$fromDate, $toDateEnd]);
+        } else {
+            $query->selectRaw('NULL as new_in_period, NULL as done_in_period');
+        }
+
+        $rows = $query->get()->keyBy('department_id');
+
+        return $departments->map(function ($dept) use ($rows) {
+            $row = $rows->get($dept->id);
             return [
                 'department_id' => $dept->id,
                 'department_name' => $dept->name,
-                'department_code' => $dept->code,
-                'total' => (clone $base)->count(),
-                'todo' => (clone $base)->where('processing_status', TaskProgressStatusEnum::Todo->value)->count(),
-                'in_progress' => (clone $base)->where('processing_status', TaskProgressStatusEnum::InProgress->value)->count(),
-                'paused' => (clone $base)->where('processing_status', TaskProgressStatusEnum::Paused->value)->count(),
-                'done' => (clone $base)->where('processing_status', $done)->count(),
-                'cancelled' => (clone $base)->where('processing_status', $cancelled)->count(),
-                'timing_stats' => $this->getTimingStats($base),
-                'new_in_period' => ($fromDate && $toDate)
-                    ? (clone $base)->whereBetween('created_at', [$fromDate, $toDateEnd])->count()
-                    : null,
-                'done_in_period' => ($fromDate && $toDate)
-                    ? (clone $base)->where('processing_status', $done)
-                        ->whereBetween('completed_at', [$fromDate, $toDateEnd])->count()
-                    : null,
+                'department_code' => $dept->code ?? null,
+                'total' => (int) ($row->total ?? 0),
+                'todo' => (int) ($row->todo ?? 0),
+                'in_progress' => (int) ($row->in_progress ?? 0),
+                'paused' => (int) ($row->paused ?? 0),
+                'done' => (int) ($row->done ?? 0),
+                'cancelled' => (int) ($row->cancelled ?? 0),
+                'timing_stats' => [
+                    'upcoming' => (int) ($row->upcoming ?? 0),
+                    'overdue' => (int) ($row->overdue ?? 0),
+                    'late' => (int) ($row->late ?? 0),
+                    'early' => (int) ($row->early ?? 0),
+                    'on_time' => (int) ($row->on_time ?? 0),
+                    'cancelled' => (int) ($row->cancelled ?? 0),
+                ],
+                'new_in_period' => ($fromDate && $toDate) ? (int) ($row->new_in_period ?? 0) : null,
+                'done_in_period' => ($fromDate && $toDate) ? (int) ($row->done_in_period ?? 0) : null,
             ];
         })->all();
-
-        return $rows;
     }
 
     public function statsByUser(array $filters): array

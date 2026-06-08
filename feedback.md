@@ -209,7 +209,7 @@ Chọn 1 key duy nhất (khuyến nghị attachments cho đồng nhất với Ta
 
 Checklist xử lý
 ID	Vấn đề	Mức độ	Trạng thái
-ISSUE-01	N+1 Query trong stats by department/itemType	Cao	[ ] Chưa xử lý (để PR riêng)
+ISSUE-01	N+1 Query trong stats by department/itemType	Cao	[x] Đã xử lý
 ISSUE-02	reject() bỏ qua $note	Cao	[x] Đã xử lý
 ISSUE-03	Scheduling bypass MediaService, thiếu cleanup	Cao	[x] Đã xử lý
 ISSUE-04	Cross-tenant risk trong bulk ops	Cao	[x] Đã xử lý
