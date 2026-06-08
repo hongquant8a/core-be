@@ -3,6 +3,7 @@
 namespace App\Modules\Scheduling\Services;
 
 use App\Modules\Core\Support\ExportFilename;
+use App\Modules\Scheduling\Enums\ModuleType;
 use App\Modules\Scheduling\Enums\ScheduleStatus;
 use App\Modules\Scheduling\Enums\ApprovalStatus;
 use App\Modules\Scheduling\Enums\SessionType;
@@ -29,10 +30,10 @@ class ScheduleService
         $base = Schedule::filter($filters);
         return [
             'total'            => (clone $base)->count(),
-            'draft'            => (clone $base)->where('status', ScheduleStatus::DRAFT->value)->whereNull('approval_status')->count(),
-            'pending_approval' => (clone $base)->where('status', ScheduleStatus::DRAFT->value)->where('approval_status', ApprovalStatus::PENDING->value)->count(),
-            'approved'         => (clone $base)->where('status', ScheduleStatus::DRAFT->value)->where('approval_status', ApprovalStatus::APPROVED->value)->count(),
-            'rejected'         => (clone $base)->where('status', ScheduleStatus::DRAFT->value)->where('approval_status', ApprovalStatus::REJECTED->value)->count(),
+            'draft'            => (clone $base)->where('status', ScheduleStatus::DRAFT->value)->count(),
+            'pending_approval' => (clone $base)->where('status', ScheduleStatus::PUBLISHED->value)->where('approval_status', ApprovalStatus::PENDING->value)->count(),
+            'approved'         => (clone $base)->where('status', ScheduleStatus::PUBLISHED->value)->where('approval_status', ApprovalStatus::APPROVED->value)->count(),
+            'rejected'         => (clone $base)->where('status', ScheduleStatus::PUBLISHED->value)->where('approval_status', ApprovalStatus::REJECTED->value)->count(),
             'published'        => (clone $base)->where('status', ScheduleStatus::PUBLISHED->value)->count(),
         ];
     }
@@ -326,39 +327,20 @@ class ScheduleService
             };
         }
 
-        // Publish (DRAFT → PUBLISHED): xử lý logic duyệt theo flag
+        // Publish (DRAFT → PUBLISHED): tự động set approval_status theo flag
         $updateData = ['status' => $statusInt];
         if ($statusInt === ScheduleStatus::PUBLISHED->value && $schedule->status !== ScheduleStatus::PUBLISHED) {
             $orgSettings = OrgSchedulingSettings::firstOrCreate(['organization_id' => $schedule->organization_id]);
-            $requiresApproval = $schedule->module_type === 'EXECUTIVE'
+            $requiresApproval = $schedule->module_type === ModuleType::EXECUTIVE
                 ? $orgSettings->executive_requires_approval
                 : $orgSettings->office_requires_approval;
-            if ((bool) $requiresApproval) {
-                if ($schedule->approval_status !== ApprovalStatus::APPROVED->value) {
-                    abort(422, 'Lịch công tác chưa được duyệt, không thể ban hành.');
-                }
-            } else {
-                // Không cần duyệt → tự động set approved
-                $updateData['approval_status'] = ApprovalStatus::APPROVED->value;
-            }
+            $updateData['approval_status'] = (bool) $requiresApproval
+                ? ApprovalStatus::PENDING->value
+                : ApprovalStatus::APPROVED->value;
         }
 
         $schedule->update($updateData);
 
-        return $this->show($schedule->fresh());
-    }
-
-    /**
-     * Gửi duyệt — set approval_status từ null → pending.
-     */
-    public function submitForApproval(Schedule $schedule): Schedule
-    {
-        if ($schedule->approval_status !== null) {
-            abort(422, 'Lịch công tác đã được gửi duyệt hoặc đã được xử lý.');
-        }
-        $schedule->update([
-            'approval_status' => ApprovalStatus::PENDING->value,
-        ]);
         return $this->show($schedule->fresh());
     }
 

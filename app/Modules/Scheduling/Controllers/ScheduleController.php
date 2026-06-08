@@ -293,18 +293,6 @@ class ScheduleController extends Controller
     }
 
     /**
-     * Gửi duyệt lịch công tác — set approval_status từ null → pending.
-     *
-     * @queryParam module_type string required Phân hệ (EXECUTIVE, OFFICE). Example: EXECUTIVE
-     * @urlParam schedule integer required ID lịch công tác. Example: 1
-     */
-    public function submitForApproval(Schedule $schedule): JsonResponse
-    {
-        $schedule = $this->scheduleService->submitForApproval($schedule);
-        return $this->successResource(new ScheduleResource($schedule), 'Gửi duyệt lịch công tác thành công!');
-    }
-
-    /**
      * Duyệt lịch công tác.
      *
      * @queryParam module_type string required Phân hệ (EXECUTIVE, OFFICE). Example: EXECUTIVE
