@@ -106,7 +106,7 @@ class PermissionSeeder extends Seeder
                 'statsByItemType', 'statsByDocument', 'exportMonthlyReport',
             ],
             'task-assignment-item-reports' => [
-                'index', 'show', 'store', 'update', 'destroy', 'confirm',
+                'index', 'show', 'store', 'update', 'destroy',
             ],
             'task-assignment-item-transfers' => [
                 'index', 'store',

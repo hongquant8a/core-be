@@ -236,10 +236,9 @@ class TaskAssignmentItemService
     /**
      * Manager đánh dấu công việc hoàn thành (mark-done).
      *
-     * Spec §9.3.D: phải có ≥1 báo cáo manager_confirmed=true (is_locked=true).
      * Auto set: processing_status=done, completion_percent=100, completed_at=now().
      *
-     * @throws \RuntimeException Khi task đã done/cancelled hoặc chưa có report locked.
+     * @throws \RuntimeException Khi task đã done/cancelled.
      */
     public function markDone(TaskAssignmentItem $item): TaskAssignmentItem
     {
@@ -248,14 +247,6 @@ class TaskAssignmentItemService
             TaskProgressStatusEnum::Cancelled->value,
         ], true)) {
             throw new \RuntimeException('Công việc đã đóng, không thể đánh dấu lại.');
-        }
-
-        $hasLockedReport = \App\Modules\TaskAssignment\Models\TaskAssignmentItemReport::where('task_assignment_item_id', $item->id)
-            ->where('is_locked', true)
-            ->exists();
-
-        if (! $hasLockedReport) {
-            throw new \RuntimeException('Phải có ít nhất 1 báo cáo đã được xác nhận trước khi đánh dấu hoàn thành.');
         }
 
         $item->update([

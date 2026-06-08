@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItemReport;
-use App\Modules\TaskAssignment\Requests\ConfirmReportRequest;
 use App\Modules\TaskAssignment\Requests\StoreReportRequest;
 use App\Modules\TaskAssignment\Requests\UpdateReportRequest;
 use App\Modules\TaskAssignment\Resources\ReportCollection;
@@ -115,16 +114,12 @@ class TaskAssignmentItemReportController extends Controller
      */
     public function update(UpdateReportRequest $request, TaskAssignmentItemReport $taskAssignmentItemReport)
     {
-        try {
-            $report = $this->reportService->update(
-                $taskAssignmentItemReport,
-                $request->validated(),
-                $request->file('attachments', []),
-                $request->input('remove_attachment_ids', [])
-            );
-        } catch (\RuntimeException $e) {
-            return $this->error($e->getMessage(), 422);
-        }
+        $report = $this->reportService->update(
+            $taskAssignmentItemReport,
+            $request->validated(),
+            $request->file('attachments', []),
+            $request->input('remove_attachment_ids', [])
+        );
 
         return $this->successResource(new ReportResource($report), 'Báo cáo đã được cập nhật!');
     }
@@ -138,37 +133,8 @@ class TaskAssignmentItemReportController extends Controller
      */
     public function destroy(TaskAssignmentItemReport $taskAssignmentItemReport)
     {
-        try {
-            $this->reportService->destroy($taskAssignmentItemReport);
-        } catch (\RuntimeException $e) {
-            return $this->error($e->getMessage(), 422);
-        }
+        $this->reportService->destroy($taskAssignmentItemReport);
 
         return $this->success(null, 'Báo cáo đã được xóa thành công!');
-    }
-
-    /**
-     * Xác nhận báo cáo và khóa.
-     *
-     * @urlParam id integer required ID báo cáo. Example: 1
-     *
-     * @bodyParam confirm_note string optional Ghi chú xác nhận. Example: Đạt quy định
-     *
-     * @response 200 {"success": true, "message": "Đã xác nhận báo cáo."}
-     */
-    public function confirm(ConfirmReportRequest $request, int $id)
-    {
-        $report = \App\Modules\TaskAssignment\Models\TaskAssignmentItemReport::findOrFail($id);
-
-        try {
-            $updated = $this->reportService->confirm($report, $request->validated('confirm_note'));
-        } catch (\RuntimeException $e) {
-            return $this->error($e->getMessage(), 422);
-        }
-
-        return $this->success(
-            (new \App\Modules\TaskAssignment\Resources\ReportResource($updated))->resolve(),
-            'Đã xác nhận báo cáo.'
-        );
     }
 }

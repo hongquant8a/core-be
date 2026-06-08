@@ -28,21 +28,10 @@ class TaskAssignmentItemReport extends TenantModel implements HasMedia
         'report_document_excerpt',
         'report_document_content',
         'organization_id',
-        'manager_confirmed',
-        'manager_confirmed_by',
-        'manager_confirmed_at',
-        'manager_confirm_note',
-        'is_locked',
-        'locked_at',
-        'locked_by',
     ];
 
     protected $casts = [
         'completed_at' => 'datetime',
-        'manager_confirmed' => 'boolean',
-        'manager_confirmed_at' => 'datetime',
-        'is_locked' => 'boolean',
-        'locked_at' => 'datetime',
     ];
 
     protected static function booted()
@@ -62,16 +51,6 @@ class TaskAssignmentItemReport extends TenantModel implements HasMedia
     public function reporter()
     {
         return $this->belongsTo(User::class, 'reporter_user_id');
-    }
-
-    public function managerConfirmer()
-    {
-        return $this->belongsTo(User::class, 'manager_confirmed_by');
-    }
-
-    public function locker()
-    {
-        return $this->belongsTo(User::class, 'locked_by');
     }
 
     /**

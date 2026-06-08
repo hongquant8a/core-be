@@ -8,7 +8,6 @@ use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItemReport;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItemReportAttachment;
 use App\Services\Notification\Events\TaskCompleted;
-use App\Services\Notification\Events\TaskConfirmed;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 
@@ -19,7 +18,7 @@ class TaskAssignmentReportService
     public function index(int $itemId, int $limit)
     {
         return TaskAssignmentItemReport::where('task_assignment_item_id', $itemId)
-            ->with(['reporter', 'managerConfirmer', 'locker', 'attachments.media', 'item:id,end_at,task_assignment_document_id'])
+            ->with(['reporter', 'attachments.media', 'item:id,end_at,task_assignment_document_id'])
             ->paginate($limit);
     }
 
@@ -53,7 +52,7 @@ class TaskAssignmentReportService
                     ]);
                 }
 
-                $loaded = $report->load(['reporter', 'managerConfirmer', 'locker', 'attachments.media', 'item:id,end_at,task_assignment_document_id']);
+                $loaded = $report->load(['reporter', 'attachments.media', 'item:id,end_at,task_assignment_document_id']);
 
                 // Auto-mark reporter's assignment as done
                 $reporterId = $report->reporter_user_id;
@@ -78,37 +77,8 @@ class TaskAssignmentReportService
         }
     }
 
-    public function confirm(TaskAssignmentItemReport $report, ?string $note): TaskAssignmentItemReport
-    {
-        if ($report->is_locked) {
-            throw new \RuntimeException('Báo cáo đã khóa, không thể xác nhận lại.');
-        }
-
-        $uid = auth()->id();
-
-        $report->update([
-            'manager_confirmed' => true,
-            'manager_confirmed_by' => $uid,
-            'manager_confirmed_at' => now(),
-            'manager_confirm_note' => $note,
-            'is_locked' => true,
-            'locked_at' => now(),
-            'locked_by' => $uid,
-        ]);
-
-        $fresh = $report->fresh(['reporter', 'managerConfirmer', 'locker', 'attachments.media', 'item:id,end_at,task_assignment_document_id']);
-
-        event(new TaskConfirmed($fresh->item));
-
-        return $fresh;
-    }
-
     public function update(TaskAssignmentItemReport $report, array $validated, array $files = [], array $removeAttachmentIds = []): TaskAssignmentItemReport
     {
-        if ($report->is_locked) {
-            throw new \RuntimeException('Báo cáo đã khóa, không thể sửa.');
-        }
-
         $storedFiles = [];
 
         try {
@@ -140,7 +110,7 @@ class TaskAssignmentReportService
                     ]);
                 }
 
-                return $report->load(['reporter', 'managerConfirmer', 'locker', 'attachments.media', 'item:id,end_at,task_assignment_document_id']);
+                return $report->load(['reporter', 'attachments.media', 'item:id,end_at,task_assignment_document_id']);
             });
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);
@@ -150,9 +120,6 @@ class TaskAssignmentReportService
 
     public function destroy(TaskAssignmentItemReport $report): void
     {
-        if ($report->is_locked) {
-            throw new \RuntimeException('Báo cáo đã khóa, không thể xóa.');
-        }
 
         $attachments = $report->attachments()->with('media')->get();
 

@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(php artisan:*)",
-      "Bash(git stash *)"
+      "Bash(git stash *)",
+      "Bash(sail artisan *)"
     ]
   }
 }
