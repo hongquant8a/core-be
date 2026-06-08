@@ -333,8 +333,15 @@ class ScheduleController extends Controller
     /**
      * Thay đổi thứ tự sắp xếp của danh sách lịch công tác.
      *
+     * Dùng cho kéo thả sắp xếp lại lịch trong cùng một ngày + buổi.
+     * FE gửi danh sách ID theo thứ tự mong muốn, BE gán lại `sort_order` từ 1 → N.
+     *
      * @queryParam module_type string required Phân hệ (EXECUTIVE, OFFICE). Example: EXECUTIVE
      * @bodyParam ordered_ids array required Danh sách ID lịch công tác theo thứ tự mong muốn. Example: [3, 1, 2]
+     * @response {
+     *  "success": true,
+     *  "message": "Sắp xếp lịch công tác thành công!"
+     * }
      */
     public function reorder(ReorderScheduleRequest $request): JsonResponse
     {
