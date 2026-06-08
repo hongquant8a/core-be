@@ -482,7 +482,7 @@ class TaskAssignmentItemService
 
         $rows = $query->get()->keyBy('department_id');
 
-        return $departments->map(function ($dept) use ($rows) {
+        return $departments->map(function ($dept) use ($rows, $fromDate, $toDate) {
             $row = $rows->get($dept->id);
             return [
                 'department_id' => $dept->id,
