@@ -14,8 +14,7 @@ class ScheduleObserver
 {
     private const NOTIFY_FIELDS = [
         'content',
-        'date',
-        'start_time',
+        'date_time',
         'location',
     ];
 

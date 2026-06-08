@@ -14,6 +14,7 @@ class NotificationScheduleSeeder extends Seeder
     {
         $this->seedTaskAssignment();
         $this->seedMeeting();
+        $this->seedScheduling();
     }
 
     private function seedTaskAssignment(): void
@@ -142,5 +143,44 @@ class NotificationScheduleSeeder extends Seeder
                 }
             }
         }
+    }
+
+    private function seedScheduling(): void
+    {
+        $moduleKey = NotificationModuleEnum::Scheduling->value;
+
+        // Instant events: published, updated, cancelled
+        $instantEvents = [
+            NotificationEventEnum::SchedulePublished->value,
+            NotificationEventEnum::ScheduleUpdated->value,
+            NotificationEventEnum::ScheduleCancelled->value,
+        ];
+
+        $configs = NotificationEventConfig::where('module_key', $moduleKey)
+            ->whereIn('event_key', $instantEvents)
+            ->get();
+
+        foreach ($configs as $config) {
+            $label = match ($config->event_key) {
+                NotificationEventEnum::SchedulePublished->value => 'Gửi thông báo ngay khi ban hành',
+                NotificationEventEnum::ScheduleUpdated->value => 'Gửi thông báo ngay khi cập nhật',
+                NotificationEventEnum::ScheduleCancelled->value => 'Gửi thông báo ngay khi hủy',
+                default => 'Gửi ngay lập tức',
+            };
+
+            $schedule = NotificationSchedule::firstOrNew([
+                'notification_event_config_id' => $config->id,
+                'moment' => null,
+                'offset_minutes' => null,
+            ]);
+
+            $schedule->label = $label;
+            $schedule->sort_order = 0;
+            $schedule->save();
+        }
+
+        // Reminder (schedule_reminder): không tạo NotificationSchedule.
+        // Lịch reminder dùng channels lưu trực tiếp trên ScheduleReminder,
+        // không qua NotificationEventConfig → NotificationSchedule.
     }
 }
