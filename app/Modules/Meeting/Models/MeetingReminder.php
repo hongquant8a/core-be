@@ -15,6 +15,10 @@ class MeetingReminder extends TenantModel
         'reminder_type',
         'notification_schedule_id',
         'moment',
+        'offset_minutes',
+        'channels',
+        'source',
+        'remind_at',
         'scheduled_at',
         'sent_at',
         'fired_at',
@@ -24,9 +28,12 @@ class MeetingReminder extends TenantModel
     ];
 
     protected $casts = [
-        'scheduled_at' => 'datetime',
-        'sent_at' => 'datetime',
-        'fired_at' => 'datetime',
+        'offset_minutes' => 'integer',
+        'channels'       => 'array',
+        'scheduled_at'   => 'datetime',
+        'sent_at'        => 'datetime',
+        'fired_at'       => 'datetime',
+        'remind_at'      => 'datetime',
     ];
 
     public function meeting()

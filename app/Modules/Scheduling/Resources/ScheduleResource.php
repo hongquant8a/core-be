@@ -88,7 +88,11 @@ class ScheduleResource extends JsonResource
                     'is_external'   => empty($r->user_id),
                 ]);
             }),
-            'reminders'            => ScheduleReminderResource::collection($this->whenLoaded('reminders')),
+            'reminders'            => $this->whenLoaded('reminders', function () {
+                return ScheduleReminderResource::collection(
+                    $this->reminders->where('source', 'CUSTOM')
+                );
+            }),
             'attachments'          => $this->whenLoaded('attachments', function () {
                 return $this->attachments->map(fn ($m) => [
                     'id'            => $m->id,

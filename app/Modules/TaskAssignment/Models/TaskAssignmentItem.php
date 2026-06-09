@@ -98,6 +98,11 @@ class TaskAssignmentItem extends TenantModel implements HasMedia
             ->withTimestamps();
     }
 
+    public function reminders()
+    {
+        return $this->hasMany(TaskAssignmentReminder::class, 'task_assignment_item_id');
+    }
+
     public function departments()
     {
         return $this->belongsToMany(TaskAssignmentDepartment::class, 'task_assignment_item_user', 'task_assignment_item_id', 'department_id')

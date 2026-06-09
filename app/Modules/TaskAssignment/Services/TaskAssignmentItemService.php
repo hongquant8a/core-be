@@ -10,6 +10,7 @@ use App\Modules\TaskAssignment\Exports\ItemsExport;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDepartment;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItemAttachment;
+use App\Modules\TaskAssignment\Models\TaskAssignmentReminder;
 use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -107,18 +108,18 @@ class TaskAssignmentItemService
 
     public function show(TaskAssignmentItem $item): TaskAssignmentItem
     {
-        $item->load(['document', 'itemType', 'users', 'reports', 'attachments.media', 'assigner', 'creator.media', 'editor.media']);
+        $item->load(['document', 'itemType', 'users', 'reports', 'attachments.media', 'assigner', 'creator.media', 'editor.media', 'reminders']);
         $item->loadCount(['reports', 'transfers', 'notes']);
 
         return $item;
     }
 
-    public function store(array $validated, array $files = []): TaskAssignmentItem
+    public function store(array $validated, array $files = [], array $reminders = []): TaskAssignmentItem
     {
         $storedFiles = [];
 
         try {
-            return DB::transaction(function () use ($validated, $files, &$storedFiles) {
+            return DB::transaction(function () use ($validated, $files, $reminders, &$storedFiles) {
                 $users = $validated['users'] ?? [];
 
                 $data = collect($validated)->except(['users', 'attachments', 'remove_attachment_ids'])->all();
@@ -133,7 +134,11 @@ class TaskAssignmentItemService
 
                 $this->fireTaskAssignedForNewUsers($item, $addedUserIds);
 
-                return $item->load(['document', 'itemType', 'users', 'attachments.media', 'creator.media', 'editor.media']);
+                if (! empty($reminders)) {
+                    $this->syncReminders($item, $reminders);
+                }
+
+                return $item->load(['document', 'itemType', 'users', 'attachments.media', 'creator.media', 'editor.media', 'reminders']);
             });
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);
@@ -141,12 +146,12 @@ class TaskAssignmentItemService
         }
     }
 
-    public function update(TaskAssignmentItem $item, array $validated, array $files = [], array $removeAttachmentIds = []): TaskAssignmentItem
+    public function update(TaskAssignmentItem $item, array $validated, array $files = [], array $removeAttachmentIds = [], ?array $reminders = null): TaskAssignmentItem
     {
         $storedFiles = [];
 
         try {
-            return DB::transaction(function () use ($item, $validated, $files, $removeAttachmentIds, &$storedFiles) {
+            return DB::transaction(function () use ($item, $validated, $files, $removeAttachmentIds, $reminders, &$storedFiles) {
                 $users = $validated['users'] ?? null;
 
                 $data = collect($validated)->except(['users', 'attachments', 'remove_attachment_ids'])->all();
@@ -165,7 +170,11 @@ class TaskAssignmentItemService
 
                 $this->fireTaskAssignedForNewUsers($item, $addedUserIds);
 
-                return $item->load(['document', 'itemType', 'users', 'attachments.media', 'creator.media', 'editor.media']);
+                if ($reminders !== null) {
+                    $this->syncReminders($item, $reminders);
+                }
+
+                return $item->load(['document', 'itemType', 'users', 'attachments.media', 'creator.media', 'editor.media', 'reminders']);
             });
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);
@@ -328,6 +337,25 @@ class TaskAssignmentItemService
         $newIds = array_keys($syncData);
 
         return array_values(array_diff($newIds, $previousIds));
+    }
+
+    private function syncReminders(TaskAssignmentItem $item, array $reminders): void
+    {
+        $item->reminders()->where('source', 'CUSTOM')->delete();
+        foreach ($reminders as $r) {
+            $moment = $r['moment'] ?? 'before';
+            $offset = (int) ($r['offset_minutes'] ?? 0);
+            $channels = array_map('strtoupper', (array) ($r['channels'] ?? []));
+
+            TaskAssignmentReminder::create([
+                'task_assignment_item_id' => $item->id,
+                'moment'                  => $moment,
+                'offset_minutes'          => $offset,
+                'channels'                => array_values(array_unique($channels)),
+                'source'                  => 'CUSTOM',
+                'status'                  => 'pending',
+            ]);
+        }
     }
 
     /**

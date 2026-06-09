@@ -2,26 +2,68 @@
 
 namespace App\Services\Notification\Services;
 
+use App\Modules\Core\Models\NotificationEventConfig;
 use App\Modules\Scheduling\Models\Schedule;
+use App\Modules\Scheduling\Models\ScheduleReminder;
 use App\Modules\Scheduling\Enums\SessionType;
+use App\Services\Notification\Enums\NotificationEventEnum;
+use App\Services\Notification\Enums\NotificationModuleEnum;
 use Carbon\Carbon;
 
 class ScheduleReminderScheduler
 {
     /**
      * Tạo pending reminders cho schedule khi được publish.
-     * Pattern giống TaskAssignment: tính remind_at, lưu DB, cron sẽ poll và fire.
+     * Chỉ xóa/recreate PRESET — CUSTOM per-record reminders giữ nguyên.
      */
     public function scheduleFor(Schedule $schedule): void
     {
         $eventDatetime = $this->getEventDatetime($schedule);
-        $schedule->load('reminders');
+        $organizationId = (int) $schedule->organization_id;
+        if ($organizationId === 0) {
+            return;
+        }
 
-        foreach ($schedule->reminders as $reminder) {
+        // Chỉ xóa pending PRESET reminders; giữ CUSTOM per-record reminders.
+        ScheduleReminder::where('schedule_id', $schedule->id)
+            ->where('status', 'pending')
+            ->where('source', 'PRESET')
+            ->delete();
+
+        // Tạo PRESET reminders từ config (event_key = schedule_reminder).
+        $config = NotificationEventConfig::with('schedules')
+            ->where('module_key', NotificationModuleEnum::Scheduling->value)
+            ->where('organization_id', $organizationId)
+            ->where('event_key', NotificationEventEnum::ScheduleReminder->value)
+            ->first();
+
+        if ($config && $config->enabled) {
+            foreach ($config->schedules as $notifSchedule) {
+                $moment = $notifSchedule->moment;
+                $offset = (int) $notifSchedule->offset_minutes;
+                $remindAt = $this->computeRemindAt($eventDatetime, $moment, $offset);
+
+                ScheduleReminder::create([
+                    'schedule_id'              => $schedule->id,
+                    'moment'                   => $moment,
+                    'offset_minutes'           => $offset,
+                    'source'                   => 'PRESET',
+                    'notification_schedule_id' => $notifSchedule->id,
+                    'remind_at'                => $remindAt ?? now(),
+                    'status'                   => 'pending',
+                ]);
+            }
+        }
+
+        // Compute remind_at cho CUSTOM per-record reminders.
+        $customPending = ScheduleReminder::where('schedule_id', $schedule->id)
+            ->where('status', 'pending')
+            ->where('source', 'CUSTOM')
+            ->get();
+
+        foreach ($customPending as $reminder) {
             $remindAt = $this->computeRemindAt($eventDatetime, $reminder->moment, (int) $reminder->offset_minutes);
-
             if ($remindAt === null || !$remindAt->isFuture()) {
-                // Đã qua hoặc không tính được — fire ngay khi cron chạy
                 $reminder->update([
                     'remind_at' => now(),
                     'status'    => 'pending',

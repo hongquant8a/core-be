@@ -157,24 +157,6 @@ class PermissionSeeder extends Seeder
             'meeting-participants' => [
                 'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
             ],
-            'meeting-attendances' => [
-                'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
-            ],
-            'meeting-vote-topics' => [
-                'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
-            ],
-            'meeting-vote-responses' => [
-                'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
-            ],
-            'meeting-discussion-registrations' => [
-                'stats', 'index', 'show', 'store', 'update', 'destroy',
-            ],
-            'meeting-personal-notes' => [
-                'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
-            ],
-            'meeting-personal-note-attachments' => [
-                'index', 'store', 'update', 'destroy',
-            ],
             'meeting-minutes-templates' => [
                 'index', 'show', 'store', 'update', 'destroy',
             ],
@@ -297,12 +279,6 @@ class PermissionSeeder extends Seeder
         'meeting-agendas' => 'Chương trình họp',
         'meeting-documents' => 'Tài liệu họp',
         'meeting-participants' => 'Người tham dự họp',
-        'meeting-attendances' => 'Điểm danh họp',
-        'meeting-vote-topics' => 'Chương trình biểu quyết',
-        'meeting-vote-responses' => 'Phiếu biểu quyết',
-        'meeting-discussion-registrations' => 'Đăng ký thảo luận/chất vấn',
-        'meeting-personal-notes' => 'Ghi chú cá nhân họp',
-        'meeting-personal-note-attachments' => 'File ghi chú cá nhân',
         'meeting-minutes-templates' => 'Template biên bản họp',
         'meeting-invitation-templates' => 'Template giấy mời họp',
         'meeting-settings' => 'Cấu hình cuộc họp',

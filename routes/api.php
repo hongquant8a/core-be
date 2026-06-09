@@ -188,24 +188,6 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
     Route::prefix('meeting-participants')->middleware('ensure.route.org')->group(function () {
         require base_path('app/Modules/Meeting/Routes/meeting_participant.php');
     });
-    Route::prefix('meeting-attendances')->middleware('ensure.route.org')->group(function () {
-        require base_path('app/Modules/Meeting/Routes/meeting_attendance.php');
-    });
-    Route::prefix('meeting-vote-topics')->middleware('ensure.route.org')->group(function () {
-        require base_path('app/Modules/Meeting/Routes/meeting_vote_topic.php');
-    });
-    Route::prefix('meeting-vote-responses')->middleware('ensure.route.org')->group(function () {
-        require base_path('app/Modules/Meeting/Routes/meeting_vote_response.php');
-    });
-    Route::prefix('meeting-discussion-registrations')->middleware('ensure.route.org')->group(function () {
-        require base_path('app/Modules/Meeting/Routes/meeting_discussion_registration.php');
-    });
-    Route::prefix('meeting-personal-notes')->middleware('ensure.route.org')->group(function () {
-        require base_path('app/Modules/Meeting/Routes/meeting_personal_note.php');
-    });
-    Route::prefix('meeting-personal-note-attachments')->middleware('ensure.route.org')->group(function () {
-        require base_path('app/Modules/Meeting/Routes/meeting_personal_note_attachment.php');
-    });
     // Template biên bản (.docx) — mỗi tổ chức có template riêng (logo, layout).
     Route::prefix('meeting-minutes-templates')->middleware('ensure.route.org')->group(function () {
         require base_path('app/Modules/Meeting/Routes/meeting_minutes_template.php');

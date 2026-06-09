@@ -34,6 +34,7 @@ class ScheduleObserver
 
         // 1. Transition: Draft -> Published
         if ($isPublishedNow && (!$wasPublishedBefore || $schedule->wasRecentlyCreated)) {
+            $this->scheduler->scheduleFor($schedule);
             Event::dispatch(new SchedulePublished($schedule));
             return;
         }
@@ -53,6 +54,7 @@ class ScheduleObserver
 
         // 3. Transition: Published -> Draft/Pending/Cancelled/etc. (Unpublished)
         if (!$isPublishedNow && $wasPublishedBefore) {
+            $this->scheduler->cancelPending($schedule);
             Event::dispatch(new ScheduleCancelled($schedule));
             return;
         }

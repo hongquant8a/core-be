@@ -150,6 +150,10 @@ class MeetingController extends Controller
      * @bodyParam content string Nội dung cuộc họp. Example: Nội dung chi tiết phiên họp
      * @bodyParam is_public boolean Công khai cuộc họp hay không. Example: true
      * @bodyParam status string Trạng thái cuộc họp. Example: draft
+     * @bodyParam reminders object[] Danh sách mốc nhắc lịch (per-record). Gửi mảng rỗng [] nếu không có.
+     * @bodyParam reminders.*.moment string required Thời điểm nhắc: before, on, after. Example: before
+     * @bodyParam reminders.*.offset_minutes integer Phút offset từ start_time. Example: 30
+     * @bodyParam reminders.*.channels string[] Kênh gửi: mail, sms, zalo, zalo_zns, fcm. Example: ["mail","zalo"]
      */
     public function store(StoreMeetingRequest $request)
     {
@@ -157,6 +161,7 @@ class MeetingController extends Controller
             $request->validated(),
             $request->file('projector_image'),
             $request->input('guests', []),
+            $request->input('reminders', []),
         );
 
         return $this->successResource(new MeetingResource($meeting), 'Tạo cuộc họp thành công!', 201);
@@ -189,6 +194,10 @@ class MeetingController extends Controller
      * @bodyParam content string Nội dung cuộc họp. Example: Nội dung đã cập nhật
      * @bodyParam is_public boolean Công khai cuộc họp hay không. Example: false
      * @bodyParam status string Trạng thái cuộc họp. Example: published
+     * @bodyParam reminders object[] Danh sách mốc nhắc lịch (per-record). Không gửi key này = giữ nguyên; gửi mảng rỗng [] = xóa hết CUSTOM.
+     * @bodyParam reminders.*.moment string required Thời điểm nhắc: before, on, after. Example: before
+     * @bodyParam reminders.*.offset_minutes integer Phút offset từ start_time. Example: 30
+     * @bodyParam reminders.*.channels string[] Kênh gửi: mail, sms, zalo, zalo_zns, fcm. Example: ["mail","zalo"]
      */
     public function update(UpdateMeetingRequest $request, Meeting $meeting)
     {
@@ -197,6 +206,7 @@ class MeetingController extends Controller
             $request->validated(),
             $request->file('projector_image'),
             $request->has('guests') ? $request->input('guests', []) : null,
+            $request->has('reminders') ? $request->input('reminders', []) : null,
         );
 
         return $this->successResource(new MeetingResource($meeting), 'Cập nhật cuộc họp thành công!');

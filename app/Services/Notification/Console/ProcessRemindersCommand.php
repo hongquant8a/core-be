@@ -21,7 +21,7 @@ class ProcessRemindersCommand extends Command
     {
         $count = 0;
 
-        TaskAssignmentReminder::with(['item.users', 'item.document', 'schedule'])
+        TaskAssignmentReminder::with(['item.users', 'item.document', 'schedule.eventConfig'])
             ->where('status', 'pending')
             ->where('remind_at', '<=', now())
             ->chunkById(100, function ($reminders) use ($dispatcher, $registry, &$count) {
@@ -33,8 +33,10 @@ class ProcessRemindersCommand extends Command
 
         MeetingReminder::with(['meeting', 'schedule.eventConfig'])
             ->where('status', 'pending')
-            ->where('scheduled_at', '<=', now())
-            ->whereNotNull('notification_schedule_id')
+            ->where(function ($q) {
+                $q->where('remind_at', '<=', now())
+                  ->orWhere(fn ($q2) => $q2->whereNull('remind_at')->where('scheduled_at', '<=', now()));
+            })
             ->chunkById(100, function ($reminders) use ($dispatcher, $registry, &$count) {
                 foreach ($reminders as $reminder) {
                     $this->fireMeetingReminder($reminder, $dispatcher, $registry);
@@ -42,7 +44,7 @@ class ProcessRemindersCommand extends Command
                 }
             });
 
-        ScheduleReminder::with('schedule')
+        ScheduleReminder::with(['schedule', 'notificationSchedule.eventConfig'])
             ->where('status', 'pending')
             ->where('remind_at', '<=', now())
             ->chunkById(100, function ($reminders) use ($dispatcher, $registry, &$count) {
@@ -73,17 +75,25 @@ class ProcessRemindersCommand extends Command
             return;
         }
 
-        $schedule = $reminder->schedule;
-        $config = $schedule?->eventConfig;
         $organizationId = (int) $reminder->organization_id;
 
-        if (! $config || (int) $config->organization_id !== $organizationId || ! $config->enabled || empty($schedule->channels)) {
-            $reminder->update(['status' => 'cancelled', 'fired_at' => now()]);
+        // CUSTOM per-record: dùng channels từ chính reminder.
+        if ($reminder->source === 'CUSTOM' && ! empty($reminder->channels)) {
+            $channels = $reminder->channels;
+        } else {
+            // PRESET: dùng channels từ notification_schedule config.
+            $schedule = $reminder->schedule;
+            $config = $schedule?->eventConfig;
 
-            return;
+            if (! $config || (int) $config->organization_id !== $organizationId || ! $config->enabled || empty($schedule->channels)) {
+                $reminder->update(['status' => 'cancelled', 'fired_at' => now()]);
+
+                return;
+            }
+
+            $channels = $schedule->channels;
         }
 
-        $channels = $schedule->channels;
         $eventKey = "meeting_reminder_{$reminder->moment}";
         $builder = $registry->for($eventKey);
 
@@ -147,18 +157,22 @@ class ProcessRemindersCommand extends Command
 
         $eventKey = "reminder_{$reminder->moment}";
 
-        // Channels lấy từ chính schedule của reminder (schedule là child của event_config).
-        // Check enabled của parent event_config trước — scope theo organization.
-        $schedule = $reminder->schedule;
-        $config = $schedule?->eventConfig;
+        // CUSTOM per-record: dùng channels từ chính reminder.
+        if ($reminder->source === 'CUSTOM' && ! empty($reminder->channels)) {
+            $channels = $reminder->channels;
+        } else {
+            // PRESET: dùng channels từ notification_schedule config.
+            $schedule = $reminder->schedule;
+            $config = $schedule?->eventConfig;
 
-        if (! $config || (int) $config->organization_id !== $organizationId || ! $config->enabled || empty($schedule->channels)) {
-            $reminder->update(['status' => 'cancelled', 'fired_at' => now()]);
+            if (! $config || (int) $config->organization_id !== $organizationId || ! $config->enabled || empty($schedule->channels)) {
+                $reminder->update(['status' => 'cancelled', 'fired_at' => now()]);
 
-            return;
+                return;
+            }
+
+            $channels = $schedule->channels;
         }
-
-        $channels = $schedule->channels;
 
         $builder = $registry->for($eventKey);
 
@@ -199,7 +213,22 @@ class ProcessRemindersCommand extends Command
             return;
         }
 
-        $channels = array_map(fn($c) => strtolower(trim($c)), $reminder->channels ?? []);
+        // CUSTOM per-record: dùng channels từ chính reminder.
+        if ($reminder->source === 'CUSTOM' && ! empty($reminder->channels)) {
+            $channels = array_map(fn($c) => strtolower(trim($c)), $reminder->channels);
+        } else {
+            // PRESET: dùng channels từ notification_schedule config.
+            $notifSchedule = $reminder->notificationSchedule;
+            $config = $notifSchedule?->eventConfig;
+
+            if (! $config || ! $config->enabled) {
+                $reminder->update(['status' => 'cancelled', 'fired_at' => now()]);
+                return;
+            }
+
+            $channels = array_map(fn($c) => strtolower(trim($c)), $notifSchedule->channels ?? []);
+        }
+
         if (empty($channels)) {
             $reminder->update(['status' => 'cancelled', 'fired_at' => now()]);
             return;

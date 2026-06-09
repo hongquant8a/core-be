@@ -3,7 +3,6 @@
 namespace App\Services\Notification\Services;
 
 use App\Modules\Core\Models\NotificationEventConfig;
-use App\Modules\Core\Models\NotificationSchedule;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Modules\TaskAssignment\Models\TaskAssignmentReminder;
 use App\Services\Notification\Enums\NotificationEventEnum;
@@ -13,6 +12,7 @@ class ReminderScheduler
 {
     /**
      * (Re)create pending reminders for item theo schedules của 3 reminder event config.
+     * Chỉ xóa/recreate PRESET — CUSTOM per-record reminders giữ nguyên.
      */
     public function scheduleFor(TaskAssignmentItem $item): void
     {
@@ -22,7 +22,6 @@ class ReminderScheduler
             return;
         }
 
-        // Chỉ schedule khi document đã ban hành — tránh tạo reminder cho item draft.
         $item->loadMissing('document');
         if (($item->document->status ?? null) !== \App\Modules\TaskAssignment\Enums\TaskAssignmentDocumentStatusEnum::Issued->value) {
             return;
@@ -33,11 +32,12 @@ class ReminderScheduler
             return;
         }
 
+        // Chỉ xóa pending PRESET reminders; giữ CUSTOM per-record reminders.
         TaskAssignmentReminder::where('task_assignment_item_id', $item->id)
             ->where('status', 'pending')
+            ->where('source', 'PRESET')
             ->delete();
 
-        // Load schedules thuộc 3 reminder event của module task_assignment — scope theo org.
         $reminderEventKeys = [
             NotificationEventEnum::ReminderBefore->value,
             NotificationEventEnum::ReminderOn->value,
@@ -51,7 +51,7 @@ class ReminderScheduler
 
         foreach ($configs as $config) {
             foreach ($config->schedules as $schedule) {
-                $remindAt = $this->computeRemindAt($item, $schedule);
+                $remindAt = $this->computeRemindAt($item->end_at, $schedule->moment, (int) $schedule->offset_minutes);
                 if ($remindAt === null) {
                     continue;
                 }
@@ -59,10 +59,25 @@ class ReminderScheduler
                 TaskAssignmentReminder::create([
                     'task_assignment_item_id' => $item->id,
                     'notification_schedule_id' => $schedule->id,
-                    'moment' => $schedule->moment,
-                    'remind_at' => $remindAt,
-                    'status' => 'pending',
+                    'moment'                   => $schedule->moment,
+                    'offset_minutes'           => (int) $schedule->offset_minutes,
+                    'source'                   => 'PRESET',
+                    'remind_at'                => $remindAt,
+                    'status'                   => 'pending',
                 ]);
+            }
+        }
+
+        // Compute remind_at cho CUSTOM per-record reminders (PRESET đã có remind_at khi tạo).
+        $customPending = TaskAssignmentReminder::where('task_assignment_item_id', $item->id)
+            ->where('status', 'pending')
+            ->where('source', 'CUSTOM')
+            ->get();
+
+        foreach ($customPending as $reminder) {
+            $remindAt = $this->computeRemindAt($item->end_at, $reminder->moment, (int) $reminder->offset_minutes);
+            if ($remindAt !== null) {
+                $reminder->update(['remind_at' => $remindAt]);
             }
         }
     }
@@ -74,18 +89,17 @@ class ReminderScheduler
             ->update(['status' => 'cancelled']);
     }
 
-    private function computeRemindAt(TaskAssignmentItem $item, NotificationSchedule $schedule): ?\Carbon\Carbon
+    private function computeRemindAt(?\Carbon\Carbon $deadline, string $moment, int $offsetMinutes): ?\Carbon\Carbon
     {
-        $deadline = $item->end_at;
         if (! $deadline) {
             return null;
         }
 
-        return match ($schedule->moment) {
-            'before' => $schedule->offset_minutes ? $deadline->copy()->subMinutes($schedule->offset_minutes) : null,
-            'on' => $deadline->copy(),
-            'after' => $schedule->offset_minutes ? $deadline->copy()->addMinutes($schedule->offset_minutes) : null,
-            default => null,
+        return match ($moment) {
+            'before' => $offsetMinutes ? $deadline->copy()->subMinutes($offsetMinutes) : null,
+            'on'     => $deadline->copy(),
+            'after'  => $offsetMinutes ? $deadline->copy()->addMinutes($offsetMinutes) : null,
+            default  => null,
         };
     }
 }

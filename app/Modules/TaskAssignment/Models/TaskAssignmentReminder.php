@@ -13,14 +13,19 @@ class TaskAssignmentReminder extends Model
         'task_assignment_item_id',
         'notification_schedule_id',
         'moment',
+        'offset_minutes',
+        'channels',
+        'source',
         'remind_at',
         'status',
         'fired_at',
     ];
 
     protected $casts = [
-        'remind_at' => 'datetime',
-        'fired_at' => 'datetime',
+        'offset_minutes' => 'integer',
+        'channels'       => 'array',
+        'remind_at'      => 'datetime',
+        'fired_at'       => 'datetime',
     ];
 
     public function item()

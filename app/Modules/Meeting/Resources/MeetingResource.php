@@ -88,6 +88,12 @@ class MeetingResource extends JsonResource
             'agendas' => MeetingAgendaResource::collection($this->whenLoaded('agendas')),
             'documents' => MeetingDocumentResource::collection($this->whenLoaded('documents')),
             'vote_topics' => MeetingVoteTopicResource::collection($this->whenLoaded('voteTopics')),
+            // Reminder per-record — chỉ trả CUSTOM, PRESET là nội bộ hệ thống.
+            'reminders' => $this->whenLoaded('reminders', function () {
+                return MeetingReminderResource::collection(
+                    $this->reminders->where('source', 'CUSTOM')
+                );
+            }),
             // Khách mời (input trực tiếp khi tạo meeting).
             'guests' => $this->whenLoaded('guests', fn () => $this->guests->map(fn ($g) => [
                 'id' => $g->id,

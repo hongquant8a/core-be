@@ -194,6 +194,11 @@ class Meeting extends TenantModel implements HasMedia
         return null;
     }
 
+    public function reminders()
+    {
+        return $this->hasMany(MeetingReminder::class, 'meeting_id');
+    }
+
     public function agendas()
     {
         return $this->hasMany(MeetingAgenda::class, 'meeting_id')->orderBy('sort_order');

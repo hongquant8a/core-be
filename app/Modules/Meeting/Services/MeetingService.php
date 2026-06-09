@@ -10,6 +10,7 @@ use App\Modules\Meeting\Exports\MeetingExport;
 use App\Modules\Meeting\Models\Meeting;
 use App\Modules\Meeting\Models\MeetingInvitation;
 use App\Modules\Meeting\Models\MeetingParticipant;
+use App\Modules\Meeting\Models\MeetingReminder;
 use App\Services\Notification\Events\MeetingPublished;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\UploadedFile;
@@ -287,17 +288,18 @@ class MeetingService
             'currentAgenda',
             'currentDiscussionRegistration',
             'guests',
+            'reminders',
         ]);
     }
 
-    public function store(array $validated, ?UploadedFile $projectorImage = null, array $guests = []): Meeting
+    public function store(array $validated, ?UploadedFile $projectorImage = null, array $guests = [], array $reminders = []): Meeting
     {
         // guests không phải column trên meetings — strip để không lỗi mass assignment.
         unset($validated['guests']);
 
         $storedFiles = [];
         try {
-            return DB::transaction(function () use ($validated, $projectorImage, $guests, &$storedFiles) {
+            return DB::transaction(function () use ($validated, $projectorImage, $guests, $reminders, &$storedFiles) {
                 $payload = [
                     ...$validated,
                     'organization_id' => $this->resolveCurrentOrganizationId(),
@@ -314,7 +316,11 @@ class MeetingService
                     $this->syncGuests($meeting, $guests);
                 }
 
-                return $meeting->load(['meetingType', 'meetingLocation', 'chairperson.user', 'operator.user', 'creator.media', 'editor.media', 'projectorImage', 'guests']);
+                if (! empty($reminders)) {
+                    $this->syncReminders($meeting, $reminders);
+                }
+
+                return $meeting->load(['meetingType', 'meetingLocation', 'chairperson.user', 'operator.user', 'creator.media', 'editor.media', 'projectorImage', 'guests', 'reminders']);
             });
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);
@@ -424,13 +430,13 @@ class MeetingService
         });
     }
 
-    public function update(Meeting $meeting, array $validated, ?UploadedFile $projectorImage = null, ?array $guests = null): Meeting
+    public function update(Meeting $meeting, array $validated, ?UploadedFile $projectorImage = null, ?array $guests = null, ?array $reminders = null): Meeting
     {
         unset($validated['guests']);
 
         $storedFiles = [];
         try {
-            return DB::transaction(function () use ($meeting, $validated, $projectorImage, $guests, &$storedFiles) {
+            return DB::transaction(function () use ($meeting, $validated, $projectorImage, $guests, $reminders, &$storedFiles) {
                 $removeProjector = (bool) ($validated['remove_projector_image'] ?? false);
                 unset($validated['remove_projector_image']);
                 $meeting->update($validated);
@@ -453,7 +459,12 @@ class MeetingService
                     $this->syncGuests($meeting, $guests);
                 }
 
-                return $meeting->load(['meetingType', 'meetingLocation', 'chairperson.user', 'operator.user', 'creator.media', 'editor.media', 'projectorImage', 'guests']);
+                // reminders null → FE không gửi field này → không sync (giữ nguyên).
+                if ($reminders !== null) {
+                    $this->syncReminders($meeting, $reminders);
+                }
+
+                return $meeting->load(['meetingType', 'meetingLocation', 'chairperson.user', 'operator.user', 'creator.media', 'editor.media', 'projectorImage', 'guests', 'reminders']);
             });
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);
@@ -514,6 +525,27 @@ class MeetingService
         $toDelete = array_diff($existingIds, $keepIds);
         if (! empty($toDelete)) {
             \App\Modules\Meeting\Models\MeetingGuest::whereIn('id', $toDelete)->delete();
+        }
+    }
+
+    private function syncReminders(Meeting $meeting, array $reminders): void
+    {
+        $meeting->reminders()->where('source', 'CUSTOM')->delete();
+        foreach ($reminders as $r) {
+            $moment = $r['moment'] ?? 'before';
+            $offset = (int) ($r['offset_minutes'] ?? 0);
+            $channels = array_map('strtoupper', (array) ($r['channels'] ?? []));
+
+            MeetingReminder::create([
+                'organization_id' => (int) $meeting->organization_id,
+                'meeting_id'       => $meeting->id,
+                'reminder_type'    => 'scheduled',
+                'moment'           => $moment,
+                'offset_minutes'   => $offset,
+                'channels'         => array_values(array_unique($channels)),
+                'source'           => 'CUSTOM',
+                'status'           => 'pending',
+            ]);
         }
     }
 

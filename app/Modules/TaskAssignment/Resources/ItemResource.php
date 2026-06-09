@@ -82,6 +82,13 @@ class ItemResource extends JsonResource
             'updated_by' => $this->whenLoaded('editor', fn () => $this->formatUserSummary($this->editor), null),
             'created_at' => $this->created_at?->format('H:i:s d/m/Y'),
             'updated_at' => $this->updated_at?->format('H:i:s d/m/Y'),
+
+            // Reminder per-record — chỉ trả CUSTOM, PRESET là nội bộ hệ thống.
+            'reminders' => $this->whenLoaded('reminders', function () {
+                return TaskAssignmentReminderResource::collection(
+                    $this->reminders->where('source', 'CUSTOM')
+                );
+            }),
         ];
     }
 }

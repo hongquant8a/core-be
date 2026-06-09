@@ -3,7 +3,6 @@
 namespace App\Services\Notification\Services;
 
 use App\Modules\Core\Models\NotificationEventConfig;
-use App\Modules\Core\Models\NotificationSchedule;
 use App\Modules\Meeting\Models\Meeting;
 use App\Modules\Meeting\Models\MeetingReminder;
 use App\Services\Notification\Enums\NotificationEventEnum;
@@ -13,10 +12,10 @@ class MeetingReminderScheduler
 {
     /**
      * (Re)create pending reminders cho meeting theo schedules của 3 reminder event config (module=meeting).
+     * Chỉ xóa/recreate PRESET — CUSTOM per-record reminders giữ nguyên.
      */
     public function scheduleFor(Meeting $meeting): void
     {
-        // Hủy pending nếu meeting bị cancelled hoặc đã kết thúc (end_time đã qua).
         $isFinished = $meeting->status === 'cancelled'
             || ($meeting->end_time && $meeting->end_time->isPast());
 
@@ -26,7 +25,6 @@ class MeetingReminderScheduler
             return;
         }
 
-        // Chỉ schedule khi meeting đã phát hành — tránh tạo reminder cho draft.
         if ($meeting->status !== 'published') {
             return;
         }
@@ -36,10 +34,10 @@ class MeetingReminderScheduler
             return;
         }
 
-        // Xóa pending auto reminders cũ; giữ nguyên reminder thủ công (reminder_type=manual).
+        // Chỉ xóa pending PRESET reminders; giữ CUSTOM per-record reminders.
         MeetingReminder::where('meeting_id', $meeting->id)
             ->where('status', 'pending')
-            ->whereNotNull('notification_schedule_id')
+            ->where('source', 'PRESET')
             ->delete();
 
         $reminderEventKeys = [
@@ -56,19 +54,40 @@ class MeetingReminderScheduler
 
         foreach ($configs as $config) {
             foreach ($config->schedules as $schedule) {
-                $remindAt = $this->computeRemindAt($meeting, $schedule);
+                $remindAt = $this->computeRemindAt($meeting->start_time, $schedule->moment, (int) $schedule->offset_minutes);
                 if ($remindAt === null) {
                     continue;
                 }
 
                 MeetingReminder::create([
-                    'organization_id' => $organizationId,
-                    'meeting_id' => $meeting->id,
-                    'reminder_type' => 'scheduled',
+                    'organization_id'          => $organizationId,
+                    'meeting_id'               => $meeting->id,
+                    'reminder_type'            => 'scheduled',
                     'notification_schedule_id' => $schedule->id,
-                    'moment' => $schedule->moment,
+                    'moment'                   => $schedule->moment,
+                    'offset_minutes'           => (int) $schedule->offset_minutes,
+                    'source'                   => 'PRESET',
+                    'scheduled_at'             => $remindAt,
+                    'remind_at'                => $remindAt,
+                    'status'                   => 'pending',
+                ]);
+            }
+        }
+
+        // Compute remind_at cho tất cả pending reminders (PRESET vừa tạo + CUSTOM từ per-record).
+        $allPending = MeetingReminder::where('meeting_id', $meeting->id)
+            ->where('status', 'pending')
+            ->get();
+
+        foreach ($allPending as $reminder) {
+            if ($reminder->remind_at !== null) {
+                continue; // đã được set lúc tạo PRESET ở trên
+            }
+            $remindAt = $this->computeRemindAt($meeting->start_time, $reminder->moment, (int) $reminder->offset_minutes);
+            if ($remindAt !== null) {
+                $reminder->update([
+                    'remind_at'    => $remindAt,
                     'scheduled_at' => $remindAt,
-                    'status' => 'pending',
                 ]);
             }
         }
@@ -78,22 +97,20 @@ class MeetingReminderScheduler
     {
         MeetingReminder::where('meeting_id', $meeting->id)
             ->where('status', 'pending')
-            ->whereNotNull('notification_schedule_id')
             ->update(['status' => 'cancelled']);
     }
 
-    private function computeRemindAt(Meeting $meeting, NotificationSchedule $schedule): ?\Carbon\Carbon
+    private function computeRemindAt(?\Carbon\Carbon $start, string $moment, int $offsetMinutes): ?\Carbon\Carbon
     {
-        $start = $meeting->start_time;
         if (! $start) {
             return null;
         }
 
-        return match ($schedule->moment) {
-            'before' => $schedule->offset_minutes ? $start->copy()->subMinutes($schedule->offset_minutes) : null,
-            'on' => $start->copy(),
-            'after' => $schedule->offset_minutes ? $start->copy()->addMinutes($schedule->offset_minutes) : null,
-            default => null,
+        return match ($moment) {
+            'before' => $offsetMinutes ? $start->copy()->subMinutes($offsetMinutes) : null,
+            'on'     => $start->copy(),
+            'after'  => $offsetMinutes ? $start->copy()->addMinutes($offsetMinutes) : null,
+            default  => null,
         };
     }
 }

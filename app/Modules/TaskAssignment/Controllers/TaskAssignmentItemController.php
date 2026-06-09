@@ -124,6 +124,10 @@ class TaskAssignmentItemController extends Controller
      * @bodyParam deadline date Hạn hoàn thành (Y-m-d). Example: 2026-04-30
      * @bodyParam description string Mô tả chi tiết công việc.
      * @bodyParam status string Trạng thái. Example: pending
+     * @bodyParam reminders object[] Danh sách mốc nhắc hạn (per-record). Gửi mảng rỗng [] nếu không có.
+     * @bodyParam reminders.*.moment string required Thời điểm nhắc: before, on, after. Example: before
+     * @bodyParam reminders.*.offset_minutes integer Phút offset từ end_at. Example: 30
+     * @bodyParam reminders.*.channels string[] Kênh gửi: mail, sms, zalo, zalo_zns, fcm. Example: ["mail","zalo"]
      *
      * @apiResource App\Modules\TaskAssignment\Resources\ItemResource status=201
      *
@@ -133,7 +137,7 @@ class TaskAssignmentItemController extends Controller
      */
     public function store(StoreItemRequest $request)
     {
-        $item = $this->itemService->store($request->validated(), $request->file('attachments', []));
+        $item = $this->itemService->store($request->validated(), $request->file('attachments', []), $request->input('reminders', []));
 
         return $this->successResource(new ItemResource($item), 'Công việc đã được tạo thành công!', 201);
     }
@@ -149,6 +153,10 @@ class TaskAssignmentItemController extends Controller
      * @bodyParam deadline date Hạn hoàn thành (Y-m-d).
      * @bodyParam description string Mô tả chi tiết công việc.
      * @bodyParam status string Trạng thái.
+     * @bodyParam reminders object[] Danh sách mốc nhắc hạn (per-record). Không gửi key này = giữ nguyên; gửi mảng rỗng [] = xóa hết CUSTOM.
+     * @bodyParam reminders.*.moment string required Thời điểm nhắc: before, on, after. Example: before
+     * @bodyParam reminders.*.offset_minutes integer Phút offset từ end_at. Example: 30
+     * @bodyParam reminders.*.channels string[] Kênh gửi: mail, sms, zalo, zalo_zns, fcm. Example: ["mail","zalo"]
      *
      * @apiResource App\Modules\TaskAssignment\Resources\ItemResource
      *
@@ -162,7 +170,8 @@ class TaskAssignmentItemController extends Controller
             $taskAssignmentItem,
             $request->validated(),
             $request->file('attachments', []),
-            $request->input('remove_attachment_ids', [])
+            $request->input('remove_attachment_ids', []),
+            $request->has('reminders') ? $request->input('reminders', []) : null,
         );
 
         return $this->successResource(new ItemResource($item), 'Công việc đã được cập nhật!');
