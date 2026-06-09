@@ -35,8 +35,8 @@ class RoleService
     public function store(array $data): Role
     {
         return DB::transaction(function () use ($data) {
-            $permissionIds = $data['permission_ids'] ?? null;
-            unset($data['permission_ids']);
+            $permissionIds = $data['permissions'] ?? $data['permission_ids'] ?? null;
+            unset($data['permission_ids'], $data['permissions']);
             $data['guard_name'] = $data['guard_name'] ?? config('auth.defaults.guard', 'web');
             $data['organization_id'] = null;
 
@@ -53,8 +53,8 @@ class RoleService
     public function update(Role $role, array $data): Role
     {
         return DB::transaction(function () use ($role, $data) {
-            $permissionIds = $data['permission_ids'] ?? null;
-            unset($data['permission_ids']);
+            $permissionIds = $data['permissions'] ?? $data['permission_ids'] ?? null;
+            unset($data['permission_ids'], $data['permissions']);
             $data['organization_id'] = null;
 
             $role->update($data);
