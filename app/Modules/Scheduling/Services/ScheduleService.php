@@ -229,6 +229,20 @@ class ScheduleService
 
         try {
             return DB::transaction(function () use ($schedule, $data, $files, $participants, $reminders, $removeMediaIds, &$storedFiles) {
+                // Nếu đang đổi status → PUBLISHED, auto resolve approval_status
+                $newStatus = $data['status'] ?? null;
+                if ($newStatus !== null) {
+                    $statusInt = $this->normalizeStatus($newStatus);
+                    if ($statusInt === ScheduleStatus::PUBLISHED->value && $schedule->status !== ScheduleStatus::PUBLISHED) {
+                        $data['approval_status'] = $this->resolveApprovalStatus(
+                            ['module_type' => $data['module_type'] ?? $schedule->module_type],
+                            $schedule->organization_id,
+                        );
+                    } elseif ($statusInt === ScheduleStatus::DRAFT->value && $schedule->status !== ScheduleStatus::DRAFT) {
+                        $data['approval_status'] = null;
+                    }
+                }
+
                 $schedule->update($data);
 
                 if ($participants !== null) {
