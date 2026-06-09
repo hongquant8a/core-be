@@ -137,7 +137,7 @@ class TaskAssignmentItemController extends Controller
      */
     public function store(StoreItemRequest $request)
     {
-        $item = $this->itemService->store($request->validated(), $request->file('attachments', []), $request->input('reminders', []));
+        $item = $this->itemService->store($request->validated(), $request->file('attachments', []), (array) $request->input('reminders', []));
 
         return $this->successResource(new ItemResource($item), 'Công việc đã được tạo thành công!', 201);
     }
@@ -171,7 +171,7 @@ class TaskAssignmentItemController extends Controller
             $request->validated(),
             $request->file('attachments', []),
             $request->input('remove_attachment_ids', []),
-            $request->has('reminders') ? $request->input('reminders', []) : null,
+            $request->has('reminders') ? (array) $request->input('reminders', []) : null,
         );
 
         return $this->successResource(new ItemResource($item), 'Công việc đã được cập nhật!');

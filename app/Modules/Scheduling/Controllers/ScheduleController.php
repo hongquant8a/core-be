@@ -198,7 +198,7 @@ class ScheduleController extends Controller
             $request->validated(),
             $files,
             $request->input('participants', []),
-            $request->input('reminders', [])
+            (array) $request->input('reminders', [])
         );
         return $this->successResource(new ScheduleResource($schedule), 'Tạo lịch công tác thành công!', 201);
     }
@@ -236,7 +236,7 @@ class ScheduleController extends Controller
             $request->validated(),
             $files,
             $request->has('participants') ? $request->input('participants') : null,
-            $request->has('reminders') ? $request->input('reminders') : null,
+            $request->has('reminders') ? (array) $request->input('reminders') : null,
             $request->input('remove_media_ids', [])
         );
         return $this->successResource(new ScheduleResource($schedule), 'Cập nhật lịch thành công!');
