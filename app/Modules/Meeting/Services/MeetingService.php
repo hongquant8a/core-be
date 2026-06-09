@@ -262,7 +262,7 @@ class MeetingService
 
     public function index(array $filters, int $limit)
     {
-        return Meeting::with(['meetingType', 'meetingLocation', 'creator.media', 'editor.media'])
+        return Meeting::with(['meetingType', 'meetingLocation', 'creator.media', 'editor.media', 'reminders'])
             ->filter($filters)
             ->paginate($limit);
     }
