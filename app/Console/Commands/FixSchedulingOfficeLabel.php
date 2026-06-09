@@ -12,10 +12,22 @@ class FixSchedulingOfficeLabel extends Command
 
     public function handle(): int
     {
-        $updated = Permission::where('name', 'group:schedules-office')
-            ->update(['description' => 'Lịch công tác - Văn phòng']);
+        $group = Permission::where('name', 'group:schedules-office')->first();
+        if (! $group) {
+            $this->error('Không tìm thấy group:schedules-office.');
+            return self::FAILURE;
+        }
 
-        $this->info("Đã cập nhật {$updated} permission group.");
+        $group->update(['description' => 'Lịch công tác - Văn phòng']);
+        $this->info("Đã cập nhật group label.");
+
+        $updated = Permission::where('parent_id', $group->id)
+            ->where('description', 'like', 'Lịch công tác - Lãnh đạo%')
+            ->update([
+                'description' => \DB::raw("REPLACE(description, 'Lịch công tác - Lãnh đạo', 'Lịch công tác - Văn phòng')")
+            ]);
+
+        $this->info("Đã cập nhật {$updated} permission con.");
         return self::SUCCESS;
     }
 }
