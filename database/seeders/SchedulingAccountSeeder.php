@@ -67,6 +67,8 @@ class SchedulingAccountSeeder extends Seeder
 
         $firstUserId = User::where('user_name', 'admin')->value('id') ?? 1;
 
+        setPermissionsTeamId($org->id);
+
         foreach ($accounts as $data) {
             $user = User::where('user_name', $data['user_name'])
                 ->orWhere('email', $data['email'])
