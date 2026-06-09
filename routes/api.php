@@ -69,6 +69,9 @@ Route::prefix('public')->middleware('log.activity')->group(function () {
     // Scheduling — dropdown options cho grid lịch công tác (chủ trì, thành phần, lái xe)
     Route::get('/scheduling-employees/options', [\App\Modules\Scheduling\Controllers\SchedulingEmployeeController::class, 'options']);
 
+    // Tổng số lịch theo module type trong tuần (dùng cho CalendarView / WorkScheduleList)
+    Route::get('/schedules/week-counts', [\App\Modules\Scheduling\Controllers\ScheduleController::class, 'weekCounts']);
+
 });
 
 // Route yêu cầu đăng nhập (Bearer token) và đặt ngữ cảnh team cho Spatie Permission

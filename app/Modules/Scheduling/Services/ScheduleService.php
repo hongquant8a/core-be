@@ -548,6 +548,39 @@ class ScheduleService
         return response()->download($path, $fileName)->deleteFileAfterSend(true);
     }
 
+    public function weekCounts(string $anchorDate, ?int $organizationId = null): array
+    {
+        $carbon = \Carbon\Carbon::parse($anchorDate);
+        $start = $carbon->copy()->startOfWeek()->toDateString();
+        $end = $carbon->copy()->endOfWeek()->toDateString();
+
+        $query = Schedule::whereBetween('date_time', [$start, $end]);
+
+        if ($organizationId) {
+            $query->where('organization_id', $organizationId);
+        }
+
+        $counts = (clone $query)->selectRaw("module_type, COUNT(*) as cnt")
+            ->groupBy('module_type')
+            ->pluck('cnt', 'module_type');
+
+        $personal = 0;
+        $userId = auth()->id();
+        if ($userId) {
+            $personal = (clone $query)->where(function ($q) use ($userId) {
+                $q->where('host_id', $userId)
+                  ->orWhere('driver_id', $userId)
+                  ->orWhereHas('recipients', fn ($r) => $r->where('user_id', $userId));
+            })->count();
+        }
+
+        return [
+            'personal'  => $personal,
+            'executive' => (int) ($counts['EXECUTIVE'] ?? 0),
+            'office'    => (int) ($counts['OFFICE'] ?? 0),
+        ];
+    }
+
     private function normalizeStatus(mixed $status): ?int
     {
         if ($status === null) {

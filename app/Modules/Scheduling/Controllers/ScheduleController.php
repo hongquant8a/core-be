@@ -410,4 +410,29 @@ class ScheduleController extends Controller
         $this->authorize('driverView', $schedule);
         return $this->successResource(new DriverScheduleResource($schedule->load('host')));
     }
+
+    /**
+     * Tổng số lịch theo module type trong tuần (public).
+     *
+     * Dùng cho CalendarView / WorkScheduleList — thay thế việc FE gọi nhiều lần lấy count.
+     *
+     * @unauthenticated
+     *
+     * @queryParam anchor_date string required Ngày neo xác định tuần (YYYY-MM-DD). Example: 2026-06-09
+     * @queryParam organization_id int Lọc theo tổ chức (null = tất cả). Example: 1
+     *
+     * @response 200 {"success": true, "data": {"personal": 5, "executive": 12, "office": 8}}
+     */
+    public function weekCounts(): JsonResponse
+    {
+        $anchorDate = request()->query('anchor_date');
+        if (! $anchorDate) {
+            return $this->error('Thiếu anchor_date.', 422);
+        }
+
+        $organizationId = request()->query('organization_id');
+
+        $counts = $this->scheduleService->weekCounts($anchorDate, $organizationId);
+        return $this->success($counts);
+    }
 }
