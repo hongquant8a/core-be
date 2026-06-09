@@ -307,7 +307,7 @@ class PermissionSeeder extends Seeder
         'meeting-invitation-templates' => 'Template giấy mời họp',
         'meeting-settings' => 'Cấu hình cuộc họp',
         'schedules-executive' => 'Lịch công tác - Thường trực',
-        'schedules-office'    => 'Lịch công tác - Lãnh đạo',
+        'schedules-office'    => 'Lịch công tác - Văn phòng',
         'scheduling-employees' => 'Nhân viên lịch công tác',
         'scheduling-employee-groups' => 'Nhóm nhân viên lịch công tác',
         'scheduling-settings' => 'Cấu hình lịch công tác',
@@ -430,7 +430,7 @@ class PermissionSeeder extends Seeder
             ['organization_id' => null]
         );
         Role::firstOrCreate(
-            ['name' => 'Lãnh đạo', 'guard_name' => self::GUARD],
+            ['name' => 'Văn phòng', 'guard_name' => self::GUARD],
             ['organization_id' => null]
         );
         Role::firstOrCreate(
@@ -482,9 +482,9 @@ class PermissionSeeder extends Seeder
             $thuKyRole->syncPermissions($this->getThuKyPermissionNames());
         }
 
-        $lanhDaoRole = Role::where('name', 'Lãnh đạo')->where('guard_name', self::GUARD)->first();
-        if ($lanhDaoRole) {
-            $lanhDaoRole->syncPermissions($this->getLanhDaoPermissionNames());
+        $vanPhongRole = Role::where('name', 'Văn phòng')->where('guard_name', self::GUARD)->first();
+        if ($vanPhongRole) {
+            $vanPhongRole->syncPermissions($this->getVanPhongPermissionNames());
         }
 
         $laiXeRole = Role::where('name', 'Lái xe')->where('guard_name', self::GUARD)->first();
@@ -542,6 +542,42 @@ class PermissionSeeder extends Seeder
             ['email' => 'nhanvien@example.com', 'user_name' => 'nhanvien', 'name' => 'Nhân viên', 'role' => $nhanVienRole],
         ] as $userData) {
             // Tìm user đã tồn tại theo user_name HOẶC email — tránh duplicate khi prod đã có account.
+            $user = User::where('user_name', $userData['user_name'])
+                ->orWhere('email', $userData['email'])
+                ->first();
+
+            if (! $user) {
+                $user = User::create([
+                    'email' => $userData['email'],
+                    'user_name' => $userData['user_name'],
+                    'name' => $userData['name'],
+                    'password' => 'quandcore**11',
+                    'status' => StatusEnum::Active->value,
+                    'email_verified_at' => now(),
+                ]);
+            }
+            $user->forceFill([
+                'created_by' => $superAdminUser->id,
+                'updated_by' => $superAdminUser->id,
+            ])->save();
+
+            if ($userData['role']) {
+                $user->syncRoles([$userData['role']]);
+            }
+        }
+
+        // Scheduling test users
+        $tongHopRole = Role::where('name', 'Tổng hợp lịch')->where('guard_name', self::GUARD)->first();
+        $thuKyRole = Role::where('name', 'Thư ký')->where('guard_name', self::GUARD)->first();
+        $vanPhongRole = Role::where('name', 'Văn phòng')->where('guard_name', self::GUARD)->first();
+        $laiXeRole = Role::where('name', 'Lái xe')->where('guard_name', self::GUARD)->first();
+
+        foreach ([
+            ['email' => 'tonghoplich@example.com', 'user_name' => 'tonghoplich', 'name' => 'Tổng hợp lịch', 'role' => $tongHopRole],
+            ['email' => 'thuky@example.com', 'user_name' => 'thuky', 'name' => 'Thư ký', 'role' => $thuKyRole],
+            ['email' => 'vanphong@example.com', 'user_name' => 'vanphong', 'name' => 'Văn phòng', 'role' => $vanPhongRole],
+            ['email' => 'laixe@example.com', 'user_name' => 'laixe', 'name' => 'Lái xe', 'role' => $laiXeRole],
+        ] as $userData) {
             $user = User::where('user_name', $userData['user_name'])
                 ->orWhere('email', $userData['email'])
                 ->first();
@@ -684,6 +720,7 @@ class PermissionSeeder extends Seeder
             'task-assignment-item-notes.store',
 
             // Dashboard + 2 màn công việc cá nhân
+            'dashboard.systemOverview',
             'my-assigned-tasks.index',
             'my-received-tasks.index',
         ];
@@ -721,7 +758,8 @@ class PermissionSeeder extends Seeder
             'task-assignment-item-transfers.store',
             'task-assignment-item-notes.store',
 
-            // Công việc được giao (xem task cua minh)
+            // Dashboard + công việc được giao
+            'dashboard.systemOverview',
             'my-received-tasks.index',
         ];
     }
@@ -754,30 +792,30 @@ class PermissionSeeder extends Seeder
             'schedules-executive.export',
             'schedules-executive.duplicate',
             'schedules-executive.reorder',
+            'schedules-executive.home',
         ];
     }
 
-    protected function getLanhDaoPermissionNames(): array
+    protected function getVanPhongPermissionNames(): array
     {
         return [
-            // Lịch Lãnh đạo — chỉ xem
             'schedules-office.index',
             'schedules-office.show',
+            'schedules-office.update',
             'schedules-office.export',
             'schedules-office.stats',
             'schedules-office.approve',
+            'schedules-office.home',
         ];
     }
 
     protected function getLaiXePermissionNames(): array
     {
         return [
-            'schedules-executive.index',
-            'schedules-executive.show',
             'schedules-executive.driver-view',
-            'schedules-office.index',
-            'schedules-office.show',
+            'schedules-executive.home',
             'schedules-office.driver-view',
+            'schedules-office.home',
         ];
     }
 }
