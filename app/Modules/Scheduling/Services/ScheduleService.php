@@ -172,7 +172,13 @@ class ScheduleService
                 $orgId = getPermissionsTeamId();
                 $data['organization_id'] = $orgId;
 
-                $data['status'] = ScheduleStatus::DRAFT->value;
+                // Normalize status: nếu FE gửi PUBLISHED thì áp dụng approval logic luôn
+                $statusInput = $data['status'] ?? null;
+                $statusInt = $this->normalizeStatus($statusInput) ?? ScheduleStatus::DRAFT->value;
+                $data['status'] = $statusInt;
+                if ($statusInt === ScheduleStatus::PUBLISHED->value) {
+                    $data['approval_status'] = $this->resolveApprovalStatus($data, $orgId);
+                }
                 if (!empty($data['sort_order']) && !empty($data['date_time']) && !empty($data['session'])) {
                     $carbon = \Carbon\Carbon::parse($data['date_time']);
                     Schedule::where('organization_id', $orgId)
@@ -325,16 +331,17 @@ class ScheduleService
             };
         }
 
-        // Publish (DRAFT → PUBLISHED): tự động set approval_status theo flag
         $updateData = ['status' => $statusInt];
+
         if ($statusInt === ScheduleStatus::PUBLISHED->value && $schedule->status !== ScheduleStatus::PUBLISHED) {
-            $orgSettings = OrgSchedulingSettings::firstOrCreate(['organization_id' => $schedule->organization_id]);
-            $requiresApproval = $schedule->module_type === ModuleType::EXECUTIVE
-                ? $orgSettings->executive_requires_approval
-                : $orgSettings->office_requires_approval;
-            $updateData['approval_status'] = (bool) $requiresApproval
-                ? ApprovalStatus::PENDING->value
-                : ApprovalStatus::APPROVED->value;
+            // DRAFT → PUBLISHED: auto resolve approval_status từ setting phân hệ
+            $updateData['approval_status'] = $this->resolveApprovalStatus(
+                ['module_type' => $schedule->module_type],
+                $schedule->organization_id,
+            );
+        } elseif ($statusInt === ScheduleStatus::DRAFT->value && $schedule->status !== ScheduleStatus::DRAFT) {
+            // PUBLISHED → DRAFT: clear approval_status
+            $updateData['approval_status'] = null;
         }
 
         $schedule->update($updateData);
@@ -525,5 +532,41 @@ class ScheduleService
         $path = $exporter->generate($filters);
         $fileName = 'export__lich-cong-tac-tuan_' . now()->format('H-i-s_d-m-Y') . '.docx';
         return response()->download($path, $fileName)->deleteFileAfterSend(true);
+    }
+
+    private function normalizeStatus(mixed $status): ?int
+    {
+        if ($status === null) {
+            return null;
+        }
+        if (is_numeric($status)) {
+            return (int) $status;
+        }
+        return match (strtoupper((string) $status)) {
+            'DRAFT' => ScheduleStatus::DRAFT->value,
+            'PUBLISHED' => ScheduleStatus::PUBLISHED->value,
+            default => null,
+        };
+    }
+
+    private function resolveApprovalStatus(array $data, int $orgId): ?string
+    {
+        $orgSettings = OrgSchedulingSettings::firstOrCreate(['organization_id' => $orgId]);
+        $moduleType = $data['module_type'] ?? null;
+        $requiresApproval = false;
+
+        if ($moduleType instanceof ModuleType) {
+            $requiresApproval = $moduleType === ModuleType::EXECUTIVE
+                ? $orgSettings->executive_requires_approval
+                : $orgSettings->office_requires_approval;
+        } else {
+            $requiresApproval = strtoupper((string) $moduleType) === 'EXECUTIVE'
+                ? $orgSettings->executive_requires_approval
+                : $orgSettings->office_requires_approval;
+        }
+
+        return (bool) $requiresApproval
+            ? ApprovalStatus::PENDING->value
+            : ApprovalStatus::APPROVED->value;
     }
 }
