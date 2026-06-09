@@ -86,7 +86,7 @@ class MeetingReminderContentBuilder implements ContentBuilder
             'gender' => $recipient->gender ?? 'Anh/Chị',
             'meeting_title' => $notifiable->title,
             'start_time' => $notifiable->start_time?->format('H:i d/m/Y') ?? '',
-            'code_id' => (string) $notifiable->id,
+            'code_id' => "meeting/{$notifiable->id}",
             'event' => $this->meetingMomentLabel(),
             'moment' => $this->humanMoment(),
             'title' => $this->title($recipient, $notifiable, ...$extraArgs),

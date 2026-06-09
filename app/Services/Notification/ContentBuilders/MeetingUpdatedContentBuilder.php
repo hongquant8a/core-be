@@ -75,7 +75,7 @@ class MeetingUpdatedContentBuilder implements ContentBuilder
             'gender' => $recipient->gender ?? 'Anh/Chị',
             'meeting_title' => $notifiable->title,
             'start_time' => $notifiable->start_time?->format('H:i d/m/Y') ?? '',
-            'code_id' => (string) $notifiable->id,
+            'code_id' => "meeting/{$notifiable->id}",
             'event' => 'Cuộc họp cập nhật thông tin',
             'title' => $this->title($recipient, $notifiable, ...$extraArgs),
         ];
