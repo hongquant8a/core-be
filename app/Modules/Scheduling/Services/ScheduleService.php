@@ -504,7 +504,7 @@ class ScheduleService
 
     private function syncReminders(Schedule $schedule, array $reminders): void
     {
-        $schedule->reminders()->delete();
+        $schedule->reminders()->where('source', 'CUSTOM')->delete();
         foreach ($reminders as $r) {
             $moment = $r['moment'] ?? $r['trigger'] ?? 'before';
             $offset = (int) ($r['offset_minutes'] ?? $r['minutes_before'] ?? 0);
@@ -548,17 +548,13 @@ class ScheduleService
         return response()->download($path, $fileName)->deleteFileAfterSend(true);
     }
 
-    public function weekCounts(string $anchorDate, ?int $organizationId = null): array
+    public function weekCounts(string $anchorDate): array
     {
         $carbon = \Carbon\Carbon::parse($anchorDate);
         $start = $carbon->copy()->startOfWeek()->toDateString();
         $end = $carbon->copy()->endOfWeek()->toDateString();
 
         $query = Schedule::whereBetween('date_time', [$start, $end]);
-
-        if ($organizationId) {
-            $query->where('organization_id', $organizationId);
-        }
 
         $counts = (clone $query)->selectRaw("module_type, COUNT(*) as cnt")
             ->groupBy('module_type')

@@ -185,7 +185,10 @@ class ScheduleController extends Controller
      * @bodyParam status string Trạng thái ban hành (DRAFT, PUBLISHED). Example: DRAFT
      * @bodyParam attachments file[] Danh sách tài liệu đính kèm.
      * @bodyParam participants array Danh sách thành phần tham dự.
-     * @bodyParam reminders array Danh sách mốc nhắc lịch.
+     * @bodyParam reminders object[] Danh sách mốc nhắc lịch (per-record). Gửi mảng rỗng [] nếu không có.
+     * @bodyParam reminders.*.moment string required Thời điểm nhắc: before, on, after, immediate. Example: before
+     * @bodyParam reminders.*.offset_minutes integer Phút offset từ date_time. Example: 30
+     * @bodyParam reminders.*.channels string[] Kênh gửi: mail, sms, zalo, zalo_zns, fcm. Example: ["mail","zalo"]
      */
     public function store(StoreScheduleRequest $request): JsonResponse
     {
@@ -217,8 +220,11 @@ class ScheduleController extends Controller
      * @bodyParam is_important boolean Đánh dấu lịch quan trọng. Example: false
      * @bodyParam status string Trạng thái ban hành (DRAFT, PUBLISHED). Example: DRAFT
      * @bodyParam attachments file[] Danh sách tài liệu đính kèm mới.
-     * @bodyParam participants array Danh sách thành phần tham dự mới.
-     * @bodyParam reminders array Danh sách mốc nhắc lịch mới.
+     * @bodyParam participants array Danh sách thành phần tham dự mới. Không gửi key này = giữ nguyên.
+     * @bodyParam reminders object[] Danh sách mốc nhắc lịch (per-record). Không gửi key này = giữ nguyên; gửi mảng rỗng [] = xóa hết CUSTOM.
+     * @bodyParam reminders.*.moment string required Thời điểm nhắc: before, on, after, immediate. Example: before
+     * @bodyParam reminders.*.offset_minutes integer Phút offset từ date_time. Example: 30
+     * @bodyParam reminders.*.channels string[] Kênh gửi: mail, sms, zalo, zalo_zns, fcm. Example: ["mail","zalo"]
      * @bodyParam remove_media_ids array Danh sách ID tài liệu đính kèm cần xóa.
      */
     public function update(UpdateScheduleRequest $request, Schedule $schedule): JsonResponse
@@ -412,14 +418,12 @@ class ScheduleController extends Controller
     }
 
     /**
-     * Tổng số lịch theo module type trong tuần (public).
+     * Tổng số lịch theo module type trong tuần (yêu cầu auth).
      *
      * Dùng cho CalendarView / WorkScheduleList — thay thế việc FE gọi nhiều lần lấy count.
      *
-     * @unauthenticated
-     *
+     * @header X-Organization-Id required ID tổ chức làm việc.
      * @queryParam anchor_date string required Ngày neo xác định tuần (YYYY-MM-DD). Example: 2026-06-09
-     * @queryParam organization_id int Lọc theo tổ chức (null = tất cả). Example: 1
      *
      * @response 200 {"success": true, "data": {"personal": 5, "executive": 12, "office": 8}}
      */
@@ -430,9 +434,7 @@ class ScheduleController extends Controller
             return $this->error('Thiếu anchor_date.', 422);
         }
 
-        $organizationId = request()->query('organization_id');
-
-        $counts = $this->scheduleService->weekCounts($anchorDate, $organizationId);
+        $counts = $this->scheduleService->weekCounts($anchorDate);
         return $this->success($counts);
     }
 }

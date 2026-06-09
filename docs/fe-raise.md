@@ -8,14 +8,20 @@ Status: **Đã implement**
 GET /api/schedules/week-counts
 ```
 
-Public — không yêu cầu auth. Nếu có auth, tự động tính thêm `personal`.
+Yêu cầu auth (Bearer token). Middleware: `auth:sanctum`, `set.permissions.team`, `ensure.route.org`, `log.activity`, `schedule.module:index` (permission `schedules.index`).
+
+## Headers
+
+| Header              | Type   | Required | Mô tả                     |
+|---------------------|--------|----------|---------------------------|
+| `Authorization`     | string | Yes      | Bearer token              |
+| `X-Organization-Id` | int    | Yes      | ID tổ chức làm việc       |
 
 ## Query Params
 
 | Param             | Type   | Required | Mô tả                                      |
 |-------------------|--------|----------|--------------------------------------------|
 | `anchor_date`     | string | Yes      | Ngày neo để xác định tuần (YYYY-MM-DD)      |
-| `organization_id` | int    | No       | Lọc theo tổ chức (null = tất cả)            |
 
 ## Response
 
@@ -32,7 +38,7 @@ Public — không yêu cầu auth. Nếu có auth, tự động tính thêm `per
 
 | Field        | Type | Mô tả |
 |--------------|------|-------|
-| `personal`   | int  | Số lịch của user hiện tại (chủ trì + lái xe + tham dự) trong tuần, gộp cả 2 module. Không có auth → 0 |
+| `personal`   | int  | Số lịch của user hiện tại (chủ trì + lái xe + tham dự) trong tuần, gộp cả 2 module. Có auth nên luôn được tính |
 | `executive`  | int  | Số lịch Thường trực trong tuần |
 | `office`     | int  | Số lịch Văn phòng trong tuần |
 
@@ -44,6 +50,6 @@ Public — không yêu cầu auth. Nếu có auth, tự động tính thêm `per
 
 ## Source
 
-- Route: `routes/api.php:73`
+- Route: `app/Modules/Scheduling/Routes/schedule.php`
 - Controller: `App\Modules\Scheduling\Controllers\ScheduleController::weekCounts()`
 - Service: `App\Modules\Scheduling\Services\ScheduleService::weekCounts()`
