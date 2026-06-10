@@ -170,7 +170,7 @@ class TaskAssignmentItemService
 
                 $this->fireTaskAssignedForNewUsers($item, $addedUserIds);
 
-                if ($reminders !== null) {
+                if (! empty($reminders)) {
                     $this->syncReminders($item, $reminders);
                 }
 

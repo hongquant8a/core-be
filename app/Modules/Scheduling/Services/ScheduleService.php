@@ -299,7 +299,7 @@ class ScheduleService
                 if ($participants !== null) {
                     $this->syncRecipients($schedule, $participants);
                 }
-                if ($reminders !== null) {
+                if (! empty($reminders)) {
                     $this->syncReminders($schedule, $reminders);
                 }
 

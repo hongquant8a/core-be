@@ -459,8 +459,8 @@ class MeetingService
                     $this->syncGuests($meeting, $guests);
                 }
 
-                // reminders null → FE không gửi field này → không sync (giữ nguyên).
-                if ($reminders !== null) {
+                // reminders rỗng hoặc null → không sync (giữ nguyên). Có dữ liệu → sync.
+                if (! empty($reminders)) {
                     $this->syncReminders($meeting, $reminders);
                 }
 
