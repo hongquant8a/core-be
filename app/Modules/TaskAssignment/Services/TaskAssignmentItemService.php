@@ -347,6 +347,15 @@ class TaskAssignmentItemService
             $offset = (int) ($r['offset_minutes'] ?? 0);
             $channels = array_map('strtoupper', (array) ($r['channels'] ?? []));
 
+            $remindAt = $item->end_at
+                ? match ($moment) {
+                    'before' => $offset ? $item->end_at->copy()->subMinutes($offset) : null,
+                    'on'     => $item->end_at->copy(),
+                    'after'  => $offset ? $item->end_at->copy()->addMinutes($offset) : null,
+                    default  => null,
+                }
+                : null;
+
             TaskAssignmentReminder::create([
                 'task_assignment_item_id' => $item->id,
                 'moment'                  => $moment,
@@ -354,6 +363,7 @@ class TaskAssignmentItemService
                 'channels'                => array_values(array_unique($channels)),
                 'source'                  => 'CUSTOM',
                 'status'                  => 'pending',
+                'remind_at'               => $remindAt,
             ]);
         }
     }

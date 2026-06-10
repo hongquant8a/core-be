@@ -536,6 +536,15 @@ class MeetingService
             $offset = (int) ($r['offset_minutes'] ?? 0);
             $channels = array_map('strtoupper', (array) ($r['channels'] ?? []));
 
+            $remindAt = $meeting->start_time
+                ? match ($moment) {
+                    'before' => $offset ? $meeting->start_time->copy()->subMinutes($offset) : null,
+                    'on'     => $meeting->start_time->copy(),
+                    'after'  => $offset ? $meeting->start_time->copy()->addMinutes($offset) : null,
+                    default  => null,
+                }
+                : null;
+
             MeetingReminder::create([
                 'organization_id' => (int) $meeting->organization_id,
                 'meeting_id'       => $meeting->id,
@@ -545,6 +554,8 @@ class MeetingService
                 'channels'         => array_values(array_unique($channels)),
                 'source'           => 'CUSTOM',
                 'status'           => 'pending',
+                'remind_at'        => $remindAt,
+                'scheduled_at'     => $remindAt,
             ]);
         }
     }
