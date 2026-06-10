@@ -530,11 +530,11 @@ class MeetingService
 
     private function syncReminders(Meeting $meeting, array $reminders): void
     {
-        $meeting->reminders()->where('source', 'CUSTOM')->delete();
+        $keptIds = [];
         foreach ($reminders as $r) {
             $moment = $r['moment'] ?? 'before';
             $offset = (int) ($r['offset_minutes'] ?? 0);
-            $channels = array_map('strtoupper', (array) ($r['channels'] ?? []));
+            $channels = array_values(array_unique(array_map('strtoupper', (array) ($r['channels'] ?? []))));
 
             $remindAt = $meeting->start_time
                 ? match ($moment) {
@@ -545,19 +545,48 @@ class MeetingService
                 }
                 : null;
 
-            MeetingReminder::create([
-                'organization_id' => (int) $meeting->organization_id,
-                'meeting_id'       => $meeting->id,
-                'reminder_type'    => 'scheduled',
-                'moment'           => $moment,
-                'offset_minutes'   => $offset,
-                'channels'         => array_values(array_unique($channels)),
-                'source'           => 'CUSTOM',
-                'status'           => 'pending',
-                'remind_at'        => $remindAt,
-                'scheduled_at'     => $remindAt,
-            ]);
+            $attributes = [
+                'organization_id'  => (int) $meeting->organization_id,
+                'meeting_id'        => $meeting->id,
+                'reminder_type'     => 'scheduled',
+                'moment'            => $moment,
+                'offset_minutes'    => $offset,
+                'channels'          => $channels,
+                'source'            => 'CUSTOM',
+                'status'            => 'pending',
+                'remind_at'         => $remindAt,
+                'scheduled_at'      => $remindAt,
+            ];
+
+            if (! empty($r['id'])) {
+                // Update existing hoặc create với id cũ (force insert) — giữ ID không đổi.
+                $existing = MeetingReminder::where('id', $r['id'])
+                    ->where('meeting_id', $meeting->id)
+                    ->where('source', 'CUSTOM')
+                    ->first();
+                if ($existing) {
+                    // Không reset status nếu đã fired/cancelled — chỉ update nếu pending.
+                    if ($existing->status !== 'pending') {
+                        $attributes['status'] = $existing->status;
+                    }
+                    $existing->update($attributes);
+                    $keptIds[] = $existing->id;
+                } else {
+                    // ID cũ không còn tồn tại → tạo mới.
+                    $new = MeetingReminder::create($attributes);
+                    $keptIds[] = $new->id;
+                }
+            } else {
+                // Tạo mới.
+                $new = MeetingReminder::create($attributes);
+                $keptIds[] = $new->id;
+            }
         }
+
+        // Xóa CUSTOM reminders không còn trong payload.
+        $meeting->reminders()->where('source', 'CUSTOM')
+            ->whereNotIn('id', $keptIds)
+            ->delete();
     }
 
     public function destroy(Meeting $meeting): void

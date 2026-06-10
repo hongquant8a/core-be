@@ -341,11 +341,11 @@ class TaskAssignmentItemService
 
     private function syncReminders(TaskAssignmentItem $item, array $reminders): void
     {
-        $item->reminders()->where('source', 'CUSTOM')->delete();
+        $keptIds = [];
         foreach ($reminders as $r) {
             $moment = $r['moment'] ?? 'before';
             $offset = (int) ($r['offset_minutes'] ?? 0);
-            $channels = array_map('strtoupper', (array) ($r['channels'] ?? []));
+            $channels = array_values(array_unique(array_map('strtoupper', (array) ($r['channels'] ?? []))));
 
             $remindAt = $item->end_at
                 ? match ($moment) {
@@ -356,16 +356,40 @@ class TaskAssignmentItemService
                 }
                 : null;
 
-            TaskAssignmentReminder::create([
+            $attributes = [
                 'task_assignment_item_id' => $item->id,
                 'moment'                  => $moment,
                 'offset_minutes'          => $offset,
-                'channels'                => array_values(array_unique($channels)),
+                'channels'                => $channels,
                 'source'                  => 'CUSTOM',
                 'status'                  => 'pending',
                 'remind_at'               => $remindAt,
-            ]);
+            ];
+
+            if (! empty($r['id'])) {
+                $existing = TaskAssignmentReminder::where('id', $r['id'])
+                    ->where('task_assignment_item_id', $item->id)
+                    ->where('source', 'CUSTOM')
+                    ->first();
+                if ($existing) {
+                    if ($existing->status !== 'pending') {
+                        $attributes['status'] = $existing->status;
+                    }
+                    $existing->update($attributes);
+                    $keptIds[] = $existing->id;
+                } else {
+                    $new = TaskAssignmentReminder::create($attributes);
+                    $keptIds[] = $new->id;
+                }
+            } else {
+                $new = TaskAssignmentReminder::create($attributes);
+                $keptIds[] = $new->id;
+            }
         }
+
+        $item->reminders()->where('source', 'CUSTOM')
+            ->whereNotIn('id', $keptIds)
+            ->delete();
     }
 
     /**
