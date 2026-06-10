@@ -79,7 +79,7 @@ class ProcessRemindersCommand extends Command
 
         // CUSTOM per-record: dùng channels từ chính reminder.
         if ($reminder->source === 'CUSTOM' && ! empty($reminder->channels)) {
-            $channels = $reminder->channels;
+            $channels = array_map(fn($c) => strtolower(trim($c)), $reminder->channels);
         } else {
             // PRESET: dùng channels từ notification_schedule config.
             $schedule = $reminder->schedule;
@@ -91,7 +91,7 @@ class ProcessRemindersCommand extends Command
                 return;
             }
 
-            $channels = $schedule->channels;
+            $channels = array_map(fn($c) => strtolower(trim($c)), $schedule->channels);
         }
 
         $eventKey = "meeting_reminder_{$reminder->moment}";
@@ -159,7 +159,7 @@ class ProcessRemindersCommand extends Command
 
         // CUSTOM per-record: dùng channels từ chính reminder.
         if ($reminder->source === 'CUSTOM' && ! empty($reminder->channels)) {
-            $channels = $reminder->channels;
+            $channels = array_map(fn($c) => strtolower(trim($c)), $reminder->channels);
         } else {
             // PRESET: dùng channels từ notification_schedule config.
             $schedule = $reminder->schedule;
@@ -171,7 +171,7 @@ class ProcessRemindersCommand extends Command
                 return;
             }
 
-            $channels = $schedule->channels;
+            $channels = array_map(fn($c) => strtolower(trim($c)), $schedule->channels);
         }
 
         $builder = $registry->for($eventKey);
