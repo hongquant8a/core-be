@@ -21,6 +21,7 @@ class TaskAssignmentReminderResource extends JsonResource
             'offset_minutes'  => $this->offset_minutes,
             'channels'        => $this->channels,
             'status'          => $this->status,
+            'remind_at'       => $this->remind_at?->format('H:i:s d/m/Y'),
             'fired_at'        => $this->fired_at?->format('H:i:s d/m/Y'),
             'source'          => $sourceVal,
             'reminder_type'   => strtoupper($sourceVal ?? 'CUSTOM'),
