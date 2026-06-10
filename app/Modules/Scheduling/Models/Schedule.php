@@ -203,7 +203,10 @@ class Schedule extends TenantModel
                 }
 
                 if (!auth()->user()?->can('scheduling.approve')) {
-                    $q->where('approval_status', 'approved');
+                    $q->where(function ($sub) use ($userId) {
+                        $sub->where('approval_status', 'approved')
+                            ->orWhere('created_by', $userId);
+                    });
                 }
             })
             ->when(

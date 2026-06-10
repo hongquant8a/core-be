@@ -59,10 +59,6 @@ class ScheduleService
      */
     public function weekMatrix(array $filters): array
     {
-        if (Auth::check() && Auth::user()->hasRole('scheduling-lai-xe')) {
-            $filters['driver_id'] = Auth::id();
-        }
-
         // Default: chỉ lịch đã duyệt + bản nháp của chính mình. Có quyền duyệt → thêm lịch chờ duyệt.
         $filters['general_visibility'] = true;
 

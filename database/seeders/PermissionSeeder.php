@@ -114,6 +114,10 @@ class PermissionSeeder extends Seeder
             'task-assignment-item-notes' => [
                 'store',
             ],
+            'task-assignment-petitions' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
+            ],
             'my-received-tasks' => [
                 'index',
             ],
@@ -155,6 +159,9 @@ class PermissionSeeder extends Seeder
                 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
             ],
             'meeting-participants' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
+            ],
+            'meeting-vote-topics' => [
                 'stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
             ],
             'meeting-minutes-templates' => [
@@ -261,6 +268,7 @@ class PermissionSeeder extends Seeder
         'task-assignment-item-reports' => 'Báo cáo công việc',
         'task-assignment-item-transfers' => 'Điều chuyển công việc',
         'task-assignment-item-notes' => 'Ghi chú công việc',
+        'task-assignment-petitions' => 'Đơn thư',
         'presentation' => 'Trình chiếu tổng quan công việc',
         'dashboard' => 'Tổng quan',
         'notifications' => 'Thông báo',
@@ -279,6 +287,7 @@ class PermissionSeeder extends Seeder
         'meeting-agendas' => 'Chương trình họp',
         'meeting-documents' => 'Tài liệu họp',
         'meeting-participants' => 'Người tham dự họp',
+        'meeting-vote-topics' => 'Chương trình biểu quyết',
         'meeting-minutes-templates' => 'Template biên bản họp',
         'meeting-invitation-templates' => 'Template giấy mời họp',
         'meeting-settings' => 'Cấu hình cuộc họp',
@@ -645,6 +654,11 @@ class PermissionSeeder extends Seeder
         $names[] = 'task-assignment-item-transfers.index';
         $names[] = 'task-assignment-item-transfers.store';
         $names[] = 'task-assignment-item-notes.store';
+
+        // Đơn thư — full quyền
+        foreach ($flat['task-assignment-petitions'] as $action) {
+            $names[] = "task-assignment-petitions.{$action}";
+        }
 
         // Dashboard + 2 màn công việc cá nhân
         $names[] = 'dashboard.systemOverview';

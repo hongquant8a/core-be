@@ -136,6 +136,11 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
         require base_path('app/Modules/TaskAssignment/Routes/notification_config.php');
     });
 
+    // Đơn thư (phòng ban)
+    Route::prefix('task-assignment-petitions')->middleware('ensure.route.org')->group(function () {
+        require base_path('app/Modules/TaskAssignment/Routes/task_assignment_petition.php');
+    });
+
     // Notification config scoped cho module Meeting
     Route::prefix('meeting/notification-config')->group(function () {
         require base_path('app/Modules/Meeting/Routes/notification_config.php');
@@ -187,6 +192,9 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
     });
     Route::prefix('meeting-participants')->middleware('ensure.route.org')->group(function () {
         require base_path('app/Modules/Meeting/Routes/meeting_participant.php');
+    });
+    Route::prefix('meeting-vote-topics')->middleware('ensure.route.org')->group(function () {
+        require base_path('app/Modules/Meeting/Routes/meeting_vote_topic.php');
     });
     // Template biên bản (.docx) — mỗi tổ chức có template riêng (logo, layout).
     Route::prefix('meeting-minutes-templates')->middleware('ensure.route.org')->group(function () {

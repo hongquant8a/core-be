@@ -2,7 +2,7 @@
 
 Tài liệu mô tả cấu trúc thư mục hiện tại của hệ thống theo hướng modular.
 
-Cập nhật: 2026-06-05.
+Cập nhật: 2026-06-10.
 
 ## 1) Tổng quan thư mục gốc
 
@@ -67,15 +67,34 @@ app/Modules/
 │   └── Traits/
 ├── TaskAssignment/
 │   ├── Controllers/
+│   │   ├── TaskAssignmentPetitionController.php       # Đơn thư (CRUD + stats + changeStatus + bulkDestroy)
+│   │   └── ...
 │   ├── Enums/
+│   │   ├── PetitionStatusEnum.php                     # Trạng thái đơn thư (new, processing, completed, paused, cancelled)
+│   │   └── ...
 │   ├── Exports/
 │   ├── Imports/
 │   ├── Models/
+│   │   ├── TaskAssignmentPetition.php                 # Model đơn thư (has timingStatus, isOverdue)
+│   │   ├── TaskAssignmentPetitionAttachment.php       # Đính kèm đơn thư
+│   │   └── ...
 │   ├── Observers/
 │   ├── Requests/
+│   │   ├── StorePetitionRequest.php
+│   │   ├── UpdatePetitionRequest.php
+│   │   ├── ChangeStatusPetitionRequest.php
+│   │   ├── BulkDestroyPetitionRequest.php
+│   │   └── ...
 │   ├── Resources/
+│   │   ├── PetitionResource.php
+│   │   ├── PetitionCollection.php
+│   │   └── ...
 │   ├── Routes/
+│   │   ├── task_assignment_petition.php               # Route /api/task-assignment-petitions
+│   │   └── ...
 │   └── Services/
+│       ├── TaskAssignmentPetitionService.php           # Nghiệp vụ đơn thư (department scoping, attachment sync)
+│       └── ...
 ├── Meeting/                  # Module phức tạp - có thêm folder tùy chọn
 │   ├── Controllers/
 │   ├── Concerns/             # Trait dùng chung nội bộ module
