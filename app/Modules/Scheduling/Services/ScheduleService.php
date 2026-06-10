@@ -605,6 +605,8 @@ class ScheduleService
         $start = $carbon->copy()->startOfWeek()->toDateString();
         $end = $carbon->copy()->endOfWeek()->toDateString();
 
+        unset($filters['module_type']);
+
         $baseQuery = fn () => Schedule::filter(array_merge($filters, [
             'from_date'          => $start,
             'to_date'            => $end,
