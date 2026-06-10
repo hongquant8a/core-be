@@ -57,6 +57,7 @@ class MeetingService
                 'documents.documentType',
                 'documents.mediaFile',
                 'participants.attendee',
+                'reminders',
             ])
             // documents_count: số tài liệu visible cho caller — dùng cho sidebar UI count.
             ->withCount(['documents as documents_count' => $docFilter])
