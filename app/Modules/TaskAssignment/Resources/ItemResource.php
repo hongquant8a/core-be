@@ -20,12 +20,10 @@ class ItemResource extends JsonResource
             'deadline_type' => $this->deadline_type,
             'start_at' => $this->start_at?->format('H:i:s d/m/Y'),
             'end_at' => $this->end_at?->format('H:i:s d/m/Y'),
-            'processing_status' => $this->resource->isLate() ? 'late' : $this->processing_status,
+            'processing_status' => $this->processing_status,
             'completion_percent' => $this->completion_percent,
             'priority' => $this->priority,
             'completed_at' => $this->completed_at?->format('H:i:s d/m/Y'),
-            // Computed flag is_overdue: chưa hoàn thành + quá end_at (= "đang trễ hạn").
-            // Timing của báo cáo (on_time/late) nằm ở report.timing_status.
             'is_overdue' => $this->resource->isOverdue(),
             'departments' => $this->whenLoaded('users', function () {
                 $deptIds = $this->users->pluck('pivot.department_id')->unique();

@@ -34,3 +34,5 @@ test-fixtures
 # Personal notes / scratch files
 /requirement.txt
 /xml.txt
+
+example.json
