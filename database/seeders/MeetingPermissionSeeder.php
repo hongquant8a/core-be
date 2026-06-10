@@ -56,8 +56,6 @@ class MeetingPermissionSeeder extends Seeder
     {
         $names = [];
 
-        // (Self profile + log activity dùng /me endpoints — không qua Spatie permission, không cần khai báo ở đây.)
-
         // Sub-resources trong meeting — full action (BE service scope theo participation)
         foreach (['meeting-agendas', 'meeting-documents'] as $resource) {
             foreach (['index', 'show', 'store', 'update', 'destroy', 'bulkDestroy'] as $action) {
@@ -65,38 +63,21 @@ class MeetingPermissionSeeder extends Seeder
             }
         }
 
-        // In-meeting actions (respond, checkin, markAbsent, approve, reject, complete,
-        // open/close vote-topic, cast vote) đã chuyển hoàn toàn sang nested route +
-        // Gate Policy → KHÔNG còn cần Spatie permission tương ứng.
+        // In-meeting actions đã chuyển sang nested route + Gate Policy — không còn Spatie permission.
 
         // Participants — admin CRUD only.
         foreach (['stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy'] as $action) {
             $names[] = "meeting-participants.{$action}";
         }
 
-        // Attendances — admin CRUD/báo cáo only.
-        foreach (['stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy'] as $action) {
-            $names[] = "meeting-attendances.{$action}";
-        }
-
-        // Vote — admin CRUD/báo cáo only (cast vote qua nested).
+        // Vote topics — admin CRUD only (cast vote qua nested + Gate Policy).
         foreach (['stats', 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy'] as $action) {
             $names[] = "meeting-vote-topics.{$action}";
-            $names[] = "meeting-vote-responses.{$action}";
         }
 
-        // Đăng ký thảo luận / chất vấn — admin CRUD/báo cáo (complete qua nested).
-        foreach (['stats', 'index', 'show', 'store', 'update', 'destroy'] as $action) {
-            $names[] = "meeting-discussion-registrations.{$action}";
-        }
-
-        // Ghi chú cá nhân (service auto-scope theo user)
-        foreach (['index', 'show', 'store', 'update', 'destroy', 'bulkDestroy'] as $action) {
-            $names[] = "meeting-personal-notes.{$action}";
-        }
-        foreach (['index', 'store', 'update', 'destroy'] as $action) {
-            $names[] = "meeting-personal-note-attachments.{$action}";
-        }
+        // Attendances, vote-responses, discussion-registrations, personal-notes,
+        // personal-note-attachments đã chuyển sang nested route + Gate Policy
+        // → không còn Spatie permission tương ứng.
 
         return array_values(array_unique($names));
     }
