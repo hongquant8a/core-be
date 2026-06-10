@@ -80,13 +80,14 @@ class ScheduleController extends Controller
     /**
      * Ma trận lịch công tác theo tuần (Weekly Matrix).
      *
+     * Mặc định trả lịch đã duyệt của tất cả mọi người + bản nháp của chính user. Người có quyền `scheduling.approve` thấy cả lịch chờ duyệt.
+     *
      * @queryParam module_type string required Phân hệ (EXECUTIVE, OFFICE). Example: EXECUTIVE
-     * @queryParam week_number integer Số thứ tự tuần trong năm. Example: 23
-     * @queryParam year integer Năm của tuần cần xem. Example: 2026
+     * @queryParam view_mode string Chế độ xem: personal (lịch của tôi), managed (lịch tôi chủ trì). Bỏ trống = tất cả. Example: personal
+     * @queryParam week_number integer Số thứ tự tuần trong năm (tự tính nếu không truyền). Example: 23
+     * @queryParam year integer Năm của tuần cần xem (tự tính nếu không truyền). Example: 2026
      * @queryParam from_date date Lọc từ ngày (Y-m-d) thay cho week_number. Example: 2026-06-01
      * @queryParam to_date date Lọc đến ngày (Y-m-d) thay cho week_number. Example: 2026-06-07
-     * @queryParam status string Lọc theo trạng thái ban hành (DRAFT, PUBLISHED). Example: PUBLISHED
-     * @queryParam approval_status string Lọc theo trạng thái duyệt (pending, approved, rejected). Example: pending
      */
     public function weeklyMatrix(FilterRequest $request): JsonResponse
     {
@@ -386,11 +387,16 @@ class ScheduleController extends Controller
     }
 
     /**
-     * Danh sách lịch công tác được gán riêng cho Lái xe hiện tại.
+     * Ma trận lịch công tác dành cho Lái xe (theo tuần).
+     *
+     * Format giống `/api/schedules/weekly-matrix` nhưng chỉ trả lịch được gán cho lái xe hiện tại.
      *
      * @queryParam from date Ngày bắt đầu (Y-m-d). Example: 2026-06-01
      * @queryParam to date Ngày kết thúc (Y-m-d). Example: 2026-06-07
-     * @queryParam limit integer Số bản ghi mỗi trang. Example: 20
+     * @queryParam week_number integer Số thứ tự tuần. Example: 23
+     * @queryParam year integer Năm. Example: 2026
+     *
+     * @response 200 {"success": true, "data": {"week_id": "2026-W24", "week_number": 24, "year": 2026, "date_from": "2026-06-08", "date_to": "2026-06-14", "matrix": {"2026-06-08": {"S": [{"id": 1, "content": "...", ...}]}}}}
      */
     public function driverIndex(FilterRequest $request): JsonResponse
     {
@@ -399,11 +405,7 @@ class ScheduleController extends Controller
         $filters['status'] = \App\Modules\Scheduling\Enums\ScheduleStatus::PUBLISHED->value;
         $filters['driver_id'] = auth()->id();
 
-        $schedules = Schedule::with(['host'])
-            ->filter($filters)
-            ->paginate((int)($request->limit ?? 20));
-
-        return $this->successCollection(DriverScheduleResource::collection($schedules));
+        return $this->success($this->scheduleService->driverWeekMatrix($filters));
     }
 
     /**

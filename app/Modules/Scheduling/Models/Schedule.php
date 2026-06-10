@@ -191,6 +191,7 @@ class Schedule extends TenantModel
             ->when($filters['general_visibility'] ?? false, function ($q) {
                 // Với màn hình chung của nhân viên (general view), chỉ xem được lịch PUBLISHED
                 // HOẶC lịch DRAFT do chính user hiện tại tạo ra.
+                // Lịch chờ duyệt (approval_status=pending) chỉ hiển thị nếu user có quyền duyệt.
                 $userId = auth()->id();
                 if ($userId) {
                     $q->where(function ($sub) use ($userId) {
@@ -199,6 +200,10 @@ class Schedule extends TenantModel
                     });
                 } else {
                     $q->where('status', \App\Modules\Scheduling\Enums\ScheduleStatus::PUBLISHED->value);
+                }
+
+                if (!auth()->user()?->can('scheduling.approve')) {
+                    $q->where('approval_status', 'approved');
                 }
             })
             ->when(

@@ -63,6 +63,9 @@ class ScheduleService
             $filters['driver_id'] = Auth::id();
         }
 
+        // Default: chỉ lịch đã duyệt + bản nháp của chính mình. Có quyền duyệt → thêm lịch chờ duyệt.
+        $filters['general_visibility'] = true;
+
         $year = $filters['year'] ?? null;
         $weekNumber = $filters['week_number'] ?? null;
 
@@ -96,6 +99,58 @@ class ScheduleService
         $matrix = $schedules->groupBy(fn($item) => $item->date_time ? $item->date_time->format('Y-m-d') : '')->map(function ($day) {
             return $day->groupBy(fn($item) => $item->session->value ?? $item->session);
         })->toArray();
+
+        return [
+            'week_id'     => $weekId,
+            'week_number' => (int)$weekNumber,
+            'year'        => (int)$year,
+            'date_from'   => $start->format('Y-m-d'),
+            'date_to'     => $end->format('Y-m-d'),
+            'matrix'      => $matrix,
+        ];
+    }
+
+    /**
+     * Ma trận lịch cho Lái xe — format gọn qua DriverScheduleResource.
+     */
+    public function driverWeekMatrix(array $filters): array
+    {
+        $filters['status'] = \App\Modules\Scheduling\Enums\ScheduleStatus::PUBLISHED->value;
+        $filters['driver_id'] = Auth::id();
+
+        $year = $filters['year'] ?? null;
+        $weekNumber = $filters['week_number'] ?? null;
+
+        if (!$year || !$weekNumber) {
+            $anchorDate = $filters['from_date'] ?? $filters['event_date'] ?? $filters['date'] ?? now()->toDateString();
+            $carbon = \Carbon\Carbon::parse($anchorDate);
+            $year = $carbon->isoWeekYear;
+            $weekNumber = $carbon->isoWeek;
+        }
+
+        $weekId = "{$year}-W" . str_pad($weekNumber, 2, '0', STR_PAD_LEFT);
+        $start = now()->setISODate((int)$year, (int)$weekNumber)->startOfWeek();
+        $end = now()->setISODate((int)$year, (int)$weekNumber)->endOfWeek();
+
+        if (empty($filters['week']) && empty($filters['event_date']) && empty($filters['date']) && empty($filters['from_date'])) {
+            $filters['week'] = $weekId;
+        }
+
+        $dateCol = 'date_time';
+
+        $schedules = Schedule::with(['host'])
+            ->filter($filters)
+            ->orderByRaw("DATE({$dateCol}) ASC")
+            ->orderBy('session', 'ASC')
+            ->orderBy('sort_order', 'ASC')
+            ->orderBy($dateCol, 'ASC')
+            ->get();
+
+        $matrix = $schedules->groupBy(fn($item) => $item->date_time ? $item->date_time->format('Y-m-d') : '')->map(function ($day) {
+            return $day->groupBy(fn($item) => $item->session->value ?? $item->session)->map(function ($items) {
+                return \App\Modules\Scheduling\Resources\DriverScheduleResource::collection($items);
+            });
+        });
 
         return [
             'week_id'     => $weekId,
@@ -554,7 +609,21 @@ class ScheduleService
         $start = $carbon->copy()->startOfWeek()->toDateString();
         $end = $carbon->copy()->endOfWeek()->toDateString();
 
-        $query = Schedule::whereBetween('date_time', [$start, $end]);
+        $baseQuery = Schedule::whereBetween('date_time', [$start, $end]);
+
+        $query = (clone $baseQuery)->where(function ($q) {
+            $userId = auth()->id();
+            if ($userId) {
+                $q->where('status', \App\Modules\Scheduling\Enums\ScheduleStatus::PUBLISHED->value)
+                  ->orWhere('created_by', $userId);
+            } else {
+                $q->where('status', \App\Modules\Scheduling\Enums\ScheduleStatus::PUBLISHED->value);
+            }
+
+            if (!auth()->user()?->can('scheduling.approve')) {
+                $q->where('approval_status', 'approved');
+            }
+        });
 
         $counts = (clone $query)->selectRaw("module_type, COUNT(*) as cnt")
             ->groupBy('module_type')

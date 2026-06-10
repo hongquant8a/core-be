@@ -18,7 +18,7 @@ Route::get('/driver-view/{schedule}', [ScheduleController::class, 'driverShow'])
 Route::get('/general', [ScheduleController::class, 'general']);
 Route::get('/general/weekly-matrix', [ScheduleController::class, 'generalWeeklyMatrix']);
 Route::get('/general/weeks', [ScheduleController::class, 'generalWeeks']);
-Route::get('/week-counts',  [ScheduleController::class, 'weekCounts'])->middleware('schedule.module:index');
+Route::get('/week-counts',  [ScheduleController::class, 'weekCounts']);
 
 Route::delete('/bulk-delete',[ScheduleController::class, 'bulkDestroy'])->middleware('schedule.module:destroy');
 Route::patch('/bulk-status', [ScheduleController::class, 'bulkUpdateStatus'])->middleware('schedule.module:update');

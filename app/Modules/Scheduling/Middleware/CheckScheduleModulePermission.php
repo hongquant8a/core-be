@@ -44,7 +44,13 @@ class CheckScheduleModulePermission
         $newPermission = "{$resource}.{$action}";
         $oldPermission = "schedules.{$action}";
 
-        if ($user->hasPermissionTo($newPermission) || $user->hasPermissionTo($oldPermission)) {
+        if ($user->hasPermissionTo($newPermission)) {
+            return $next($request);
+        }
+
+        // Fallback quyền cũ (schedules.*) — chỉ check nếu permission có tồn tại
+        $oldExists = \Spatie\Permission\Models\Permission::where('name', $oldPermission)->where('guard_name', 'web')->exists();
+        if ($oldExists && $user->hasPermissionTo($oldPermission)) {
             return $next($request);
         }
 
