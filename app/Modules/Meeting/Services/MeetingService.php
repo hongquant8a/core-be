@@ -651,7 +651,7 @@ class MeetingService
             Event::dispatch(new \App\Services\Notification\Events\MeetingCancelled($meeting->fresh()));
         }
 
-        return $meeting->load(['meetingType', 'meetingLocation', 'creator.media', 'editor.media']);
+        return $meeting->load(['meetingType', 'meetingLocation', 'creator.media', 'editor.media', 'reminders']);
     }
 
     /**
