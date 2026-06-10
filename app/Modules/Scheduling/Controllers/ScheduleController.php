@@ -436,7 +436,7 @@ class ScheduleController extends Controller
             return $this->error('Thiếu anchor_date.', 422);
         }
 
-        $counts = $this->scheduleService->weekCounts($anchorDate, $request->all());
+        $counts = $this->scheduleService->weekCounts($anchorDate, request()->all());
         return $this->success($counts);
     }
 }
