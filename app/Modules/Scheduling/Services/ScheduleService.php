@@ -599,36 +599,27 @@ class ScheduleService
         return response()->download($path, $fileName)->deleteFileAfterSend(true);
     }
 
-    public function weekCounts(string $anchorDate): array
+    public function weekCounts(string $anchorDate, array $filters = []): array
     {
         $carbon = \Carbon\Carbon::parse($anchorDate);
         $start = $carbon->copy()->startOfWeek()->toDateString();
         $end = $carbon->copy()->endOfWeek()->toDateString();
 
-        $baseQuery = Schedule::whereBetween('date_time', [$start, $end]);
+        $baseQuery = fn () => Schedule::filter(array_merge($filters, [
+            'from_date'          => $start,
+            'to_date'            => $end,
+            'status'             => \App\Modules\Scheduling\Enums\ScheduleStatus::PUBLISHED->value,
+            'general_visibility' => true,
+        ]));
 
-        $query = (clone $baseQuery)->where(function ($q) {
-            $userId = auth()->id();
-            if ($userId) {
-                $q->where('status', \App\Modules\Scheduling\Enums\ScheduleStatus::PUBLISHED->value)
-                  ->orWhere('created_by', $userId);
-            } else {
-                $q->where('status', \App\Modules\Scheduling\Enums\ScheduleStatus::PUBLISHED->value);
-            }
-
-            if (!auth()->user()?->can('scheduling.approve')) {
-                $q->where('approval_status', 'approved');
-            }
-        });
-
-        $counts = (clone $query)->selectRaw("module_type, COUNT(*) as cnt")
+        $counts = $baseQuery()->selectRaw("module_type, COUNT(*) as cnt")
             ->groupBy('module_type')
             ->pluck('cnt', 'module_type');
 
         $personal = 0;
         $userId = auth()->id();
         if ($userId) {
-            $personal = (clone $query)->where(function ($q) use ($userId) {
+            $personal = $baseQuery()->where(function ($q) use ($userId) {
                 $q->where('host_id', $userId)
                   ->orWhere('driver_id', $userId)
                   ->orWhereHas('recipients', fn ($r) => $r->where('user_id', $userId));
