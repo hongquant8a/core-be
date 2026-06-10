@@ -80,14 +80,12 @@ class SchedulingModuleSeeder extends Seeder
         }
 
         $startOfWeek = Carbon::now()->startOfWeek();
-        $dateCol = Schedule::dateColumn();
-
         $schedulesData = [
             [
                 'content' => 'Họp giao ban đầu tuần',
                 'location' => 'Phòng họp số 1',
                 'session' => 'S',
-                $dateCol => $startOfWeek->copy()->addDays(0)->setHour(8)->setMinute(0),
+                'date_time' => $startOfWeek->copy()->addDays(0)->setHour(8)->setMinute(0),
                 'status' => ScheduleStatus::PUBLISHED->value,
                 'host_id' => $employees[0]->user_id,
                 'preparation_unit' => 'Phòng TC-HC',
@@ -99,7 +97,7 @@ class SchedulingModuleSeeder extends Seeder
                 'content' => 'Tiếp đón đoàn khách đối tác chiến lược',
                 'location' => 'Phòng khách VIP',
                 'session' => 'C',
-                $dateCol => $startOfWeek->copy()->addDays(1)->setHour(14)->setMinute(30),
+                'date_time' => $startOfWeek->copy()->addDays(1)->setHour(14)->setMinute(30),
                 'status'         => ScheduleStatus::DRAFT->value,
                 'approval_status' => \App\Modules\Scheduling\Enums\ApprovalStatus::PENDING->value,
                 'host_id' => $employees[0]->user_id,
@@ -112,7 +110,7 @@ class SchedulingModuleSeeder extends Seeder
                 'content' => 'Họp chuyên đề kỹ thuật tháng',
                 'location' => 'Phòng họp số 2',
                 'session' => 'S',
-                $dateCol => $startOfWeek->copy()->addDays(2)->setHour(9)->setMinute(0),
+                'date_time' => $startOfWeek->copy()->addDays(2)->setHour(9)->setMinute(0),
                 'status' => ScheduleStatus::PUBLISHED->value,
                 'host_id' => $employees[1]->user_id,
                 'preparation_unit' => 'Phòng Kỹ thuật',
@@ -124,7 +122,7 @@ class SchedulingModuleSeeder extends Seeder
                 'content' => 'Kiểm tra tiến độ dự án Alpha',
                 'location' => 'Công trường dự án',
                 'session' => 'C',
-                $dateCol => $startOfWeek->copy()->addDays(3)->setHour(15)->setMinute(0),
+                'date_time' => $startOfWeek->copy()->addDays(3)->setHour(15)->setMinute(0),
                 'status' => ScheduleStatus::DRAFT->value,
                 'host_id' => $employees[1]->user_id,
                 'driver_text' => 'Nguyễn Văn Tài',
@@ -137,7 +135,7 @@ class SchedulingModuleSeeder extends Seeder
                 'content' => 'Lễ kỷ niệm thành lập công ty',
                 'location' => 'Hội trường lớn',
                 'session' => 'T',
-                $dateCol => $startOfWeek->copy()->addDays(4)->setHour(18)->setMinute(0),
+                'date_time' => $startOfWeek->copy()->addDays(4)->setHour(18)->setMinute(0),
                 'status' => ScheduleStatus::PUBLISHED->value,
                 'host_id' => $employees[0]->user_id,
                 'preparation_unit' => 'Công đoàn',
