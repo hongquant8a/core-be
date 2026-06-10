@@ -129,7 +129,120 @@ class ProcessRemindersCommand extends Command
             );
         }
 
+        // Gửi reminder cho khách mời (guest) — không có user account, dùng contact info trực tiếp.
+        $this->dispatchGuestReminders($meeting, $channels, $reminder->moment);
+
         $reminder->update(['status' => 'fired', 'fired_at' => now()]);
+    }
+
+    /**
+     * Gửi reminder đến khách mời (guest) — không cần User account.
+     * Dùng NotificationService::send() trực tiếp thay vì NotificationDispatcher (vốn yêu cầu User).
+     */
+    private function dispatchGuestReminders(\App\Modules\Meeting\Models\Meeting $meeting, array $channels, string $moment): void
+    {
+        $guests = $meeting->guests()->get();
+        if ($guests->isEmpty()) {
+            return;
+        }
+
+        $notifier = app(\App\Services\Notification\NotificationService::class);
+
+        $start = $meeting->start_time?->format('d/m/Y H:i') ?? '';
+        $url = rtrim((string) config('app.frontend_url'), '/') . "/meetings/{$meeting->id}";
+
+        $subject = match ($moment) {
+            'before' => "Nhắc cuộc họp sắp diễn ra: {$meeting->title}",
+            'on'     => "Cuộc họp đã đến giờ: {$meeting->title}",
+            'after'  => "Cuộc họp đã kết thúc: {$meeting->title}",
+            default  => "Nhắc cuộc họp: {$meeting->title}",
+        };
+
+        foreach ($guests as $guest) {
+            foreach ($channels as $channel) {
+                match ($channel) {
+                    'mail' => $this->sendGuestMail($notifier, $guest, $meeting, $subject, $moment),
+                    'sms'  => $this->sendGuestSms($notifier, $guest, $meeting, $start, $url, $moment),
+                    'zalo' => $this->sendGuestZalo($notifier, $guest, $meeting, $start, $url, $moment),
+                    default => null,
+                };
+            }
+        }
+    }
+
+    private function sendGuestMail($notifier, $guest, $meeting, string $subject, string $moment): void
+    {
+        if (empty($guest->email)) {
+            return;
+        }
+
+        $view = view("notifications.meeting_reminder_{$moment}.email", [
+            'recipient' => $guest,
+            'meeting'   => $meeting,
+            'url'       => rtrim((string) config('app.frontend_url'), '/') . "/meetings/{$meeting->id}",
+        ])->render();
+
+        $notifier->send(new \App\Services\Notification\DTOs\NotificationPayload(
+            channels: ['mail'],
+            recipient: new \App\Services\Notification\DTOs\Recipient(
+                email: $guest->email,
+                name: $guest->name,
+            ),
+            content: $view,
+            subject: $subject,
+        ));
+    }
+
+    private function sendGuestSms($notifier, $guest, $meeting, string $start, string $url, string $moment): void
+    {
+        if (empty($guest->phone)) {
+            return;
+        }
+
+        $text = match ($moment) {
+            'before' => "Sap hop: {$meeting->title} ({$start}). Xem: {$url}",
+            'on'     => "Den gio hop: {$meeting->title}. Xem: {$url}",
+            'after'  => "Cuoc hop {$meeting->title} da ket thuc. Xem: {$url}",
+            default  => "Nhac hop: {$meeting->title}. Xem: {$url}",
+        };
+
+        $notifier->send(new \App\Services\Notification\DTOs\NotificationPayload(
+            channels: ['sms'],
+            recipient: new \App\Services\Notification\DTOs\Recipient(
+                phone: $guest->phone,
+                name: $guest->name,
+            ),
+            content: \Illuminate\Support\Str::ascii($text),
+        ));
+    }
+
+    private function sendGuestZalo($notifier, $guest, $meeting, string $start, string $url, string $moment): void
+    {
+        if (empty($guest->zalo_user_id)) {
+            return;
+        }
+
+        $prefix = match ($moment) {
+            'before' => 'Nhắc cuộc họp sắp diễn ra',
+            'on'     => 'Cuộc họp đã đến giờ',
+            'after'  => 'Cuộc họp đã kết thúc',
+            default  => 'Nhắc lịch họp',
+        };
+        $text = "{$prefix}: {$meeting->title}.".($start ? " Thời gian: {$start}." : '')." Xem chi tiết: {$url}";
+
+        $notifier->send(new \App\Services\Notification\DTOs\NotificationPayload(
+            channels: ['zalo'],
+            recipient: new \App\Services\Notification\DTOs\Recipient(
+                zaloId: $guest->zalo_user_id,
+                name: $guest->name,
+            ),
+            content: $text,
+            context: [
+                'customer_name' => $guest->name,
+                'meeting_title' => $meeting->title,
+                'url' => $url,
+            ],
+        ));
     }
 
     private function fireReminder(TaskAssignmentReminder $reminder, NotificationDispatcher $dispatcher, ContentBuilderRegistry $registry): void
