@@ -13,6 +13,7 @@ class TaskAssignmentPetitionAttachment extends Model
         'petition_id',
         'media_id',
         'file_name',
+        'type',
         'sort_order',
     ];
 

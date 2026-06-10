@@ -15,8 +15,6 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class TaskAssignmentPetitionService
 {
-    private const ADMIN_ROLES = ['Quản trị', 'Super Admin', 'Admin'];
-
     public function __construct(private MediaService $mediaService) {}
 
     public function stats(array $filters): array
@@ -57,13 +55,14 @@ class TaskAssignmentPetitionService
         try {
             return DB::transaction(function () use ($validated, $files, &$storedFiles) {
                 $data = collect($validated)->except(['attachments'])->all();
+                $data['department_id'] = $this->resolveUserDepartmentId();
 
                 if (isset($data['processing_status']) && $data['processing_status'] === PetitionStatusEnum::DaHoanThanh->value && empty($data['completed_at'])) {
                     $data['completed_at'] = now();
                 }
 
                 $petition = TaskAssignmentPetition::create($data);
-                $this->uploadAttachments($petition, $files, $storedFiles);
+                $this->uploadAttachments($petition, $files, $storedFiles, 'petition');
 
                 return $petition->load(['department', 'attachments.media', 'creator', 'editor']);
             });
@@ -88,10 +87,10 @@ class TaskAssignmentPetitionService
                 $petition->update($data);
 
                 if (! empty($removeAttachmentIds)) {
-                    $this->removeAttachments($petition, $removeAttachmentIds);
+                    $this->removeAttachments($petition, $removeAttachmentIds, 'petition');
                 }
 
-                $this->uploadAttachments($petition, $files, $storedFiles);
+                $this->uploadAttachments($petition, $files, $storedFiles, 'petition');
 
                 return $petition->load(['department', 'attachments.media', 'creator', 'editor']);
             });
@@ -109,6 +108,29 @@ class TaskAssignmentPetitionService
     public function bulkDestroy(array $ids): void
     {
         TaskAssignmentPetition::where('organization_id', getPermissionsTeamId())->whereIn('id', $ids)->delete();
+    }
+
+    public function updateProgress(TaskAssignmentPetition $petition, array $validated, array $files = [], array $removeAttachmentIds = []): TaskAssignmentPetition
+    {
+        $storedFiles = [];
+
+        try {
+            return DB::transaction(function () use ($petition, $validated, $files, $removeAttachmentIds, &$storedFiles) {
+                $data = collect($validated)->except(['attachments', 'remove_attachment_ids'])->all();
+                $petition->update($data);
+
+                if (! empty($removeAttachmentIds)) {
+                    $this->removeAttachments($petition, $removeAttachmentIds);
+                }
+
+                $this->uploadAttachments($petition, $files, $storedFiles, 'progress');
+
+                return $petition->load(['department', 'attachments.media', 'creator', 'editor']);
+            });
+        } catch (\Throwable $exception) {
+            $this->mediaService->cleanupStoredFiles($storedFiles);
+            throw $exception;
+        }
     }
 
     public function export(array $filters): BinaryFileResponse
@@ -133,12 +155,19 @@ class TaskAssignmentPetitionService
         return $petition->load(['department', 'attachments.media', 'creator', 'editor']);
     }
 
+    private function resolveUserDepartmentId(): int
+    {
+        return (int) (auth()->user()->taskAssignmentUser?->task_assignment_department_id ?: 0);
+    }
+
     private function applyDepartmentRestriction(array $filters): array
     {
-        $user = auth()->user();
-        if (! $user->hasAnyRole(self::ADMIN_ROLES)) {
-            $taskAssignmentUser = $user->taskAssignmentUser;
-            $filters['department_id'] = $taskAssignmentUser?->task_assignment_department_id;
+        $deptId = $this->resolveUserDepartmentId();
+        $isOverview = \App\Modules\TaskAssignment\Models\TaskAssignmentDepartment::where('id', $deptId)
+            ->value('is_petition_overview');
+
+        if (! $isOverview) {
+            $filters['department_id'] = $deptId;
         }
 
         return $filters;
@@ -167,7 +196,7 @@ class TaskAssignmentPetitionService
             });
     }
 
-    private function uploadAttachments(TaskAssignmentPetition $petition, array $files, array &$storedFiles): void
+    private function uploadAttachments(TaskAssignmentPetition $petition, array $files, array &$storedFiles, string $type = 'petition'): void
     {
         foreach ($files as $file) {
             if (! $file instanceof UploadedFile || ! $file->isValid()) {
@@ -185,16 +214,22 @@ class TaskAssignmentPetitionService
                 'petition_id' => $petition->id,
                 'media_id' => $media->id,
                 'file_name' => $file->getClientOriginalName(),
+                'type' => $type,
                 'sort_order' => 0,
             ]);
         }
     }
 
-    private function removeAttachments(TaskAssignmentPetition $petition, array $attachmentIds): void
+    private function removeAttachments(TaskAssignmentPetition $petition, array $attachmentIds, ?string $type = null): void
     {
-        $attachments = TaskAssignmentPetitionAttachment::where('petition_id', $petition->id)
-            ->whereIn('id', $attachmentIds)
-            ->get();
+        $query = TaskAssignmentPetitionAttachment::where('petition_id', $petition->id)
+            ->whereIn('id', $attachmentIds);
+
+        if ($type !== null) {
+            $query->where('type', $type);
+        }
+
+        $attachments = $query->get();
 
         foreach ($attachments as $attachment) {
             if ($attachment->media) {

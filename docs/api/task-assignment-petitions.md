@@ -249,7 +249,42 @@ Permission: `task-assignment-petitions.changeStatus`
 
 ---
 
-## 7. Xóa đơn thư
+## 7. Cập nhật tiến độ xử lý
+
+```
+PATCH /api/task-assignment-petitions/{petition}/progress
+```
+
+Permission: `task-assignment-petitions.update`
+
+Content-Type: `multipart/form-data`
+
+### Body Params
+
+| Param | Type | Required | Mô tả |
+|---|---|---|---|
+| `completed_at` | datetime | No | Ngày hoàn thành xử lý |
+| `document_number` | string | No | Số ký hiệu văn bản trả lời (max 255) |
+| `document_excerpt` | string | No | Trích yếu văn bản (max 2000) |
+| `response_content` | string | No | Tóm tắt nội dung trả lời |
+| `attachments[]` | file | No | File đính kèm trả lời (max 10, ≤20MB) |
+| `remove_attachment_ids[]` | int[] | No | DS ID attachment cần xóa |
+
+File upload qua endpoint này có `type: "progress"`, phân biệt với `type: "petition"` ở store/update.
+
+### Response
+
+```json
+{
+  "success": true,
+  "message": "Cập nhật tiến độ thành công!",
+  "data": { ... }
+}
+```
+
+---
+
+## 8. Xóa đơn thư
 
 ```
 DELETE /api/task-assignment-petitions/{petition}
@@ -268,7 +303,7 @@ Permission: `task-assignment-petitions.destroy`
 
 ---
 
-## 8. Xóa hàng loạt
+## 9. Xóa hàng loạt
 
 ```
 DELETE /api/task-assignment-petitions/bulk-delete
@@ -293,7 +328,7 @@ Permission: `task-assignment-petitions.bulkDestroy`
 
 ---
 
-## 9. Xuất Excel
+## 10. Xuất Excel
 
 ```
 GET /api/task-assignment-petitions/export

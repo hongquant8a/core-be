@@ -8,6 +8,7 @@ use App\Modules\TaskAssignment\Requests\BulkDestroyPetitionRequest;
 use App\Modules\TaskAssignment\Requests\ChangeStatusPetitionRequest;
 use App\Modules\TaskAssignment\Requests\StorePetitionRequest;
 use App\Modules\TaskAssignment\Requests\UpdatePetitionRequest;
+use App\Modules\TaskAssignment\Requests\UpdateProgressPetitionRequest;
 use App\Modules\TaskAssignment\Resources\PetitionCollection;
 use App\Modules\TaskAssignment\Resources\PetitionResource;
 use App\Modules\TaskAssignment\Services\TaskAssignmentPetitionService;
@@ -139,6 +140,29 @@ class TaskAssignmentPetitionController extends Controller
         $petition = $this->service->changeStatus($petition, $request->input('processing_status'));
 
         return $this->successResource(new PetitionResource($petition), 'Cập nhật trạng thái thành công!');
+    }
+
+    /**
+     * Cập nhật tiến độ xử lý đơn thư
+     *
+     * @urlParam petition int required ID đơn thư. Example: 1
+     * @bodyParam completed_at datetime Ngày hoàn thành xử lý.
+     * @bodyParam document_number string Số ký hiệu văn bản trả lời.
+     * @bodyParam document_excerpt string Trích yếu văn bản.
+     * @bodyParam response_content string Tóm tắt nội dung trả lời.
+     * @bodyParam attachments file[] File đính kèm trả lời.
+     * @bodyParam remove_attachment_ids int[] DS ID attachment cần xóa.
+     */
+    public function updateProgress(UpdateProgressPetitionRequest $request, TaskAssignmentPetition $petition): JsonResponse
+    {
+        $petition = $this->service->updateProgress(
+            $petition,
+            $request->validated(),
+            $request->file('attachments', []),
+            $request->input('remove_attachment_ids', [])
+        );
+
+        return $this->successResource(new PetitionResource($petition), 'Cập nhật tiến độ thành công!');
     }
 
     /**

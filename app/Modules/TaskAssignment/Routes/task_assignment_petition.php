@@ -26,4 +26,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/{petition}/status', [TaskAssignmentPetitionController::class, 'changeStatus'])
         ->whereNumber('petition')
         ->middleware('permission:task-assignment-petitions.changeStatus,web');
+    Route::patch('/{petition}/progress', [TaskAssignmentPetitionController::class, 'updateProgress'])
+        ->whereNumber('petition')
+        ->middleware('permission:task-assignment-petitions.update,web');
 });

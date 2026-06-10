@@ -40,6 +40,7 @@ class PetitionResource extends JsonResource
                         'id' => $attachment->id,
                         'media_id' => $attachment->media_id,
                         'file_name' => $attachment->file_name,
+                        'type' => $attachment->type,
                         'sort_order' => $attachment->sort_order,
                         'url' => $attachment->media ? '/storage/' . $attachment->media->id . '/' . $attachment->media->file_name : null,
                         'original_name' => $attachment->media?->file_name,

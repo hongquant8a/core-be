@@ -14,6 +14,7 @@ class UpdateDepartmentRequest extends BaseRequest
             'description' => 'nullable|string|max:65535',
             'status' => ['sometimes', StatusEnum::rule()],
             'sort_order' => 'nullable|integer|min:0',
+            'is_petition_overview' => 'boolean',
         ];
     }
 
@@ -36,6 +37,10 @@ class UpdateDepartmentRequest extends BaseRequest
                 'description' => 'Thứ tự sắp xếp.',
                 'example' => 1,
             ],
+            'is_petition_overview' => [
+                'description' => 'Phòng ban tổng hợp đơn thư, được xem toàn bộ đơn thư.',
+                'example' => false,
+            ],
         ];
     }
 
@@ -46,6 +51,7 @@ class UpdateDepartmentRequest extends BaseRequest
             'description' => 'Mô tả',
             'status' => 'Trạng thái',
             'sort_order' => 'Thứ tự sắp xếp',
+            'is_petition_overview' => 'Tổng hợp đơn thư',
         ];
     }
 }

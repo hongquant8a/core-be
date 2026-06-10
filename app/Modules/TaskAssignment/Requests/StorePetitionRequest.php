@@ -9,7 +9,6 @@ class StorePetitionRequest extends BaseRequest
     public function rules(): array
     {
         return [
-            'department_id' => 'required|integer|exists:task_assignment_departments,id',
             'submission_date' => 'required|date',
             'deadline_date' => 'nullable|date|after_or_equal:submission_date',
             'sender_name' => 'required|string|max:255',
@@ -47,7 +46,6 @@ class StorePetitionRequest extends BaseRequest
     public function attributes(): array
     {
         return [
-            'department_id' => 'Phòng ban',
             'submission_date' => 'Ngày gửi đơn',
             'deadline_date' => 'Hạn xử lý',
             'sender_name' => 'Người gửi đơn',
@@ -68,7 +66,6 @@ class StorePetitionRequest extends BaseRequest
     public function bodyParameters(): array
     {
         return [
-            'department_id' => ['description' => 'ID phòng ban tiếp nhận.', 'example' => 1],
             'submission_date' => ['description' => 'Ngày gửi đơn.', 'example' => '2026-06-10'],
             'deadline_date' => ['description' => 'Hạn xử lý.', 'example' => '2026-06-15'],
             'sender_name' => ['description' => 'Tên người gửi đơn.', 'example' => 'Nguyễn Văn A'],

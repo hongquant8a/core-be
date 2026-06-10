@@ -4,10 +4,13 @@ namespace App\Modules\TaskAssignment\Models;
 
 use App\Modules\Core\Models\TenantModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class TaskAssignmentPetition extends TenantModel
+class TaskAssignmentPetition extends TenantModel implements HasMedia
 {
     use HasFactory;
+    use InteractsWithMedia;
 
     protected $table = 'task_assignment_petitions';
 
