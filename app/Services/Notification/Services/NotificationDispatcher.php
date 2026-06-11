@@ -45,7 +45,7 @@ class NotificationDispatcher
         foreach ($channels as $channelKey) {
             $delivery = NotificationDelivery::create([
                 'notification_id' => $notification->id,
-                'channel' => $channelKey,
+                'channel' => strtolower($channelKey),
                 'status' => 'pending',
             ]);
             SendDeliveryJob::dispatch($delivery->id, $extraArgs)->onQueue('notifications');

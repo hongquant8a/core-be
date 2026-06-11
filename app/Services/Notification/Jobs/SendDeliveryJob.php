@@ -39,9 +39,10 @@ class SendDeliveryJob implements ShouldQueue
             return;
         }
 
+        $channel = strtolower($delivery->channel);
         $builder = $registry->for($notification->event_key);
 
-        $payload = $builder->build($delivery->channel, $recipient, $notifiable, ...$this->extraArgs);
+        $payload = $builder->build($channel, $recipient, $notifiable, ...$this->extraArgs);
 
         if ($payload === null) {
             $delivery->update([
@@ -53,7 +54,7 @@ class SendDeliveryJob implements ShouldQueue
         }
 
         // Zalo ZNS: resolve template cho (module, event, channel)
-        if ($delivery->channel === 'zalo_zns') {
+        if ($channel === 'zalo_zns') {
             $payload = $this->applyZnsTemplate($notification->event_key, $notification->organization_id, $payload, $delivery);
             if ($payload === null) {
                 return;
