@@ -298,7 +298,13 @@ class LogActivity
 
     protected function sanitizeRequestData(Request $request): ?array
     {
-        $data = array_merge($request->query(), $request->except(self::$excludedRequestKeys));
+        try {
+            $data = array_merge($request->query(), $request->except(self::$excludedRequestKeys));
+        } catch (\Symfony\Component\HttpFoundation\File\Exception\FileNotFoundException $e) {
+            // Temp file đã bị PHP dọn trước khi middleware chạy (stale upload).
+            // Chỉ lấy query data, bỏ qua phần body/files.
+            $data = $request->query();
+        }
 
         if (empty($data)) {
             return null;
