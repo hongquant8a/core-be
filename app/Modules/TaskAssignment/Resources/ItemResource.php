@@ -25,6 +25,7 @@ class ItemResource extends JsonResource
             'priority' => $this->priority,
             'completed_at' => $this->completed_at?->format('H:i:s d/m/Y'),
             'is_overdue' => $this->resource->isOverdue(),
+            'timing_status' => $this->resolveTimingStatus(),
             'departments' => $this->whenLoaded('users', function () {
                 $deptIds = $this->users->pluck('pivot.department_id')->unique();
                 $depts = \App\Modules\TaskAssignment\Models\TaskAssignmentDepartment::whereIn('id', $deptIds)->get()->keyBy('id');
@@ -88,5 +89,37 @@ class ItemResource extends JsonResource
                 );
             }),
         ];
+    }
+
+    private function resolveTimingStatus(): string
+    {
+        $done = \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Done->value;
+        $cancelled = \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Cancelled->value;
+        $hasDeadline = \App\Modules\TaskAssignment\Enums\TaskDeadlineTypeEnum::HasDeadline->value;
+
+        if ($this->processing_status === $cancelled) {
+            return 'cancelled';
+        }
+
+        if ($this->processing_status === $done) {
+            if ($this->deadline_type === $hasDeadline && $this->end_at && $this->completed_at) {
+                $completedAt = \Carbon\Carbon::parse($this->completed_at);
+                $endAt = \Carbon\Carbon::parse($this->end_at);
+
+                if ($completedAt->toDateString() < $endAt->toDateString()) {
+                    return 'early';
+                }
+                if ($completedAt->toDateString() > $endAt->toDateString()) {
+                    return 'late';
+                }
+            }
+            return 'on_time';
+        }
+
+        if ($this->deadline_type === $hasDeadline && $this->end_at && \Carbon\Carbon::parse($this->end_at)->lt(now())) {
+            return 'overdue';
+        }
+
+        return 'upcoming';
     }
 }
