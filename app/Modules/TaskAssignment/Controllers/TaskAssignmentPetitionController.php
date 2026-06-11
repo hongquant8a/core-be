@@ -25,6 +25,19 @@ class TaskAssignmentPetitionController extends Controller
     public function __construct(private TaskAssignmentPetitionService $service) {}
 
     /**
+     * Danh sách phòng ban available cho user hiện tại (dropdown)
+     *
+     * Trả về danh sách phòng ban mà user đang đăng nhập có quyền xem đơn thư.
+     * Nếu 1 phòng: trả về mảng 1 phần tử. Nếu 2+ phòng: trả về đầy đủ.
+     *
+     * @response 200 {"success": true, "data": [{"id": 1, "name": "Phòng A"}]}
+     */
+    public function availableDepartments(): JsonResponse
+    {
+        return $this->success($this->service->getAvailableDepartments());
+    }
+
+    /**
      * Thống kê đơn thư
      */
     public function stats(Request $request): JsonResponse

@@ -165,6 +165,11 @@ class User extends Authenticatable implements HasMedia
         return $this->hasOne(TaskAssignmentUser::class, 'user_id');
     }
 
+    public function taskAssignmentUsers()
+    {
+        return $this->hasMany(TaskAssignmentUser::class, 'user_id');
+    }
+
     public function scopeFilter($query, array $filters)
     {
         $query->when($filters['search'] ?? null, function ($query, $search) {

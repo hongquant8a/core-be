@@ -22,6 +22,7 @@ class PetitionsExport extends AbstractExcelExport implements FromCollection
                 ->orWhere('content', 'like', "%{$v}%")))
             ->when($this->filters['processing_status'] ?? null, fn ($q, $v) => $q->where('processing_status', $v))
             ->when($this->filters['department_id'] ?? null, fn ($q, $v) => $q->where('department_id', $v))
+            ->when($this->filters['department_ids'] ?? null, fn ($q, $v) => $q->whereIn('department_id', $v))
             ->when($this->filters['submission_date_from'] ?? null, fn ($q, $v) => $q->whereDate('submission_date', '>=', $v))
             ->when($this->filters['submission_date_to'] ?? null, fn ($q, $v) => $q->whereDate('submission_date', '<=', $v))
             ->orderByDesc('id')

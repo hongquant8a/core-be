@@ -21,9 +21,10 @@ class TaskAssignmentPetitionService
     {
         $filters = $this->applyDepartmentRestriction($filters);
         $base = TaskAssignmentPetition::query();
+        $this->applyFilters($base, $filters);
 
         return [
-            'total' => (clone $base)->count(),
+            'total'      => (clone $base)->count(),
             'new'        => (clone $base)->where('processing_status', PetitionStatusEnum::MoiTiepNhan->value)->count(),
             'processing' => (clone $base)->where('processing_status', PetitionStatusEnum::DangXuLy->value)->count(),
             'completed'  => (clone $base)->where('processing_status', PetitionStatusEnum::DaHoanThanh->value)->count(),
@@ -55,7 +56,6 @@ class TaskAssignmentPetitionService
         try {
             return DB::transaction(function () use ($validated, $files, &$storedFiles) {
                 $data = collect($validated)->except(['attachments'])->all();
-                $data['department_id'] = $this->resolveUserDepartmentId();
 
                 if (isset($data['processing_status']) && $data['processing_status'] === PetitionStatusEnum::DaHoanThanh->value && empty($data['completed_at'])) {
                     $data['completed_at'] = now();
@@ -117,6 +117,17 @@ class TaskAssignmentPetitionService
         try {
             return DB::transaction(function () use ($petition, $validated, $files, $removeAttachmentIds, &$storedFiles) {
                 $data = collect($validated)->except(['attachments', 'remove_attachment_ids'])->all();
+
+                // Tự động set completed_at khi chuyển processing_status
+                if (! empty($data['processing_status'])) {
+                    if ($data['processing_status'] === PetitionStatusEnum::DaHoanThanh->value) {
+                        $data['completed_at'] = $data['completed_at'] ?? now();
+                    } elseif ($data['processing_status'] !== PetitionStatusEnum::DaHoanThanh->value
+                        && $petition->processing_status === PetitionStatusEnum::DaHoanThanh->value) {
+                        $data['completed_at'] = null;
+                    }
+                }
+
                 $petition->update($data);
 
                 if (! empty($removeAttachmentIds)) {
@@ -155,19 +166,55 @@ class TaskAssignmentPetitionService
         return $petition->load(['department', 'attachments.media', 'creator', 'editor']);
     }
 
-    private function resolveUserDepartmentId(): int
+    private function getUserDepartmentIds(): array
     {
-        return (int) (auth()->user()->taskAssignmentUser?->task_assignment_department_id ?: 0);
+        return auth()->user()->taskAssignmentUsers()
+            ->where('status', 'active')
+            ->pluck('task_assignment_department_id')
+            ->toArray();
+    }
+
+    public function getAvailableDepartments()
+    {
+        $deptIds = $this->getUserDepartmentIds();
+
+        return \App\Modules\TaskAssignment\Models\TaskAssignmentDepartment::whereIn('id', $deptIds)
+            ->where('status', 'active')
+            ->select(['id', 'name'])
+            ->orderBy('name')
+            ->get();
     }
 
     private function applyDepartmentRestriction(array $filters): array
     {
-        $deptId = $this->resolveUserDepartmentId();
-        $isOverview = \App\Modules\TaskAssignment\Models\TaskAssignmentDepartment::where('id', $deptId)
-            ->value('is_petition_overview');
+        $userDeptIds = $this->getUserDepartmentIds();
 
-        if (! $isOverview) {
-            $filters['department_id'] = $deptId;
+        if (empty($userDeptIds)) {
+            $filters['department_id'] = 0;
+            return $filters;
+        }
+
+        if (isset($filters['department_id'])) {
+            $requestedDeptId = (int) $filters['department_id'];
+            if (in_array($requestedDeptId, $userDeptIds, true)) {
+                return $filters;
+            }
+            $filters['department_id'] = 0;
+            return $filters;
+        }
+
+        $hasOverview = \App\Modules\TaskAssignment\Models\TaskAssignmentDepartment::whereIn('id', $userDeptIds)
+            ->where('is_petition_overview', true)
+            ->exists();
+
+        if ($hasOverview) {
+            return $filters;
+        }
+
+        if (count($userDeptIds) === 1) {
+            $filters['department_id'] = $userDeptIds[0];
+        } else {
+            $filters['department_ids'] = $userDeptIds;
         }
 
         return $filters;
@@ -184,6 +231,7 @@ class TaskAssignmentPetitionService
         }))
             ->when($filters['processing_status'] ?? null, fn ($q, $v) => $q->where('processing_status', $v))
             ->when($filters['department_id'] ?? null, fn ($q, $v) => $q->where('department_id', $v))
+            ->when($filters['department_ids'] ?? null, fn ($q, $v) => $q->whereIn('department_id', $v))
             ->when($filters['submission_date_from'] ?? null, fn ($q, $v) => $q->whereDate('submission_date', '>=', $v))
             ->when($filters['submission_date_to'] ?? null, fn ($q, $v) => $q->whereDate('submission_date', '<=', $v))
             ->when($filters['deadline_date_from'] ?? null, fn ($q, $v) => $q->whereDate('deadline_date', '>=', $v))

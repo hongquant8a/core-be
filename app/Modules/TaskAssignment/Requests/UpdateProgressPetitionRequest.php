@@ -2,11 +2,14 @@
 
 namespace App\Modules\TaskAssignment\Requests;
 
+use App\Modules\TaskAssignment\Enums\PetitionStatusEnum;
+
 class UpdateProgressPetitionRequest extends BaseRequest
 {
     public function rules(): array
     {
         return [
+            'processing_status' => ['nullable', PetitionStatusEnum::rule()],
             'completed_at' => 'nullable|date',
             'document_number' => 'nullable|string|max:255',
             'document_excerpt' => 'nullable|string|max:2000',
@@ -21,6 +24,7 @@ class UpdateProgressPetitionRequest extends BaseRequest
     public function messages(): array
     {
         return [
+            'in'      => ':attribute không hợp lệ.',
             'date'    => ':attribute phải là ngày hợp lệ.',
             'string'  => ':attribute phải là chuỗi.',
             'array'   => ':attribute phải là mảng.',
@@ -31,6 +35,7 @@ class UpdateProgressPetitionRequest extends BaseRequest
     public function attributes(): array
     {
         return [
+            'processing_status'      => 'Trạng thái xử lý',
             'completed_at'           => 'Ngày hoàn thành',
             'document_number'        => 'Số ký hiệu văn bản',
             'document_excerpt'       => 'Trích yếu văn bản',
@@ -43,6 +48,7 @@ class UpdateProgressPetitionRequest extends BaseRequest
     public function bodyParameters(): array
     {
         return [
+            'processing_status' => ['description' => 'Trạng thái xử lý mới (new/processing/completed/paused/cancelled).', 'example' => 'completed'],
             'completed_at'     => ['description' => 'Ngày hoàn thành xử lý.', 'example' => '2026-06-14 10:00:00'],
             'document_number'  => ['description' => 'Số ký hiệu văn bản trả lời.', 'example' => '01/UBND-VP'],
             'document_excerpt' => ['description' => 'Trích yếu văn bản.', 'example' => 'V/v giải quyết đơn...'],

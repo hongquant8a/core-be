@@ -9,6 +9,7 @@ class UpdatePetitionRequest extends BaseRequest
     public function rules(): array
     {
         return [
+            'department_id' => 'sometimes|integer|exists:task_assignment_departments,id',
             'submission_date' => 'sometimes|date',
             'deadline_date' => 'nullable|date|after_or_equal:submission_date',
             'sender_name' => 'sometimes|string|max:255',
@@ -48,6 +49,7 @@ class UpdatePetitionRequest extends BaseRequest
     public function attributes(): array
     {
         return [
+            'department_id' => 'Phòng ban',
             'submission_date' => 'Ngày gửi đơn',
             'deadline_date' => 'Hạn xử lý',
             'sender_name' => 'Người gửi đơn',

@@ -4,6 +4,7 @@ use App\Modules\TaskAssignment\Controllers\TaskAssignmentPetitionController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/available-departments', [TaskAssignmentPetitionController::class, 'availableDepartments']);
     Route::get('/stats', [TaskAssignmentPetitionController::class, 'stats'])
         ->middleware('permission:task-assignment-petitions.index,web');
     Route::get('/', [TaskAssignmentPetitionController::class, 'index'])
