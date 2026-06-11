@@ -1,5 +1,5 @@
 @php
-    $accent = $accentColor ?? '#C8102E';
+    $accent = $accentColor ?? '#2596be';
     $label = $accentLabel ?? null;
     $greetName = trim((string) ($recipient->name ?? ''));
     $greeting = $greeting ?? ('Kính gửi Ông/Bà '.($greetName !== '' ? $greetName : 'Quý vị'));
@@ -20,23 +20,23 @@
         a { color:#0B4F9C; }
         .wrapper { background:#F5F1EA; padding:32px 16px; }
         .container { max-width:640px; margin:0 auto; }
-        .ribbon-top, .ribbon-bot { height:5px; background:#C8102E; font-size:0; line-height:0; }
-        .ribbon-gold { height:2px; background:#F4C20D; font-size:0; line-height:0; }
+        .ribbon-top, .ribbon-bot { height:5px; background:#2596be; font-size:0; line-height:0; }
+        .ribbon-gold { height:2px; background:#2596be; font-size:0; line-height:0; }
         .card { background:#FFFFFF; border:1px solid #E7DFD1; border-top:0; border-bottom:0; box-shadow:0 1px 4px rgba(0,0,0,0.04); }
         .header { padding:24px 32px 20px; }
         .header-logo { width:64px; height:64px; vertical-align:top; }
-        .header-logo-fallback { width:64px; height:64px; background:#C8102E; color:#FFFFFF; text-align:center; vertical-align:middle; font-size:24px; font-weight:700; letter-spacing:2px; font-family:Georgia,serif; }
+        .header-logo-fallback { width:64px; height:64px; background:#2596be; color:#FFFFFF; text-align:center; vertical-align:middle; font-size:24px; font-weight:700; letter-spacing:2px; font-family:Georgia,serif; }
         .header-meta { padding-left:20px; vertical-align:middle; }
         .header-appname { font-size:13px; font-weight:700; letter-spacing:2.5px; text-transform:uppercase; color:#6B7280; margin:0 0 6px; }
-        .header-divider { width:40px; height:2px; background:#F4C20D; margin:6px 0 10px; font-size:0; line-height:0; }
-        .header-title { font-size:20px; font-weight:700; color:#C8102E; margin:0; line-height:1.3; }
+        .header-divider { width:40px; height:2px; background:#2596be; margin:6px 0 10px; font-size:0; line-height:0; }
+        .header-title { font-size:20px; font-weight:700; color:#2596be; margin:0; line-height:1.3; }
         .header-label { display:inline-block; margin-top:10px; padding:3px 10px; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#FFFFFF; font-family:Arial,sans-serif; font-weight:700; }
-        .body { padding:28px 40px 8px; border-left:4px solid #C8102E; }
+        .body { padding:28px 40px 8px; border-left:4px solid #2596be; }
         .body p { margin:0 0 14px; font-size:15px; }
         .greeting { font-size:15px; margin:0 0 16px; }
-        .info-title { font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#C8102E; font-weight:700; margin:22px 0 0; padding-bottom:6px; border-bottom:1px solid #C8102E; font-family:Arial,sans-serif; }
-        .info-title-dot { display:inline-block; width:6px; height:6px; background:#C8102E; margin-right:8px; vertical-align:middle; }
-        .info-table { width:100%; font-size:14px; border-bottom:1px double #C8102E; margin:0 0 18px; }
+        .info-title { font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#2596be; font-weight:700; margin:22px 0 0; padding-bottom:6px; border-bottom:1px solid #2596be; font-family:Arial,sans-serif; }
+        .info-title-dot { display:inline-block; width:6px; height:6px; background:#2596be; margin-right:8px; vertical-align:middle; }
+        .info-table { width:100%; font-size:14px; border-bottom:1px double #2596be; margin:0 0 18px; }
         .info-table td { padding:8px 10px; vertical-align:top; border-bottom:1px dotted #E7DFD1; }
         .info-table tr:last-child td { border-bottom:0; }
         .info-label { color:#6B7280; width:38%; font-family:Arial,sans-serif; font-size:13px; }
