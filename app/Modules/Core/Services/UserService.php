@@ -138,13 +138,21 @@ class UserService
     public function destroy(User $user): void
     {
         $this->guardActiveAssignments([$user->id]);
-        $user->delete();
+
+        DB::transaction(function () use ($user) {
+            $user->taskAssignmentUser()->delete();
+            $user->delete();
+        });
     }
 
     public function bulkDestroy(array $ids): void
     {
         $this->guardActiveAssignments($ids);
-        User::destroy($ids);
+
+        DB::transaction(function () use ($ids) {
+            \App\Modules\TaskAssignment\Models\TaskAssignmentUser::whereIn('user_id', $ids)->delete();
+            User::whereIn('id', $ids)->delete();
+        });
     }
 
     /**
