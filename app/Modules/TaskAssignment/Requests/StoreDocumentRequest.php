@@ -14,10 +14,31 @@ class StoreDocumentRequest extends BaseRequest
             'issue_date' => 'nullable|date',
             'task_assignment_type_id' => 'required|integer|exists:task_assignment_types,id',
             'status' => ['required', TaskAssignmentDocumentStatusEnum::rule()],
-            'instant_channels' => 'nullable|array',
-            'instant_channels.*' => 'string',
+            'reminders' => 'nullable|array',
+            'reminders.*.reminder_type' => 'required|string|in:instant,scheduled',
+            'reminders.*.channels' => 'required|array',
+            'reminders.*.channels.*' => 'string',
+            'reminders.*.moment' => 'nullable|string|in:before,on,after',
+            'reminders.*.offset_minutes' => 'nullable|integer|min:0',
             'attachments' => 'nullable|array|max:10',
             'attachments.*' => $this->getAttachmentRule(),
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'Vui lòng nhập tên văn bản.',
+            'name.max' => 'Tên văn bản không được vượt quá 255 ký tự.',
+            'issue_date.date' => 'Ngày ban hành không đúng định dạng.',
+            'task_assignment_type_id.required' => 'Vui lòng chọn loại văn bản.',
+            'task_assignment_type_id.exists' => 'Loại văn bản không tồn tại.',
+            'status.required' => 'Vui lòng chọn trạng thái.',
+            'status.in' => 'Trạng thái không hợp lệ.',
+            'reminders.*.reminder_type.required' => 'Vui lòng chọn loại reminder.',
+            'reminders.*.reminder_type.in' => 'Loại reminder phải là instant hoặc scheduled.',
+            'reminders.*.channels.required' => 'Vui lòng chọn kênh thông báo.',
+            'attachments.max' => 'Tối đa 10 tệp đính kèm.',
         ];
     }
 
@@ -44,6 +65,10 @@ class StoreDocumentRequest extends BaseRequest
                 'description' => 'Trạng thái văn bản (draft, issued).',
                 'example' => 'draft',
             ],
+            'reminders' => [
+                'description' => 'Danh sách reminders. Mỗi reminder có reminder_type (instant|scheduled), channels. Với scheduled thêm moment + offset_minutes.',
+                'example' => '[{"reminder_type":"instant","channels":["mail"]}]',
+            ],
             'attachments' => [
                 'description' => 'Danh sách tệp đính kèm. Có thể truyền file mới (multipart/form-data) hoặc truyền chuỗi JSON/object của file cũ để giữ lại. Tối đa 10 tệp, mỗi tệp 20MB.',
                 'example' => [],
@@ -61,6 +86,11 @@ class StoreDocumentRequest extends BaseRequest
             'status' => 'Trạng thái',
             'attachments' => 'Tệp đính kèm',
             'attachments.*' => 'Tệp đính kèm',
+            'reminders' => 'Reminders',
+            'reminders.*.reminder_type' => 'Loại reminder',
+            'reminders.*.channels' => 'Kênh thông báo',
+            'reminders.*.moment' => 'Thời điểm',
+            'reminders.*.offset_minutes' => 'Số phút',
         ];
     }
 }

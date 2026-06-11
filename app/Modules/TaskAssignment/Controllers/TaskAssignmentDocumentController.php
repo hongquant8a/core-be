@@ -107,7 +107,7 @@ class TaskAssignmentDocumentController extends Controller
      * @bodyParam title string required Tiêu đề văn bản. Example: Quyết định giao việc tháng 4
      * @bodyParam type_id integer required ID loại văn bản. Example: 1
      * @bodyParam status string required Trạng thái. Example: draft
-     * @bodyParam instant_channels string[] Kênh gửi thông báo tức thì khi ban hành: mail, sms, zalo, zalo_zns, fcm. Không gửi = dùng cấu hình mặc định của tổ chức. Example: ["mail","zalo"]
+     * @bodyParam reminders array Danh sách reminders. Mỗi reminder có reminder_type (instant|scheduled), channels (mảng string: mail, sms, zalo, zalo_zns, fcm). Với scheduled thêm moment (before|on|after) và offset_minutes (phút). Example: [{"reminder_type":"instant","channels":["mail"]}]
      * @bodyParam attachments[] file Tệp đính kèm (tối đa 10 tệp, multipart/form-data).
      *
      * @apiResource App\Modules\TaskAssignment\Resources\DocumentResource status=201
@@ -131,7 +131,7 @@ class TaskAssignmentDocumentController extends Controller
      * @bodyParam title string Tiêu đề văn bản.
      * @bodyParam type_id integer ID loại văn bản.
      * @bodyParam status string Trạng thái.
-     * @bodyParam instant_channels string[] Kênh gửi thông báo tức thì khi ban hành: mail, sms, zalo, zalo_zns, fcm. Không gửi = dùng cấu hình mặc định của tổ chức. Example: ["mail","zalo"]
+     * @bodyParam reminders array Danh sách reminders. Mỗi reminder có reminder_type (instant|scheduled), channels (mảng string). Với scheduled thêm moment (before|on|after) và offset_minutes (phút). Example: [{"reminder_type":"instant","channels":["mail"]}]
      * @bodyParam attachments[] file Tệp đính kèm mới (append, multipart/form-data).
      * @bodyParam remove_attachment_ids array Mảng ID đính kèm cần xóa.
      *

@@ -25,6 +25,7 @@ class DocumentResource extends JsonResource
                 $this->items_count !== null && $this->completed_items_count !== null,
                 fn() => $this->items_count > 0 ? (int) round(($this->completed_items_count / $this->items_count) * 100) : 0
             ),
+            'reminders' => TaskAssignmentReminderResource::collection($this->whenLoaded('reminders')),
             'attachments' => $this->whenLoaded('attachments', function () {
                 return $this->attachments->map(function ($attachment) {
                     return [

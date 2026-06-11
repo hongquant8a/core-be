@@ -10,6 +10,8 @@ class TaskAssignmentReminder extends Model
     protected $table = 'task_assignment_reminders';
 
     protected $fillable = [
+        'task_assignment_document_id',
+        'reminder_type',
         'task_assignment_item_id',
         'notification_schedule_id',
         'moment',
@@ -27,6 +29,11 @@ class TaskAssignmentReminder extends Model
         'remind_at'      => 'datetime',
         'fired_at'       => 'datetime',
     ];
+
+    public function document()
+    {
+        return $this->belongsTo(TaskAssignmentDocument::class, 'task_assignment_document_id');
+    }
 
     public function item()
     {

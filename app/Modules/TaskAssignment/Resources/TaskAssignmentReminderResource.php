@@ -16,6 +16,7 @@ class TaskAssignmentReminderResource extends JsonResource
 
         return [
             'id'              => $this->id,
+            'task_assignment_document_id' => $this->task_assignment_document_id,
             'task_assignment_item_id' => $this->task_assignment_item_id,
             'moment'          => $this->moment,
             'offset_minutes'  => $this->offset_minutes,
@@ -24,7 +25,7 @@ class TaskAssignmentReminderResource extends JsonResource
             'remind_at'       => $this->remind_at?->format('H:i:s d/m/Y'),
             'fired_at'        => $this->fired_at?->format('H:i:s d/m/Y'),
             'source'          => $sourceVal,
-            'reminder_type'   => strtoupper($sourceVal ?? 'CUSTOM'),
+            'reminder_type'   => $this->reminder_type, // instant | scheduled
             // Deprecated — giữ backward compat với FE cũ
             'minutes_before'  => $this->offset_minutes,
             'trigger'         => $this->moment,

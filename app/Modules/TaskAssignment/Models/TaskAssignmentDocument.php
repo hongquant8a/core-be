@@ -28,7 +28,6 @@ class TaskAssignmentDocument extends TenantModel implements HasMedia
         'status',
         'issued_at',
         'organization_id',
-        'instant_channels',
         'created_by',
         'updated_by',
     ];
@@ -36,7 +35,6 @@ class TaskAssignmentDocument extends TenantModel implements HasMedia
     protected $casts = [
         'issue_date' => 'date',
         'issued_at'  => 'datetime',
-        'instant_channels' => 'array',
     ];
 
     protected static function booted()
@@ -53,6 +51,11 @@ class TaskAssignmentDocument extends TenantModel implements HasMedia
     public function items()
     {
         return $this->hasMany(TaskAssignmentItem::class, 'task_assignment_document_id');
+    }
+
+    public function reminders()
+    {
+        return $this->hasMany(TaskAssignmentReminder::class, 'task_assignment_document_id');
     }
 
     public function attachments()

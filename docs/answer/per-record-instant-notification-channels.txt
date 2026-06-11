@@ -116,25 +116,33 @@ Cho schedule_updated, schedule_cancelled: luôn dùng org config.
 Endpoint: POST /api/task-assignment-documents
           PUT  /api/task-assignment-documents/{document}
 
-Field mới trên document: `instant_channels`
+Thêm 1 record "instant" vào mảng `reminders` (giống Meeting):
 
 {
   "name": "Văn bản giao việc tháng 6",
   "task_assignment_type_id": 1,
   "status": "draft",
-  "instant_channels": ["mail", "sms", "zalo"],
+  "reminders": [
+    {
+      "reminder_type": "instant",
+      "channels": ["mail", "sms", "zalo"]
+    }
+  ],
   "attachments": []
 }
 
-Field mới: instant_channels
-  - Mảng string, nullable
-  - Các giá trị hợp lệ: mail, sms, zalo, zalo_zns, fcm
-  - Nếu không gửi hoặc null → dùng org-level config
-  - Áp dụng cho 2 sự kiện: task_assigned, task_confirmed
-  - KHÔNG áp dụng cho: document_issued, task_completed (luôn dùng org config)
+Field mới: reminders
+  - Mảng, nullable
+  - reminders.*.reminder_type: "instant" | "scheduled"
+  - reminders.*.channels: mảng channel (mail, sms, zalo, zalo_zns, fcm)
+  - Với instant: moment/offset_minutes bỏ qua (BE set null)
+  - Với scheduled: giống Meeting/Scheduling, có moment + offset_minutes
 
-Priority resolve channels:
-  1. document.instant_channels (nếu không rỗng)
+Áp dụng per-record cho 2 sự kiện: task_assigned, task_confirmed
+KHÔNG áp dụng cho: document_issued, task_completed (luôn dùng org config)
+
+Priority resolve channels cho task_assigned, task_confirmed:
+  1. task_assignment_reminders row có reminder_type=instant + status=active (gắn với document)
   2. NotificationEventConfig của org
 
 ===========================================================================
