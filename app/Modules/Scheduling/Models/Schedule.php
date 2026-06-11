@@ -202,7 +202,10 @@ class Schedule extends TenantModel
                     $q->where('status', \App\Modules\Scheduling\Enums\ScheduleStatus::PUBLISHED->value);
                 }
 
-                if (!auth()->user()?->can('scheduling.approve')) {
+                $hasApprovePerm = auth()->user()?->can('scheduling.approve')
+                    || auth()->user()?->can('schedules-executive.approve')
+                    || auth()->user()?->can('schedules-office.approve');
+                if (! $hasApprovePerm) {
                     $q->where(function ($sub) use ($userId) {
                         $sub->where('approval_status', 'approved')
                             ->orWhere('created_by', $userId);

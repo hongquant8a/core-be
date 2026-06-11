@@ -60,6 +60,7 @@ class ScheduleResource extends JsonResource
             'approval_status'      => $this->approval_status,
             'approved_by'          => $this->approved_by,
             'approved_at'          => $this->approved_at?->toIso8601String(),
+            'rejection_note'       => $this->rejection_note,
             'approver'             => new UserResource($this->whenLoaded('approver')),
 
             'sort_order'           => $this->sort_order,
