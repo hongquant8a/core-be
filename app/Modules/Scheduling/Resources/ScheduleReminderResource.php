@@ -23,7 +23,7 @@ class ScheduleReminderResource extends JsonResource
             'status'         => $this->status,
             'fired_at'       => $this->fired_at?->format('H:i:s d/m/Y'),
             'source'         => $sourceVal,
-            'reminder_type'  => strtoupper($sourceVal ?? 'CUSTOM'),
+            'reminder_type'  => $this->source === 'CUSTOM' && $this->moment === null ? 'instant' : 'scheduled',
             // Deprecated
             'minutes_before' => $this->offset_minutes,
             'trigger'        => $this->moment,
