@@ -19,6 +19,8 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
  */
 class MonthlyReportDepartmentSheet implements FromArray, WithTitle, WithStyles, ShouldAutoSize
 {
+    private ?string $customTitle = null;
+
     public function __construct(
         private string $month,
         private TaskAssignmentDepartment $department,
@@ -26,7 +28,20 @@ class MonthlyReportDepartmentSheet implements FromArray, WithTitle, WithStyles, 
 
     public function title(): string
     {
-        return mb_substr($this->department->code, 0, 31);
+        if ($this->customTitle !== null) {
+            return $this->customTitle;
+        }
+
+        // Sheet name max 31 chars, không được chứa: \ / * ? : [ ]
+        $name = $this->department->name ?: 'Phòng ban';
+        $name = preg_replace('/[\\\\\/*?:\[\]]/', '-', $name);
+
+        return mb_substr($name, 0, 31);
+    }
+
+    public function setTitle(string $title): void
+    {
+        $this->customTitle = $title;
     }
 
     public function array(): array
