@@ -112,7 +112,7 @@ class AppServiceProvider extends ServiceProvider
             }
 
             $appUrl = rtrim((string) config('app.url', ''), '/');
-            $logoUrl = $logoPath ? $appUrl.$logoPath : null;
+            $logoUrl = $logoPath ? $appUrl . '/api' . $logoPath : null;
 
             $view->with([
                 'logoUrl' => $logoUrl,
