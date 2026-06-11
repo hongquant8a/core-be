@@ -34,7 +34,7 @@ class SendMeetingPublishedNotifications implements ShouldQueue
             return;
         }
 
-        $channels = $this->resolveChannels($organizationId);
+        $channels = $this->resolveChannels($meeting, $organizationId);
         if (empty($channels)) {
             return;
         }
@@ -149,8 +149,17 @@ class SendMeetingPublishedNotifications implements ShouldQueue
         }
     }
 
-    private function resolveChannels(int $organizationId): array
+    private function resolveChannels(Meeting $meeting, int $organizationId): array
     {
+        // Per-record: kiểm tra meeting.reminders có reminder_type=instant không.
+        $instantChannels = $meeting->reminders()
+            ->where('reminder_type', 'instant')
+            ->where('status', 'active')
+            ->value('channels');
+        if (! empty($instantChannels)) {
+            return $instantChannels;
+        }
+
         $config = NotificationEventConfig::with('schedules')
             ->where('module_key', NotificationModuleEnum::Meeting->value)
             ->where('organization_id', $organizationId)

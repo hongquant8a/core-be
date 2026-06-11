@@ -14,6 +14,8 @@ class StoreDocumentRequest extends BaseRequest
             'issue_date' => 'nullable|date',
             'task_assignment_type_id' => 'required|integer|exists:task_assignment_types,id',
             'status' => ['required', TaskAssignmentDocumentStatusEnum::rule()],
+            'instant_channels' => 'nullable|array',
+            'instant_channels.*' => 'string',
             'attachments' => 'nullable|array|max:10',
             'attachments.*' => $this->getAttachmentRule(),
         ];

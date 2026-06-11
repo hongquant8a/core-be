@@ -28,6 +28,7 @@ class TaskAssignmentDocument extends TenantModel implements HasMedia
         'status',
         'issued_at',
         'organization_id',
+        'instant_channels',
         'created_by',
         'updated_by',
     ];
@@ -35,6 +36,7 @@ class TaskAssignmentDocument extends TenantModel implements HasMedia
     protected $casts = [
         'issue_date' => 'date',
         'issued_at'  => 'datetime',
+        'instant_channels' => 'array',
     ];
 
     protected static function booted()

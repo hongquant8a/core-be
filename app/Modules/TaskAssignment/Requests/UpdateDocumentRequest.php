@@ -14,6 +14,8 @@ class UpdateDocumentRequest extends BaseRequest
             'issue_date' => 'sometimes|nullable|date',
             'task_assignment_type_id' => 'nullable|integer|exists:task_assignment_types,id',
             'status' => ['sometimes', TaskAssignmentDocumentStatusEnum::rule()],
+            'instant_channels' => 'nullable|array',
+            'instant_channels.*' => 'string',
             'attachments' => 'nullable|array|max:10',
             'attachments.*' => $this->getAttachmentRule(),
             'remove_attachment_ids' => 'nullable|array',

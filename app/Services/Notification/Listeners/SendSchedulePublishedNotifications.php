@@ -29,7 +29,7 @@ class SendSchedulePublishedNotifications implements ShouldQueue
         // Luôn schedule reminders — remind_at phải được set bất kể có instant channels hay không.
         $this->scheduler->scheduleFor($schedule);
 
-        $channels = $this->resolveChannels($organizationId);
+        $channels = $this->resolveChannels($organizationId, $schedule);
         if (empty($channels)) {
             return;
         }
@@ -49,8 +49,17 @@ class SendSchedulePublishedNotifications implements ShouldQueue
         }
     }
 
-    private function resolveChannels(int $organizationId): array
+    private function resolveChannels(int $organizationId, \App\Modules\Scheduling\Models\Schedule $schedule): array
     {
+        // Per-record: kiểm tra schedule.reminders có source=CUSTOM + moment=null (instant).
+        $instantChannels = $schedule->reminders()
+            ->where('source', 'CUSTOM')
+            ->whereNull('moment')
+            ->where('status', 'active')
+            ->value('channels');
+        if (! empty($instantChannels)) {
+            return $instantChannels;
+        }
         $config = NotificationEventConfig::with('schedules')
             ->where('module_key', NotificationModuleEnum::Scheduling->value)
             ->where('organization_id', $organizationId)

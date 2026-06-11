@@ -1,0 +1,160 @@
+# PER-RECORD INSTANT NOTIFICATION CHANNELS
+# Ngày: 2026-06-11
+# Áp dụng: Meeting, Scheduling, TaskAssignment
+
+===========================================================================
+1. TỔNG QUAN
+===========================================================================
+
+Trước đây, kênh gửi thông báo cho sự kiện tức thì (publish, update, cancel)
+chỉ cấu hình được ở cấp tổ chức (org-level), qua NotificationEventConfig.
+
+Giờ đây, mỗi meeting / schedule / document có thể cấu hình kênh riêng
+(per-record). Nếu per-record có cấu hình → dùng per-record.
+Nếu không → fallback về org-level config.
+
+QUAN TRỌNG: Per-record instant channels chỉ áp dụng cho MỘT SỐ SỰ KIỆN CỤ THỂ
+(cố định, FE không cần phân biệt — cứ gửi xuống như docs này, BE tự resolve
+theo từng sự kiện):
+
+  Module          | Các sự kiện dùng per-record instant
+  --------------- | -------------------------------------
+  Meeting         | meeting_published
+  Scheduling      | schedule_published
+  TaskAssignment  | task_assigned, task_confirmed
+
+Các sự kiện KHÔNG dùng per-record (luôn fallback org config):
+  - Meeting: meeting_updated, meeting_cancelled
+  - Scheduling: schedule_updated, schedule_cancelled
+  - TaskAssignment: document_issued, task_completed
+
+===========================================================================
+2. MEETING
+===========================================================================
+
+Endpoint: POST /api/meetings
+          PUT  /api/meetings/{meeting}
+
+Thêm 1 record "instant" vào mảng `reminders`:
+
+{
+  "reminders": [
+    // --- Per-record instant: gửi ngay khi publish ---
+    {
+      "reminder_type": "instant",
+      "channels": ["mail", "zalo"]
+    },
+    // --- Scheduled reminders (giống cũ) ---
+    {
+      "reminder_type": "scheduled",
+      "moment": "before",
+      "offset_minutes": 30,
+      "channels": ["mail"]
+    }
+  ]
+}
+
+Field mới: reminders.*.reminder_type
+  - "instant"   → gửi ngay khi meeting được publish (chỉ publish)
+  - "scheduled" → nhắc theo lịch (mặc định, giữ nguyên behavior cũ)
+  - Nếu không gửi reminder_type → mặc định "scheduled"
+
+Với reminder_type=instant:
+  - moment, offset_minutes được bỏ qua (BE set về null)
+  - status được set = "active" (không phải "pending" như scheduled)
+
+Priority resolve channels cho meeting_published:
+  1. meeting_reminders row có reminder_type=instant + status=active
+  2. NotificationEventConfig của org (meeting_published)
+
+Cho meeting_updated, meeting_cancelled: luôn dùng org config.
+
+===========================================================================
+3. SCHEDULING
+===========================================================================
+
+Endpoint: POST /api/schedules
+          PUT  /api/schedules/{schedule}
+
+Thêm 1 record "instant" vào mảng `reminders`:
+
+{
+  "reminders": [
+    // --- Per-record instant ---
+    {
+      "type": "instant",
+      "channels": ["mail", "fcm"]
+    },
+    // --- Scheduled (giống cũ) ---
+    {
+      "type": "scheduled",
+      "moment": "before",
+      "offset_minutes": 60,
+      "channels": ["mail"]
+    }
+  ]
+}
+
+Field mới: reminders.*.type
+  - "instant"   → gửi ngay khi schedule được publish (chỉ publish)
+  - "scheduled" → nhắc theo lịch (mặc định)
+  - Nếu không gửi type → mặc định "scheduled"
+
+Với type=instant:
+  - moment=null, offset_minutes=null, status="active"
+
+Priority resolve channels cho schedule_published:
+  1. schedule_reminders row có source=CUSTOM + moment IS NULL + status=active
+  2. NotificationEventConfig của org (schedule_published)
+
+Cho schedule_updated, schedule_cancelled: luôn dùng org config.
+
+===========================================================================
+4. TASKASSIGNMENT
+===========================================================================
+
+Endpoint: POST /api/task-assignment-documents
+          PUT  /api/task-assignment-documents/{document}
+
+Field mới trên document: `instant_channels`
+
+{
+  "name": "Văn bản giao việc tháng 6",
+  "task_assignment_type_id": 1,
+  "status": "draft",
+  "instant_channels": ["mail", "sms", "zalo"],
+  "attachments": []
+}
+
+Field mới: instant_channels
+  - Mảng string, nullable
+  - Các giá trị hợp lệ: mail, sms, zalo, zalo_zns, fcm
+  - Nếu không gửi hoặc null → dùng org-level config
+  - Áp dụng cho 2 sự kiện: task_assigned, task_confirmed
+  - KHÔNG áp dụng cho: document_issued, task_completed (luôn dùng org config)
+
+Priority resolve channels:
+  1. document.instant_channels (nếu không rỗng)
+  2. NotificationEventConfig của org
+
+===========================================================================
+5. CÁC KÊNH HỖ TRỢ
+===========================================================================
+
+| Key       | Mô tả                      |
+|-----------|----------------------------|
+| mail      | Email (SMTP)               |
+| sms       | SMS                        |
+| zalo      | Zalo OA message            |
+| zalo_zns  | Zalo ZNS template          |
+| fcm       | Firebase Cloud Messaging   |
+
+===========================================================================
+6. BEHAVIOR
+===========================================================================
+
+- Per-record instant channels ƯU TIÊN CAO HƠN org config.
+- Nếu per-record có channels → listener KHÔNG đọc org config nữa.
+- Nếu per-record không có (hoặc rỗng) → listener fallback org config như cũ.
+- Nếu cả 2 đều không có → listener return sớm, không gửi thông báo.
+- Việc thêm instant channels không ảnh hưởng đến scheduled reminders đang có.

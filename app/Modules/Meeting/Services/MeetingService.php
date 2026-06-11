@@ -533,52 +533,65 @@ class MeetingService
     {
         $keptIds = [];
         foreach ($reminders as $r) {
-            $moment = $r['moment'] ?? 'before';
-            $offset = (int) ($r['offset_minutes'] ?? 0);
+            $reminderType = $r['reminder_type'] ?? 'scheduled';
             $channels = array_values(array_unique(array_map('strtoupper', (array) ($r['channels'] ?? []))));
 
-            $remindAt = $meeting->start_time
-                ? match ($moment) {
-                    'before' => $offset ? $meeting->start_time->copy()->subMinutes($offset) : null,
-                    'on'     => $meeting->start_time->copy(),
-                    'after'  => $offset ? $meeting->start_time->copy()->addMinutes($offset) : null,
-                    default  => null,
-                }
-                : null;
+            if ($reminderType === 'instant') {
+                $attributes = [
+                    'organization_id' => (int) $meeting->organization_id,
+                    'meeting_id'      => $meeting->id,
+                    'reminder_type'   => 'instant',
+                    'moment'          => null,
+                    'offset_minutes'  => null,
+                    'channels'        => $channels,
+                    'source'          => 'CUSTOM',
+                    'status'          => 'active',
+                    'remind_at'       => null,
+                    'scheduled_at'    => null,
+                ];
+            } else {
+                $moment = $r['moment'] ?? 'before';
+                $offset = (int) ($r['offset_minutes'] ?? 0);
 
-            $attributes = [
-                'organization_id'  => (int) $meeting->organization_id,
-                'meeting_id'        => $meeting->id,
-                'reminder_type'     => 'scheduled',
-                'moment'            => $moment,
-                'offset_minutes'    => $offset,
-                'channels'          => $channels,
-                'source'            => 'CUSTOM',
-                'status'            => 'pending',
-                'remind_at'         => $remindAt,
-                'scheduled_at'      => $remindAt,
-            ];
+                $remindAt = $meeting->start_time
+                    ? match ($moment) {
+                        'before' => $offset ? $meeting->start_time->copy()->subMinutes($offset) : null,
+                        'on'     => $meeting->start_time->copy(),
+                        'after'  => $offset ? $meeting->start_time->copy()->addMinutes($offset) : null,
+                        default  => null,
+                    }
+                    : null;
+
+                $attributes = [
+                    'organization_id' => (int) $meeting->organization_id,
+                    'meeting_id'      => $meeting->id,
+                    'reminder_type'   => 'scheduled',
+                    'moment'          => $moment,
+                    'offset_minutes'  => $offset,
+                    'channels'        => $channels,
+                    'source'          => 'CUSTOM',
+                    'status'          => 'pending',
+                    'remind_at'       => $remindAt,
+                    'scheduled_at'    => $remindAt,
+                ];
+            }
 
             if (! empty($r['id'])) {
-                // Update existing hoặc create với id cũ (force insert) — giữ ID không đổi.
                 $existing = MeetingReminder::where('id', $r['id'])
                     ->where('meeting_id', $meeting->id)
                     ->where('source', 'CUSTOM')
                     ->first();
                 if ($existing) {
-                    // Không reset status nếu đã fired/cancelled — chỉ update nếu pending.
                     if ($existing->status !== 'pending') {
                         $attributes['status'] = $existing->status;
                     }
                     $existing->update($attributes);
                     $keptIds[] = $existing->id;
                 } else {
-                    // ID cũ không còn tồn tại → tạo mới.
                     $new = MeetingReminder::create($attributes);
                     $keptIds[] = $new->id;
                 }
             } else {
-                // Tạo mới.
                 $new = MeetingReminder::create($attributes);
                 $keptIds[] = $new->id;
             }

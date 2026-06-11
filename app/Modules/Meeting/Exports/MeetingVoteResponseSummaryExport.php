@@ -3,6 +3,7 @@
 namespace App\Modules\Meeting\Exports;
 
 use App\Modules\Core\Exports\AbstractExcelExport;
+use App\Modules\Meeting\Models\MeetingParticipant;
 use App\Modules\Meeting\Models\MeetingVoteResponse;
 use App\Modules\Meeting\Models\MeetingVoteTopic;
 use Maatwebsite\Excel\Concerns\FromCollection;
@@ -11,7 +12,7 @@ use Maatwebsite\Excel\Concerns\FromCollection;
  * Xuất tổng hợp biểu quyết — mỗi row = 1 topic + đếm số phiếu theo option.
  * Filter: meeting_id (export tất cả topic của 1 meeting) hoặc meeting_vote_topic_id (1 topic).
  *
- * Columns: STT, Nội dung biểu quyết, Đồng ý / Tán thành, Không đồng ý / Không tán thành, Không ý kiến.
+ * Columns: STT, Nội dung biểu quyết, Đồng ý / Tán thành, Không đồng ý / Không tán thành, Không ý kiến, Chưa biểu quyết.
  */
 class MeetingVoteResponseSummaryExport extends AbstractExcelExport implements FromCollection
 {
@@ -33,6 +34,7 @@ class MeetingVoteResponseSummaryExport extends AbstractExcelExport implements Fr
         $topics = MeetingVoteTopic::query()
             ->when($this->meetingId, fn ($q) => $q->where('meeting_id', $this->meetingId))
             ->when($this->topicId, fn ($q) => $q->where('id', $this->topicId))
+            ->with('meeting.chairperson')
             ->get()
             ->sortBy(fn ($t) => sprintf('%010d|%010d',
                 $treeIndex[$t->meeting_agenda_id] ?? PHP_INT_MAX,
@@ -40,8 +42,34 @@ class MeetingVoteResponseSummaryExport extends AbstractExcelExport implements Fr
             ))
             ->values();
 
-        return $topics->values()->map(function ($topic, $i) {
+        // Cache tổng số người có quyền biểu quyết theo meeting_id
+        $eligibleCountByMeeting = [];
+
+        return $topics->values()->map(function ($topic, $i) use (&$eligibleCountByMeeting) {
             $base = MeetingVoteResponse::query()->where('meeting_vote_topic_id', $topic->id);
+
+            // Tổng người có quyền biểu quyết = participants + chairperson
+            $meetingId = $topic->meeting_id;
+            if (! isset($eligibleCountByMeeting[$meetingId])) {
+                $participantUserIds = MeetingParticipant::query()
+                    ->where('meeting_id', $meetingId)
+                    ->with('attendee')
+                    ->get()
+                    ->pluck('attendee.user_id')
+                    ->filter()
+                    ->unique()
+                    ->values();
+
+                $chairUserId = $topic->meeting?->chairperson?->user_id;
+                if ($chairUserId && ! $participantUserIds->contains($chairUserId)) {
+                    $participantUserIds->push($chairUserId);
+                }
+
+                $eligibleCountByMeeting[$meetingId] = $participantUserIds->count();
+            }
+
+            $votedCount = (clone $base)->count();
+            $eligibleCount = $eligibleCountByMeeting[$meetingId];
 
             return [
                 'stt' => $i + 1,
@@ -49,12 +77,13 @@ class MeetingVoteResponseSummaryExport extends AbstractExcelExport implements Fr
                 'agree' => (clone $base)->whereIn('option', ['agree', 'approve'])->count(),
                 'disagree' => (clone $base)->whereIn('option', ['disagree', 'reject'])->count(),
                 'abstain' => (clone $base)->where('option', 'abstain')->count(),
+                'not_voted' => max(0, $eligibleCount - $votedCount),
             ];
         });
     }
 
     public function headings(): array
     {
-        return ['STT', 'Nội dung biểu quyết', 'Đồng ý / Tán thành', 'Không đồng ý / Không tán thành', 'Không ý kiến'];
+        return ['STT', 'Nội dung biểu quyết', 'Đồng ý / Tán thành', 'Không đồng ý / Không tán thành', 'Không ý kiến', 'Chưa biểu quyết'];
     }
 }

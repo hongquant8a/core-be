@@ -187,8 +187,9 @@ class ScheduleController extends Controller
      * @bodyParam attachments file[] Danh sách tài liệu đính kèm.
      * @bodyParam participants array Danh sách thành phần tham dự.
      * @bodyParam reminders object[] Danh sách mốc nhắc lịch (per-record). Gửi mảng rỗng [] nếu không có.
-     * @bodyParam reminders.*.moment string required Thời điểm nhắc: before, on, after, immediate. Example: before
-     * @bodyParam reminders.*.offset_minutes integer Phút offset từ date_time. Example: 30
+     * @bodyParam reminders.*.type string Loại reminder: instant (gửi ngay khi publish/update/cancel) hoặc scheduled (nhắc theo lịch). Mặc định scheduled. Example: instant
+     * @bodyParam reminders.*.moment string Thời điểm nhắc: before, on, after. Bỏ qua nếu type=instant. Example: before
+     * @bodyParam reminders.*.offset_minutes integer Phút offset từ date_time. Bỏ qua nếu type=instant. Example: 30
      * @bodyParam reminders.*.channels string[] Kênh gửi: mail, sms, zalo, zalo_zns, fcm. Example: ["mail","zalo"]
      */
     public function store(StoreScheduleRequest $request): JsonResponse
@@ -223,8 +224,9 @@ class ScheduleController extends Controller
      * @bodyParam attachments file[] Danh sách tài liệu đính kèm mới.
      * @bodyParam participants array Danh sách thành phần tham dự mới. Không gửi key này = giữ nguyên.
      * @bodyParam reminders object[] Danh sách mốc nhắc lịch (per-record). Không gửi key này = giữ nguyên; gửi mảng rỗng [] = xóa hết CUSTOM.
-     * @bodyParam reminders.*.moment string required Thời điểm nhắc: before, on, after, immediate. Example: before
-     * @bodyParam reminders.*.offset_minutes integer Phút offset từ date_time. Example: 30
+     * @bodyParam reminders.*.type string Loại reminder: instant (gửi ngay khi publish/update/cancel) hoặc scheduled (nhắc theo lịch). Mặc định scheduled. Example: instant
+     * @bodyParam reminders.*.moment string Thời điểm nhắc: before, on, after. Bỏ qua nếu type=instant. Example: before
+     * @bodyParam reminders.*.offset_minutes integer Phút offset từ date_time. Bỏ qua nếu type=instant. Example: 30
      * @bodyParam reminders.*.channels string[] Kênh gửi: mail, sms, zalo, zalo_zns, fcm. Example: ["mail","zalo"]
      * @bodyParam remove_media_ids array Danh sách ID tài liệu đính kèm cần xóa.
      */

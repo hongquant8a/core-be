@@ -65,4 +65,5 @@ class SendScheduleCancelledNotifications implements ShouldQueue
 
         return $instant?->channels ?? [];
     }
+
 }

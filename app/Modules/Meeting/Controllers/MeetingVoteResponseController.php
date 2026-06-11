@@ -128,7 +128,8 @@ class MeetingVoteResponseController extends Controller
     }
 
     /**
-     * Xuất danh sách chi tiết phiếu biểu quyết của 1 topic — mỗi row 1 phiếu.
+     * Xuất danh sách chi tiết biểu quyết của 1 topic — mỗi row 1 người có quyền biểu quyết
+     * (đại biểu + chủ trì), bao gồm cả người chưa biểu quyết.
      *
      * Auth-only, không qua Spatie permission. Gate qua MeetingPolicy::operate
      * (chair/operator của meeting chứa topic này).
@@ -160,7 +161,7 @@ class MeetingVoteResponseController extends Controller
      * Auth-only, không qua Spatie permission. Gate qua MeetingPolicy::operate.
      * Filter: meeting_id (tất cả topic của 1 meeting) HOẶC meeting_vote_topic_id (1 topic).
      *
-     * Xuất ra các trường: STT, Nội dung biểu quyết, Đồng ý, Không đồng ý, Không ý kiến.
+     * Xuất ra các trường: STT, Nội dung biểu quyết, Đồng ý / Tán thành, Không đồng ý / Không tán thành, Không ý kiến, Chưa biểu quyết.
      *
      * @queryParam meeting_id integer ID cuộc họp. Example: 1
      * @queryParam meeting_vote_topic_id integer ID phiên biểu quyết (chỉ 1 topic). Example: 1
@@ -238,6 +239,9 @@ class MeetingVoteResponseController extends Controller
     /**
      * Nested export — `GET /api/meetings/{meeting}/vote-responses/export` — gate operate.
      *
+     * Xuất danh sách chi tiết biểu quyết của 1 topic, bao gồm cả người chưa biểu quyết.
+     * Xuất ra các trường: STT, Nội dung biểu quyết, Tên đại biểu, Biểu quyết.
+     *
      * @urlParam meeting integer required ID cuộc họp. Example: 1
      *
      * @queryParam meeting_vote_topic_id integer required ID topic. Example: 1
@@ -261,6 +265,8 @@ class MeetingVoteResponseController extends Controller
 
     /**
      * Nested export summary — `GET /api/meetings/{meeting}/vote-responses/export-summary` — gate operate.
+     *
+     * Xuất ra các trường: STT, Nội dung biểu quyết, Đồng ý / Tán thành, Không đồng ý / Không tán thành, Không ý kiến, Chưa biểu quyết.
      *
      * @urlParam meeting integer required ID cuộc họp. Example: 1
      *

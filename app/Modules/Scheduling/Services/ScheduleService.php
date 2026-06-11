@@ -555,26 +555,68 @@ class ScheduleService
 
     private function syncReminders(Schedule $schedule, array $reminders): void
     {
-        $schedule->reminders()->where('source', 'CUSTOM')->delete();
+        $keptIds = [];
         foreach ($reminders as $r) {
-            $moment = $r['moment'] ?? $r['trigger'] ?? 'before';
-            $offset = (int) ($r['offset_minutes'] ?? $r['minutes_before'] ?? 0);
-
+            $type = $r['type'] ?? 'scheduled'; // 'instant' | 'scheduled'
             $source = $r['source'] ?? $r['reminder_type'] ?? 'CUSTOM';
 
             $channels = $r['channels'] ?? [];
             if (!is_array($channels)) {
                 $channels = [$channels];
             }
-            $channels = array_map('strtoupper', $channels);
+            $channels = array_values(array_unique(array_map('strtoupper', $channels)));
 
-            $schedule->reminders()->create([
+            if ($type === 'instant') {
+                // Per-record instant: moment=null + source=CUSTOM
+                $existing = \App\Modules\Scheduling\Models\ScheduleReminder::where('schedule_id', $schedule->id)
+                    ->where('source', 'CUSTOM')
+                    ->whereNull('moment')
+                    ->first();
+                if ($existing) {
+                    $existing->update(['channels' => $channels, 'status' => 'active']);
+                    $keptIds[] = $existing->id;
+                } else {
+                    $new = \App\Modules\Scheduling\Models\ScheduleReminder::create([
+                        'schedule_id'    => $schedule->id,
+                        'moment'         => null,
+                        'offset_minutes' => null,
+                        'channels'       => $channels,
+                        'source'         => 'CUSTOM',
+                        'status'         => 'active',
+                        'remind_at'      => null,
+                    ]);
+                    $keptIds[] = $new->id;
+                }
+                continue;
+            }
+
+            $moment = $r['moment'] ?? $r['trigger'] ?? 'before';
+            $offset = (int) ($r['offset_minutes'] ?? $r['minutes_before'] ?? 0);
+
+            $remindAt = $schedule->date_time
+                ? match ($moment) {
+                    'before' => $offset ? $schedule->date_time->copy()->subMinutes($offset) : null,
+                    'on'     => $schedule->date_time->copy(),
+                    'after'  => $offset ? $schedule->date_time->copy()->addMinutes($offset) : null,
+                    default  => null,
+                }
+                : null;
+
+            $new = $schedule->reminders()->create([
                 'moment'         => $moment,
                 'offset_minutes' => $offset,
-                'channels'       => array_values(array_unique($channels)),
+                'channels'       => $channels,
                 'source'         => $source,
+                'remind_at'      => $remindAt,
+                'status'         => 'pending',
             ]);
+            $keptIds[] = $new->id;
         }
+
+        // Xóa CUSTOM reminders (cả instant lẫn scheduled) không còn trong payload.
+        $schedule->reminders()->where('source', 'CUSTOM')
+            ->whereNotIn('id', $keptIds)
+            ->delete();
     }
 
     public function export(array $filters)

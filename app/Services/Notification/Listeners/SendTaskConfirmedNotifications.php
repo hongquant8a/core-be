@@ -20,7 +20,7 @@ class SendTaskConfirmedNotifications implements ShouldQueue
     {
         $item = $event->item->load(['users', 'document']);
         $organizationId = (int) $item->document->organization_id;
-        $channels = $this->resolveChannels($organizationId);
+        $channels = $this->resolveChannels($item, $organizationId);
         if (empty($channels)) {
             return;
         }
@@ -39,8 +39,13 @@ class SendTaskConfirmedNotifications implements ShouldQueue
         }
     }
 
-    private function resolveChannels(int $organizationId): array
+    private function resolveChannels(\App\Modules\TaskAssignment\Models\TaskAssignmentItem $item, int $organizationId): array
     {
+        // Per-record: kiểm tra item.document.instant_channels.
+        $perRecord = $item->document?->instant_channels;
+        if (! empty($perRecord)) {
+            return $perRecord;
+        }
         $config = NotificationEventConfig::with('schedules')
             ->where('module_key', NotificationModuleEnum::TaskAssignment->value)
             ->where('organization_id', $organizationId)

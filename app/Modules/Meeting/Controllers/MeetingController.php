@@ -151,8 +151,9 @@ class MeetingController extends Controller
      * @bodyParam is_public boolean Công khai cuộc họp hay không. Example: true
      * @bodyParam status string Trạng thái cuộc họp. Example: draft
      * @bodyParam reminders object[] Danh sách mốc nhắc lịch (per-record). Gửi mảng rỗng [] nếu không có.
-     * @bodyParam reminders.*.moment string required Thời điểm nhắc: before, on, after. Example: before
-     * @bodyParam reminders.*.offset_minutes integer Phút offset từ start_time. Example: 30
+     * @bodyParam reminders.*.reminder_type string Loại reminder: instant (gửi ngay khi publish) hoặc scheduled (nhắc theo lịch). Mặc định scheduled. Example: instant
+     * @bodyParam reminders.*.moment string Thời điểm nhắc: before, on, after. Bỏ qua nếu reminder_type=instant. Example: before
+     * @bodyParam reminders.*.offset_minutes integer Phút offset từ start_time. Bỏ qua nếu reminder_type=instant. Example: 30
      * @bodyParam reminders.*.channels string[] Kênh gửi: mail, sms, zalo, zalo_zns, fcm. Example: ["mail","zalo"]
      */
     public function store(StoreMeetingRequest $request)
@@ -195,8 +196,9 @@ class MeetingController extends Controller
      * @bodyParam is_public boolean Công khai cuộc họp hay không. Example: false
      * @bodyParam status string Trạng thái cuộc họp. Example: published
      * @bodyParam reminders object[] Danh sách mốc nhắc lịch (per-record). Không gửi key này = giữ nguyên; gửi mảng rỗng [] = xóa hết CUSTOM.
-     * @bodyParam reminders.*.moment string required Thời điểm nhắc: before, on, after. Example: before
-     * @bodyParam reminders.*.offset_minutes integer Phút offset từ start_time. Example: 30
+     * @bodyParam reminders.*.reminder_type string Loại reminder: instant (gửi ngay khi publish/update/cancel) hoặc scheduled (nhắc theo lịch). Mặc định scheduled. Example: instant
+     * @bodyParam reminders.*.moment string Thời điểm nhắc: before, on, after. Bỏ qua nếu reminder_type=instant. Example: before
+     * @bodyParam reminders.*.offset_minutes integer Phút offset từ start_time. Bỏ qua nếu reminder_type=instant. Example: 30
      * @bodyParam reminders.*.channels string[] Kênh gửi: mail, sms, zalo, zalo_zns, fcm. Example: ["mail","zalo"]
      */
     public function update(UpdateMeetingRequest $request, Meeting $meeting)
