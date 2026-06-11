@@ -542,7 +542,7 @@ class MeetingService
                     'meeting_id'      => $meeting->id,
                     'reminder_type'   => 'instant',
                     'moment'          => null,
-                    'offset_minutes'  => null,
+                    'offset_minutes'  => 0,
                     'channels'        => $channels,
                     'source'          => 'CUSTOM',
                     'status'          => 'active',
