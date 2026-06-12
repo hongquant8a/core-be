@@ -653,6 +653,7 @@ class ScheduleService
             'from_date'          => $start,
             'to_date'            => $end,
             'status'             => \App\Modules\Scheduling\Enums\ScheduleStatus::PUBLISHED->value,
+            'approval_status'    => \App\Modules\Scheduling\Enums\ApprovalStatus::APPROVED->value,
             'general_visibility' => true,
         ]));
 
@@ -663,11 +664,13 @@ class ScheduleService
         $personal = 0;
         $userId = auth()->id();
         if ($userId) {
-            $personal = $baseQuery()->where(function ($q) use ($userId) {
-                $q->where('host_id', $userId)
-                  ->orWhere('driver_id', $userId)
-                  ->orWhereHas('recipients', fn ($r) => $r->where('user_id', $userId));
-            })->count();
+            $personal = Schedule::query()
+                ->whereBetween('start_at', [$start, $end])
+                ->where(function ($q) use ($userId) {
+                    $q->where('host_id', $userId)
+                      ->orWhere('driver_id', $userId)
+                      ->orWhereHas('recipients', fn ($r) => $r->where('user_id', $userId));
+                })->count();
         }
 
         return [
