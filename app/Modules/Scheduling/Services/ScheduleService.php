@@ -557,14 +557,21 @@ class ScheduleService
     {
         $keptIds = [];
         foreach ($reminders as $r) {
-            $type = $r['type'] ?? 'scheduled'; // 'instant' | 'scheduled'
-            $source = $r['source'] ?? $r['reminder_type'] ?? 'CUSTOM';
+            $type   = ($r['type'] ?? '') === 'instant' ? 'instant' : 'scheduled';
+            $source = strtoupper($r['source'] ?? $r['reminder_type'] ?? 'CUSTOM');
 
             $channels = $r['channels'] ?? [];
             if (!is_array($channels)) {
                 $channels = [$channels];
             }
             $channels = array_values(array_unique(array_map('strtoupper', $channels)));
+
+            // Fallback moment: empty/null → BEFORE
+            $moment = strtoupper($r['moment'] ?? $r['trigger'] ?? '') ?: 'BEFORE';
+            if (!in_array($moment, \App\Modules\Scheduling\Enums\ReminderMomentEnum::values(), true)) {
+                $moment = \App\Modules\Scheduling\Enums\ReminderMomentEnum::Before->value;
+            }
+            $offset = (int) ($r['offset_minutes'] ?? $r['minutes_before'] ?? 0);
 
             if ($type === 'instant') {
                 // Per-record instant: moment=ON + source=CUSTOM (gửi ngay, không chờ lịch)
@@ -589,9 +596,6 @@ class ScheduleService
                 }
                 continue;
             }
-
-            $moment = strtoupper($r['moment'] ?? $r['trigger'] ?? 'BEFORE');
-            $offset = (int) ($r['offset_minutes'] ?? $r['minutes_before'] ?? 0);
 
             $remindAt = $schedule->date_time
                 ? match ($moment) {
