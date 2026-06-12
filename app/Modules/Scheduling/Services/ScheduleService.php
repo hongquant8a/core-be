@@ -665,7 +665,8 @@ class ScheduleService
         $userId = auth()->id();
         if ($userId) {
             $personal = Schedule::query()
-                ->whereBetween('start_at', [$start, $end])
+                ->whereDate('date_time', '>=', $start)
+                ->whereDate('date_time', '<=', $end)
                 ->where(function ($q) use ($userId) {
                     $q->where('host_id', $userId)
                       ->orWhere('driver_id', $userId)
