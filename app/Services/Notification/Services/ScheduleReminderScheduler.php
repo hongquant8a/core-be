@@ -127,17 +127,23 @@ class ScheduleReminderScheduler
     }
 
     /**
-     * Lấy danh sách User nhận reminder từ recipients của schedule.
+     * Lấy danh sách User nhận reminder: recipients + host + driver.
      */
     public function resolveRecipients(Schedule $schedule): array
     {
-        $schedule->load(['recipients.user', 'recipients.group.users']);
+        $schedule->load(['recipients.user', 'host', 'driver']);
 
         $users = [];
         foreach ($schedule->recipients as $recipient) {
             if ($recipient->user) {
                 $users[$recipient->user->id] = $recipient->user;
             }
+        }
+        if ($schedule->host) {
+            $users[$schedule->host->id] = $schedule->host;
+        }
+        if ($schedule->driver) {
+            $users[$schedule->driver->id] = $schedule->driver;
         }
 
         return array_values($users);
