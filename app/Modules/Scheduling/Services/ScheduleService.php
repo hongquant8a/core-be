@@ -619,7 +619,7 @@ class ScheduleService
 
     public function export(array $filters)
     {
-        $fileName = 'export__lich-cong-tac-tuan_' . now()->format('H-i-s_d-m-Y') . '.xlsx';
+        $fileName = ExportFilename::make('lich-cong-tac-tuan');
         return \Maatwebsite\Excel\Facades\Excel::download(new \App\Modules\Scheduling\Exports\WeeklyScheduleExcelExport($filters), $fileName);
     }
 
@@ -627,7 +627,7 @@ class ScheduleService
     {
         $exporter = new \App\Modules\Scheduling\Exports\WeeklySchedulePdfExporter();
         $path = $exporter->generate($filters);
-        $fileName = 'export__lich-cong-tac-tuan_' . now()->format('H-i-s_d-m-Y') . '.pdf';
+        $fileName = ExportFilename::make('lich-cong-tac-tuan', 'pdf');
         return response()->download($path, $fileName)->deleteFileAfterSend(true);
     }
 
@@ -635,7 +635,7 @@ class ScheduleService
     {
         $exporter = new \App\Modules\Scheduling\Exports\WeeklyScheduleWordExporter();
         $path = $exporter->generate($filters);
-        $fileName = 'export__lich-cong-tac-tuan_' . now()->format('H-i-s_d-m-Y') . '.docx';
+        $fileName = ExportFilename::make('lich-cong-tac-tuan', 'docx');
         return response()->download($path, $fileName)->deleteFileAfterSend(true);
     }
 
