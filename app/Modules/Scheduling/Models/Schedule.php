@@ -188,7 +188,13 @@ class Schedule extends TenantModel
                     $q->where('host_id', auth()->id());
                 }
             })
-            ->when($filters['general_visibility'] ?? false, function ($q) {
+            ->when($filters['general_visibility'] ?? false, function ($q) use ($filters) {
+                // Khi đã có view_mode (personal/managed) thì bỏ qua general_visibility —
+                // view_mode tự định nghĩa visibility riêng, không cần lọc thêm status/approval.
+                if (! empty($filters['view_mode'])) {
+                    return;
+                }
+
                 // Với màn hình chung của nhân viên (general view), chỉ xem được lịch PUBLISHED
                 // HOẶC lịch DRAFT do chính user hiện tại tạo ra.
                 // Lịch chờ duyệt (approval_status=pending) chỉ hiển thị nếu user có quyền duyệt.
