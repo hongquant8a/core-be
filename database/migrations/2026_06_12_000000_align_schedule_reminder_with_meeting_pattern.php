@@ -18,6 +18,9 @@ return new class extends Migration
 
         // Bước 3: Bỏ 'immediate' khỏi enum (giờ chỉ còn before/on/after)
         DB::statement("ALTER TABLE schedule_reminders MODIFY COLUMN moment ENUM('before','on','after') NULL DEFAULT 'before'");
+
+        // Bước 4: Thêm 'active' vào enum status (cần cho instant reminder)
+        DB::statement("ALTER TABLE schedule_reminders MODIFY COLUMN status ENUM('active','pending','fired','cancelled') NOT NULL DEFAULT 'pending'");
     }
 
     public function down(): void
@@ -32,5 +35,9 @@ return new class extends Migration
 
         // Bước 3: Đưa về NOT NULL
         DB::statement("ALTER TABLE schedule_reminders MODIFY COLUMN moment ENUM('immediate','before','on','after') NOT NULL DEFAULT 'before'");
+
+        // Bước 4: Bỏ 'active' khỏi enum status
+        DB::table('schedule_reminders')->where('status', 'active')->update(['status' => 'pending']);
+        DB::statement("ALTER TABLE schedule_reminders MODIFY COLUMN status ENUM('pending','fired','cancelled') NOT NULL DEFAULT 'pending'");
     }
 };
