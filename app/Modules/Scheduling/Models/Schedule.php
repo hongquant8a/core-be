@@ -179,8 +179,7 @@ class Schedule extends TenantModel
                 if ($mode === 'personal') {
                     $userId = auth()->id();
                     $q->where(function ($sub) use ($userId) {
-                        $sub->where('created_by', $userId)
-                            ->orWhere('host_id', $userId)
+                        $sub->where('host_id', $userId)
                             ->orWhere('driver_id', $userId)
                             ->orWhereHas('recipients', fn ($p) => $p->where('user_id', $userId));
                     });
