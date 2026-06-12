@@ -58,14 +58,17 @@ class ScheduleReminder extends Model
         return $this->offset_minutes;
     }
 
-    public function getReminderTypeAttribute()
+    public function getReminderTypeAttribute(): string
     {
-        return $this->source instanceof ReminderSource ? $this->source->value : 'CUSTOM';
+        return strcasecmp((string) $this->moment, 'immediate') === 0 ? 'instant' : 'scheduled';
     }
 
-    public function setReminderTypeAttribute($value)
+    public function setReminderTypeAttribute($value): void
     {
-        $this->source = ReminderSource::tryFrom(strtoupper($value)) ?? ReminderSource::CUSTOM;
+        if ($value === 'instant') {
+            $this->moment = \App\Modules\Scheduling\Enums\ReminderMomentEnum::Immediate->value;
+        }
+        // scheduled không cần set vì nó là default khi moment là BEFORE/ON/AFTER
     }
 
     public function getSourceAttribute($value)

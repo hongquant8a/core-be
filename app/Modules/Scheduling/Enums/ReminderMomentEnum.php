@@ -4,9 +4,10 @@ namespace App\Modules\Scheduling\Enums;
 
 enum ReminderMomentEnum: string
 {
-    case Before = 'BEFORE';
-    case On     = 'ON';
-    case After  = 'AFTER';
+    case Immediate = 'IMMEDIATE';
+    case Before    = 'BEFORE';
+    case On        = 'ON';
+    case After     = 'AFTER';
 
     public static function values(): array
     {

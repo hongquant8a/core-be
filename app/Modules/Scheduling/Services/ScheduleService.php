@@ -557,67 +557,62 @@ class ScheduleService
     {
         $keptIds = [];
         foreach ($reminders as $r) {
-            $type   = ($r['type'] ?? '') === 'instant' ? 'instant' : 'scheduled';
-            $source = strtoupper($r['source'] ?? $r['reminder_type'] ?? 'CUSTOM');
+            $reminderType = $r['reminder_type'] ?? 'scheduled';
+            $channels = array_values(array_unique(array_map('strtoupper', (array) ($r['channels'] ?? []))));
 
-            $channels = $r['channels'] ?? [];
-            if (!is_array($channels)) {
-                $channels = [$channels];
+            if ($reminderType === 'instant') {
+                $attributes = [
+                    'schedule_id'    => $schedule->id,
+                    'moment'         => \App\Modules\Scheduling\Enums\ReminderMomentEnum::Immediate->value,
+                    'offset_minutes' => 0,
+                    'channels'       => $channels,
+                    'source'         => 'CUSTOM',
+                    'status'         => 'active',
+                    'remind_at'      => null,
+                ];
+            } else {
+                $rawMoment = $r['moment'] ?? 'before';
+                $moment = strtoupper($rawMoment);
+                if (! in_array($moment, [\App\Modules\Scheduling\Enums\ReminderMomentEnum::Before->value, \App\Modules\Scheduling\Enums\ReminderMomentEnum::On->value, \App\Modules\Scheduling\Enums\ReminderMomentEnum::After->value], true)) {
+                    $moment = \App\Modules\Scheduling\Enums\ReminderMomentEnum::Before->value;
+                }
+                $rawOffset = (int) ($r['offset_minutes'] ?? 0);
+
+                $remindAt = $schedule->date_time
+                    ? match ($moment) {
+                        \App\Modules\Scheduling\Enums\ReminderMomentEnum::Before->value => $rawOffset ? $schedule->date_time->copy()->subMinutes($rawOffset) : null,
+                        \App\Modules\Scheduling\Enums\ReminderMomentEnum::On->value     => $schedule->date_time->copy(),
+                        \App\Modules\Scheduling\Enums\ReminderMomentEnum::After->value  => $rawOffset ? $schedule->date_time->copy()->addMinutes($rawOffset) : null,
+                        default  => null,
+                    }
+                    : null;
+
+                $attributes = [
+                    'schedule_id'    => $schedule->id,
+                    'moment'         => $moment,
+                    'offset_minutes' => $rawOffset,
+                    'channels'       => $channels,
+                    'source'         => 'CUSTOM',
+                    'status'         => 'pending',
+                    'remind_at'      => $remindAt,
+                ];
             }
-            $channels = array_values(array_unique(array_map('strtoupper', $channels)));
 
-            // Fallback moment: empty/null → BEFORE
-            $moment = strtoupper($r['moment'] ?? $r['trigger'] ?? '') ?: 'BEFORE';
-            if (!in_array($moment, \App\Modules\Scheduling\Enums\ReminderMomentEnum::values(), true)) {
-                $moment = \App\Modules\Scheduling\Enums\ReminderMomentEnum::Before->value;
-            }
-            $offset = (int) ($r['offset_minutes'] ?? $r['minutes_before'] ?? 0);
-
-            if ($type === 'instant') {
-                // Per-record instant: moment=ON + source=CUSTOM (gửi ngay, không chờ lịch)
-                $existing = \App\Modules\Scheduling\Models\ScheduleReminder::where('schedule_id', $schedule->id)
+            if (! empty($r['id'])) {
+                $existing = \App\Modules\Scheduling\Models\ScheduleReminder::where('id', $r['id'])
+                    ->where('schedule_id', $schedule->id)
                     ->where('source', 'CUSTOM')
-                    ->where('moment', \App\Modules\Scheduling\Enums\ReminderMomentEnum::On->value)
                     ->first();
                 if ($existing) {
-                    $existing->update(['channels' => $channels, 'status' => 'active']);
+                    $existing->update($attributes);
                     $keptIds[] = $existing->id;
-                } else {
-                    $new = \App\Modules\Scheduling\Models\ScheduleReminder::create([
-                        'schedule_id'    => $schedule->id,
-                        'moment'         => \App\Modules\Scheduling\Enums\ReminderMomentEnum::On->value,
-                        'offset_minutes' => 0,
-                        'channels'       => $channels,
-                        'source'         => 'CUSTOM',
-                        'status'         => 'active',
-                        'remind_at'      => now(),
-                    ]);
-                    $keptIds[] = $new->id;
                 }
-                continue;
+            } else {
+                $new = \App\Modules\Scheduling\Models\ScheduleReminder::create($attributes);
+                $keptIds[] = $new->id;
             }
-
-            $remindAt = $schedule->date_time
-                ? match ($moment) {
-                    \App\Modules\Scheduling\Enums\ReminderMomentEnum::Before->value => $offset ? $schedule->date_time->copy()->subMinutes($offset) : null,
-                    \App\Modules\Scheduling\Enums\ReminderMomentEnum::On->value     => $schedule->date_time->copy(),
-                    \App\Modules\Scheduling\Enums\ReminderMomentEnum::After->value  => $offset ? $schedule->date_time->copy()->addMinutes($offset) : null,
-                    default  => null,
-                }
-                : null;
-
-            $new = $schedule->reminders()->create([
-                'moment'         => $moment,
-                'offset_minutes' => $offset,
-                'channels'       => $channels,
-                'source'         => $source,
-                'remind_at'      => $remindAt,
-                'status'         => 'pending',
-            ]);
-            $keptIds[] = $new->id;
         }
 
-        // Xóa CUSTOM reminders (cả instant lẫn scheduled) không còn trong payload.
         $schedule->reminders()->where('source', 'CUSTOM')
             ->whereNotIn('id', $keptIds)
             ->delete();
