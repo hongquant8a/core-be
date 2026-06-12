@@ -567,10 +567,10 @@ class ScheduleService
             $channels = array_values(array_unique(array_map('strtoupper', $channels)));
 
             if ($type === 'instant') {
-                // Per-record instant: moment=null + source=CUSTOM
+                // Per-record instant: moment=ON + source=CUSTOM (gửi ngay, không chờ lịch)
                 $existing = \App\Modules\Scheduling\Models\ScheduleReminder::where('schedule_id', $schedule->id)
                     ->where('source', 'CUSTOM')
-                    ->whereNull('moment')
+                    ->where('moment', \App\Modules\Scheduling\Enums\ReminderMomentEnum::On->value)
                     ->first();
                 if ($existing) {
                     $existing->update(['channels' => $channels, 'status' => 'active']);
@@ -578,26 +578,26 @@ class ScheduleService
                 } else {
                     $new = \App\Modules\Scheduling\Models\ScheduleReminder::create([
                         'schedule_id'    => $schedule->id,
-                        'moment'         => null,
-                        'offset_minutes' => null,
+                        'moment'         => \App\Modules\Scheduling\Enums\ReminderMomentEnum::On->value,
+                        'offset_minutes' => 0,
                         'channels'       => $channels,
                         'source'         => 'CUSTOM',
                         'status'         => 'active',
-                        'remind_at'      => null,
+                        'remind_at'      => now(),
                     ]);
                     $keptIds[] = $new->id;
                 }
                 continue;
             }
 
-            $moment = $r['moment'] ?? $r['trigger'] ?? 'before';
+            $moment = strtoupper($r['moment'] ?? $r['trigger'] ?? 'BEFORE');
             $offset = (int) ($r['offset_minutes'] ?? $r['minutes_before'] ?? 0);
 
             $remindAt = $schedule->date_time
                 ? match ($moment) {
-                    'before' => $offset ? $schedule->date_time->copy()->subMinutes($offset) : null,
-                    'on'     => $schedule->date_time->copy(),
-                    'after'  => $offset ? $schedule->date_time->copy()->addMinutes($offset) : null,
+                    \App\Modules\Scheduling\Enums\ReminderMomentEnum::Before->value => $offset ? $schedule->date_time->copy()->subMinutes($offset) : null,
+                    \App\Modules\Scheduling\Enums\ReminderMomentEnum::On->value     => $schedule->date_time->copy(),
+                    \App\Modules\Scheduling\Enums\ReminderMomentEnum::After->value  => $offset ? $schedule->date_time->copy()->addMinutes($offset) : null,
                     default  => null,
                 }
                 : null;
