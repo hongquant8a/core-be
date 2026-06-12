@@ -17,7 +17,18 @@ class BulkUpdateStatusScheduleRequest extends FormRequest
         return [
             'ids'    => ['required', 'array'],
             'ids.*'  => ['integer', 'exists:schedules,id'],
-            'status' => ['required', ScheduleStatusEnum::rule()],
+            'status' => ['required', 'in:DRAFT,PUBLISHED,0,1'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $status = $this->input('status');
+
+        if ($status === 0 || $status === '0') {
+            $this->merge(['status' => 'DRAFT']);
+        } elseif ($status === 1 || $status === '1') {
+            $this->merge(['status' => 'PUBLISHED']);
+        }
     }
 }
