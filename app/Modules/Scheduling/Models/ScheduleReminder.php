@@ -60,13 +60,13 @@ class ScheduleReminder extends Model
 
     public function getReminderTypeAttribute(): string
     {
-        return strcasecmp((string) $this->moment, 'immediate') === 0 ? 'instant' : 'scheduled';
+        return $this->moment === null ? 'instant' : 'scheduled';
     }
 
     public function setReminderTypeAttribute($value): void
     {
         if ($value === 'instant') {
-            $this->moment = \App\Modules\Scheduling\Enums\ReminderMomentEnum::Immediate->value;
+            $this->moment = null;
         }
         // scheduled không cần set vì nó là default khi moment là BEFORE/ON/AFTER
     }

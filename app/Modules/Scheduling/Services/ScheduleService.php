@@ -563,7 +563,7 @@ class ScheduleService
             if ($reminderType === 'instant') {
                 $attributes = [
                     'schedule_id'    => $schedule->id,
-                    'moment'         => \App\Modules\Scheduling\Enums\ReminderMomentEnum::Immediate->value,
+                    'moment'         => null,
                     'offset_minutes' => 0,
                     'channels'       => $channels,
                     'source'         => 'CUSTOM',
@@ -571,9 +571,8 @@ class ScheduleService
                     'remind_at'      => null,
                 ];
             } else {
-                $rawMoment = $r['moment'] ?? 'before';
-                $moment = strtoupper($rawMoment);
-                if (! in_array($moment, [\App\Modules\Scheduling\Enums\ReminderMomentEnum::Before->value, \App\Modules\Scheduling\Enums\ReminderMomentEnum::On->value, \App\Modules\Scheduling\Enums\ReminderMomentEnum::After->value], true)) {
+                $moment = $r['moment'] ?? 'before';
+                if (! in_array($moment, \App\Modules\Scheduling\Enums\ReminderMomentEnum::values(), true)) {
                     $moment = \App\Modules\Scheduling\Enums\ReminderMomentEnum::Before->value;
                 }
                 $rawOffset = (int) ($r['offset_minutes'] ?? 0);
