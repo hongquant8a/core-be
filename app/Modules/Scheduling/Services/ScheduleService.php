@@ -664,14 +664,12 @@ class ScheduleService
         $personal = 0;
         $userId = auth()->id();
         if ($userId) {
-            $personal = Schedule::query()
-                ->whereDate('date_time', '>=', $start)
-                ->whereDate('date_time', '<=', $end)
-                ->where(function ($q) use ($userId) {
-                    $q->where('host_id', $userId)
-                      ->orWhere('driver_id', $userId)
-                      ->orWhereHas('recipients', fn ($r) => $r->where('user_id', $userId));
-                })->count();
+            $personal = Schedule::filter([
+                'from_date' => $start,
+                'to_date'   => $end,
+                'status'    => \App\Modules\Scheduling\Enums\ScheduleStatus::PUBLISHED->value,
+                'view_mode' => 'personal',
+            ])->count();
         }
 
         return [

@@ -178,7 +178,8 @@ class Schedule extends TenantModel
             ->when($filters['view_mode'] ?? null, function ($q, $mode) {
                 if ($mode === 'personal') {
                     $userId = auth()->id();
-                    $q->where(function ($sub) use ($userId) {
+                    $q->where('status', \App\Modules\Scheduling\Enums\ScheduleStatus::PUBLISHED->value)
+                        ->where(function ($sub) use ($userId) {
                         $sub->where('host_id', $userId)
                             ->orWhere('driver_id', $userId)
                             ->orWhereHas('recipients', fn ($p) => $p->where('user_id', $userId));
