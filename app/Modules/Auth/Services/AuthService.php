@@ -82,7 +82,7 @@ class AuthService
             $currentOrganizationId = null;
         } else {
             $currentOrganizationId = $this->resolveCurrentOrganizationIdForLogin(
-                $user, $organizations, $accessibleIds
+                $user, $accessibleIds
             );
         }
 
@@ -91,7 +91,7 @@ class AuthService
         return [
             'access_token' => $token,
             'token_type' => 'Bearer',
-            'user' => (new UserResource($user))->resolve(),
+            'user' => (new UserResource($user->load('preference')))->resolve(),
             'available_organizations' => $organizations,
             'current_organization_id' => $currentOrganizationId,
             'roles' => $rolesAndPermissions['roles'],
@@ -230,7 +230,7 @@ class AuthService
      * Xác định tổ chức hiện tại khi đăng nhập: ưu tiên bản ghi user_preferences;
      * nếu không hợp lệ thì xóa preference; nếu chỉ có một tổ chức thì tự gán và lưu.
      */
-    protected function resolveCurrentOrganizationIdForLogin(User $user, array $organizations, array $accessibleIds): ?int
+    protected function resolveCurrentOrganizationIdForLogin(User $user, array $accessibleIds): ?int
     {
         $preferredId = $this->userPreferenceService->getCurrentOrganizationId($user);
 
@@ -239,13 +239,6 @@ class AuthService
                 return $preferredId;
             }
             $this->userPreferenceService->clearCurrentOrganizationId($user);
-        }
-
-        if (count($organizations) === 1) {
-            $onlyId = (int) $organizations[0]['id'];
-            $this->userPreferenceService->setCurrentOrganizationId($user, $onlyId);
-
-            return $onlyId;
         }
 
         return null;
