@@ -25,3 +25,4 @@ Route::delete('/{taskAssignmentItem}', [TaskAssignmentItemController::class, 'de
 Route::patch('/{taskAssignmentItem}/progress', [TaskAssignmentItemController::class, 'updateProgress'])->middleware('permission:task-assignment-items.updateProgress,web');
 Route::patch('/{taskAssignmentItem}/status', [TaskAssignmentItemController::class, 'changeStatus'])->middleware('permission:task-assignment-items.changeStatus,web');
 Route::patch('/{taskAssignmentItem}/mark-done', [TaskAssignmentItemController::class, 'markDone'])->middleware('permission:task-assignment-items.markDone,web');
+Route::patch('/{taskAssignmentItem}/reopen', [TaskAssignmentItemController::class, 'reopen'])->middleware('permission:task-assignment-items.changeStatus,web');

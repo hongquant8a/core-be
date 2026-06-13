@@ -241,6 +241,29 @@ class TaskAssignmentItemController extends Controller
     }
 
     /**
+     * Mở lại công việc
+     *
+     * Mở lại công việc từ trạng thái đóng (done/cancelled/paused).
+     * Trạng thái mới tự động suy từ completion_percent:
+     * - 0% → todo (chưa thực hiện)
+     * - 1-100% → in_progress (đang thực hiện)
+     *
+     * Lưu ý: done chỉ đạt được khi manager gọi mark-done, không tự động từ reopen.
+     *
+     * @urlParam taskAssignmentItem integer required ID công việc. Example: 1
+     *
+     * @apiResource App\Modules\TaskAssignment\Resources\ItemResource
+     * @apiResourceModel App\Modules\TaskAssignment\Models\TaskAssignmentItem
+     * @apiResourceAdditional success=true message="Đã mở lại công việc!"
+     */
+    public function reopen(TaskAssignmentItem $taskAssignmentItem)
+    {
+        $item = $this->itemService->reopen($taskAssignmentItem);
+
+        return $this->successResource(new ItemResource($item), 'Đã mở lại công việc!');
+    }
+
+    /**
      * Đánh dấu công việc hoàn thành (manager xác nhận).
      *
      * Auto set: processing_status=done, completion_percent=100, completed_at=now().

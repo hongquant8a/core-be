@@ -154,6 +154,7 @@ class LogActivity
             'attendees' => 'Quản lý đại biểu nhóm',
             'duplicate' => 'Sao chép',
             'reorder' => 'Sắp xếp lại',
+            'reopen' => 'Mở lại',
             'week-matrix' => 'Xem ma trận tuần',
             'sync-members' => 'Đồng bộ thành viên nhóm',
             'driver-view' => 'Xem lịch của lái xe',

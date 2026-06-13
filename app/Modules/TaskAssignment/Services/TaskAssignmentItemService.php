@@ -224,6 +224,26 @@ class TaskAssignmentItemService
         return $item->load(['document', 'itemType', 'users', 'creator.media', 'editor.media']);
     }
 
+    /**
+     * Mở lại công việc từ trạng thái đóng (done/cancelled/paused).
+     * Trạng thái mới tự động suy từ completion_percent:
+     *   0%    → todo (chưa thực hiện)
+     *   1-100% → in_progress (đang thực hiện)
+     * done chỉ đạt được khi manager gọi mark-done, không tự động từ reopen.
+     */
+    public function reopen(TaskAssignmentItem $item): TaskAssignmentItem
+    {
+        $percent = (int) ($item->completion_percent ?? 0);
+
+        $status = $percent > 0
+            ? TaskProgressStatusEnum::InProgress->value
+            : TaskProgressStatusEnum::Todo->value;
+
+        $item->update($this->buildStatusUpdateData($status));
+
+        return $item->load(['document', 'itemType', 'users', 'creator.media', 'editor.media']);
+    }
+
     public function export(array $filters): BinaryFileResponse
     {
         return Excel::download(new ItemsExport($filters), ExportFilename::make('cong-viec-giao'));
@@ -239,8 +259,22 @@ class TaskAssignmentItemService
 
     public function updateProgress(TaskAssignmentItem $item, array $validated): TaskAssignmentItem
     {
-        $item->processing_status = $validated['processing_status'] ?? $item->processing_status;
-        $item->completion_percent = $validated['completion_percent'] ?? $item->completion_percent;
+        if (array_key_exists('completion_percent', $validated)) {
+            $item->completion_percent = $validated['completion_percent'];
+
+            // Nếu client không gửi processing_status → tự suy từ completion_percent.
+            if (! array_key_exists('processing_status', $validated)) {
+                $percent = (int) $validated['completion_percent'];
+                $item->processing_status = $percent > 0
+                    ? TaskProgressStatusEnum::InProgress->value
+                    : TaskProgressStatusEnum::Todo->value;
+            }
+        }
+
+        if (array_key_exists('processing_status', $validated)) {
+            $item->processing_status = $validated['processing_status'];
+        }
+
         $item->save();
 
         return $item->load(['document', 'itemType', 'users', 'creator.media', 'editor.media']);
