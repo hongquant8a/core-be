@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Meeting\Models\Meeting;
+use App\Modules\Meeting\Models\MeetingParticipant;
 use Illuminate\Support\Facades\Broadcast;
 
 /*
@@ -28,27 +29,38 @@ Broadcast::channel('meeting.{meetingId}', function ($user, int $meetingId) {
         return false;
     }
 
-    // FK match — chair / operator / participant.
-    if ((int) ($meeting->chairperson?->user_id ?? 0) === (int) $user->id) {
-        return true;
-    }
-    if ((int) ($meeting->operator?->user_id ?? 0) === (int) $user->id) {
-        return true;
-    }
-    $isParticipant = $meeting->participants()
-        ->whereHas('attendee', fn ($q) => $q->where('user_id', $user->id))
-        ->exists();
-    if ($isParticipant) {
-        return true;
+    $userId = (int) $user->id;
+    $isChair = (int) ($meeting->chairperson?->user_id ?? 0) === $userId;
+    $isOperator = (int) ($meeting->operator?->user_id ?? 0) === $userId;
+
+    $participant = MeetingParticipant::where('meeting_id', $meeting->id)
+        ->whereHas('attendee', fn ($q) => $q->where('user_id', $userId))
+        ->with('attendance')
+        ->first();
+
+    $isParticipant = $participant !== null;
+
+    // is_attendance_confirmed: đại biểu đã được xác nhận điểm danh (attendance present).
+    $isAttendanceConfirmed = $participant && $participant->attendance?->status === 'present';
+
+    if ($isChair || $isOperator || $isParticipant) {
+        return [
+            'user_id'                  => $userId,
+            'participant_id'           => $participant?->id,
+            'is_attendance_confirmed'  => $isAttendanceConfirmed,
+        ];
     }
 
     // Spatie role privileged trong org của meeting (Super Admin / Admin / Quản trị).
-    // Set permissions team theo meeting.organization_id để check role chính xác.
     if (function_exists('setPermissionsTeamId')) {
         setPermissionsTeamId((int) $meeting->organization_id);
     }
     if (method_exists($user, 'hasAnyRole') && $user->hasAnyRole(['Super Admin', 'Admin', 'Quản trị'])) {
-        return true;
+        return [
+            'user_id'                 => $userId,
+            'participant_id'          => $participant?->id,
+            'is_attendance_confirmed' => $isAttendanceConfirmed,
+        ];
     }
 
     return false;

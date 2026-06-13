@@ -96,13 +96,16 @@ class MeetingDiscussionRegistrationController extends Controller
      * Operator/Chair có thể bổ sung:
      *   - operator_note (discussion): ghi chú thảo luận
      *   - answer_content (question): nội dung trả lời chất vấn
-     * Đại biểu KHÔNG sửa được 2 field này (BE tự strip trong prepareForValidation).
+     *   - answer_attachment (question): file đính kèm trả lời chất vấn
+     * Đại biểu KHÔNG sửa được 3 field này (BE tự strip trong prepareForValidation).
      *
      * @urlParam meetingDiscussionRegistration integer required ID đăng ký. Example: 1
      * @bodyParam type string Loại đăng ký (discussion | question). Example: question
      * @bodyParam content string Nội dung đăng ký. Example: Làm rõ nguyên nhân chậm tiến độ
      * @bodyParam operator_note string Ghi chú thảo luận (operator/chair). Example: Đề xuất được tiếp thu.
      * @bodyParam answer_content string Nội dung trả lời chất vấn (operator/chair). Example: Đã trả lời: phân bổ 200 tỷ.
+     * @bodyParam answer_attachment file Tệp đính kèm trả lời chất vấn (chỉ chair/operator). Example: (binary)
+     * @bodyParam remove_answer_attachment boolean Xóa tệp đính kèm trả lời chất vấn (chỉ chair/operator). Example: false
      * @bodyParam attachment file Tệp đính kèm mới (thay tệp cũ). Example: (binary)
      * @bodyParam remove_attachment boolean Xóa tệp đính kèm hiện tại. Example: false
      * @bodyParam status string Trạng thái đăng ký. Example: completed
@@ -210,6 +213,7 @@ class MeetingDiscussionRegistrationController extends Controller
      * @bodyParam content string Nội dung đăng ký. Example: Cập nhật nội dung
      * @bodyParam operator_note string Ghi chú thảo luận (chỉ chair/op). Example: Đã ghi nhận
      * @bodyParam answer_content string Nội dung trả lời chất vấn (chỉ chair/op). Example: Đã trả lời
+     * @bodyParam answer_attachment file Tệp đính kèm trả lời chất vấn (chỉ chair/op). Example: (binary)
      */
     public function updateInMeeting(UpdateMeetingDiscussionRegistrationRequest $request, Meeting $meeting, MeetingDiscussionRegistration $meetingDiscussionRegistration)
     {

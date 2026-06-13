@@ -55,7 +55,7 @@ class MeetingDiscussionRegistrationService
 
     public function index(array $filters, int $limit, ?Meeting $meeting = null)
     {
-        $query = MeetingDiscussionRegistration::with(['participant', 'agenda', 'mediaFile', 'attachments.mediaFile'])
+        $query = MeetingDiscussionRegistration::with(['participant.attendance', 'agenda', 'mediaFile', 'attachments.mediaFile'])
             ->filter($filters);
 
         if ($meeting) {
@@ -67,7 +67,7 @@ class MeetingDiscussionRegistrationService
 
     public function show(MeetingDiscussionRegistration $meetingDiscussionRegistration): MeetingDiscussionRegistration
     {
-        return $meetingDiscussionRegistration->load(['participant', 'agenda', 'mediaFile', 'attachments.mediaFile']);
+        return $meetingDiscussionRegistration->load(['participant', 'agenda', 'mediaFile', 'attachments.mediaFile', 'answerAttachment']);
     }
 
     public function store(array $validated, $file = null): MeetingDiscussionRegistration
@@ -86,6 +86,7 @@ class MeetingDiscussionRegistrationService
         if (! $participant) {
             throw new ModelNotFoundException('Bạn không phải đại biểu của cuộc họp này.');
         }
+
 
         // Spec line 276: BE kiểm tra cờ cho phép theo agenda.
         // Đăng ký luôn gắn với 1 chương trình cụ thể (agenda_id required).
@@ -146,7 +147,7 @@ class MeetingDiscussionRegistrationService
         // Phân quyền:
         //   - Owner đại biểu (auth = participant.attendee.user_id): update content/attachment/status/sort_order.
         //   - Chair/Operator của meeting (MeetingPolicy::operate): update operator_note (ghi chú thảo luận)
-        //     và answer_content (nội dung trả lời chất vấn).
+        //     và answer_content (nội dung trả lời chất vấn) và answer_attachment (file đính kèm trả lời).
         //   - Cả 2 vai trò có thể giao nhau (vd chair tự đăng ký phát biểu).
         $userId = $this->resolveCurrentUserId();
         $model->loadMissing(['participant.attendee', 'meeting.chairperson', 'meeting.operator']);
@@ -161,9 +162,9 @@ class MeetingDiscussionRegistrationService
         }
 
         // Filter field theo vai trò:
-        //   Non-owner       -> chỉ cho update operator_note + answer_content (operator-only fields).
-        //   Non-operator    -> không được set operator_note + answer_content (strip).
-        $operatorOnlyFields = ['operator_note', 'answer_content'];
+        //   Non-owner       -> chỉ cho update operator_note + answer_content + answer_attachment (operator-only fields).
+        //   Non-operator    -> không được set operator_note + answer_content + answer_attachment (strip).
+        $operatorOnlyFields = ['operator_note', 'answer_content', 'answer_attachment', 'remove_answer_attachment'];
         if (! $isOwner) {
             $validated = array_intersect_key($validated, array_flip($operatorOnlyFields));
             $file = null;
@@ -176,16 +177,24 @@ class MeetingDiscussionRegistrationService
 
         $storedFiles = [];
         try {
-            $model = DB::transaction(function () use ($model, $validated, $file, &$storedFiles) {
+            $model = DB::transaction(function () use ($model, $validated, $file, $canOperate, &$storedFiles) {
                 $removeFile = (bool) ($validated['remove_attachment'] ?? false);
-                unset($validated['remove_attachment']);
+                $removeAnswerAttachment = (bool) ($validated['remove_answer_attachment'] ?? false);
+                unset($validated['remove_attachment'], $validated['remove_answer_attachment']);
+
+                // Xử lý answer_attachment file trong validated (nếu có key answer_attachment là file upload)
+                $answerAttachmentFile = $validated['answer_attachment'] ?? null;
+                unset($validated['answer_attachment']);
+
                 $model->update($validated);
 
+                // Xóa registration attachment (của đại biểu)
                 if ($removeFile && $model->media_id) {
                     $this->mediaService->removeByIds($model, [$model->media_id], 'meeting-discussion-attachments');
                     $model->update(['media_id' => null]);
                 }
 
+                // Upload registration attachment mới
                 if ($file) {
                     if ($model->media_id) {
                         $this->mediaService->removeByIds($model, [$model->media_id], 'meeting-discussion-attachments');
@@ -195,7 +204,23 @@ class MeetingDiscussionRegistrationService
                     $model->update(['media_id' => $media->id]);
                 }
 
-                return $model->load(['participant', 'agenda', 'mediaFile', 'attachments.mediaFile']);
+                // Xóa answer attachment (operator-only)
+                if ($canOperate && $removeAnswerAttachment && $model->answer_attachment_id) {
+                    $this->mediaService->removeByIds($model, [$model->answer_attachment_id], 'meeting-discussion-attachments');
+                    $model->update(['answer_attachment_id' => null]);
+                }
+
+                // Upload answer attachment mới (operator-only)
+                if ($canOperate && $answerAttachmentFile instanceof \Illuminate\Http\UploadedFile) {
+                    if ($model->answer_attachment_id) {
+                        $this->mediaService->removeByIds($model, [$model->answer_attachment_id], 'meeting-discussion-attachments');
+                    }
+                    $media = $this->mediaService->uploadOne($model, $answerAttachmentFile, 'meeting-discussion-attachments', ['disk' => 'public']);
+                    $storedFiles[] = ['disk' => $media->disk, 'path' => $media->getPathRelativeToRoot()];
+                    $model->update(['answer_attachment_id' => $media->id]);
+                }
+
+                return $model->load(['participant', 'agenda', 'mediaFile', 'attachments.mediaFile', 'answerAttachment']);
             });
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);

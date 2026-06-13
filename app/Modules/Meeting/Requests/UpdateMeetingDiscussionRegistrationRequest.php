@@ -29,6 +29,8 @@ class UpdateMeetingDiscussionRegistrationRequest extends FormRequest
         if (! $isOperatorOrChair) {
             $this->offsetUnset('operator_note');
             $this->offsetUnset('answer_content');
+            $this->offsetUnset('answer_attachment');
+            $this->offsetUnset('remove_answer_attachment');
         }
     }
 
@@ -42,6 +44,8 @@ class UpdateMeetingDiscussionRegistrationRequest extends FormRequest
             'answer_content' => 'sometimes|nullable|string|max:10000',
             'attachment' => 'nullable|file|max:10240',
             'remove_attachment' => 'nullable|boolean',
+            'answer_attachment' => 'nullable|file|max:10240',
+            'remove_answer_attachment' => 'nullable|boolean',
             'is_public' => 'nullable|boolean',
             'status' => ['sometimes', MeetingDiscussionStatusEnum::rule()],
             'completed_at' => 'nullable|date',
@@ -79,6 +83,8 @@ class UpdateMeetingDiscussionRegistrationRequest extends FormRequest
             'answer_content' => 'Nội dung trả lời chất vấn',
             'attachment' => 'Tệp đính kèm',
             'remove_attachment' => 'Xóa tệp đính kèm',
+            'answer_attachment' => 'Tệp đính kèm trả lời chất vấn',
+            'remove_answer_attachment' => 'Xóa tệp đính kèm trả lời chất vấn',
             'is_public' => 'Công khai',
             'status' => 'Trạng thái',
             'completed_at' => 'Thời điểm hoàn thành',
@@ -100,6 +106,8 @@ class UpdateMeetingDiscussionRegistrationRequest extends FormRequest
             ],
             'attachment' => ['description' => 'Tệp đính kèm mới (sẽ thay tệp cũ qua MediaService).'],
             'remove_attachment' => ['description' => 'Xóa tệp đính kèm hiện tại hay không.', 'example' => false],
+            'answer_attachment' => ['description' => 'Tệp đính kèm trả lời chất vấn (chỉ chair/operator).'],
+            'remove_answer_attachment' => ['description' => 'Xóa tệp đính kèm trả lời chất vấn hiện tại (chỉ chair/operator).', 'example' => false],
             'status' => ['description' => 'Trạng thái đăng ký (registered | completed).', 'example' => 'completed'],
             'completed_at' => ['description' => 'Thời điểm hoàn tất.', 'example' => '2026-05-01 09:25:00'],
             'sort_order' => ['description' => 'Thứ tự gọi.', 'example' => 2],

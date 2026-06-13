@@ -14,7 +14,8 @@ class MeetingDiscussionRegistrationResource extends JsonResource
             'meeting_id' => $this->meeting_id,
             'meeting_agenda_id' => $this->meeting_agenda_id,
             'meeting_participant_id' => $this->meeting_participant_id,
-            'participant_name' => $this->participant?->display_name,
+            'participant_name'             => $this->participant?->display_name,
+            'is_attendance_confirmed'       => $this->participant?->attendance?->status === 'present',
             'type' => $this->type,
             'content' => $this->content,
             // Operator/Chair fill sau khi đại biểu xong lượt.
@@ -22,6 +23,9 @@ class MeetingDiscussionRegistrationResource extends JsonResource
             //   - answer_content   : nội dung trả lời chất vấn (áp dụng type=question)
             'operator_note' => $this->operator_note,
             'answer_content' => $this->answer_content,
+            'answer_attachment_id' => $this->answer_attachment_id,
+            'answer_attachment_url' => $this->answerAttachment ? '/storage/'.$this->answerAttachment->id.'/'.$this->answerAttachment->file_name : null,
+            'answer_attachment_name' => $this->answerAttachment?->file_name,
             // Legacy single attachment (media_id) — giữ cho backward-compat, FE mới dùng
             // mảng attachments bên dưới (multi-file).
             'media_id' => $this->media_id,

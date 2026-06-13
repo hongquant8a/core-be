@@ -194,6 +194,21 @@ class Meeting extends TenantModel implements HasMedia
         return null;
     }
 
+    /**
+     * User hiện tại có quyền bỏ phiếu không.
+     * Source of truth là list đại biểu + đã được xác nhận điểm danh (attendance present).
+     * Chủ trì chỉ được vote nếu cũng là đại biểu. Thư ký không được vote.
+     */
+    public function canVote(\App\Modules\Core\Models\User $user): bool
+    {
+        $participant = $this->participants()
+            ->whereHas('attendee', fn ($q) => $q->where('user_id', $user->id))
+            ->with('attendance')
+            ->first();
+
+        return $participant && $participant->attendance?->status === 'present';
+    }
+
     public function reminders()
     {
         return $this->hasMany(MeetingReminder::class, 'meeting_id');

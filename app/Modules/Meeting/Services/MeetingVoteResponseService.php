@@ -105,16 +105,21 @@ class MeetingVoteResponseService
             ]);
         }
 
-        // Allow: chủ trì meeting (FK match) HOẶC participant (đại biểu được mời).
-        // Operator (thư ký) — vai trò vận hành, KHÔNG vote.
-        $isChair = (int) ($topic->meeting?->chairperson?->user_id ?? 0) === $userId;
+        // Chỉ participant (đại biểu) đã được xác nhận điểm danh mới được vote.
+        // Chủ trì chỉ vote được nếu cũng là đại biểu. Thư ký không được vote.
         $participant = MeetingParticipant::query()
             ->where('meeting_id', $topic->meeting_id)
             ->whereHas('attendee', fn ($q) => $q->where('user_id', $userId))
+            ->with('attendance')
             ->first();
 
-        if (! $isChair && ! $participant) {
+        if (! $participant) {
             throw new ModelNotFoundException('Bạn không có quyền bỏ phiếu trong cuộc họp này.');
+        }
+        if (! $participant->attendance || $participant->attendance->status !== 'present') {
+            throw ValidationException::withMessages([
+                'meeting_vote_topic_id' => ['Bạn chưa được xác nhận điểm danh — không thể bỏ phiếu.'],
+            ]);
         }
 
         $existing = MeetingVoteResponse::query()

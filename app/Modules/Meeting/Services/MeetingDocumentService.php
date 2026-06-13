@@ -25,7 +25,8 @@ class MeetingDocumentService
     {
         $meetingId = $filters['meeting_id'] ?? null;
         $meeting = $meetingId ? Meeting::find($meetingId) : null;
-        $isParticipant = $this->shouldSeeAllDocs($meeting);
+        $strictPublic = ! empty($filters['strict_public']);
+        $isParticipant = $strictPublic ? false : $this->shouldSeeAllDocs($meeting);
 
         return MeetingDocument::with(['agenda', 'documentType', 'mediaFile'])
             ->when(! $isParticipant, fn ($q) => $q->where('is_public', true)

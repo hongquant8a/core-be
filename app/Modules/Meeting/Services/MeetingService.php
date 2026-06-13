@@ -35,17 +35,22 @@ class MeetingService
      */
     public function publicIndex(array $filters, int $limit)
     {
-        $userId = $this->resolveUserId();
+        $strictPublic = ! empty($filters['strict_public']);
+        $userId = $strictPublic ? null : $this->resolveUserId();
         $myMeetingIds = $userId ? $this->visibleMeetingIdsForUser($userId) : [];
 
         // Doc filter dùng chung cho preload + count: is_public=true HOẶC thuộc meeting user tham gia.
-        $docFilter = function ($q) use ($myMeetingIds) {
-            $q->where(function ($sub) use ($myMeetingIds) {
-                $sub->where('is_public', true);
-                if (! empty($myMeetingIds)) {
-                    $sub->orWhereIn('meeting_id', $myMeetingIds);
-                }
-            });
+        $docFilter = function ($q) use ($myMeetingIds, $strictPublic) {
+            if ($strictPublic) {
+                $q->where('is_public', true);
+            } else {
+                $q->where(function ($sub) use ($myMeetingIds) {
+                    $sub->where('is_public', true);
+                    if (! empty($myMeetingIds)) {
+                        $sub->orWhereIn('meeting_id', $myMeetingIds);
+                    }
+                });
+            }
         };
 
         $query = Meeting::with([
@@ -62,7 +67,7 @@ class MeetingService
             // documents_count: số tài liệu visible cho caller — dùng cho sidebar UI count.
             ->withCount(['documents as documents_count' => $docFilter])
             ->filter($filters)
-            ->where(function ($outer) use ($myMeetingIds) {
+            ->where(function ($outer) use ($myMeetingIds, $strictPublic) {
                 // Branch 1: cuộc họp công khai + đã ban hành.
                 $outer->where(function ($public) {
                     $public->where('is_public', true)
@@ -71,7 +76,7 @@ class MeetingService
 
                 // Branch 2 (auth): meeting user là chủ trì / thư ký / participant
                 // — dùng id list đã pluck từ visibleMeetingIdsForUser thay vì 3 whereHas.
-                if (! empty($myMeetingIds)) {
+                if (! $strictPublic && ! empty($myMeetingIds)) {
                     $outer->orWhereIn('id', $myMeetingIds);
                 }
             });

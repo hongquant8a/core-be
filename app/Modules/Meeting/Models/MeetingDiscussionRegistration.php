@@ -21,6 +21,7 @@ class MeetingDiscussionRegistration extends TenantModel implements HasMedia
         'content',
         'operator_note',
         'answer_content',
+        'answer_attachment_id',
         'media_id',
         'status',
         'is_public',
@@ -53,6 +54,11 @@ class MeetingDiscussionRegistration extends TenantModel implements HasMedia
     public function mediaFile()
     {
         return $this->belongsTo(\Spatie\MediaLibrary\MediaCollections\Models\Media::class, 'media_id');
+    }
+
+    public function answerAttachment()
+    {
+        return $this->belongsTo(\Spatie\MediaLibrary\MediaCollections\Models\Media::class, 'answer_attachment_id');
     }
 
     public function attachments()
