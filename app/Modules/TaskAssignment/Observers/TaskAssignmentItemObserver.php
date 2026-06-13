@@ -20,11 +20,16 @@ class TaskAssignmentItemObserver
             return;
         }
 
-        // Schedule reminders — chỉ khi document đã ban hành VÀ end_at hoặc status thay đổi
+        // Với item mới tạo: service tự gọi scheduleFor() sau transaction để tránh deadlock.
+        if ($item->wasRecentlyCreated) {
+            return;
+        }
+
+        // Schedule reminders khi document đã ban hành VÀ end_at/status/deadline thay đổi.
         $item->loadMissing('document');
         $isIssued = ($item->document->status ?? null) === TaskAssignmentDocumentStatusEnum::Issued->value;
 
-        if ($isIssued && ($item->wasChanged(['end_at', 'processing_status', 'deadline_type']) || $item->wasRecentlyCreated)) {
+        if ($isIssued && $item->wasChanged(['end_at', 'processing_status', 'deadline_type'])) {
             $this->scheduler->scheduleFor($item);
         }
     }

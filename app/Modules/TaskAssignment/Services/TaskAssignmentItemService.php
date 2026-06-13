@@ -11,6 +11,7 @@ use App\Modules\TaskAssignment\Models\TaskAssignmentDepartment;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItemAttachment;
 use App\Modules\TaskAssignment\Models\TaskAssignmentReminder;
+use App\Services\Notification\Services\ReminderScheduler;
 use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +20,10 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class TaskAssignmentItemService
 {
-    public function __construct(private MediaService $mediaService) {}
+    public function __construct(
+        private MediaService $mediaService,
+        private ReminderScheduler $reminderScheduler,
+    ) {}
 
     public function stats(array $filters): array
     {
@@ -119,7 +123,7 @@ class TaskAssignmentItemService
         $storedFiles = [];
 
         try {
-            return DB::transaction(function () use ($validated, $files, $reminders, &$storedFiles) {
+            $item = DB::transaction(function () use ($validated, $files, &$storedFiles) {
                 $users = $validated['users'] ?? [];
 
                 $data = collect($validated)->except(['users', 'attachments', 'remove_attachment_ids'])->all();
@@ -134,12 +138,17 @@ class TaskAssignmentItemService
 
                 $this->fireTaskAssignedForNewUsers($item, $addedUserIds);
 
-                if (! empty($reminders)) {
-                    $this->syncReminders($item, $reminders);
-                }
-
                 return $item->load(['document', 'itemType', 'users', 'attachments.media', 'creator.media', 'editor.media', 'reminders']);
             });
+
+            // Reminder operations nằm NGOÀI transaction để tránh deadlock khi
+            // concurrent request cùng INSERT vào task_assignment_reminders.
+            if (! empty($reminders)) {
+                $this->syncReminders($item, $reminders);
+            }
+            $this->reminderScheduler->scheduleFor($item);
+
+            return $item;
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);
             throw $exception;
@@ -151,7 +160,7 @@ class TaskAssignmentItemService
         $storedFiles = [];
 
         try {
-            return DB::transaction(function () use ($item, $validated, $files, $removeAttachmentIds, $reminders, &$storedFiles) {
+            $item = DB::transaction(function () use ($item, $validated, $files, $removeAttachmentIds, &$storedFiles) {
                 $users = $validated['users'] ?? null;
 
                 $data = collect($validated)->except(['users', 'attachments', 'remove_attachment_ids'])->all();
@@ -170,12 +179,16 @@ class TaskAssignmentItemService
 
                 $this->fireTaskAssignedForNewUsers($item, $addedUserIds);
 
-                if (! empty($reminders)) {
-                    $this->syncReminders($item, $reminders);
-                }
-
                 return $item->load(['document', 'itemType', 'users', 'attachments.media', 'creator.media', 'editor.media', 'reminders']);
             });
+
+            // Sync CUSTOM reminders nằm NGOÀI transaction để tránh deadlock.
+            // PRESET reminders do observer handle khi wasChanged(end_at/status/deadline).
+            if ($reminders !== null) {
+                $this->syncReminders($item, $reminders);
+            }
+
+            return $item;
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);
             throw $exception;
