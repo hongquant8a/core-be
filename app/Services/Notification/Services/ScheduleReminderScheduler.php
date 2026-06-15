@@ -45,6 +45,7 @@ class ScheduleReminderScheduler
 
                 ScheduleReminder::create([
                     'schedule_id'              => $schedule->id,
+                    'reminder_type'            => 'scheduled',
                     'moment'                   => $moment,
                     'offset_minutes'           => $offset,
                     'source'                   => 'PRESET',

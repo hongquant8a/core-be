@@ -51,10 +51,10 @@ class SendSchedulePublishedNotifications implements ShouldQueue
 
     private function resolveChannels(int $organizationId, \App\Modules\Scheduling\Models\Schedule $schedule): array
     {
-        // Per-record: kiểm tra schedule.reminders có source=CUSTOM + moment=null (instant).
+        // Per-record: kiểm tra schedule.reminders có reminder_type=instant (active).
         $instantChannels = $schedule->reminders()
+            ->where('reminder_type', 'instant')
             ->where('source', 'CUSTOM')
-            ->whereNull('moment')
             ->where('status', 'active')
             ->value('channels');
         if (! empty($instantChannels)) {

@@ -13,7 +13,7 @@ class ScheduleReminder extends Model
     protected $table = 'schedule_reminders';
 
     protected $fillable = [
-        'schedule_id', 'moment', 'offset_minutes', 'remind_at', 'channels',
+        'schedule_id', 'reminder_type', 'moment', 'offset_minutes', 'remind_at', 'channels',
         'notification_schedule_id', 'status', 'fired_at', 'source', 'created_at',
     ];
 
@@ -58,17 +58,18 @@ class ScheduleReminder extends Model
         return $this->offset_minutes;
     }
 
-    public function getReminderTypeAttribute(): string
+    public function getReminderTypeAttribute($value): string
     {
-        return $this->moment === null ? 'instant' : 'scheduled';
+        return $value ?: ($this->moment === null ? 'instant' : 'scheduled');
     }
 
     public function setReminderTypeAttribute($value): void
     {
+        $this->attributes['reminder_type'] = $value;
+
         if ($value === 'instant') {
             $this->moment = null;
         }
-        // scheduled không cần set vì nó là default khi moment là BEFORE/ON/AFTER
     }
 
     public function getSourceAttribute($value)

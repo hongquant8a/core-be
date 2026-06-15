@@ -464,6 +464,7 @@ class ScheduleService
             // Clone reminders
             foreach ($schedule->reminders as $reminder) {
                 $new->reminders()->create([
+                    'reminder_type'            => $reminder->reminder_type,
                     'moment'                   => $reminder->moment,
                     'offset_minutes'           => $reminder->offset_minutes,
                     'channels'                 => $reminder->channels,
@@ -563,6 +564,7 @@ class ScheduleService
             if ($reminderType === 'instant') {
                 $attributes = [
                     'schedule_id'    => $schedule->id,
+                    'reminder_type'  => 'instant',
                     'moment'         => null,
                     'offset_minutes' => 0,
                     'channels'       => $channels,
@@ -588,6 +590,7 @@ class ScheduleService
 
                 $attributes = [
                     'schedule_id'    => $schedule->id,
+                    'reminder_type'  => 'scheduled',
                     'moment'         => $moment,
                     'offset_minutes' => $rawOffset,
                     'channels'       => $channels,
@@ -597,15 +600,15 @@ class ScheduleService
                 ];
             }
 
-            if (! empty($r['id'])) {
-                $existing = \App\Modules\Scheduling\Models\ScheduleReminder::where('id', $r['id'])
-                    ->where('schedule_id', $schedule->id)
-                    ->where('source', 'CUSTOM')
-                    ->first();
-                if ($existing) {
-                    $existing->update($attributes);
-                    $keptIds[] = $existing->id;
-                }
+            // Upsert theo schedule_id + reminder_type + source (đồng bộ với Meeting/TaskAssignment)
+            $existing = \App\Modules\Scheduling\Models\ScheduleReminder::where('schedule_id', $schedule->id)
+                ->where('reminder_type', $reminderType)
+                ->where('source', 'CUSTOM')
+                ->first();
+
+            if ($existing) {
+                $existing->update($attributes);
+                $keptIds[] = $existing->id;
             } else {
                 $new = \App\Modules\Scheduling\Models\ScheduleReminder::create($attributes);
                 $keptIds[] = $new->id;
