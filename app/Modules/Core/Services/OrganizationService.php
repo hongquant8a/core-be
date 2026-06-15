@@ -88,7 +88,131 @@ class OrganizationService
 
     public function store(array $data): Organization
     {
-        return Organization::create($data);
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($data) {
+            $org = Organization::create($data);
+
+            // 1. NotificationEventConfig — mỗi event 1 row cho org mới
+            foreach (\App\Services\Notification\Enums\NotificationEventEnum::cases() as $event) {
+                \App\Modules\Core\Models\NotificationEventConfig::firstOrCreate(
+                    [
+                        'module_key'      => $event->module()->value,
+                        'event_key'       => $event->value,
+                        'organization_id' => $org->id,
+                    ],
+                    ['enabled' => false]
+                );
+            }
+
+            // 2. NotificationSchedule — schedule mặc định cho từng event config
+            $this->seedNotificationSchedules($org->id);
+
+            // 3. OrgSchedulingSettings + SchedulingSetting
+            $workingSessions = [
+                'MORNING'   => ['start' => '07:30', 'end' => '11:30'],
+                'AFTERNOON' => ['start' => '13:30', 'end' => '17:00'],
+                'EVENING'   => ['start' => '19:00', 'end' => '21:00'],
+            ];
+            \App\Modules\Scheduling\Models\OrgSchedulingSettings::updateOrCreate(
+                ['organization_id' => $org->id],
+                [
+                    'executive_requires_approval' => false,
+                    'office_requires_approval'    => false,
+                    'executive_working_sessions'  => $workingSessions,
+                    'office_working_sessions'     => $workingSessions,
+                ]
+            );
+            \App\Modules\Scheduling\Models\SchedulingSetting::updateOrCreate(
+                ['organization_id' => $org->id],
+                ['default_channels' => ['inapp']]
+            );
+
+            return $org;
+        });
+    }
+
+    private function seedNotificationSchedules(int $organizationId): void
+    {
+        $configs = \App\Modules\Core\Models\NotificationEventConfig::where('organization_id', $organizationId)->get()->keyBy('event_key');
+
+        // ── TaskAssignment ──
+        $moduleKey = \App\Services\Notification\Enums\NotificationModuleEnum::TaskAssignment->value;
+        $isTaskAssignment = fn ($c) => $c && $c->module_key === $moduleKey;
+
+        // Non-reminder instant
+        foreach (['document_issued', 'task_assigned', 'task_completed', 'task_confirmed'] as $ek) {
+            $c = $configs->get($ek);
+            if (! $c) continue;
+            $label = match ($ek) {
+                'document_issued' => 'Thông báo ngay khi ban hành',
+                'task_assigned'   => 'Thông báo ngay khi giao việc',
+                'task_completed'  => 'Thông báo ngay khi hoàn thành',
+                'task_confirmed'  => 'Thông báo ngay khi xác nhận',
+                default           => 'Gửi ngay lập tức',
+            };
+            $s = \App\Modules\Core\Models\NotificationSchedule::firstOrNew([
+                'notification_event_config_id' => $c->id, 'moment' => null, 'offset_minutes' => null,
+            ]);
+            $s->label = $label; $s->sort_order = 0; $s->save();
+        }
+
+        // Reminder
+        $reminders = [
+            'reminder_before' => [['before', 1440, 'Nhắc trước 1 ngày', 1], ['before', 120, 'Nhắc trước 2 giờ', 2]],
+            'reminder_on'     => [['on', null, 'Đến hạn', 1]],
+            'reminder_after'  => [['after', 1440, 'Trễ 1 ngày', 1]],
+        ];
+        foreach ($reminders as $ek => $schedules) {
+            $c = $configs->get($ek);
+            if (! $c) continue;
+            foreach ($schedules as [$moment, $offset, $label, $sort]) {
+                \App\Modules\Core\Models\NotificationSchedule::firstOrCreate(
+                    ['notification_event_config_id' => $c->id, 'moment' => $moment, 'offset_minutes' => $offset],
+                    ['channels' => [], 'label' => $label, 'sort_order' => $sort],
+                );
+            }
+        }
+
+        // ── Meeting ──
+        $moduleKey = \App\Services\Notification\Enums\NotificationModuleEnum::Meeting->value;
+
+        // Instant
+        foreach (['meeting_published' => 'Gửi giấy mời ngay', 'meeting_updated' => 'Thông báo ngay khi cập nhật', 'meeting_cancelled' => 'Thông báo ngay khi hủy'] as $ek => $label) {
+            $c = $configs->get($ek);
+            if (! $c) continue;
+            $s = \App\Modules\Core\Models\NotificationSchedule::firstOrNew([
+                'notification_event_config_id' => $c->id, 'moment' => null, 'offset_minutes' => null,
+            ]);
+            $s->label = $label; $s->sort_order = 0; $s->save();
+        }
+
+        // Reminder
+        $reminders = [
+            'meeting_reminder_before' => [['before', 1440, 'Nhắc trước 1 ngày', 1], ['before', 30, 'Nhắc trước 30 phút', 2]],
+            'meeting_reminder_on'     => [['on', null, 'Đến giờ họp', 1]],
+            'meeting_reminder_after'  => [['after', 5, 'Sau 5 phút (nhắc kiểm tra biên bản)', 1]],
+        ];
+        foreach ($reminders as $ek => $schedules) {
+            $c = $configs->get($ek);
+            if (! $c) continue;
+            foreach ($schedules as [$moment, $offset, $label, $sort]) {
+                \App\Modules\Core\Models\NotificationSchedule::firstOrCreate(
+                    ['notification_event_config_id' => $c->id, 'moment' => $moment, 'offset_minutes' => $offset],
+                    ['channels' => [], 'label' => $label, 'sort_order' => $sort],
+                );
+            }
+        }
+
+        // ── Scheduling ──
+        $moduleKey = \App\Services\Notification\Enums\NotificationModuleEnum::Scheduling->value;
+
+        foreach (['schedule_published' => 'Gửi thông báo ngay khi ban hành', 'schedule_updated' => 'Gửi thông báo ngay khi cập nhật', 'schedule_cancelled' => 'Gửi thông báo ngay khi hủy'] as $ek => $label) {
+            $c = $configs->get($ek);
+            if (! $c) continue;
+            $s = \App\Modules\Core\Models\NotificationSchedule::firstOrNew([
+                'notification_event_config_id' => $c->id, 'moment' => null, 'offset_minutes' => null,
+            ]);
+            $s->label = $label; $s->sort_order = 0; $s->save();
+        }
     }
 
     public function update(Organization $organization, array $data): array
