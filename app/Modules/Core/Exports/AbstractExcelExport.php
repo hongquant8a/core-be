@@ -132,9 +132,10 @@ abstract class AbstractExcelExport implements WithHeadings, WithStyles, ShouldAu
                     ],
                 ]);
 
-                // Vertical center cho data rows.
+                // Data rows: canh trái mặc định, vertical center, wrap text.
                 if ($lastRow > 1) {
                     $sheet->getStyle("A2:{$lastColumn}{$lastRow}")->getAlignment()
+                        ->setHorizontal(Alignment::HORIZONTAL_LEFT)
                         ->setVertical(Alignment::VERTICAL_CENTER)
                         ->setWrapText(true);
                 }
