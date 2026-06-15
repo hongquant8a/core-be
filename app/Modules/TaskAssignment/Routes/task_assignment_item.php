@@ -26,3 +26,4 @@ Route::patch('/{taskAssignmentItem}/progress', [TaskAssignmentItemController::cl
 Route::patch('/{taskAssignmentItem}/status', [TaskAssignmentItemController::class, 'changeStatus'])->middleware('permission:task-assignment-items.changeStatus,web');
 Route::patch('/{taskAssignmentItem}/mark-done', [TaskAssignmentItemController::class, 'markDone'])->middleware('permission:task-assignment-items.markDone,web');
 Route::patch('/{taskAssignmentItem}/reopen', [TaskAssignmentItemController::class, 'reopen'])->middleware('permission:task-assignment-items.changeStatus,web');
+Route::patch('/{taskAssignmentItem}/reject', [TaskAssignmentItemController::class, 'reject'])->middleware('permission:task-assignment-items.changeStatus,web');

@@ -22,8 +22,12 @@ class ItemResource extends JsonResource
             'end_at' => $this->end_at?->format('H:i:s d/m/Y'),
             'processing_status' => $this->processing_status,
             'completion_percent' => $this->completion_percent,
+            'rejection_reason' => $this->rejection_reason,
+            'reported_at' => $this->reported_at?->format('H:i:s d/m/Y'),
+            'reported_by' => $this->whenLoaded('reporter', fn () => $this->formatUserSummary($this->reporter), null),
             'priority' => $this->priority,
             'completed_at' => $this->completed_at?->format('H:i:s d/m/Y'),
+            'approved_by' => $this->whenLoaded('approver', fn () => $this->formatUserSummary($this->approver), null),
             'is_overdue' => $this->resource->isOverdue(),
             'timing_status' => $this->resolveTimingStatus(),
             'departments' => $this->whenLoaded('users', function () {
@@ -94,6 +98,7 @@ class ItemResource extends JsonResource
     private function resolveTimingStatus(): string
     {
         $done = \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Done->value;
+        $pendingApproval = \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::PendingApproval->value;
         $cancelled = \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Cancelled->value;
         $hasDeadline = \App\Modules\TaskAssignment\Enums\TaskDeadlineTypeEnum::HasDeadline->value;
 
@@ -101,7 +106,8 @@ class ItemResource extends JsonResource
             return 'cancelled';
         }
 
-        if ($this->processing_status === $done) {
+        // done hoặc pending_approval có completed_at từ báo cáo → tính sớm/đúng/trễ hạn.
+        if (in_array($this->processing_status, [$done, $pendingApproval], true)) {
             if ($this->deadline_type === $hasDeadline && $this->end_at && $this->completed_at) {
                 $completedAt = \Carbon\Carbon::parse($this->completed_at);
                 $endAt = \Carbon\Carbon::parse($this->end_at);

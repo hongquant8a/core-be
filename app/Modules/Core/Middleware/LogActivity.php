@@ -155,6 +155,7 @@ class LogActivity
             'duplicate' => 'Sao chép',
             'reorder' => 'Sắp xếp lại',
             'reopen' => 'Mở lại',
+            'reject' => 'Từ chối duyệt',
             'week-matrix' => 'Xem ma trận tuần',
             'sync-members' => 'Đồng bộ thành viên nhóm',
             'driver-view' => 'Xem lịch của lái xe',

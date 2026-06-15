@@ -35,7 +35,7 @@ class TaskAssignmentItemController extends Controller
      * Thống kê công việc
      *
      * @queryParam search string Từ khóa tìm kiếm theo tên.
-     * @queryParam processing_status string Lọc theo trạng thái xử lý: todo, in_progress, done, overdue, paused, cancelled. Example: in_progress
+     * @queryParam processing_status string Lọc theo trạng thái xử lý: todo, in_progress, pending_approval, done, paused, cancelled. Example: in_progress
      * @queryParam priority string Lọc theo mức độ ưu tiên. Example: high
      * @queryParam deadline_type string Lọc theo loại thời hạn. Example: has_deadline
      * @queryParam task_assignment_document_id integer Lọc theo văn bản giao việc. Example: 1
@@ -52,7 +52,7 @@ class TaskAssignmentItemController extends Controller
      * @queryParam from_date date Lọc từ ngày tạo (Y-m-d). Example: 2026-01-01
      * @queryParam to_date date Lọc đến ngày tạo (Y-m-d). Example: 2026-12-31
      *
-     * @response 200 {"success": true, "data": {"total": 18, "todo": 5, "in_progress": 8, "done": 3, "paused": 0, "cancelled": 1, "overdue": 1}}
+     * @response 200 {"success": true, "data": {"total": 18, "todo": 5, "in_progress": 8, "pending_approval": 2, "done": 3, "paused": 0, "cancelled": 1, "overdue": 1, "timing_stats": {...}}}
      */
     public function stats(FilterRequest $request)
     {
@@ -63,7 +63,7 @@ class TaskAssignmentItemController extends Controller
      * Danh sách công việc
      *
      * @queryParam search string Từ khóa tìm kiếm theo tên.
-     * @queryParam processing_status string Lọc theo trạng thái xử lý: todo, in_progress, done, overdue, paused, cancelled. Example: in_progress
+     * @queryParam processing_status string Lọc theo trạng thái xử lý: todo, in_progress, pending_approval, done, paused, cancelled. Example: in_progress
      * @queryParam priority string Lọc theo mức độ ưu tiên. Example: high
      * @queryParam deadline_type string Lọc theo loại thời hạn. Example: has_deadline
      * @queryParam task_assignment_document_id integer Lọc theo văn bản giao việc. Example: 1
@@ -225,7 +225,7 @@ class TaskAssignmentItemController extends Controller
      *
      * @urlParam taskAssignmentItem integer required ID công việc. Example: 1
      *
-     * @bodyParam processing_status string required Trạng thái mới: todo, in_progress, done, overdue, paused, cancelled. Example: done
+     * @bodyParam processing_status string required Trạng thái mới: todo, in_progress, pending_approval, done, paused, cancelled. Example: done
      *
      * @apiResource App\Modules\TaskAssignment\Resources\ItemResource
      *
@@ -267,7 +267,7 @@ class TaskAssignmentItemController extends Controller
      * Đánh dấu công việc hoàn thành (manager xác nhận).
      *
      * Auto set: processing_status=done, completion_percent=100, completed_at=now().
-     * Yêu cầu: task chưa done/cancelled, có ít nhất 1 báo cáo đã được xác nhận và khóa.
+     * Yêu cầu: task đang ở pending_approval (báo cáo 100%, chờ duyệt).
      *
      * @urlParam taskAssignmentItem integer required ID công việc. Example: 1
      *
@@ -277,7 +277,7 @@ class TaskAssignmentItemController extends Controller
      *
      * @apiResourceAdditional success=true message="Đã đánh dấu hoàn thành."
      *
-     * @response 422 {"success": false, "message": "Phải có ít nhất 1 báo cáo đã được xác nhận trước khi đánh dấu hoàn thành."}
+     * @response 422 {"success": false, "message": "Công việc đang ở trạng thái \"Đang thực hiện\" — chỉ có thể đánh dấu hoàn thành khi đang chờ duyệt."}
      */
     public function markDone(TaskAssignmentItem $taskAssignmentItem)
     {
@@ -291,9 +291,35 @@ class TaskAssignmentItemController extends Controller
     }
 
     /**
+     * Từ chối duyệt hoàn thành công việc
+     *
+     * Chỉ áp dụng khi task đang ở pending_approval. Chuyển trạng thái về in_progress để nhân viên làm tiếp.
+     *
+     * @urlParam taskAssignmentItem integer required ID công việc. Example: 1
+     *
+     * @bodyParam rejection_reason string required Lý do từ chối duyệt. Example: Báo cáo chưa đầy đủ, cần bổ sung tài liệu đính kèm.
+     *
+     * @apiResource App\Modules\TaskAssignment\Resources\ItemResource
+     * @apiResourceModel App\Modules\TaskAssignment\Models\TaskAssignmentItem
+     * @apiResourceAdditional success=true message="Đã từ chối duyệt."
+     *
+     * @response 422 {"success": false, "message": "Công việc đang ở trạng thái \"Đang thực hiện\" — chỉ có thể từ chối khi đang chờ duyệt."}
+     */
+    public function reject(\App\Modules\TaskAssignment\Requests\RejectItemRequest $request, TaskAssignmentItem $taskAssignmentItem)
+    {
+        try {
+            $item = $this->itemService->reject($taskAssignmentItem, $request->rejection_reason);
+        } catch (\RuntimeException $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+
+        return $this->successResource(new ItemResource($item), 'Đã từ chối duyệt.');
+    }
+
+    /**
      * Xuất Excel danh sách công việc
      *
-     * Xuất ra các trường: id, name, description, document, item_type, deadline_type, start_at, end_at, processing_status, completion_percent, priority, completed_at, departments, created_by, updated_by, created_at, updated_at.
+     * Xuất ra các trường: id, name, description, document, item_type, deadline_type, start_at, end_at, processing_status, completion_percent, rejection_reason, reported_at, reported_by, priority, completed_at, approved_by, departments, created_by, updated_by, created_at, updated_at.
      *
      * @queryParam search string Từ khóa tìm kiếm.
      * @queryParam processing_status string Lọc theo trạng thái xử lý.

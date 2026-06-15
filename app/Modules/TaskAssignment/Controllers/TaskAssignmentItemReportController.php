@@ -71,8 +71,11 @@ class TaskAssignmentItemReportController extends Controller
      * Tạo báo cáo công việc
      *
      * @bodyParam task_assignment_item_id integer required ID công việc. Example: 1
-     * @bodyParam content string required Nội dung báo cáo. Example: Đã hoàn thành 50% khối lượng công việc.
-     * @bodyParam progress integer Tiến độ tại thời điểm báo cáo (0-100). Example: 50
+     * @bodyParam completion_percent integer Tiến độ hoàn thành (0-100). Nếu đạt 100%, công việc sẽ chuyển sang trạng thái chờ duyệt. Example: 100
+     * @bodyParam completed_at date Ngày hoàn thành công việc (Y-m-d). Example: 2026-04-30
+     * @bodyParam report_document_number string Số hiệu văn bản báo cáo. Example: BC-01/2026
+     * @bodyParam report_document_excerpt string Trích yếu nội dung báo cáo. Example: Báo cáo kết quả thực hiện công việc tháng 4/2026
+     * @bodyParam report_document_content string Nội dung chi tiết báo cáo.
      * @bodyParam attachments[] file Tệp đính kèm (tối đa 10 tệp, multipart/form-data).
      *
      * **Xử lý file đính kèm:** gửi `multipart/form-data` với `attachments[]` để upload.

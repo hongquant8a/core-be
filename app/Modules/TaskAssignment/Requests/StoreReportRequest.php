@@ -8,6 +8,7 @@ class StoreReportRequest extends BaseRequest
     {
         return [
             'task_assignment_item_id' => 'required|integer|exists:task_assignment_items,id',
+            'completion_percent' => 'nullable|integer|min:0|max:100',
             'completed_at' => 'nullable|date',
             'report_document_number' => 'nullable|string|max:255',
             'report_document_excerpt' => 'nullable|string|max:65535',
@@ -20,6 +21,10 @@ class StoreReportRequest extends BaseRequest
     public function bodyParameters(): array
     {
         return [
+            'completion_percent' => [
+                'description' => 'Tiến độ hoàn thành (0-100). Nếu đạt 100%, công việc sẽ chuyển sang trạng thái chờ duyệt.',
+                'example' => 100,
+            ],
             'completed_at' => [
                 'description' => 'Ngày hoàn thành công việc.',
                 'example' => '2026-04-30',
@@ -47,6 +52,7 @@ class StoreReportRequest extends BaseRequest
     {
         return [
             'task_assignment_item_id' => 'Công việc',
+            'completion_percent' => 'Tiến độ hoàn thành',
             'completed_at' => 'Thời gian hoàn thành',
             'report_document_number' => 'Số văn bản báo cáo',
             'report_document_excerpt' => 'Report document excerpt',

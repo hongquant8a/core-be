@@ -9,6 +9,7 @@ enum TaskProgressStatusEnum: string
 {
     case Todo = 'todo';
     case InProgress = 'in_progress';
+    case PendingApproval = 'pending_approval';
     case Done = 'done';
     case Paused = 'paused';
     case Cancelled = 'cancelled';
@@ -26,7 +27,8 @@ enum TaskProgressStatusEnum: string
     }
 
     /**
-     * Trạng thái user được phép chọn trong UI (loại `done` — internal).
+     * Trạng thái user được phép chọn trong UI (loại `done`, `pending_approval` — internal).
+     * - `pending_approval`: BE auto set khi updateProgress với completion_percent=100.
      * - `done`: BE auto set qua endpoint `PATCH /items/{id}/mark-done` (manager).
      *
      * Khái niệm "trễ hạn" KHÔNG còn là enum value — chuyển sang computed flag
@@ -35,10 +37,10 @@ enum TaskProgressStatusEnum: string
      */
     public static function selectableValues(): array
     {
-        return array_values(array_diff(self::values(), [self::Done->value]));
+        return array_values(array_diff(self::values(), [self::Done->value, self::PendingApproval->value]));
     }
 
-    /** Rule validation cho user input — KHÔNG cho phép chọn `done` trực tiếp. */
+    /** Rule validation cho user input — KHÔNG cho phép chọn `done` và `pending_approval` trực tiếp. */
     public static function selectableRule(): string
     {
         return 'in:'.implode(',', self::selectableValues());
@@ -50,6 +52,7 @@ enum TaskProgressStatusEnum: string
         return match ($this) {
             self::Todo => 'Chưa bắt đầu',
             self::InProgress => 'Đang thực hiện',
+            self::PendingApproval => 'Chờ duyệt',
             self::Done => 'Hoàn thành',
             self::Paused => 'Tạm dừng',
             self::Cancelled => 'Đã hủy',

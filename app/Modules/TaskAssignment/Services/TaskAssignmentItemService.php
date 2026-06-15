@@ -33,6 +33,7 @@ class TaskAssignmentItemService
             'total' => (clone $base)->count(),
             'todo' => (clone $base)->where('processing_status', TaskProgressStatusEnum::Todo->value)->count(),
             'in_progress' => (clone $base)->where('processing_status', TaskProgressStatusEnum::InProgress->value)->count(),
+            'pending_approval' => (clone $base)->where('processing_status', TaskProgressStatusEnum::PendingApproval->value)->count(),
             'paused' => (clone $base)->where('processing_status', TaskProgressStatusEnum::Paused->value)->count(),
             'done' => (clone $base)->where('processing_status', TaskProgressStatusEnum::Done->value)->count(),
             'cancelled' => (clone $base)->where('processing_status', TaskProgressStatusEnum::Cancelled->value)->count(),
@@ -52,6 +53,7 @@ class TaskAssignmentItemService
             ->whereIn('processing_status', [
                 TaskProgressStatusEnum::Todo->value,
                 TaskProgressStatusEnum::InProgress->value,
+                TaskProgressStatusEnum::PendingApproval->value,
                 TaskProgressStatusEnum::Paused->value,
             ])->count();
     }
@@ -62,7 +64,7 @@ class TaskAssignmentItemService
         $cancelled = TaskProgressStatusEnum::Cancelled->value;
         $hasDeadline = TaskDeadlineTypeEnum::HasDeadline->value;
 
-        // Upcoming: active statuses, and (no deadline or end_at >= now)
+        // Upcoming: active statuses (todo/in_progress/paused/pending_approval), and (no deadline or end_at >= now)
         $upcoming = (clone $base)->whereNotIn('processing_status', [$done, $cancelled])
             ->where(fn ($sub) => $sub->where('deadline_type', '!=', $hasDeadline)
                 ->orWhereNull('end_at')
@@ -104,7 +106,7 @@ class TaskAssignmentItemService
 
     public function index(array $filters, int $limit)
     {
-        return TaskAssignmentItem::with(['document', 'itemType', 'users', 'assigner', 'creator.media', 'editor.media', 'attachments.media', 'reminders'])
+        return TaskAssignmentItem::with(['document', 'itemType', 'users', 'assigner', 'creator.media', 'editor.media', 'attachments.media', 'reminders', 'reporter', 'approver'])
             ->withCount('reports')
             ->filter($filters)
             ->paginate($limit);
@@ -112,7 +114,7 @@ class TaskAssignmentItemService
 
     public function show(TaskAssignmentItem $item): TaskAssignmentItem
     {
-        $item->load(['document', 'itemType', 'users', 'reports', 'attachments.media', 'assigner', 'creator.media', 'editor.media', 'reminders']);
+        $item->load(['document', 'itemType', 'users', 'reports', 'attachments.media', 'assigner', 'creator.media', 'editor.media', 'reminders', 'reporter', 'approver']);
         $item->loadCount(['reports', 'transfers', 'notes']);
 
         return $item;
@@ -214,8 +216,9 @@ class TaskAssignmentItemService
     {
         $data = $this->buildStatusUpdateData($status);
 
-        // Reopen from done -> clear completed_at
-        if ($item->processing_status === TaskProgressStatusEnum::Done->value && $status !== TaskProgressStatusEnum::Done->value) {
+        // Reopen from done/pending_approval -> clear completed_at
+        if (in_array($item->processing_status, [TaskProgressStatusEnum::Done->value, TaskProgressStatusEnum::PendingApproval->value], true)
+            && $status !== TaskProgressStatusEnum::Done->value) {
             $data['completed_at'] = null;
         }
 
@@ -225,19 +228,21 @@ class TaskAssignmentItemService
     }
 
     /**
-     * Mở lại công việc từ trạng thái đóng (done/cancelled/paused).
+     * Mở lại công việc từ trạng thái đóng (done/cancelled/paused/pending_approval).
      * Trạng thái mới tự động suy từ completion_percent:
      *   0%    → todo (chưa thực hiện)
-     *   1-100% → in_progress (đang thực hiện)
-     * done chỉ đạt được khi manager gọi mark-done, không tự động từ reopen.
+     *   1-99% → in_progress (đang thực hiện)
+     *   100%  → pending_approval (chờ duyệt)
      */
     public function reopen(TaskAssignmentItem $item): TaskAssignmentItem
     {
         $percent = (int) ($item->completion_percent ?? 0);
 
-        $status = $percent > 0
-            ? TaskProgressStatusEnum::InProgress->value
-            : TaskProgressStatusEnum::Todo->value;
+        $status = match (true) {
+            $percent >= 100 => TaskProgressStatusEnum::PendingApproval->value,
+            $percent > 0   => TaskProgressStatusEnum::InProgress->value,
+            default         => TaskProgressStatusEnum::Todo->value,
+        };
 
         $item->update($this->buildStatusUpdateData($status));
 
@@ -262,7 +267,6 @@ class TaskAssignmentItemService
         if (array_key_exists('completion_percent', $validated)) {
             $item->completion_percent = $validated['completion_percent'];
 
-            // Nếu client không gửi processing_status → tự suy từ completion_percent.
             if (! array_key_exists('processing_status', $validated)) {
                 $percent = (int) $validated['completion_percent'];
                 $item->processing_status = $percent > 0
@@ -281,25 +285,47 @@ class TaskAssignmentItemService
     }
 
     /**
+     * Manager từ chối duyệt hoàn thành — pending_approval → in_progress.
+     *
+     * @throws \RuntimeException Khi task không ở pending_approval.
+     */
+    public function reject(TaskAssignmentItem $item, string $reason): TaskAssignmentItem
+    {
+        if ($item->processing_status !== TaskProgressStatusEnum::PendingApproval->value) {
+            $label = TaskProgressStatusEnum::tryFrom($item->processing_status)?->label() ?? $item->processing_status;
+            throw new \RuntimeException("Công việc đang ở trạng thái \"{$label}\" — chỉ có thể từ chối khi đang chờ duyệt.");
+        }
+
+        $item->update([
+            'processing_status' => TaskProgressStatusEnum::Todo->value,
+            'completion_percent' => 0,
+            'rejection_reason' => $reason,
+        ]);
+
+        return $item->load(['document', 'itemType', 'users', 'creator.media', 'editor.media']);
+    }
+
+    /**
      * Manager đánh dấu công việc hoàn thành (mark-done).
      *
+     * Chỉ accept khi task đang ở pending_approval (báo cáo 100%, chờ duyệt).
      * Auto set: processing_status=done, completion_percent=100, completed_at=now().
      *
-     * @throws \RuntimeException Khi task đã done/cancelled.
+     * @throws \RuntimeException Khi task không ở pending_approval.
      */
     public function markDone(TaskAssignmentItem $item): TaskAssignmentItem
     {
-        if (in_array($item->processing_status, [
-            TaskProgressStatusEnum::Done->value,
-            TaskProgressStatusEnum::Cancelled->value,
-        ], true)) {
-            throw new \RuntimeException('Công việc đã đóng, không thể đánh dấu lại.');
+        if ($item->processing_status !== TaskProgressStatusEnum::PendingApproval->value) {
+            $label = TaskProgressStatusEnum::tryFrom($item->processing_status)?->label() ?? $item->processing_status;
+            throw new \RuntimeException("Công việc đang ở trạng thái \"{$label}\" — chỉ có thể đánh dấu hoàn thành khi đang chờ duyệt.");
         }
 
         $item->update([
             'processing_status' => TaskProgressStatusEnum::Done->value,
             'completion_percent' => 100,
-            'completed_at' => now(),
+            'completed_at' => $item->completed_at ?? now(),
+            'approved_by' => auth()->id(),
+            'rejection_reason' => null,
         ]);
 
         event(new \App\Services\Notification\Events\TaskConfirmed($item->fresh()));
@@ -484,6 +510,7 @@ class TaskAssignmentItemService
         $cancelled = TaskProgressStatusEnum::Cancelled->value;
         $todo = TaskProgressStatusEnum::Todo->value;
         $inProgress = TaskProgressStatusEnum::InProgress->value;
+        $pendingApproval = TaskProgressStatusEnum::PendingApproval->value;
         $paused = TaskProgressStatusEnum::Paused->value;
         $hasDeadline = TaskDeadlineTypeEnum::HasDeadline->value;
 
@@ -504,11 +531,12 @@ class TaskAssignmentItemService
             ->selectRaw('COUNT(*) as total')
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$todo}' THEN 1 ELSE 0 END) as todo")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$inProgress}' THEN 1 ELSE 0 END) as in_progress")
+            ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$pendingApproval}' THEN 1 ELSE 0 END) as pending_approval")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$paused}' THEN 1 ELSE 0 END) as paused")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' THEN 1 ELSE 0 END) as done")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$cancelled}' THEN 1 ELSE 0 END) as cancelled")
             ->selectRaw("SUM(CASE WHEN ti.processing_status NOT IN ('{$done}','{$cancelled}') AND (ti.deadline_type != '{$hasDeadline}' OR ti.end_at IS NULL OR ti.end_at >= NOW()) THEN 1 ELSE 0 END) as upcoming")
-            ->selectRaw("SUM(CASE WHEN ti.deadline_type = '{$hasDeadline}' AND ti.end_at < NOW() AND ti.processing_status IN ('{$todo}','{$inProgress}','{$paused}') THEN 1 ELSE 0 END) as overdue")
+            ->selectRaw("SUM(CASE WHEN ti.deadline_type = '{$hasDeadline}' AND ti.end_at < NOW() AND ti.processing_status IN ('{$todo}','{$inProgress}','{$pendingApproval}','{$paused}') THEN 1 ELSE 0 END) as overdue")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' AND ti.deadline_type = '{$hasDeadline}' AND ti.completed_at > ti.end_at THEN 1 ELSE 0 END) as late")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' AND ti.deadline_type = '{$hasDeadline}' AND DATE(ti.completed_at) < DATE(ti.end_at) THEN 1 ELSE 0 END) as early")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' AND (ti.deadline_type != '{$hasDeadline}' OR ti.end_at IS NULL OR DATE(ti.completed_at) = DATE(ti.end_at)) THEN 1 ELSE 0 END) as on_time");
@@ -523,6 +551,7 @@ class TaskAssignmentItemService
                 'total' => (int) ($row->total ?? 0),
                 'todo' => (int) ($row->todo ?? 0),
                 'in_progress' => (int) ($row->in_progress ?? 0),
+                'pending_approval' => (int) ($row->pending_approval ?? 0),
                 'paused' => (int) ($row->paused ?? 0),
                 'done' => (int) ($row->done ?? 0),
                 'cancelled' => (int) ($row->cancelled ?? 0),
@@ -550,6 +579,7 @@ class TaskAssignmentItemService
         $cancelled = TaskProgressStatusEnum::Cancelled->value;
         $todo = TaskProgressStatusEnum::Todo->value;
         $inProgress = TaskProgressStatusEnum::InProgress->value;
+        $pendingApproval = TaskProgressStatusEnum::PendingApproval->value;
         $paused = TaskProgressStatusEnum::Paused->value;
         $hasDeadline = TaskDeadlineTypeEnum::HasDeadline->value;
 
@@ -573,11 +603,12 @@ class TaskAssignmentItemService
             ->selectRaw('COUNT(*) as total')
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$todo}' THEN 1 ELSE 0 END) as todo")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$inProgress}' THEN 1 ELSE 0 END) as in_progress")
+            ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$pendingApproval}' THEN 1 ELSE 0 END) as pending_approval")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$paused}' THEN 1 ELSE 0 END) as paused")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' THEN 1 ELSE 0 END) as done")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$cancelled}' THEN 1 ELSE 0 END) as cancelled")
             ->selectRaw("SUM(CASE WHEN ti.processing_status NOT IN ('{$done}','{$cancelled}') AND (ti.deadline_type != '{$hasDeadline}' OR ti.end_at IS NULL OR ti.end_at >= NOW()) THEN 1 ELSE 0 END) as upcoming")
-            ->selectRaw("SUM(CASE WHEN ti.deadline_type = '{$hasDeadline}' AND ti.end_at < NOW() AND ti.processing_status IN ('{$todo}','{$inProgress}','{$paused}') THEN 1 ELSE 0 END) as overdue")
+            ->selectRaw("SUM(CASE WHEN ti.deadline_type = '{$hasDeadline}' AND ti.end_at < NOW() AND ti.processing_status IN ('{$todo}','{$inProgress}','{$pendingApproval}','{$paused}') THEN 1 ELSE 0 END) as overdue")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' AND ti.deadline_type = '{$hasDeadline}' AND ti.completed_at > ti.end_at THEN 1 ELSE 0 END) as late")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' AND ti.deadline_type = '{$hasDeadline}' AND DATE(ti.completed_at) < DATE(ti.end_at) THEN 1 ELSE 0 END) as early")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' AND (ti.deadline_type != '{$hasDeadline}' OR ti.end_at IS NULL OR DATE(ti.completed_at) = DATE(ti.end_at)) THEN 1 ELSE 0 END) as on_time");
@@ -600,6 +631,7 @@ class TaskAssignmentItemService
                 'total' => (int) ($row->total ?? 0),
                 'todo' => (int) ($row->todo ?? 0),
                 'in_progress' => (int) ($row->in_progress ?? 0),
+                'pending_approval' => (int) ($row->pending_approval ?? 0),
                 'paused' => (int) ($row->paused ?? 0),
                 'done' => (int) ($row->done ?? 0),
                 'cancelled' => (int) ($row->cancelled ?? 0),
@@ -623,6 +655,7 @@ class TaskAssignmentItemService
 
         $done = TaskProgressStatusEnum::Done->value;
         $cancelled = TaskProgressStatusEnum::Cancelled->value;
+        $pendingApproval = TaskProgressStatusEnum::PendingApproval->value;
         $hasDeadline = TaskDeadlineTypeEnum::HasDeadline->value;
 
         $fromDate = $filters['from_date'] ?? null;
@@ -645,6 +678,7 @@ class TaskAssignmentItemService
             ->selectRaw('COUNT(*) as total')
             ->selectRaw("SUM(CASE WHEN ti.processing_status = 'todo' THEN 1 ELSE 0 END) as todo")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = 'in_progress' THEN 1 ELSE 0 END) as in_progress")
+            ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$pendingApproval}' THEN 1 ELSE 0 END) as pending_approval")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = 'done' THEN 1 ELSE 0 END) as done")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = 'paused' THEN 1 ELSE 0 END) as paused")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = ? THEN 1 ELSE 0 END) as cancelled", [$cancelled])
@@ -668,6 +702,7 @@ class TaskAssignmentItemService
             'total' => (int) $row->total,
             'todo' => (int) $row->todo,
             'in_progress' => (int) $row->in_progress,
+            'pending_approval' => (int) $row->pending_approval,
             'done' => (int) $row->done,
             'paused' => (int) $row->paused,
             'cancelled' => (int) $row->cancelled,
@@ -687,6 +722,7 @@ class TaskAssignmentItemService
 
         $done = TaskProgressStatusEnum::Done->value;
         $cancelled = TaskProgressStatusEnum::Cancelled->value;
+        $pendingApproval = TaskProgressStatusEnum::PendingApproval->value;
         $hasDeadline = TaskDeadlineTypeEnum::HasDeadline->value;
 
         $baseQuery = TaskAssignmentItem::query()
@@ -714,10 +750,16 @@ class TaskAssignmentItemService
                 ->where('created_at', '<=', $monthEnd)
                 ->count();
 
+            $pendingApprovalUpToMonth = (clone $baseQuery)
+                ->where('created_at', '<=', $monthEnd)
+                ->where('processing_status', $pendingApproval)
+                ->count();
+
             $results[] = [
                 'month' => $monthKey,
                 'total' => $totalUpToMonth,
                 'done' => $doneInMonth,
+                'pending_approval' => $pendingApprovalUpToMonth,
                 'new_tasks' => $newTasks,
             ];
 
@@ -733,6 +775,7 @@ class TaskAssignmentItemService
 
         $done = TaskProgressStatusEnum::Done->value;
         $cancelled = TaskProgressStatusEnum::Cancelled->value;
+        $pendingApproval = TaskProgressStatusEnum::PendingApproval->value;
         $hasDeadline = TaskDeadlineTypeEnum::HasDeadline->value;
 
         $query = DB::table('task_assignment_items as ti')
@@ -752,6 +795,7 @@ class TaskAssignmentItemService
             ->selectRaw('COUNT(*) as total_items')
             ->selectRaw("SUM(CASE WHEN ti.processing_status = 'done' THEN 1 ELSE 0 END) as done")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = 'in_progress' THEN 1 ELSE 0 END) as in_progress")
+            ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$pendingApproval}' THEN 1 ELSE 0 END) as pending_approval")
             ->orderBy('td.issue_date', 'desc')
             ->get();
 
@@ -762,6 +806,7 @@ class TaskAssignmentItemService
             'total_items' => (int) $row->total_items,
             'done' => (int) $row->done,
             'in_progress' => (int) $row->in_progress,
+            'pending_approval' => (int) $row->pending_approval,
             'completion_rate' => $row->total_items > 0 ? round(((int) $row->done / (int) $row->total_items) * 100, 1) : 0,
         ])->all();
     }

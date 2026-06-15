@@ -30,8 +30,12 @@ class TaskAssignmentItem extends TenantModel implements HasMedia
         'end_at',
         'processing_status',
         'completion_percent',
+        'rejection_reason',
+        'reported_at',
+        'reported_by',
         'priority',
         'completed_at',
+        'approved_by',
         'assigned_by',
         'organization_id',
         'created_by',
@@ -41,6 +45,7 @@ class TaskAssignmentItem extends TenantModel implements HasMedia
     protected $casts = [
         'start_at'           => 'datetime',
         'end_at'             => 'datetime',
+        'reported_at'        => 'datetime',
         'completed_at'       => 'datetime',
         'completion_percent' => 'integer',
     ];
@@ -138,6 +143,16 @@ class TaskAssignmentItem extends TenantModel implements HasMedia
     public function editor()
     {
         return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    public function reporter()
+    {
+        return $this->belongsTo(User::class, 'reported_by');
+    }
+
+    public function approver()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 
     public function attachments()

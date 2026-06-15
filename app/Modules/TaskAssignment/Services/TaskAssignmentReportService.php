@@ -28,7 +28,7 @@ class TaskAssignmentReportService
 
         try {
             return DB::transaction(function () use ($item, $validated, $files, &$storedFiles) {
-                $data = collect($validated)->except(['attachments', 'task_assignment_item_id'])->all();
+                $data = collect($validated)->except(['attachments', 'task_assignment_item_id', 'completion_percent'])->all();
                 $data['task_assignment_item_id'] = $item->id;
                 $report = TaskAssignmentItemReport::create($data);
 
@@ -50,6 +50,23 @@ class TaskAssignmentReportService
                         'file_name' => $file->getClientOriginalName(),
                         'sort_order' => 0,
                     ]);
+                }
+
+                // Nếu submit báo cáo kèm completion_percent 100% → chuyển item sang chờ duyệt.
+                if (array_key_exists('completion_percent', $validated)) {
+                    $percent = (int) $validated['completion_percent'];
+                    $item->completion_percent = $percent;
+
+                    if ($percent >= 100) {
+                        $item->processing_status = TaskProgressStatusEnum::PendingApproval->value;
+                        $item->reported_at = now();
+                        $item->reported_by = auth()->id();
+                        $item->rejection_reason = null;
+                        // Lấy ngày hoàn thành từ báo cáo để làm căn cứ tính tiến độ (sớm/đúng/trễ hạn).
+                        $item->completed_at = $validated['completed_at'] ?? now();
+                    }
+
+                    $item->save();
                 }
 
                 $loaded = $report->load(['reporter', 'attachments.media', 'item:id,end_at,task_assignment_document_id']);
