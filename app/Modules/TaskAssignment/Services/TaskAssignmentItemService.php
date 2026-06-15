@@ -204,12 +204,12 @@ class TaskAssignmentItemService
 
     public function bulkDestroy(array $ids): void
     {
-        TaskAssignmentItem::where('organization_id', getPermissionsTeamId())->whereIn('id', $ids)->delete();
+        TaskAssignmentItem::withoutGlobalScope('issuedDocument')->where('organization_id', getPermissionsTeamId())->whereIn('id', $ids)->delete();
     }
 
     public function bulkUpdateStatus(array $ids, string $status): void
     {
-        TaskAssignmentItem::where('organization_id', getPermissionsTeamId())->whereIn('id', $ids)->update($this->buildStatusUpdateData($status));
+        TaskAssignmentItem::withoutGlobalScope('issuedDocument')->where('organization_id', getPermissionsTeamId())->whereIn('id', $ids)->update($this->buildStatusUpdateData($status));
     }
 
     public function changeStatus(TaskAssignmentItem $item, string $status): TaskAssignmentItem
