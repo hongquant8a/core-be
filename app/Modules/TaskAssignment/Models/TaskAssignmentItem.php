@@ -167,11 +167,6 @@ class TaskAssignmentItem extends TenantModel implements HasMedia
 
     public function scopeFilter($query, array $filters)
     {
-        // Mặc định chỉ hiển thị item thuộc văn bản đã ban hành.
-        if (empty($filters['include_draft_documents'])) {
-            $query->whereHas('document', fn ($q) => $q->where('status', \App\Modules\TaskAssignment\Enums\TaskAssignmentDocumentStatusEnum::Issued->value));
-        }
-
         $query->when($filters['search'] ?? null, fn ($q, $search) => $q->where('name', 'like', '%'.$search.'%'))
             ->when($filters['processing_status'] ?? null, function ($q, $status) {
                 $q->where('processing_status', $status);
