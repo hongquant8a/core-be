@@ -93,8 +93,10 @@ class ScheduleService
             ->get();
 
         $matrix = $schedules->groupBy(fn($item) => $item->date_time ? $item->date_time->format('Y-m-d') : '')->map(function ($day) {
-            return $day->groupBy(fn($item) => $item->session->value ?? $item->session);
-        })->toArray();
+            return $day->groupBy(fn($item) => $item->session->value ?? $item->session)->map(function ($items) {
+                return \App\Modules\Scheduling\Resources\ScheduleResource::collection($items);
+            });
+        });
 
         return [
             'week_id'     => $weekId,

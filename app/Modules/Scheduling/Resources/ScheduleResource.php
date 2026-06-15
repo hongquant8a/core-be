@@ -100,6 +100,7 @@ class ScheduleResource extends JsonResource
                     'media_id'      => null,
                     'name'          => $m->title ?: $m->file_name,
                     'file_name'     => $m->file_name,
+                    'file_path'     => '/storage/' . $m->file_path,
                     'sort_order'    => $m->sort_order ?? 0,
                     'url'           => '/storage/' . $m->file_path,
                     'mime_type'     => $m->mime_type,
