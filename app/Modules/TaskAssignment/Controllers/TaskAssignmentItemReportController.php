@@ -88,7 +88,7 @@ class TaskAssignmentItemReportController extends Controller
      */
     public function store(StoreReportRequest $request)
     {
-        $item = TaskAssignmentItem::findOrFail($request->input('task_assignment_item_id'));
+        $item = TaskAssignmentItem::withoutGlobalScope('issuedDocument')->findOrFail($request->input('task_assignment_item_id'));
         $report = $this->reportService->store($item, $request->validated(), $request->file('attachments', []));
 
         return $this->successResource(new ReportResource($report), 'Báo cáo đã được tạo thành công!', 201);

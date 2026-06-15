@@ -62,6 +62,15 @@ class TaskAssignmentItem extends TenantModel implements HasMedia
     }
 
     /**
+     * Khi resolve model từ route (show/update/destroy/...), bỏ global scope
+     * để truy cập được item thuộc văn bản chưa ban hành (draft).
+     */
+    public function resolveRouteBinding($value, $field = null)
+    {
+        return $this->withoutGlobalScope('issuedDocument')->where($field ?? $this->getRouteKeyName(), $value)->firstOrFail();
+    }
+
+    /**
      * "Trễ hạn" — task chưa hoàn thành mà đã quá `end_at`.
      * Derive từ dates, không lưu DB.
      *
