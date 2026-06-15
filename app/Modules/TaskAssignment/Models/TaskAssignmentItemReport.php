@@ -23,14 +23,18 @@ class TaskAssignmentItemReport extends TenantModel implements HasMedia
     protected $fillable = [
         'task_assignment_item_id',
         'reporter_user_id',
+        'completion_percent',
         'completed_at',
         'report_document_number',
         'report_document_excerpt',
         'report_document_content',
         'organization_id',
+        'created_by',
+        'updated_by',
     ];
 
     protected $casts = [
+        'completion_percent' => 'integer',
         'completed_at' => 'datetime',
     ];
 
@@ -40,6 +44,12 @@ class TaskAssignmentItemReport extends TenantModel implements HasMedia
             if (! $model->reporter_user_id) {
                 $model->reporter_user_id = auth()->id();
             }
+            $model->created_by = auth()->id();
+            $model->updated_by = auth()->id();
+        });
+
+        static::updating(function (TaskAssignmentItemReport $model) {
+            $model->updated_by = auth()->id();
         });
     }
 
@@ -51,6 +61,16 @@ class TaskAssignmentItemReport extends TenantModel implements HasMedia
     public function reporter()
     {
         return $this->belongsTo(User::class, 'reporter_user_id');
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function editor()
+    {
+        return $this->belongsTo(User::class, 'updated_by');
     }
 
     /**

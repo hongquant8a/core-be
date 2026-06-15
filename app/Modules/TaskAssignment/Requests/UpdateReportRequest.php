@@ -56,6 +56,7 @@ class UpdateReportRequest extends BaseRequest
     public function attributes(): array
     {
         return [
+            'completion_percent' => 'Tiến độ hoàn thành',
             'completed_at' => 'Thời gian hoàn thành',
             'report_document_number' => 'Số văn bản báo cáo',
             'report_document_excerpt' => 'Report document excerpt',

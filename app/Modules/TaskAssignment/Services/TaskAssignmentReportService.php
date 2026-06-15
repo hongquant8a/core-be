@@ -18,7 +18,7 @@ class TaskAssignmentReportService
     public function index(int $itemId, int $limit)
     {
         return TaskAssignmentItemReport::where('task_assignment_item_id', $itemId)
-            ->with(['reporter', 'attachments.media', 'item:id,end_at,task_assignment_document_id'])
+            ->with(['reporter', 'creator', 'editor', 'attachments.media', 'item:id,end_at,task_assignment_document_id'])
             ->paginate($limit);
     }
 
@@ -28,9 +28,9 @@ class TaskAssignmentReportService
 
         try {
             return DB::transaction(function () use ($item, $validated, $files, &$storedFiles) {
-                $data = collect($validated)->except(['attachments', 'task_assignment_item_id', 'completion_percent'])->all();
-                $data['task_assignment_item_id'] = $item->id;
-                $report = TaskAssignmentItemReport::create($data);
+                $reportData = collect($validated)->except(['attachments', 'task_assignment_item_id'])->all();
+                $reportData['task_assignment_item_id'] = $item->id;
+                $report = TaskAssignmentItemReport::create($reportData);
 
                 foreach ($files as $file) {
                     if (! $file instanceof UploadedFile || ! $file->isValid()) {
@@ -69,7 +69,7 @@ class TaskAssignmentReportService
                     $item->save();
                 }
 
-                $loaded = $report->load(['reporter', 'attachments.media', 'item:id,end_at,task_assignment_document_id']);
+                $loaded = $report->load(['reporter', 'creator', 'editor', 'attachments.media', 'item:id,end_at,task_assignment_document_id']);
 
                 // Auto-mark reporter's assignment as done
                 $reporterId = $report->reporter_user_id;
@@ -100,7 +100,7 @@ class TaskAssignmentReportService
 
         try {
             return DB::transaction(function () use ($report, $validated, $files, $removeAttachmentIds, &$storedFiles) {
-                $data = collect($validated)->except(['attachments', 'remove_attachment_ids', 'completion_percent'])->all();
+                $data = collect($validated)->except(['attachments', 'remove_attachment_ids'])->all();
                 $report->update($data);
 
                 // Cập nhật tiến độ item nếu có completion_percent.
@@ -114,6 +114,8 @@ class TaskAssignmentReportService
                         $item->reported_at = now();
                         $item->reported_by = auth()->id();
                         $item->rejection_reason = null;
+                    } elseif ($percent > 0 && $item->processing_status === TaskProgressStatusEnum::Todo->value) {
+                        $item->processing_status = TaskProgressStatusEnum::InProgress->value;
                     }
 
                     $item->save();
@@ -143,7 +145,7 @@ class TaskAssignmentReportService
                     ]);
                 }
 
-                return $report->load(['reporter', 'attachments.media', 'item:id,end_at,task_assignment_document_id']);
+                return $report->load(['reporter', 'creator', 'editor', 'attachments.media', 'item:id,end_at,task_assignment_document_id']);
             });
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);

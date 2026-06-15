@@ -2,23 +2,22 @@
 
 namespace App\Modules\TaskAssignment\Resources;
 
+use App\Modules\Core\Resources\Concerns\FormatsUserSummary;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class ReportResource extends JsonResource
 {
+    use FormatsUserSummary;
+
     public function toArray(Request $request): array
     {
         return [
             'id' => $this->id,
             'task_assignment_item_id' => $this->task_assignment_item_id,
-            'reporter' => $this->whenLoaded('reporter', fn () => [
-                'id' => $this->reporter?->id,
-                'name' => $this->reporter?->name,
-                'email' => $this->reporter?->email,
-            ]),
+            'reporter' => $this->whenLoaded('reporter', fn () => $this->formatUserSummary($this->reporter)),
+            'completion_percent' => $this->completion_percent,
             'completed_at' => $this->completed_at?->format('H:i:s d/m/Y'),
-            // Timing so với deadline task: 'on_time' | 'late' | null
             'timing_status' => $this->resource->timingStatus(),
             'report_document_number' => $this->report_document_number,
             'report_document_excerpt' => $this->report_document_excerpt,
