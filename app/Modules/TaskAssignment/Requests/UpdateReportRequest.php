@@ -7,6 +7,7 @@ class UpdateReportRequest extends BaseRequest
     public function rules(): array
     {
         return [
+            'completion_percent' => 'sometimes|integer|min:0|max:100',
             'completed_at' => 'sometimes|nullable|date',
             'report_document_number' => 'sometimes|nullable|string|max:255',
             'report_document_excerpt' => 'sometimes|nullable|string|max:65535',
@@ -21,6 +22,10 @@ class UpdateReportRequest extends BaseRequest
     public function bodyParameters(): array
     {
         return [
+            'completion_percent' => [
+                'description' => 'Tiến độ hoàn thành (0-100). Nếu đạt 100%, công việc sẽ chuyển sang trạng thái chờ duyệt.',
+                'example' => 100,
+            ],
             'completed_at' => [
                 'description' => 'Ngày hoàn thành công việc.',
                 'example' => '2026-04-30',

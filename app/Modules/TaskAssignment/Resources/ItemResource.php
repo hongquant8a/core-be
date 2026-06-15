@@ -98,7 +98,6 @@ class ItemResource extends JsonResource
     private function resolveTimingStatus(): string
     {
         $done = \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Done->value;
-        $pendingApproval = \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::PendingApproval->value;
         $cancelled = \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Cancelled->value;
         $hasDeadline = \App\Modules\TaskAssignment\Enums\TaskDeadlineTypeEnum::HasDeadline->value;
 
@@ -106,8 +105,7 @@ class ItemResource extends JsonResource
             return 'cancelled';
         }
 
-        // done hoặc pending_approval có completed_at từ báo cáo → tính sớm/đúng/trễ hạn.
-        if (in_array($this->processing_status, [$done, $pendingApproval], true)) {
+        if ($this->processing_status === $done) {
             if ($this->deadline_type === $hasDeadline && $this->end_at && $this->completed_at) {
                 $completedAt = \Carbon\Carbon::parse($this->completed_at);
                 $endAt = \Carbon\Carbon::parse($this->end_at);

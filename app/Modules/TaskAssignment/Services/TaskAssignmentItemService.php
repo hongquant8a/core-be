@@ -323,7 +323,7 @@ class TaskAssignmentItemService
         $item->update([
             'processing_status' => TaskProgressStatusEnum::Done->value,
             'completion_percent' => 100,
-            'completed_at' => $item->completed_at ?? now(),
+            'completed_at' => now(),
             'approved_by' => auth()->id(),
             'rejection_reason' => null,
         ]);
@@ -517,6 +517,12 @@ class TaskAssignmentItemService
         $query = DB::table('task_assignment_items as ti')
             ->join('task_assignment_item_types as tit', 'tit.id', '=', 'ti.task_assignment_item_type_id')
             ->where('tit.status', 'active')
+            ->whereExists(function ($sub) {
+                $sub->select(DB::raw(1))
+                    ->from('task_assignment_documents')
+                    ->whereColumn('task_assignment_documents.id', 'ti.task_assignment_document_id')
+                    ->where('task_assignment_documents.status', 'issued');
+            })
             ->when($filters['department_id'] ?? null, fn ($q, $v) => $q->whereExists(function ($sub) use ($v) {
                 $sub->select(DB::raw(1))
                     ->from('task_assignment_item_user')
@@ -591,6 +597,12 @@ class TaskAssignmentItemService
             ->join(DB::raw('(SELECT DISTINCT task_assignment_item_id, department_id FROM task_assignment_item_user) as tiu'),
                 'tiu.task_assignment_item_id', '=', 'ti.id')
             ->join('task_assignment_departments as td', 'td.id', '=', 'tiu.department_id')
+            ->whereExists(function ($sub) {
+                $sub->select(DB::raw(1))
+                    ->from('task_assignment_documents')
+                    ->whereColumn('task_assignment_documents.id', 'ti.task_assignment_document_id')
+                    ->where('task_assignment_documents.status', 'issued');
+            })
             ->when($filters['department_id'] ?? null, fn ($q, $v) => $q->where('tiu.department_id', $v))
             ->when($filters['processing_status'] ?? null, fn ($q, $v) => $q->where('ti.processing_status', $v))
             ->when($filters['priority'] ?? null, fn ($q, $v) => $q->where('ti.priority', $v))
@@ -664,6 +676,12 @@ class TaskAssignmentItemService
         $query = DB::table('task_assignment_item_user as tiu')
             ->join('task_assignment_items as ti', 'ti.id', '=', 'tiu.task_assignment_item_id')
             ->join('users as u', 'u.id', '=', 'tiu.user_id')
+            ->whereExists(function ($sub) {
+                $sub->select(DB::raw(1))
+                    ->from('task_assignment_documents')
+                    ->whereColumn('task_assignment_documents.id', 'ti.task_assignment_document_id')
+                    ->where('task_assignment_documents.status', 'issued');
+            })
             ->when($filters['department_id'] ?? null, fn ($q, $v) => $q->where('tiu.department_id', $v))
             ->when($filters['priority'] ?? null, fn ($q, $v) => $q->where('ti.priority', $v))
             ->when($fromDate, fn ($q, $v) => $q->where('ti.created_at', '>=', $v))
@@ -780,6 +798,7 @@ class TaskAssignmentItemService
 
         $query = DB::table('task_assignment_items as ti')
             ->join('task_assignment_documents as td', 'td.id', '=', 'ti.task_assignment_document_id')
+            ->where('td.status', 'issued')
             ->when($filters['department_id'] ?? null, fn ($q, $v) => $q->whereExists(function ($sub) use ($v) {
                 $sub->select(DB::raw(1))
                     ->from('task_assignment_item_user')

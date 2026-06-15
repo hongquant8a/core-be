@@ -1,0 +1,51 @@
+PENDING APPROVAL - Thay đổi cần biết
+=====================================
+
+1. TRẠNG THÁI MỚI
+   - pending_approval (Chờ duyệt): nằm giữa in_progress và done
+   - done và pending_approval KHÔNG có trong dropdown chọn trạng thái
+   - Flow: todo → in_progress → pending_approval → done/reject
+
+2. UPDATE PROGRESS (PATCH /{id}/progress)
+   - completion_percent > 0 → in_progress
+   - completion_percent = 0 → todo
+   - KHÔNG BAO GIỜ tự lên pending_approval (kể cả kéo 100%)
+
+3. SUBMIT/SỬA BÁO CÁO - KEY STEP lên pending_approval
+   POST /task-assignment-item-reports
+   PUT  /task-assignment-item-reports/{id}
+   - Gửi kèm completion_percent: 100 → item chuyển pending_approval
+   - BE tự ghi reported_at, reported_by
+   - Nếu submit lại sau khi bị reject → clear rejection_reason
+
+4. MANAGER DUYỆT/TỪ CHỐI
+   PATCH /{id}/mark-done
+     - Chỉ từ pending_approval → done
+     - completed_at lấy từ báo cáo mới nhất
+     - clear rejection_reason
+
+   PATCH /{id}/reject
+     - Chỉ từ pending_approval → todo
+     - completion_percent về 0
+     - Body: { "rejection_reason": "lý do" }
+
+5. MỞ LẠI (PATCH /{id}/reopen)
+   - Dùng cho done/cancelled/paused
+   - completion_percent >= 100 → pending_approval
+   - completion_percent > 0   → in_progress
+   - completion_percent = 0   → todo
+
+6. RESPONSE MỚI
+   - rejection_reason: string|null
+   - reported_at: datetime|null
+   - reported_by: user object|null
+   - approved_by: user object|null
+
+7. THỐNG KÊ
+   - Tất cả API stats có thêm bucket pending_approval
+   - pending_approval tính vào overdue
+   - timing_status (early/on_time/late) chỉ tính khi done
+
+8. MIGRATION
+   sail artisan migrate
+   (thêm cột rejection_reason, reported_at, reported_by, approved_by)

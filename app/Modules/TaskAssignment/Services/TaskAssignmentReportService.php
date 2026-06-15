@@ -52,7 +52,7 @@ class TaskAssignmentReportService
                     ]);
                 }
 
-                // Nếu submit báo cáo kèm completion_percent 100% → chuyển item sang chờ duyệt.
+                // Submit báo cáo kèm completion_percent → cập nhật tiến độ item.
                 if (array_key_exists('completion_percent', $validated)) {
                     $percent = (int) $validated['completion_percent'];
                     $item->completion_percent = $percent;
@@ -62,8 +62,8 @@ class TaskAssignmentReportService
                         $item->reported_at = now();
                         $item->reported_by = auth()->id();
                         $item->rejection_reason = null;
-                        // Lấy ngày hoàn thành từ báo cáo để làm căn cứ tính tiến độ (sớm/đúng/trễ hạn).
-                        $item->completed_at = $validated['completed_at'] ?? now();
+                    } elseif ($percent > 0 && $item->processing_status === TaskProgressStatusEnum::Todo->value) {
+                        $item->processing_status = TaskProgressStatusEnum::InProgress->value;
                     }
 
                     $item->save();
@@ -100,8 +100,24 @@ class TaskAssignmentReportService
 
         try {
             return DB::transaction(function () use ($report, $validated, $files, $removeAttachmentIds, &$storedFiles) {
-                $data = collect($validated)->except(['attachments', 'remove_attachment_ids'])->all();
+                $data = collect($validated)->except(['attachments', 'remove_attachment_ids', 'completion_percent'])->all();
                 $report->update($data);
+
+                // Cập nhật tiến độ item nếu có completion_percent.
+                if (array_key_exists('completion_percent', $validated)) {
+                    $item = $report->item;
+                    $percent = (int) $validated['completion_percent'];
+                    $item->completion_percent = $percent;
+
+                    if ($percent >= 100) {
+                        $item->processing_status = TaskProgressStatusEnum::PendingApproval->value;
+                        $item->reported_at = now();
+                        $item->reported_by = auth()->id();
+                        $item->rejection_reason = null;
+                    }
+
+                    $item->save();
+                }
 
                 if (! empty($removeAttachmentIds)) {
                     $this->removeAttachments($report, $removeAttachmentIds);

@@ -54,6 +54,11 @@ class TaskAssignmentItem extends TenantModel implements HasMedia
     {
         static::creating(fn (TaskAssignmentItem $model) => $model->created_by = $model->updated_by = auth()->id());
         static::updating(fn (TaskAssignmentItem $model) => $model->updated_by = auth()->id());
+
+        // Global scope: mặc định chỉ hiển thị item thuộc văn bản đã ban hành.
+        static::addGlobalScope('issuedDocument', function ($query) {
+            $query->whereHas('document', fn ($dq) => $dq->where('status', \App\Modules\TaskAssignment\Enums\TaskAssignmentDocumentStatusEnum::Issued->value));
+        });
     }
 
     /**
@@ -167,6 +172,11 @@ class TaskAssignmentItem extends TenantModel implements HasMedia
 
     public function scopeFilter($query, array $filters)
     {
+        // Khi lọc theo văn bản cụ thể, bỏ global scope để hiển thị cả bản nháp.
+        if (! empty($filters['task_assignment_document_id'])) {
+            $query->withoutGlobalScope('issuedDocument');
+        }
+
         $query->when($filters['search'] ?? null, fn ($q, $search) => $q->where('name', 'like', '%'.$search.'%'))
             ->when($filters['processing_status'] ?? null, function ($q, $status) {
                 $q->where('processing_status', $status);

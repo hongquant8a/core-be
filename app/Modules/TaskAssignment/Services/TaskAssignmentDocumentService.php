@@ -194,7 +194,7 @@ class TaskAssignmentDocumentService
     public function destroy(TaskAssignmentDocument $document): void
     {
         DB::transaction(function () use ($document) {
-            $this->cleanupOrphanNotifications($document->items()->pluck('id')->all());
+            $this->cleanupOrphanNotifications($document->items()->withoutGlobalScope('issuedDocument')->pluck('id')->all());
             $document->delete();
         });
     }
@@ -202,7 +202,7 @@ class TaskAssignmentDocumentService
     public function bulkDestroy(array $ids): void
     {
         DB::transaction(function () use ($ids) {
-            $itemIds = TaskAssignmentItem::whereIn('task_assignment_document_id', $ids)->pluck('id')->all();
+            $itemIds = TaskAssignmentItem::withoutGlobalScope('issuedDocument')->whereIn('task_assignment_document_id', $ids)->pluck('id')->all();
             $this->cleanupOrphanNotifications($itemIds);
             TaskAssignmentDocument::whereIn('id', $ids)->delete();
         });
@@ -253,13 +253,14 @@ class TaskAssignmentDocumentService
         $draft = TaskAssignmentDocumentStatusEnum::Draft->value;
 
         if ($status === $issued) {
-            if ($document->items()->count() === 0) {
+            if ($document->items()->withoutGlobalScope('issuedDocument')->count() === 0) {
                 throw \Illuminate\Validation\ValidationException::withMessages([
                     'status' => ['Văn bản phải có ít nhất một công việc trước khi ban hành.'],
                 ]);
             }
 
             $invalidItems = $document->items()
+                ->withoutGlobalScope('issuedDocument')
                 ->where('deadline_type', 'has_deadline')
                 ->whereNull('end_at')
                 ->exists();
@@ -298,7 +299,7 @@ class TaskAssignmentDocumentService
      */
     private function cancelPendingNotificationsForDocument(TaskAssignmentDocument $document): void
     {
-        $itemIds = $document->items()->pluck('id')->all();
+        $itemIds = $document->items()->withoutGlobalScope('issuedDocument')->pluck('id')->all();
         if (empty($itemIds)) {
             return;
         }
