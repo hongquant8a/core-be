@@ -52,7 +52,8 @@ class TelegramChannel implements NotificationChannel
         }
 
         try {
-            $response = Http::timeout(10)
+            $response = Http::timeout(30)
+                ->withOptions(['curl' => [CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4]])
                 ->post("https://api.telegram.org/bot{$cfg['bot_token']}/sendMessage", [
                     'chat_id'    => $chatId,
                     'text'       => $text,
