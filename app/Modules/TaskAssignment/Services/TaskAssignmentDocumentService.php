@@ -84,7 +84,7 @@ class TaskAssignmentDocumentService
 
     public function show(TaskAssignmentDocument $document): TaskAssignmentDocument
     {
-        return $document->load(['type', 'items.attachments.media', 'attachments.media', 'creator.media', 'editor.media', 'reminders'])
+        return $document->load(['type', 'items.attachments.media', 'attachments.media', 'creator.media', 'editor.media'])
             ->loadCount([
                 'items',
                 'items as completed_items_count' => function ($query) {
@@ -99,13 +99,8 @@ class TaskAssignmentDocumentService
 
         try {
             return DB::transaction(function () use ($validated, $files, &$storedFiles) {
-                $reminders = $validated['reminders'] ?? [];
-                $data = collect($validated)->except(['attachments', 'remove_attachment_ids', 'reminders'])->all();
+                $data = collect($validated)->except(['attachments', 'remove_attachment_ids'])->all();
                 $document = TaskAssignmentDocument::create($data);
-
-                if (! empty($reminders)) {
-                    $this->syncReminders($document, $reminders);
-                }
 
                 foreach ($files as $file) {
                     if (! $file instanceof UploadedFile || ! $file->isValid()) {
@@ -129,7 +124,7 @@ class TaskAssignmentDocumentService
                     ]);
                 }
 
-                return $document->load(['type', 'items', 'attachments.media', 'creator.media', 'editor.media', 'reminders']);
+                return $document->load(['type', 'items', 'attachments.media', 'creator.media', 'editor.media']);
             });
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);
@@ -149,13 +144,8 @@ class TaskAssignmentDocumentService
 
         try {
             return DB::transaction(function () use ($document, $validated, $files, $removeAttachmentIds, &$storedFiles) {
-                $reminders = $validated['reminders'] ?? null;
-                $data = collect($validated)->except(['attachments', 'remove_attachment_ids', 'reminders'])->all();
+                $data = collect($validated)->except(['attachments', 'remove_attachment_ids'])->all();
                 $document->update($data);
-
-                if ($reminders !== null) {
-                    $this->syncReminders($document, $reminders);
-                }
 
                 if (! empty($removeAttachmentIds)) {
                     $this->removeAttachments($document, $removeAttachmentIds);
@@ -183,7 +173,7 @@ class TaskAssignmentDocumentService
                     ]);
                 }
 
-                return $document->load(['type', 'items', 'attachments.media', 'creator.media', 'editor.media', 'reminders']);
+                return $document->load(['type', 'items', 'attachments.media', 'creator.media', 'editor.media']);
             });
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);
@@ -286,7 +276,7 @@ class TaskAssignmentDocumentService
             foreach ($document->items as $item) {
                 $this->reminderScheduler->scheduleFor($item);
             }
-            event(new DocumentIssued($document->fresh()));
+            // event(new DocumentIssued($document->fresh()));
         }
 
         return $document->load(['type', 'attachments.media', 'creator.media', 'editor.media']);
@@ -320,64 +310,6 @@ class TaskAssignmentDocumentService
         NotificationDelivery::whereIn('notification_id', $notificationIds)
             ->where('status', 'pending')
             ->update(['status' => 'skipped', 'error_message' => 'Document reverted to draft']);
-    }
-
-    private function syncReminders(TaskAssignmentDocument $document, array $reminders): void
-    {
-        $keptIds = [];
-        foreach ($reminders as $r) {
-            $reminderType = $r['reminder_type'] ?? 'scheduled';
-            $channels = array_values(array_unique(array_map('strtoupper', (array) ($r['channels'] ?? []))));
-
-            if ($reminderType === 'instant') {
-                $attributes = [
-                    'task_assignment_document_id' => $document->id,
-                    'reminder_type'              => 'instant',
-                    'task_assignment_item_id'     => null,
-                    'notification_schedule_id'    => null,
-                    'moment'                      => null,
-                    'offset_minutes'              => 0,
-                    'channels'                    => $channels,
-                    'source'                      => 'CUSTOM',
-                    'status'                      => 'active',
-                    'remind_at'                   => null,
-                ];
-            } else {
-                $moment = $r['moment'] ?? 'before';
-                $offset = (int) ($r['offset_minutes'] ?? 0);
-
-                $attributes = [
-                    'task_assignment_document_id' => $document->id,
-                    'reminder_type'              => 'scheduled',
-                    'task_assignment_item_id'     => null,
-                    'notification_schedule_id'    => null,
-                    'moment'                      => $moment,
-                    'offset_minutes'              => $offset,
-                    'channels'                    => $channels,
-                    'source'                      => 'CUSTOM',
-                    'status'                      => 'pending',
-                    'remind_at'                   => null,
-                ];
-            }
-
-            $existing = \App\Modules\TaskAssignment\Models\TaskAssignmentReminder::where('task_assignment_document_id', $document->id)
-                ->where('reminder_type', $reminderType)
-                ->where('source', 'CUSTOM')
-                ->first();
-
-            if ($existing) {
-                $existing->update($attributes);
-                $keptIds[] = $existing->id;
-            } else {
-                $new = \App\Modules\TaskAssignment\Models\TaskAssignmentReminder::create($attributes);
-                $keptIds[] = $new->id;
-            }
-        }
-
-        \App\Modules\TaskAssignment\Models\TaskAssignmentReminder::where('task_assignment_document_id', $document->id)
-            ->where('source', 'CUSTOM')
-            ->whereNotIn('id', $keptIds)
-            ->delete();
     }
 
     public function export(array $filters): BinaryFileResponse

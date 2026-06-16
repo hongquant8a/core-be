@@ -10,6 +10,11 @@ use App\Modules\TaskAssignment\Enums\TaskUserAssignmentRoleEnum;
 
 class UpdateItemRequest extends BaseRequest
 {
+    public function prepareForValidation(): void
+    {
+        $this->resolveDepartmentsToUsers();
+    }
+
     public function rules(): array
     {
         return [
@@ -23,6 +28,24 @@ class UpdateItemRequest extends BaseRequest
             'completion_percent' => 'nullable|integer|min:0|max:100',
             'priority' => ['sometimes', TaskPriorityEnum::rule()],
             'users' => 'sometimes|array|min:1',
+            'departments' => 'sometimes|array|min:1',
+            'departments.*.department_id' => 'required|integer|exists:task_assignment_departments,id',
+            'departments.*.department_role' => ['required', TaskAssignmentRoleEnum::rule()],
+            'departments.*' => [function ($attribute, $value, $fail) {
+                if (! is_array($value) || empty($value['department_id'])) {
+                    return;
+                }
+                $orgId = getPermissionsTeamId();
+                $hasRep = \Illuminate\Support\Facades\DB::table('task_assignment_users')
+                    ->where('task_assignment_department_id', $value['department_id'])
+                    ->where('organization_id', $orgId)
+                    ->where('is_representative', true)
+                    ->where('status', 'active')
+                    ->exists();
+                if (! $hasRep) {
+                    $fail("Phòng ban ID {$value['department_id']} chưa có người đại diện.");
+                }
+            }],
             'users.*.user_id' => 'required|integer',
             'users.*.department_id' => 'required|integer|exists:task_assignment_departments,id',
             'users.*.department_role' => ['required', TaskAssignmentRoleEnum::rule()],
@@ -102,7 +125,18 @@ class UpdateItemRequest extends BaseRequest
                 'example' => 'high',
             ],
             'users' => [
-                'description' => 'Danh sách người thực hiện công việc (cập nhật lại toàn bộ danh sách).',
+                'description' => 'Danh sách người thực hiện công việc. Có thể thay bằng departments để tự động lấy đại diện phòng ban.',
+            ],
+            'departments' => [
+                'description' => 'Danh sách phòng ban (thay cho users). Hệ thống tự lấy người đại diện của từng phòng ban.',
+            ],
+            'departments.*.department_id' => [
+                'description' => 'ID phòng ban.',
+                'example' => 2,
+            ],
+            'departments.*.department_role' => [
+                'description' => 'Vai trò phòng ban (main=chủ trì, cooperate=phối hợp).',
+                'example' => 'main',
             ],
             'users.*.user_id' => [
                 'description' => 'ID người dùng.',
@@ -145,10 +179,28 @@ class UpdateItemRequest extends BaseRequest
             'priority' => 'Mức ưu tiên',
             'users' => 'Danh sách người thực hiện',
             'users.*' => 'Người thực hiện',
+            'departments' => 'Danh sách phòng ban',
+            'departments.*' => 'Phòng ban',
+            'departments.*.department_id' => 'Phòng ban',
+            'departments.*.department_role' => 'Vai trò phòng ban',
             'attachments' => 'Tệp đính kèm',
             'attachments.*' => 'Tệp đính kèm',
             'remove_attachment_ids' => 'Danh sách tệp xóa',
             'remove_attachment_ids.*' => 'ID tệp xóa',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'users.required' => 'Phải phân công ít nhất 1 người thực hiện.',
+            'users.array' => 'Danh sách người thực hiện không hợp lệ.',
+            'users.min' => 'Phải phân công ít nhất 1 người thực hiện.',
+            'departments.array' => 'Danh sách phòng ban không hợp lệ.',
+            'departments.min' => 'Phải chọn ít nhất 1 phòng ban.',
+            'departments.*.department_id.required' => 'Phải chọn phòng ban.',
+            'departments.*.department_id.exists' => 'Phòng ban không tồn tại.',
+            'departments.*.department_role.required' => 'Phải chọn vai trò phòng ban.',
         ];
     }
 }

@@ -416,28 +416,44 @@ class TaskAssignmentItemService
     {
         $keptIds = [];
         foreach ($reminders as $r) {
-            $moment = $r['moment'] ?? 'before';
-            $offset = (int) ($r['offset_minutes'] ?? 0);
+            $reminderType = $r['reminder_type'] ?? 'scheduled';
             $channels = array_values(array_unique(array_map('strtoupper', (array) ($r['channels'] ?? []))));
 
-            $remindAt = $item->end_at
-                ? match ($moment) {
-                    'before' => $offset ? $item->end_at->copy()->subMinutes($offset) : null,
-                    'on'     => $item->end_at->copy(),
-                    'after'  => $offset ? $item->end_at->copy()->addMinutes($offset) : null,
-                    default  => null,
-                }
-                : null;
+            if ($reminderType === 'instant') {
+                $attributes = [
+                    'task_assignment_item_id' => $item->id,
+                    'reminder_type'           => 'instant',
+                    'moment'                  => null,
+                    'offset_minutes'          => 0,
+                    'channels'                => $channels,
+                    'source'                  => 'CUSTOM',
+                    'status'                  => 'active',
+                    'remind_at'               => null,
+                ];
+            } else {
+                $moment = $r['moment'] ?? 'before';
+                $offset = (int) ($r['offset_minutes'] ?? 0);
 
-            $attributes = [
-                'task_assignment_item_id' => $item->id,
-                'moment'                  => $moment,
-                'offset_minutes'          => $offset,
-                'channels'                => $channels,
-                'source'                  => 'CUSTOM',
-                'status'                  => 'pending',
-                'remind_at'               => $remindAt,
-            ];
+                $remindAt = $item->end_at
+                    ? match ($moment) {
+                        'before' => $offset ? $item->end_at->copy()->subMinutes($offset) : null,
+                        'on'     => $item->end_at->copy(),
+                        'after'  => $offset ? $item->end_at->copy()->addMinutes($offset) : null,
+                        default  => null,
+                    }
+                    : null;
+
+                $attributes = [
+                    'task_assignment_item_id' => $item->id,
+                    'reminder_type'           => 'scheduled',
+                    'moment'                  => $moment,
+                    'offset_minutes'          => $offset,
+                    'channels'                => $channels,
+                    'source'                  => 'CUSTOM',
+                    'status'                  => 'pending',
+                    'remind_at'               => $remindAt,
+                ];
+            }
 
             if (! empty($r['id'])) {
                 $existing = TaskAssignmentReminder::where('id', $r['id'])

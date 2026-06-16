@@ -43,8 +43,8 @@ class SendTaskAssignedNotifications implements ShouldQueue
 
     private function resolveChannels(\App\Modules\TaskAssignment\Models\TaskAssignmentItem $item, int $organizationId): array
     {
-        // Per-record: kiểm tra document.reminders có reminder_type=instant không.
-        $perRecord = $item->document?->reminders()
+        // Per-record: kiểm tra item.reminders có reminder_type=instant không.
+        $perRecord = $item->reminders()
             ->where('reminder_type', 'instant')
             ->where('status', 'active')
             ->value('channels');
