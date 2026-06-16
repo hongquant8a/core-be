@@ -33,6 +33,7 @@ class NotificationController extends Controller
                 zaloId: $data['zalo_id'] ?? null,
                 name: $data['name'] ?? null,
                 fcmToken: $data['fcm_token'] ?? null,
+                telegramChatId: $data['telegram_chat_id'] ?? null,
             ),
             content: $data['content'],
             subject: $data['subject'] ?? null,

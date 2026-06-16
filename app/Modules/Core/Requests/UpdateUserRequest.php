@@ -53,6 +53,7 @@ class UpdateUserRequest extends FormRequest
                 'sometimes', 'nullable', 'string', 'max:20',
                 \Illuminate\Validation\Rule::unique('user_profiles', 'citizen_id')->ignore($userId, 'user_id'),
             ],
+            'telegram_chat_id' => 'sometimes|nullable|string|max:100',
             'permanent_address' => 'sometimes|nullable|string|max:500',
             'temporary_address' => 'sometimes|nullable|string|max:500',
         ];

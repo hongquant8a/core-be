@@ -26,6 +26,7 @@ class ScheduleCancelledContentBuilder implements ContentBuilder
             'zalo' => $this->toZalo($recipient, $notifiable),
             'zalo_zns' => $this->buildZnsPayload($recipient, $notifiable),
             'fcm' => $this->toFcm($recipient, $notifiable),
+            'telegram' => $this->toTelegram($recipient, $notifiable),
             default => null,
         };
     }
@@ -151,6 +152,21 @@ private function toSms(User $recipient, Schedule $schedule): ?NotificationPayloa
             context: [
                 'type' => 'schedule_cancelled',
             ],
+        );
+    }
+
+    private function toTelegram(User $recipient, Schedule $schedule): ?NotificationPayload
+    {
+        if (! $recipient->telegram_chat_id) {
+            return null;
+        }
+        $dateStr = $schedule->event_date;
+        $text = "<b>Lịch công tác đã bị hủy</b>\n\n{$schedule->content}\nNgày: {$dateStr}";
+
+        return new NotificationPayload(
+            channels: ['telegram'],
+            recipient: new Recipient(telegramChatId: $recipient->telegram_chat_id, name: $recipient->name),
+            content: $text,
         );
     }
 }

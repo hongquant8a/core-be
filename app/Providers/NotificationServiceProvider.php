@@ -10,6 +10,7 @@ use App\Modules\TaskAssignment\Observers\TaskAssignmentItemObserver;
 use App\Services\Notification\Channels\FcmChannel;
 use App\Services\Notification\Channels\MailChannel;
 use App\Services\Notification\Channels\SmsChannel;
+use App\Services\Notification\Channels\TelegramChannel;
 use App\Services\Notification\Channels\ZaloChannel;
 use App\Services\Notification\Channels\ZaloZnsChannel;
 use App\Services\Notification\ContentBuilders\DocumentIssuedContentBuilder;
@@ -73,6 +74,7 @@ class NotificationServiceProvider extends ServiceProvider
                     // Zalo ZNS template qua WorldSMS relay (key: 'zalo_zns') — ZaloZnsChannel.php
                     'zalo_zns' => new ZaloZnsChannel($settings),
                     'fcm'      => new FcmChannel($settings),
+                    'telegram' => new TelegramChannel($settings),
                 ],
             );
         });

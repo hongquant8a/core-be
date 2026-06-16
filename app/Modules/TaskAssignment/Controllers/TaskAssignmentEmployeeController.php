@@ -40,6 +40,8 @@ class TaskAssignmentEmployeeController extends Controller
     {
         $items = $this->employeeService->publicOptions($request->all());
 
+        $deptId = $request->input('department_id');
+
         return $this->success($items->map(fn ($emp) => [
             'id' => $emp->id,
             'user_id' => $emp->user_id,
@@ -47,6 +49,11 @@ class TaskAssignmentEmployeeController extends Controller
             'email' => $emp->user?->email,
             'user_name' => $emp->user?->user_name,
             'status' => $emp->status,
+            'is_representative' => $deptId
+                ? (bool) $emp->departmentMemberships
+                    ->firstWhere('task_assignment_department_id', (int) $deptId)
+                    ?->is_representative
+                : false,
         ]));
     }
 

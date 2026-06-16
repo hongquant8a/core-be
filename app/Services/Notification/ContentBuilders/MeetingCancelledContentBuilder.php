@@ -29,6 +29,7 @@ class MeetingCancelledContentBuilder implements ContentBuilder
             'zalo' => $this->toZalo($recipient, $notifiable),
             'zalo_zns' => $this->buildZnsPayload($recipient, $notifiable),
             'fcm' => $this->toFcm($recipient, $notifiable),
+            'telegram' => $this->toTelegram($recipient, $notifiable),
             default => null,
         };
     }
@@ -160,6 +161,21 @@ private function toSms(User $recipient, Meeting $meeting): ?NotificationPayload
                 'url' => $this->meetingFrontendUrl($meeting),
                 'type' => 'meeting_cancelled',
             ],
+        );
+    }
+
+    private function toTelegram(User $recipient, Meeting $meeting): ?NotificationPayload
+    {
+        if (! $recipient->telegram_chat_id) {
+            return null;
+        }
+        $url = $this->meetingFrontendUrl($meeting);
+        $text = "<b>Cuộc họp đã bị hủy</b>\n\n{$meeting->title}\nXem chi tiết: {$url}";
+
+        return new NotificationPayload(
+            channels: ['telegram'],
+            recipient: new Recipient(telegramChatId: $recipient->telegram_chat_id, name: $recipient->name),
+            content: $text,
         );
     }
 }

@@ -20,6 +20,7 @@ class UserResource extends JsonResource
             'email' => $this->email,
             'phone' => $this->phone,
             'zalo_user_id' => $this->zalo_user_id,
+            'telegram_chat_id' => $this->telegram_chat_id,
             'gender' => $this->profile?->gender,
             'birth_date' => $this->profile?->birth_date?->format('d/m/Y'),
             'citizen_id' => $this->profile?->citizen_id,

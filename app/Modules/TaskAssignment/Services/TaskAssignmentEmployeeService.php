@@ -24,7 +24,7 @@ class TaskAssignmentEmployeeService
             'sort_order' => $filters['sort_order'] ?? 'asc',
         ];
 
-        return TaskAssignmentEmployee::with('user:id,name,email,user_name')
+        return TaskAssignmentEmployee::with(['user:id,name,email,user_name', 'departmentMemberships'])
             ->filter($publicFilters)
             ->get();
     }

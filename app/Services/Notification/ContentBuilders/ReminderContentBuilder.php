@@ -31,6 +31,7 @@ class ReminderContentBuilder implements ContentBuilder
             'zalo' => $this->toZalo($recipient, $notifiable),
             'zalo_zns' => $this->buildZnsPayload($recipient, $notifiable),
             'fcm' => $this->toFcm($recipient, $notifiable),
+            'telegram' => $this->toTelegram($recipient, $notifiable),
             default => null,
         };
     }
@@ -209,6 +210,27 @@ private function toSms(User $recipient, TaskAssignmentItem $item): ?Notification
                 'url' => "/task-assignment-items/{$item->id}",
                 'type' => "reminder_{$this->moment}",
             ],
+        );
+    }
+
+    private function toTelegram(User $recipient, TaskAssignmentItem $item): ?NotificationPayload
+    {
+        if (! $recipient->telegram_chat_id) {
+            return null;
+        }
+        $deadline = $item->end_at ? ' (hạn '.$item->end_at->format('d/m/Y H:i').')' : '';
+        $prefix = match ($this->moment) {
+            'before' => 'Sắp đến hạn công việc',
+            'on' => 'Đến hạn công việc',
+            'after' => 'Quá hạn công việc',
+            default => 'Nhắc công việc',
+        };
+        $text = "<b>{$this->title($recipient, $item)}</b>\n\n{$prefix}: {$item->name}{$deadline}.";
+
+        return new NotificationPayload(
+            channels: ['telegram'],
+            recipient: new Recipient(telegramChatId: $recipient->telegram_chat_id, name: $recipient->name),
+            content: $text,
         );
     }
 }

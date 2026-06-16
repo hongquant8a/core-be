@@ -93,6 +93,9 @@ class SettingSeeder extends Seeder
         // SMS Failover (tùy chọn) — gửi SMS nếu ZNS thất bại
         ['key' => 'zns_sms_failover_sender', 'value' => null, 'group' => 'zalo_zns', 'is_public' => false, 'type' => 'string', 'label' => 'SMS Failover Brandname (tùy chọn)', 'sort_order' => 7],
         ['key' => 'zns_sms_failover_unicode', 'value' => '1', 'group' => 'zalo_zns', 'is_public' => false, 'type' => 'boolean', 'label' => 'SMS Failover unicode (có dấu)', 'sort_order' => 8],
+        // Telegram
+        ['key' => 'tg_enabled', 'value' => '0', 'group' => 'telegram', 'is_public' => false, 'type' => 'boolean', 'label' => 'Bật Telegram', 'sort_order' => 0],
+        ['key' => 'tg_bot_token', 'value' => null, 'group' => 'telegram', 'is_public' => false, 'type' => 'string', 'label' => 'Bot Token', 'sort_order' => 1],
         // Chat
         ['key' => 'chat_enabled', 'value' => '0', 'group' => 'chat', 'is_public' => false, 'type' => 'boolean', 'label' => 'Bật Chat', 'sort_order' => 0],
         ['key' => 'chat_server', 'value' => null, 'group' => 'chat', 'is_public' => false, 'type' => 'string', 'label' => 'Máy chủ Chat', 'sort_order' => 1],

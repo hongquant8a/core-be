@@ -29,6 +29,7 @@ class MeetingPublishedContentBuilder implements ContentBuilder
             'zalo' => $this->toZalo($recipient, $notifiable),
             'zalo_zns' => $this->buildZnsPayload($recipient, $notifiable),
             'fcm' => $this->toFcm($recipient, $notifiable),
+            'telegram' => $this->toTelegram($recipient, $notifiable),
             default => null,
         };
     }
@@ -163,6 +164,22 @@ private function toSms(User $recipient, Meeting $meeting): ?NotificationPayload
                 'url' => $this->meetingFrontendUrl($meeting),
                 'type' => 'meeting_published',
             ],
+        );
+    }
+
+    private function toTelegram(User $recipient, Meeting $meeting): ?NotificationPayload
+    {
+        if (! $recipient->telegram_chat_id) {
+            return null;
+        }
+        $start = $meeting->start_time?->format('d/m/Y H:i') ?? '';
+        $url = $this->meetingFrontendUrl($meeting);
+        $text = "<b>Bạn được mời tham dự cuộc họp</b>\n\n{$meeting->title}".($start ? "\nThời gian: {$start}" : '')."\nXem chi tiết: {$url}";
+
+        return new NotificationPayload(
+            channels: ['telegram'],
+            recipient: new Recipient(telegramChatId: $recipient->telegram_chat_id, name: $recipient->name),
+            content: $text,
         );
     }
 }

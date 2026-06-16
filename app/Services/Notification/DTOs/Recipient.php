@@ -15,5 +15,6 @@ final readonly class Recipient
         public ?string $name = null,
         public ?string $fcmToken = null,
         public ?array $fcmTokens = null,
+        public ?string $telegramChatId = null,
     ) {}
 }

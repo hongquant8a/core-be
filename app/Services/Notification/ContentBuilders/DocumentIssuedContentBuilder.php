@@ -27,6 +27,7 @@ class DocumentIssuedContentBuilder implements ContentBuilder
             'zalo' => $this->toZalo($recipient, $notifiable, $document),
             'zalo_zns' => $this->buildZnsPayload($recipient, $notifiable),
             'fcm' => $this->toFcm($recipient, $notifiable, $document),
+            'telegram' => $this->toTelegram($recipient, $notifiable, $document),
             default => null,
         };
     }
@@ -158,6 +159,22 @@ private function toSms(User $recipient, TaskAssignmentItem $item, $document): ?N
                 'url' => "/task-assignment-items/{$item->id}",
                 'type' => 'document_issued',
             ],
+        );
+    }
+
+    private function toTelegram(User $recipient, TaskAssignmentItem $item, $document): ?NotificationPayload
+    {
+        if (! $recipient->telegram_chat_id) {
+            return null;
+        }
+        $documentName = $document?->name ?? '';
+        $deadline = $item->end_at ? ' (hạn '.$item->end_at->format('d/m/Y H:i').')' : '';
+        $text = "<b>Văn bản đã ban hành</b>\n\n{$documentName}\nCông việc: {$item->name}{$deadline}.";
+
+        return new NotificationPayload(
+            channels: ['telegram'],
+            recipient: new Recipient(telegramChatId: $recipient->telegram_chat_id, name: $recipient->name),
+            content: $text,
         );
     }
 }

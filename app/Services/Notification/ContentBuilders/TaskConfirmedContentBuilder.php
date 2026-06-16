@@ -26,6 +26,7 @@ class TaskConfirmedContentBuilder implements ContentBuilder
             'zalo' => $this->toZalo($recipient, $notifiable),
             'zalo_zns' => $this->buildZnsPayload($recipient, $notifiable),
             'fcm' => $this->toFcm($recipient, $notifiable),
+            'telegram' => $this->toTelegram($recipient, $notifiable),
             default => null,
         };
     }
@@ -149,6 +150,20 @@ private function toSms(User $recipient, TaskAssignmentItem $item): ?Notification
                 'url' => "/task-assignment-items/{$item->id}",
                 'type' => 'task_confirmed',
             ],
+        );
+    }
+
+    private function toTelegram(User $recipient, TaskAssignmentItem $item): ?NotificationPayload
+    {
+        if (! $recipient->telegram_chat_id) {
+            return null;
+        }
+        $text = "<b>Công việc đã được xác nhận hoàn thành</b>\n\n{$item->name}.";
+
+        return new NotificationPayload(
+            channels: ['telegram'],
+            recipient: new Recipient(telegramChatId: $recipient->telegram_chat_id, name: $recipient->name),
+            content: $text,
         );
     }
 }

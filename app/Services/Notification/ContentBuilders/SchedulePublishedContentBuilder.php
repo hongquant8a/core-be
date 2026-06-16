@@ -26,6 +26,7 @@ class SchedulePublishedContentBuilder implements ContentBuilder
             'zalo' => $this->toZalo($recipient, $notifiable),
             'zalo_zns' => $this->buildZnsPayload($recipient, $notifiable),
             'fcm' => $this->toFcm($recipient, $notifiable),
+            'telegram' => $this->toTelegram($recipient, $notifiable),
             default => null,
         };
     }
@@ -165,6 +166,22 @@ class SchedulePublishedContentBuilder implements ContentBuilder
                 'url' => $this->scheduleFrontendUrl($schedule),
                 'type' => 'schedule_published',
             ],
+        );
+    }
+
+    private function toTelegram(User $recipient, Schedule $schedule): ?NotificationPayload
+    {
+        if (! $recipient->telegram_chat_id) {
+            return null;
+        }
+        $dateStr = $schedule->event_date;
+        $url = $this->scheduleFrontendUrl($schedule);
+        $text = "<b>Lịch công tác mới được ban hành</b>\n\n{$schedule->content}\nNgày: {$dateStr}\nXem chi tiết: {$url}";
+
+        return new NotificationPayload(
+            channels: ['telegram'],
+            recipient: new Recipient(telegramChatId: $recipient->telegram_chat_id, name: $recipient->name),
+            content: $text,
         );
     }
 }

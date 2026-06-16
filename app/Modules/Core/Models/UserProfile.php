@@ -17,6 +17,7 @@ class UserProfile extends Model
         'citizen_id',
         'permanent_address',
         'temporary_address',
+        'telegram_chat_id',
     ];
 
     protected $casts = [

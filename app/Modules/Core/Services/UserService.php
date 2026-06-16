@@ -104,7 +104,7 @@ class UserService
 
             // Tách profile fields: BE auto-route sang user_profiles trong cùng transaction.
             // 'phone' không tách ở đây vì model User đã có boot routing (saving/saved).
-            $profileFields = ['gender', 'birth_date', 'citizen_id', 'permanent_address', 'temporary_address'];
+            $profileFields = ['gender', 'birth_date', 'citizen_id', 'permanent_address', 'temporary_address', 'telegram_chat_id'];
             $profileData = array_intersect_key($data, array_flip($profileFields));
 
             unset($data['assignments'], $data['avatar']);
