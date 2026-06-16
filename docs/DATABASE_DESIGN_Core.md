@@ -240,6 +240,26 @@ Trạng thái gửi của từng kênh cho mỗi notification.
 | `error_message` | text | Lỗi nếu failed |
 | `created_at` | datetime | |
 
+### 10.5. `notification_templates`
+
+Template thông báo theo kênh (Zalo ZNS, SMS) — mapping template_id ↔ module/event/channel.
+
+| Column | Type | Ghi chú |
+|---|---|---|
+| `id` | bigint PK | |
+| `organization_id` | bigint FK | → organizations.id nullOnDelete |
+| `module_key` | varchar(50) | meeting / task_assignment / scheduling |
+| `event_key` | varchar(100) | Key sự kiện (nullable) |
+| `channel` | varchar(30) | zalo_zns (mặc định) |
+| `template_id` | varchar(255) | ID template trên kênh |
+| `variable_mapping` | json | Map biến → field dữ liệu |
+| `is_default` | boolean | false |
+| `status` | varchar(20) | active / inactive |
+| `created_by` / `updated_by` | bigint | FK → users.id |
+| `created_at` / `updated_at` | datetime | |
+
+UNIQUE: (organization_id, module_key, channel)
+
 ---
 
 ## Sơ đồ quan hệ Core (rút gọn)
@@ -253,5 +273,6 @@ organizations (1) ──── (N) users
     (1:1)                 (1:N)              (1:N)
 
 organizations (1) ──── (N) notification_event_configs ──── (N) notification_schedules
+organizations (1) ──── (N) notification_templates
 organizations (1) ──── (N) notifications ──── (N) notification_deliveries
 ```

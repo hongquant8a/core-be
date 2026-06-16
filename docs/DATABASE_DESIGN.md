@@ -2,7 +2,7 @@
 
 Tài liệu index — chi tiết từng module xem file riêng.
 
-Cập nhật: 2026-06-05.
+Cập nhật: 2026-06-16.
 
 ---
 
@@ -22,9 +22,9 @@ app/Modules/
 
 | Module | File | Bảng chính |
 |---|---|---|
-| **Core** | [DATABASE_DESIGN_Core.md](DATABASE_DESIGN_Core.md) | users, organizations, roles, permissions, settings, media, log_activities, notifications, notification_event_configs, notification_schedules |
-| **Meeting** | [DATABASE_DESIGN.old.md](DATABASE_DESIGN.old.md) (mục 3-7) | meetings, meeting_agendas, meeting_documents, meeting_participants, meeting_vote_topics, meeting_discussion_registrations, meeting_attendees, meeting_attendance ... |
-| **TaskAssignment** | [DATABASE_DESIGN.old.md](DATABASE_DESIGN.old.md) (mục 2) | task_assignment_items, task_assignment_types, task_assignment_departments, task_assignment_users ... |
+| **Core** | [DATABASE_DESIGN_Core.md](DATABASE_DESIGN_Core.md) | users, organizations, roles, permissions, settings, media, log_activities, notifications, notification_event_configs, notification_schedules, notification_templates |
+| **TaskAssignment** | [DATABASE_DESIGN_TaskAssignment.md](answer/DATABASE_DESIGN_TaskAssignment.md) | task_assignment_items, task_assignment_types, task_assignment_departments, task_assignment_documents ... |
+| **Meeting** | [DATABASE_DESIGN_Meeting.md](answer/DATABASE_DESIGN_Meeting.md) | meetings, meeting_agendas, meeting_documents, meeting_participants, meeting_vote_topics, meeting_discussion_registrations, meeting_attendees ... |
 | **Scheduling** | [DATABASE_DESIGN_Scheduling.md](DATABASE_DESIGN_Scheduling.md) | schedules, schedule_reminders, schedule_notifications, scheduling_employees ... |
 
 ---
