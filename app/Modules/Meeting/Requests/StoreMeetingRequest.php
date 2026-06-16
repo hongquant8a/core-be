@@ -38,7 +38,7 @@ class StoreMeetingRequest extends FormRequest
             'title' => 'required|string|max:255',
             'is_public' => 'nullable|boolean',
             'content' => 'nullable|string',
-            'start_time' => 'required|date',
+            'start_time' => 'nullable|date',
             'end_time' => 'nullable|date|after_or_equal:start_time',
             'attendance_open_at' => 'nullable|date',
             'attendance_close_at' => 'nullable|date|after_or_equal:attendance_open_at',
