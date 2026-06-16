@@ -80,7 +80,10 @@ class SettingService
         if (!empty($flatSettings['zns_enabled'])) {
             $channels[] = ['value' => 'zalo_zns', 'title' => 'Zalo ZNS', 'label' => 'Zalo ZNS'];
         }
-        
+        if (!empty($flatSettings['tg_enabled'])) {
+            $channels[] = ['value' => 'telegram', 'title' => 'Telegram', 'label' => 'Telegram'];
+        }
+
         return $channels;
     }
 
