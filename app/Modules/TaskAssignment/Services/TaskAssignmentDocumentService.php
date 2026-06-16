@@ -134,12 +134,6 @@ class TaskAssignmentDocumentService
 
     public function update(TaskAssignmentDocument $document, array $validated, array $files = [], array $removeAttachmentIds = []): TaskAssignmentDocument
     {
-        if ($document->status === TaskAssignmentDocumentStatusEnum::Issued->value) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'status' => ['Không thể chỉnh sửa văn bản đã ban hành. Vui lòng chuyển về trạng thái nháp trước.'],
-            ]);
-        }
-
         $storedFiles = [];
 
         try {
