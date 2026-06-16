@@ -8,6 +8,7 @@ class StoreReportRequest extends BaseRequest
     {
         return [
             'task_assignment_item_id' => 'required|integer|exists:task_assignment_items,id',
+            'assignee_user_id' => 'nullable|integer|exists:users,id',
             'completion_percent' => 'nullable|integer|min:0|max:100',
             'completed_at' => 'nullable|date',
             'report_document_number' => 'nullable|string|max:255',
@@ -21,6 +22,10 @@ class StoreReportRequest extends BaseRequest
     public function bodyParameters(): array
     {
         return [
+            'assignee_user_id' => [
+                'description' => 'ID người thực hiện công việc (từ danh sách người dùng thuộc phòng ban được giao của task).',
+                'example' => 5,
+            ],
             'completion_percent' => [
                 'description' => 'Tiến độ hoàn thành (0-100). Nếu đạt 100%, công việc sẽ chuyển sang trạng thái chờ duyệt.',
                 'example' => 100,
@@ -52,6 +57,7 @@ class StoreReportRequest extends BaseRequest
     {
         return [
             'task_assignment_item_id' => 'Công việc',
+            'assignee_user_id' => 'Người thực hiện',
             'completion_percent' => 'Tiến độ hoàn thành',
             'completed_at' => 'Thời gian hoàn thành',
             'report_document_number' => 'Số văn bản báo cáo',

@@ -23,6 +23,7 @@ class TaskAssignmentItemReport extends TenantModel implements HasMedia
     protected $fillable = [
         'task_assignment_item_id',
         'reporter_user_id',
+        'assignee_user_id',
         'completion_percent',
         'completed_at',
         'report_document_number',
@@ -61,6 +62,11 @@ class TaskAssignmentItemReport extends TenantModel implements HasMedia
     public function reporter()
     {
         return $this->belongsTo(User::class, 'reporter_user_id');
+    }
+
+    public function assignee()
+    {
+        return $this->belongsTo(User::class, 'assignee_user_id');
     }
 
     public function creator()

@@ -18,7 +18,7 @@ class TaskAssignmentReportService
     public function index(int $itemId, int $limit)
     {
         return TaskAssignmentItemReport::where('task_assignment_item_id', $itemId)
-            ->with(['reporter', 'creator', 'editor', 'attachments.media', 'item:id,end_at,task_assignment_document_id'])
+            ->with(['reporter', 'assignee', 'creator', 'editor', 'attachments.media', 'item:id,end_at,task_assignment_document_id'])
             ->paginate($limit);
     }
 
@@ -69,7 +69,7 @@ class TaskAssignmentReportService
                     $item->save();
                 }
 
-                $loaded = $report->load(['reporter', 'creator', 'editor', 'attachments.media', 'item:id,end_at,task_assignment_document_id']);
+                $loaded = $report->load(['reporter', 'assignee', 'creator', 'editor', 'attachments.media', 'item:id,end_at,task_assignment_document_id']);
 
                 // Auto-mark reporter's assignment as done
                 $reporterId = $report->reporter_user_id;

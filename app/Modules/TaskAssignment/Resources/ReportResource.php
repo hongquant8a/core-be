@@ -16,6 +16,7 @@ class ReportResource extends JsonResource
             'id' => $this->id,
             'task_assignment_item_id' => $this->task_assignment_item_id,
             'reporter' => $this->whenLoaded('reporter', fn () => $this->formatUserSummary($this->reporter)),
+            'assignee' => $this->whenLoaded('assignee', fn () => $this->formatUserSummary($this->assignee)),
             'completion_percent' => $this->completion_percent,
             'completed_at' => $this->completed_at?->format('H:i:s d/m/Y'),
             'timing_status' => $this->resource->timingStatus(),
