@@ -243,6 +243,9 @@ class ScheduleService
                         ->increment('sort_order');
                 }
 
+                // Tự động resolve session từ config nếu chưa có
+                $data['session'] = $this->resolveSession($data, $orgId);
+
                 $schedule = Schedule::create($data);
 
                 $this->syncRecipients($schedule, $participants);
@@ -723,5 +726,88 @@ class ScheduleService
         return (bool) $requiresApproval
             ? ApprovalStatus::PENDING->value
             : ApprovalStatus::APPROVED->value;
+    }
+
+    /**
+     * Resolve session khi tạo lịch:
+     * 1. Nếu $data đã có session hợp lệ → giữ nguyên.
+     * 2. Nếu có date_time → dùng fromTime() lấy session ứng viên theo giờ:
+     *    - Nếu session ứng viên nằm trong working_sessions config → dùng luôn.
+     *    - Nếu time rơi vào "gap" (session không có trong config) → lấy session
+     *      cuối cùng trước gap (nearest-before), fallback session đầu tiên của config.
+     * 3. Nếu không có date_time → lấy session đầu tiên trong config.
+     * 4. Fallback cuối → SessionType::MORNING.
+     *
+     * Thứ tự ưu tiên của session (theo thời gian trong ngày): S < C < T
+     */
+    private function resolveSession(array $data, int $orgId): string
+    {
+        $sessionValue = $data['session'] ?? null;
+
+        // Bước 1: Nếu đã có session hợp lệ, giữ nguyên
+        if ($sessionValue instanceof SessionType) {
+            return $sessionValue->value;
+        }
+        if (!empty($sessionValue) && SessionType::tryFrom((string) $sessionValue) !== null) {
+            return (string) $sessionValue;
+        }
+
+        // Lấy config working_sessions theo module_type
+        $orgSettings = OrgSchedulingSettings::firstOrCreate(['organization_id' => $orgId]);
+        $moduleType  = $data['module_type'] ?? null;
+        $isExecutive = $moduleType instanceof ModuleType
+            ? $moduleType === ModuleType::EXECUTIVE
+            : strtoupper((string) $moduleType) === 'EXECUTIVE';
+
+        $rawSessions = $isExecutive
+            ? ($orgSettings->executive_working_sessions ?? [])
+            : ($orgSettings->office_working_sessions ?? []);
+
+        // Lọc & validate các session hợp lệ từ config
+        $configSessions = array_values(array_filter(
+            array_map(fn($s) => SessionType::tryFrom((string) $s)?->value, $rawSessions)
+        ));
+
+        // Bước 2: Có date_time → dùng fromTime() để xác định session từ giờ
+        if (!empty($data['date_time'])) {
+            $timePart     = \Carbon\Carbon::parse($data['date_time'])->format('H:i:s');
+            $candidate    = SessionType::fromTime($timePart)->value;
+
+            if (!empty($configSessions)) {
+                // Nếu session ứng viên nằm trong config → dùng luôn
+                if (in_array($candidate, $configSessions, true)) {
+                    return $candidate;
+                }
+
+                // Time rơi vào gap: tìm session cuối cùng đứng trước candidate
+                // Thứ tự chuẩn trong ngày: S → C → T
+                $order = array_flip([SessionType::MORNING->value, SessionType::AFTERNOON->value, SessionType::EVENING->value]);
+                $candidateOrder = $order[$candidate] ?? 0;
+
+                $nearestBefore = null;
+                foreach ($configSessions as $s) {
+                    $sOrder = $order[$s] ?? 0;
+                    if ($sOrder <= $candidateOrder) {
+                        // Lấy session gần candidate nhất (lớn nhất trong các session ≤ candidate)
+                        if ($nearestBefore === null || $sOrder > ($order[$nearestBefore] ?? -1)) {
+                            $nearestBefore = $s;
+                        }
+                    }
+                }
+
+                return $nearestBefore ?? $configSessions[0];
+            }
+
+            // Không có config → dùng candidate từ fromTime()
+            return $candidate;
+        }
+
+        // Bước 3: Không có date_time → lấy session đầu tiên trong config
+        if (!empty($configSessions)) {
+            return $configSessions[0];
+        }
+
+        // Bước 4: Fallback
+        return SessionType::MORNING->value;
     }
 }
