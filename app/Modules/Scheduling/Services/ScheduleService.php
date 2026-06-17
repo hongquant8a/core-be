@@ -650,7 +650,9 @@ class ScheduleService
         $start = $carbon->copy()->startOfWeek()->toDateString();
         $end = $carbon->copy()->endOfWeek()->toDateString();
 
-        unset($filters['module_type']);
+        // Lưu lại module_type để filter cột cá nhân (personal)
+        $originalModuleType = $filters['module_type'] ?? null;
+        unset($filters['module_type']); // Xoá để tính tổng cột EXECUTIVE và OFFICE
 
         $baseQuery = fn () => Schedule::filter(array_merge($filters, [
             'from_date'          => $start,
@@ -667,12 +669,17 @@ class ScheduleService
         $personal = 0;
         $userId = auth()->id();
         if ($userId) {
-            $personal = Schedule::filter([
+            $personalQuery = [
                 'from_date' => $start,
                 'to_date'   => $end,
                 'status'    => \App\Modules\Scheduling\Enums\ScheduleStatus::PUBLISHED->value,
                 'view_mode' => 'personal',
-            ])->count();
+            ];
+            if ($originalModuleType) {
+                $personalQuery['module_type'] = $originalModuleType;
+            }
+
+            $personal = Schedule::filter($personalQuery)->count();
         }
 
         return [
