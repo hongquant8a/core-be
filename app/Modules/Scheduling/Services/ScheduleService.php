@@ -764,8 +764,17 @@ class ScheduleService
             : ($orgSettings->office_working_sessions ?? []);
 
         // Lọc & validate các session hợp lệ từ config
+        // Guard: flatten nếu DB lưu dạng lồng như [["S","C"]] thay vì ["S","C"]
+        $flatSessions = [];
+        foreach ($rawSessions as $s) {
+            if (is_array($s)) {
+                array_push($flatSessions, ...$s);
+            } elseif (is_scalar($s)) {
+                $flatSessions[] = $s;
+            }
+        }
         $configSessions = array_values(array_filter(
-            array_map(fn($s) => SessionType::tryFrom((string) $s)?->value, $rawSessions)
+            array_map(fn($s) => SessionType::tryFrom((string) $s)?->value, $flatSessions)
         ));
 
         // Bước 2: Có date_time → dùng fromTime() để xác định session từ giờ
