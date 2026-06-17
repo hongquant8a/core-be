@@ -9,6 +9,15 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
+/**
+ * @property bool $is_public
+ * @property string $status
+ * @property ?int $qr_manager_user_id
+ * @property ?int $chairperson_meeting_attendee_id
+ * @property ?int $operator_meeting_attendee_id
+ * @property-read ?\App\Modules\Meeting\Models\MeetingAttendee $chairperson
+ * @property-read ?\App\Modules\Meeting\Models\MeetingAttendee $operator
+ */
 class Meeting extends TenantModel implements HasMedia
 {
     use HasFactory;

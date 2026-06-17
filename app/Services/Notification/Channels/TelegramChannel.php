@@ -19,6 +19,8 @@ use Throwable;
  *
  * Settings keys (group: telegram):
  *   tg_enabled, tg_bot_token
+ *
+ * Server VN bị nhà mạng chặn HTTP/2 đến Telegram → force HTTP/1.1 + IPv4.
  */
 class TelegramChannel implements NotificationChannel
 {
@@ -53,7 +55,10 @@ class TelegramChannel implements NotificationChannel
 
         try {
             $response = Http::timeout(30)
-                ->withOptions(['curl' => [CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4]])
+                ->withOptions(['curl' => [
+                    CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+                    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                ]])
                 ->post("https://api.telegram.org/bot{$cfg['bot_token']}/sendMessage", [
                     'chat_id'    => $chatId,
                     'text'       => $text,

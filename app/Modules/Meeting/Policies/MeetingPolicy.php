@@ -19,7 +19,7 @@ class MeetingPolicy
      * Xem meeting ở route public — guest cũng được nếu meeting public + published.
      * User auth không cần role: chỉ check is_public + status. Trang ngoài (citizen).
      */
-    public function viewPublic(?User $user, Meeting $meeting): bool
+    public function viewPublic(?User $_user, Meeting $meeting): bool
     {
         return (bool) $meeting->is_public && $meeting->status === 'published';
     }
@@ -30,7 +30,13 @@ class MeetingPolicy
      */
     public function viewParticipant(User $user, Meeting $meeting): bool
     {
-        return $meeting->userMeetingRole($user) !== null;
+        // 1. User là participant trong meeting (chủ trì, thư ký, đại biểu)
+        if ($meeting->userMeetingRole($user) !== null) {
+            return true;
+        }
+
+        // 2. Hoặc user có quyền admin quản lý meetings nói chung
+        return $user->canany(['meetings.store', 'meetings.update', 'meetings.destroy']);
     }
 
     /**
