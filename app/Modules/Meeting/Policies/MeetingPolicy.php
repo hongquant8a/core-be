@@ -77,7 +77,13 @@ class MeetingPolicy
      */
     public function operate(User $user, Meeting $meeting): bool
     {
-        return $meeting->isChairperson($user) || $meeting->isOperator($user);
+        // 1. User là chủ trì hoặc thư ký của meeting
+        if ($meeting->isChairperson($user) || $meeting->isOperator($user)) {
+            return true;
+        }
+
+        // 2. Hoặc user có quyền admin quản lý meetings nói chung
+        return $user->canany(['meetings.store', 'meetings.update', 'meetings.destroy']);
     }
 
     /**
