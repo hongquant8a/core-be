@@ -731,14 +731,12 @@ class ScheduleService
     /**
      * Resolve session khi tạo lịch:
      * 1. Nếu $data đã có session hợp lệ → giữ nguyên.
-     * 2. Nếu có date_time → dùng fromTime() lấy session ứng viên theo giờ:
-     *    - Nếu session ứng viên nằm trong working_sessions config → dùng luôn.
-     *    - Nếu time rơi vào "gap" (session không có trong config) → lấy session
-     *      cuối cùng trước gap (nearest-before), fallback session đầu tiên của config.
-     * 3. Nếu không có date_time → lấy session đầu tiên trong config.
-     * 4. Fallback cuối → SessionType::MORNING.
-     *
-     * Thứ tự ưu tiên của session (theo thời gian trong ngày): S < C < T
+     * 2. Parse config working_sessions (hỗ trợ nhiều format: "S", ["S"], [{"value":"S"}]).
+     * 3. Nếu date_time có → fromTime() → khớp với config:
+     *    - Khớp trực tiếp → dùng luôn.
+     *    - Rơi vào gap → chọn session gần nhất (nearest) trong config.
+     * 4. Không có date_time → lấy session đầu tiên trong config.
+     * 5. Fallback → SessionType::MORNING.
      */
     private function resolveSession(array $data, int $orgId): string
     {
@@ -748,7 +746,7 @@ class ScheduleService
         if ($sessionValue instanceof SessionType) {
             return $sessionValue->value;
         }
-        if (!empty($sessionValue) && SessionType::tryFrom((string) $sessionValue) !== null) {
+        if (!empty($sessionValue) && !is_array($sessionValue) && SessionType::tryFrom((string) $sessionValue) !== null) {
             return (string) $sessionValue;
         }
 
@@ -763,52 +761,63 @@ class ScheduleService
             ? ($orgSettings->executive_working_sessions ?? [])
             : ($orgSettings->office_working_sessions ?? []);
 
-        // Lọc & validate các session hợp lệ từ config
-        // Guard: flatten nếu DB lưu dạng lồng như [["S","C"]] thay vì ["S","C"]
-        $flatSessions = [];
-        foreach ($rawSessions as $s) {
-            if (is_array($s)) {
-                array_push($flatSessions, ...$s);
-            } elseif (is_scalar($s)) {
-                $flatSessions[] = $s;
+        // Parse config → danh sách session hợp lệ.
+        // Hỗ trợ mọi format DB có thể lưu:
+        //   "S"                 → scalar string
+        //   ["S", "C"]         → array of strings
+        //   [{"value":"S",...}] → array of objects (FE gửi object có key "value")
+        if (!is_array($rawSessions)) {
+            $rawSessions = [$rawSessions];
+        }
+        $configSessions = [];
+        foreach ($rawSessions as $item) {
+            $raw = is_array($item)
+                ? ($item['value'] ?? array_values($item)[0] ?? null)
+                : $item;
+            if (is_scalar($raw) && $raw !== null) {
+                $resolved = SessionType::tryFrom((string) $raw)?->value;
+                if ($resolved !== null) {
+                    $configSessions[] = $resolved;
+                }
             }
         }
-        $configSessions = array_values(array_filter(
-            array_map(fn($s) => SessionType::tryFrom((string) $s)?->value, $flatSessions)
-        ));
+        $configSessions = array_values(array_unique($configSessions));
 
-        // Bước 2: Có date_time → dùng fromTime() để xác định session từ giờ
+        // Bước 2: Có date_time → resolve theo giờ
         if (!empty($data['date_time'])) {
-            $timePart     = \Carbon\Carbon::parse($data['date_time'])->format('H:i:s');
-            $candidate    = SessionType::fromTime($timePart)->value;
+            $timePart  = \Carbon\Carbon::parse($data['date_time'])->format('H:i:s');
+            $candidate = SessionType::fromTime($timePart)->value;
 
-            if (!empty($configSessions)) {
-                // Nếu session ứng viên nằm trong config → dùng luôn
-                if (in_array($candidate, $configSessions, true)) {
-                    return $candidate;
-                }
-
-                // Time rơi vào gap: tìm session cuối cùng đứng trước candidate
-                // Thứ tự chuẩn trong ngày: S → C → T
-                $order = array_flip([SessionType::MORNING->value, SessionType::AFTERNOON->value, SessionType::EVENING->value]);
-                $candidateOrder = $order[$candidate] ?? 0;
-
-                $nearestBefore = null;
-                foreach ($configSessions as $s) {
-                    $sOrder = $order[$s] ?? 0;
-                    if ($sOrder <= $candidateOrder) {
-                        // Lấy session gần candidate nhất (lớn nhất trong các session ≤ candidate)
-                        if ($nearestBefore === null || $sOrder > ($order[$nearestBefore] ?? -1)) {
-                            $nearestBefore = $s;
-                        }
-                    }
-                }
-
-                return $nearestBefore ?? $configSessions[0];
+            if (empty($configSessions)) {
+                return $candidate;
             }
 
-            // Không có config → dùng candidate từ fromTime()
-            return $candidate;
+            // Khớp trực tiếp
+            if (in_array($candidate, $configSessions, true)) {
+                return $candidate;
+            }
+
+            // Gap: chọn session gần nhất theo thứ tự S=0, C=1, T=2.
+            // Nếu cùng khoảng cách → ưu tiên session trước (nearest-before).
+            $order = array_flip([
+                SessionType::MORNING->value,
+                SessionType::AFTERNOON->value,
+                SessionType::EVENING->value,
+            ]);
+            $candidateOrder = $order[$candidate] ?? 0;
+            $nearest        = null;
+            $minDist        = PHP_INT_MAX;
+
+            foreach ($configSessions as $s) {
+                $dist = abs(($order[$s] ?? 0) - $candidateOrder);
+                $isBefore = ($order[$s] ?? 0) <= $candidateOrder;
+                if ($dist < $minDist || ($dist === $minDist && $isBefore)) {
+                    $minDist = $dist;
+                    $nearest = $s;
+                }
+            }
+
+            return $nearest ?? $configSessions[0];
         }
 
         // Bước 3: Không có date_time → lấy session đầu tiên trong config
