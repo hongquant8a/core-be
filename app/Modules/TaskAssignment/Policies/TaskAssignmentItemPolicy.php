@@ -15,7 +15,7 @@ class TaskAssignmentItemPolicy
      */
     public function before(User $user, string $ability): ?bool
     {
-        if ($user->hasAnyRole(['Super Admin', 'Admin', 'Quản trị'])) {
+        if ($user->hasAnyRole(['Super Admin'])) {
             return true;
         }
         return null;

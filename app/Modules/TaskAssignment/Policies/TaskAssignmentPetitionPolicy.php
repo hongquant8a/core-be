@@ -39,10 +39,7 @@ class TaskAssignmentPetitionPolicy
             return false;
         }
 
-        // Người tạo đơn thư luôn có quyền xem.
-        if ($petition->created_by === $user->id) {
-            return true;
-        }
+
 
         if ($this->isUserInOverviewDepartment($user)) {
             return true;
@@ -79,10 +76,6 @@ class TaskAssignmentPetitionPolicy
             return false;
         }
 
-        // Người tạo đơn thư luôn có quyền cập nhật.
-        if ($petition->created_by === $user->id) {
-            return true;
-        }
 
         if ($this->isUserInOverviewDepartment($user)) {
             return true;
@@ -107,11 +100,7 @@ class TaskAssignmentPetitionPolicy
             return false;
         }
 
-        if ($this->isUserInOverviewDepartment($user)) {
-            return true;
-        }
-
-        return $petition->created_by === $user->id;
+        return $this->isUserInOverviewDepartment($user);
     }
 
     /**
@@ -124,19 +113,7 @@ class TaskAssignmentPetitionPolicy
             return false;
         }
 
-        if ($this->isUserInOverviewDepartment($user)) {
-            return true;
-        }
-
-        $ids = request('ids', []);
-        if (! empty($ids)) {
-            $invalidCount = TaskAssignmentPetition::whereIn('id', $ids)->where('created_by', '!=', $user->id)->count();
-            if ($invalidCount > 0) {
-                return false;
-            }
-        }
-
-        return true;
+        return $this->isUserInOverviewDepartment($user);
     }
 
     /**
@@ -152,10 +129,7 @@ class TaskAssignmentPetitionPolicy
             return false;
         }
 
-        // Người tạo đơn thư luôn có quyền đổi trạng thái.
-        if ($petition->created_by === $user->id) {
-            return true;
-        }
+
 
         if ($this->isUserInOverviewDepartment($user)) {
             return true;
