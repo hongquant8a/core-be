@@ -1,0 +1,156 @@
+<?php
+
+namespace App\Modules\TaskAssignment\Policies;
+
+use App\Modules\Core\Models\User;
+use App\Modules\TaskAssignment\Models\TaskAssignmentPetition;
+use App\Modules\TaskAssignment\Models\TaskAssignmentUser;
+use Illuminate\Auth\Access\HandlesAuthorization;
+
+class TaskAssignmentPetitionPolicy
+{
+    use HandlesAuthorization;
+
+    /**
+     * Super Admin / Admin / Quản trị bypass mọi check ownership.
+     */
+    public function before(User $user, string $ability): ?bool
+    {
+        if ($user->hasAnyRole(['Super Admin'])) {
+            return true;
+        }
+        return null;
+    }
+
+    /**
+     * Xem danh sách đơn thư — bất kỳ user có quyền index.
+     */
+    public function viewAny(User $user): bool
+    {
+        return $user->hasPermissionTo('task-assignment-petitions.index');
+    }
+
+    /**
+     * Xem chi tiết đơn thư — bất kỳ user có quyền show VÀ là người có đơn thư này ở phòng ban của mình (nếu không phải là người tạo).
+     */
+    public function view(User $user, TaskAssignmentPetition $petition): bool
+    {
+        if (! $user->hasPermissionTo('task-assignment-petitions.show')) {
+            return false;
+        }
+
+        // Người tạo đơn thư luôn có quyền xem.
+        if ($petition->created_by === $user->id) {
+            return true;
+        }
+
+        // Người trong phòng ban được giao của đơn thư cũng có quyền xem.
+        if ($petition->department_id) {
+            return TaskAssignmentUser::where('user_id', $user->id)
+                ->where('task_assignment_department_id', $petition->department_id)
+                ->exists();
+        }
+
+        return false;
+    }
+
+    /**
+     * Tạo mới đơn thư — bất kỳ user có quyền store.
+     */
+    public function create(User $user): bool
+    {
+        return $user->hasPermissionTo('task-assignment-petitions.store');
+    }
+
+    /**
+     * Cập nhật đơn thư — cần có quyền update VÀ là người tạo hoặc trong phòng ban được giao.
+     */
+    public function update(User $user, TaskAssignmentPetition $petition): bool
+    {
+        if ($petition->processing_status === \App\Modules\TaskAssignment\Enums\PetitionStatusEnum::Completed->value) {
+            return false;
+        }
+
+        if (! $user->hasPermissionTo('task-assignment-petitions.update')) {
+            return false;
+        }
+
+        // Người tạo đơn thư luôn có quyền cập nhật.
+        if ($petition->created_by === $user->id) {
+            return true;
+        }
+
+        // Người trong phòng ban được giao của đơn thư cũng có quyền cập nhật.
+        if ($petition->department_id) {
+            return TaskAssignmentUser::where('user_id', $user->id)
+                ->where('task_assignment_department_id', $petition->department_id)
+                ->exists();
+        }
+
+        return false;
+    }
+
+    /**
+     * Xóa đơn thư — cần có quyền destroy VÀ là người tạo.
+     */
+    public function delete(User $user, TaskAssignmentPetition $petition): bool
+    {
+        if (! $user->hasPermissionTo('task-assignment-petitions.destroy')) {
+            return false;
+        }
+
+        return $petition->created_by === $user->id;
+    }
+
+    /**
+     * Đổi trạng thái đơn thư — cần có quyền changeStatus VÀ là người trong phòng ban được giao.
+     */
+    public function changeStatus(User $user, TaskAssignmentPetition $petition): bool
+    {
+        if ($petition->processing_status === \App\Modules\TaskAssignment\Enums\PetitionStatusEnum::Completed->value) {
+            return false;
+        }
+
+        if (! $user->hasPermissionTo('task-assignment-petitions.changeStatus')) {
+            return false;
+        }
+
+        // Người tạo đơn thư luôn có quyền đổi trạng thái.
+        if ($petition->created_by === $user->id) {
+            return true;
+        }
+
+        // Người trong phòng ban được giao mới có quyền đổi trạng thái.
+        if ($petition->department_id) {
+            return TaskAssignmentUser::where('user_id', $user->id)
+                ->where('task_assignment_department_id', $petition->department_id)
+                ->exists();
+        }
+
+        return false;
+    }
+
+    /**
+     * Mở khóa đơn thư — cần có quyền manage VÀ là người trong phòng ban được giao.
+     */
+    public function unlock(User $user, TaskAssignmentPetition $petition): bool
+    {
+        if (! $user->hasPermissionTo('task-assignment-petitions.manage')) {
+            return false;
+        }
+
+        // Người tạo đơn thư (nếu có quyền manage) có quyền mở khóa.
+        if ($petition->created_by === $user->id) {
+            return true;
+        }
+
+        // Chỉ người trong phòng ban được giao mới có quyền mở khóa.
+        if ($petition->department_id) {
+            return TaskAssignmentUser::where('user_id', $user->id)
+                ->where('task_assignment_department_id', $petition->department_id)
+                ->exists();
+        }
+
+        return false;
+    }
+}

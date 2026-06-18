@@ -25,11 +25,11 @@ class TaskAssignmentPetitionService
 
         return [
             'total'      => (clone $base)->count(),
-            'new'        => (clone $base)->where('processing_status', PetitionStatusEnum::MoiTiepNhan->value)->count(),
-            'processing' => (clone $base)->where('processing_status', PetitionStatusEnum::DangXuLy->value)->count(),
-            'completed'  => (clone $base)->where('processing_status', PetitionStatusEnum::DaHoanThanh->value)->count(),
-            'paused'     => (clone $base)->where('processing_status', PetitionStatusEnum::TamDung->value)->count(),
-            'cancelled'  => (clone $base)->where('processing_status', PetitionStatusEnum::DaHuy->value)->count(),
+            'new'        => (clone $base)->where('processing_status', PetitionStatusEnum::New->value)->count(),
+            'processing' => (clone $base)->where('processing_status', PetitionStatusEnum::Processing->value)->count(),
+            'completed'  => (clone $base)->where('processing_status', PetitionStatusEnum::Completed->value)->count(),
+            'paused'     => (clone $base)->where('processing_status', PetitionStatusEnum::Paused->value)->count(),
+            'cancelled'  => (clone $base)->where('processing_status', PetitionStatusEnum::Cancelled->value)->count(),
         ];
     }
 
@@ -57,7 +57,7 @@ class TaskAssignmentPetitionService
             return DB::transaction(function () use ($validated, $files, &$storedFiles) {
                 $data = collect($validated)->except(['attachments'])->all();
 
-                if (isset($data['processing_status']) && $data['processing_status'] === PetitionStatusEnum::DaHoanThanh->value && empty($data['completed_at'])) {
+                if (isset($data['processing_status']) && $data['processing_status'] === PetitionStatusEnum::Completed->value && empty($data['completed_at'])) {
                     $data['completed_at'] = now();
                 }
 
@@ -80,7 +80,7 @@ class TaskAssignmentPetitionService
             return DB::transaction(function () use ($petition, $validated, $files, $removeAttachmentIds, &$storedFiles) {
                 $data = collect($validated)->except(['attachments', 'remove_attachment_ids'])->all();
 
-                if (isset($data['processing_status']) && $data['processing_status'] === PetitionStatusEnum::DaHoanThanh->value && empty($petition->completed_at)) {
+                if (isset($data['processing_status']) && $data['processing_status'] === PetitionStatusEnum::Completed->value && empty($petition->completed_at)) {
                     $data['completed_at'] = now();
                 }
 
@@ -120,10 +120,10 @@ class TaskAssignmentPetitionService
 
                 // Tự động set completed_at khi chuyển processing_status
                 if (! empty($data['processing_status'])) {
-                    if ($data['processing_status'] === PetitionStatusEnum::DaHoanThanh->value) {
+                    if ($data['processing_status'] === PetitionStatusEnum::Completed->value) {
                         $data['completed_at'] = $data['completed_at'] ?? now();
-                    } elseif ($data['processing_status'] !== PetitionStatusEnum::DaHoanThanh->value
-                        && $petition->processing_status === PetitionStatusEnum::DaHoanThanh->value) {
+                    } elseif ($data['processing_status'] !== PetitionStatusEnum::Completed->value
+                        && $petition->processing_status === PetitionStatusEnum::Completed->value) {
                         $data['completed_at'] = null;
                     }
                 }
@@ -155,15 +155,21 @@ class TaskAssignmentPetitionService
     {
         $data = ['processing_status' => $status];
 
-        if ($status === PetitionStatusEnum::DaHoanThanh->value) {
+        if ($status === PetitionStatusEnum::Completed->value) {
             $data['completed_at'] = now();
-        } elseif ($petition->processing_status === PetitionStatusEnum::DaHoanThanh->value) {
+        } elseif ($petition->processing_status === PetitionStatusEnum::Completed->value) {
             $data['completed_at'] = null;
         }
 
         $petition->update($data);
 
         return $petition->load(['department', 'attachments.media', 'creator', 'editor']);
+    }
+
+    public function unlock(TaskAssignmentPetition $petition): TaskAssignmentPetition
+    {
+        // Sử dụng lại logic changeStatus, chuyển về Đang xử lý
+        return $this->changeStatus($petition, PetitionStatusEnum::Processing->value);
     }
 
     private function getUserDepartmentIds(): array
@@ -236,6 +242,36 @@ class TaskAssignmentPetitionService
             ->when($filters['submission_date_to'] ?? null, fn ($q, $v) => $q->whereDate('submission_date', '<=', $v))
             ->when($filters['deadline_date_from'] ?? null, fn ($q, $v) => $q->whereDate('deadline_date', '>=', $v))
             ->when($filters['deadline_date_to'] ?? null, fn ($q, $v) => $q->whereDate('deadline_date', '<=', $v))
+            ->when($filters['timing_status'] ?? null, function ($q, $timing) {
+                $done = PetitionStatusEnum::Completed->value;
+                $cancelled = PetitionStatusEnum::Cancelled->value;
+
+                if ($timing === 'upcoming') {
+                    $q->whereNotIn('processing_status', [$done, $cancelled])
+                        ->where(fn ($sub) => $sub->whereNull('deadline_date')
+                            ->orWhereDate('deadline_date', '>=', today())
+                        );
+                } elseif ($timing === 'overdue') {
+                    $q->whereNotIn('processing_status', [$done, $cancelled])
+                        ->whereNotNull('deadline_date')
+                        ->whereDate('deadline_date', '<', today());
+                } elseif ($timing === 'late') {
+                    $q->where('processing_status', $done)
+                        ->whereNotNull('deadline_date')
+                        ->whereRaw('DATE(completed_at) > DATE(deadline_date)');
+                } elseif ($timing === 'early') {
+                    $q->where('processing_status', $done)
+                        ->whereNotNull('deadline_date')
+                        ->whereRaw('DATE(completed_at) < DATE(deadline_date)');
+                } elseif ($timing === 'on_time') {
+                    $q->where('processing_status', $done)
+                        ->where(fn ($sub) => $sub->whereNull('deadline_date')
+                            ->orWhereRaw('DATE(completed_at) = DATE(deadline_date)')
+                        );
+                } elseif ($timing === 'cancelled') {
+                    $q->where('processing_status', $cancelled);
+                }
+            })
             ->when($filters['sort_by'] ?? null, function ($q, $v) use ($filters) {
                 $allowed = ['id', 'submission_date', 'deadline_date', 'created_at', 'updated_at'];
                 if (in_array($v, $allowed, true)) {

@@ -27,6 +27,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/{petition}/status', [TaskAssignmentPetitionController::class, 'changeStatus'])
         ->whereNumber('petition')
         ->middleware('can:changeStatus,petition');
+    Route::patch('/{petition}/unlock', [TaskAssignmentPetitionController::class, 'unlock'])
+        ->whereNumber('petition')
+        ->middleware('can:unlock,petition');
     Route::patch('/{petition}/progress', [TaskAssignmentPetitionController::class, 'updateProgress'])
         ->whereNumber('petition')
         ->middleware('can:update,petition'); // updateProgress dùng chung quyền update

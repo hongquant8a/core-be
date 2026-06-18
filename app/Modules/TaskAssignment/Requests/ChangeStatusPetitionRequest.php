@@ -16,7 +16,7 @@ class ChangeStatusPetitionRequest extends BaseRequest
     public function bodyParameters(): array
     {
         return [
-            'processing_status' => ['description' => 'Trạng thái xử lý mới.', 'example' => PetitionStatusEnum::DangXuLy->value],
+            'processing_status' => ['description' => 'Trạng thái xử lý mới.', 'example' => PetitionStatusEnum::Processing->value],
         ];
     }
 

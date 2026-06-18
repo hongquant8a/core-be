@@ -156,6 +156,18 @@ class TaskAssignmentPetitionController extends Controller
     }
 
     /**
+     * Mở khóa đơn thư (Quản lý)
+     *
+     * @urlParam petition int required ID đơn thư. Example: 1
+     */
+    public function unlock(TaskAssignmentPetition $petition): JsonResponse
+    {
+        $petition = $this->service->unlock($petition);
+
+        return $this->successResource(new PetitionResource($petition), 'Đã mở khóa đơn thư thành công!');
+    }
+
+    /**
      * Cập nhật tiến độ xử lý đơn thư
      *
      * @urlParam petition int required ID đơn thư. Example: 1

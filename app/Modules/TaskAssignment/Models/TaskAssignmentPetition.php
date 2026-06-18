@@ -38,6 +38,9 @@ class TaskAssignmentPetition extends TenantModel implements HasMedia
         'completed_at'    => 'datetime',
     ];
 
+    protected $appends = [
+    ];
+
     public function department()
     {
         return $this->belongsTo(TaskAssignmentDepartment::class, 'department_id');
@@ -63,15 +66,15 @@ class TaskAssignmentPetition extends TenantModel implements HasMedia
         return $this->deadline_date
             && $this->deadline_date->isPast()
             && ! in_array($this->processing_status, [
-                \App\Modules\TaskAssignment\Enums\PetitionStatusEnum::DaHoanThanh->value,
-                \App\Modules\TaskAssignment\Enums\PetitionStatusEnum::DaHuy->value,
+                \App\Modules\TaskAssignment\Enums\PetitionStatusEnum::Completed->value,
+                \App\Modules\TaskAssignment\Enums\PetitionStatusEnum::Cancelled->value,
             ], true);
     }
 
     public function timingStatus(): string
     {
-        $done      = \App\Modules\TaskAssignment\Enums\PetitionStatusEnum::DaHoanThanh->value;
-        $cancelled = \App\Modules\TaskAssignment\Enums\PetitionStatusEnum::DaHuy->value;
+        $done      = \App\Modules\TaskAssignment\Enums\PetitionStatusEnum::Completed->value;
+        $cancelled = \App\Modules\TaskAssignment\Enums\PetitionStatusEnum::Cancelled->value;
 
         if ($this->processing_status === $cancelled) {
             return 'cancelled';
@@ -97,4 +100,6 @@ class TaskAssignmentPetition extends TenantModel implements HasMedia
 
         return 'upcoming';
     }
+
+
 }

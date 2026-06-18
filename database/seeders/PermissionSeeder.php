@@ -116,7 +116,7 @@ class PermissionSeeder extends Seeder
             ],
             'task-assignment-petitions' => [
                 'stats', 'index', 'show', 'store', 'update', 'destroy',
-                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'pause', 'cancel', 'export',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'pause', 'cancel', 'export', 'manage',
             ],
             'my-received-tasks' => [
                 'index',
@@ -341,6 +341,7 @@ class PermissionSeeder extends Seeder
         'driver-view' => 'Xem lịch phân công lái xe',
         'pause' => 'Tạm dừng',
         'cancel' => 'Hủy',
+        'manage' => 'Quản lý (Mở khóa)',
     ];
 
     /** Tạo đầy đủ permission từ danh sách PERMISSIONS (kèm description, sort_order, parent_id).

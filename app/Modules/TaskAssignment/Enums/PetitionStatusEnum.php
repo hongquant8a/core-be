@@ -4,11 +4,11 @@ namespace App\Modules\TaskAssignment\Enums;
 
 enum PetitionStatusEnum: string
 {
-    case MoiTiepNhan = 'new';
-    case DangXuLy    = 'processing';
-    case DaHoanThanh = 'completed';
-    case TamDung     = 'paused';
-    case DaHuy       = 'cancelled';
+    case New       = 'new';
+    case Processing = 'processing';
+    case Completed = 'completed';
+    case Paused    = 'paused';
+    case Cancelled = 'cancelled';
 
     public static function values(): array
     {
@@ -23,11 +23,11 @@ enum PetitionStatusEnum: string
     public function label(): string
     {
         return match ($this) {
-            self::MoiTiepNhan => 'Mới tiếp nhận',
-            self::DangXuLy    => 'Đang xử lý',
-            self::DaHoanThanh => 'Đã hoàn thành',
-            self::TamDung     => 'Tạm dừng',
-            self::DaHuy       => 'Đã hủy',
+            self::New       => 'Mới tiếp nhận',
+            self::Processing => 'Đang xử lý',
+            self::Completed => 'Đã hoàn thành',
+            self::Paused    => 'Tạm dừng',
+            self::Cancelled => 'Đã hủy',
         };
     }
 }
