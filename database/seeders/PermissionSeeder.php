@@ -116,7 +116,7 @@ class PermissionSeeder extends Seeder
             ],
             'task-assignment-petitions' => [
                 'stats', 'index', 'show', 'store', 'update', 'destroy',
-                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'pause', 'cancel', 'export', 'manage',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'manage',
             ],
             'my-received-tasks' => [
                 'index',
@@ -756,7 +756,6 @@ class PermissionSeeder extends Seeder
             'task-assignment-item-notes.store',
 
             // Dashboard + công việc được giao
-            'dashboard.systemOverview',
             'my-received-tasks.index',
         ];
     }
