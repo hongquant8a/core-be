@@ -184,11 +184,19 @@ class TaskAssignmentPetitionService
     {
         $deptIds = $this->getUserDepartmentIds();
 
-        return \App\Modules\TaskAssignment\Models\TaskAssignmentDepartment::whereIn('id', $deptIds)
-            ->where('status', 'active')
+        $hasOverview = \App\Modules\TaskAssignment\Models\TaskAssignmentDepartment::whereIn('id', $deptIds)
+            ->where('is_petition_overview', true)
+            ->exists();
+
+        $query = \App\Modules\TaskAssignment\Models\TaskAssignmentDepartment::where('status', 'active')
             ->select(['id', 'name', 'is_petition_overview'])
-            ->orderBy('name')
-            ->get();
+            ->orderBy('name');
+
+        if (! $hasOverview) {
+            $query->whereIn('id', $deptIds);
+        }
+
+        return $query->get();
     }
 
     private function applyDepartmentRestriction(array $filters): array
