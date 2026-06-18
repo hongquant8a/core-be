@@ -26,12 +26,14 @@ use App\Modules\Meeting\Policies\MeetingVoteTopicPolicy;
 use App\Modules\Scheduling\Models\Schedule;
 use App\Modules\Scheduling\Observers\ScheduleObserver;
 use App\Modules\Scheduling\Policies\SchedulePolicy;
-use App\Modules\Scheduling\Models\FilterPreset;
-use App\Modules\Scheduling\Policies\FilterPresetPolicy;
 use App\Modules\Scheduling\Models\SchedulingEmployee;
 use App\Modules\Scheduling\Policies\SchedulingEmployeePolicy;
 use App\Modules\Scheduling\Models\SchedulingEmployeeGroup;
 use App\Modules\Scheduling\Policies\SchedulingEmployeeGroupPolicy;
+use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
+use App\Modules\TaskAssignment\Policies\TaskAssignmentItemPolicy;
+use App\Modules\TaskAssignment\Models\TaskAssignmentPetition;
+use App\Modules\TaskAssignment\Policies\TaskAssignmentPetitionPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -76,9 +78,12 @@ class AppServiceProvider extends ServiceProvider
 
         // Register Scheduling Policies
         Gate::policy(Schedule::class, SchedulePolicy::class);
-        Gate::policy(FilterPreset::class, FilterPresetPolicy::class);
         Gate::policy(SchedulingEmployee::class, SchedulingEmployeePolicy::class);
         Gate::policy(SchedulingEmployeeGroup::class, SchedulingEmployeeGroupPolicy::class);
+
+        // Register TaskAssignment Policies
+        Gate::policy(TaskAssignmentItem::class, TaskAssignmentItemPolicy::class);
+        Gate::policy(TaskAssignmentPetition::class, TaskAssignmentPetitionPolicy::class);
 
         $this->loadViewsFrom(resource_path('views/scheduling'), 'scheduling');
 

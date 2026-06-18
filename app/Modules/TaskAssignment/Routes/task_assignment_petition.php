@@ -6,28 +6,28 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/available-departments', [TaskAssignmentPetitionController::class, 'availableDepartments']);
     Route::get('/stats', [TaskAssignmentPetitionController::class, 'stats'])
-        ->middleware('permission:task-assignment-petitions.index,web');
+        ->middleware('can:viewAny,\App\Modules\TaskAssignment\Models\TaskAssignmentPetition');
     Route::get('/', [TaskAssignmentPetitionController::class, 'index'])
-        ->middleware('permission:task-assignment-petitions.index,web');
+        ->middleware('can:viewAny,\App\Modules\TaskAssignment\Models\TaskAssignmentPetition');
     Route::get('/export', [TaskAssignmentPetitionController::class, 'export'])
-        ->middleware('permission:task-assignment-petitions.export,web');
+        ->middleware('permission:task-assignment-petitions.export,web'); // Export không cần model instance
     Route::get('/{petition}', [TaskAssignmentPetitionController::class, 'show'])
         ->whereNumber('petition')
-        ->middleware('permission:task-assignment-petitions.show,web');
+        ->middleware('can:view,petition');
     Route::post('/', [TaskAssignmentPetitionController::class, 'store'])
-        ->middleware('permission:task-assignment-petitions.store,web');
+        ->middleware('can:create,\App\Modules\TaskAssignment\Models\TaskAssignmentPetition');
     Route::put('/{petition}', [TaskAssignmentPetitionController::class, 'update'])
         ->whereNumber('petition')
-        ->middleware('permission:task-assignment-petitions.update,web');
+        ->middleware('can:update,petition');
     Route::delete('/bulk-delete', [TaskAssignmentPetitionController::class, 'bulkDestroy'])
-        ->middleware('permission:task-assignment-petitions.bulkDestroy,web');
+        ->middleware('permission:task-assignment-petitions.bulkDestroy,web'); // Bulk delete không cần model instance
     Route::delete('/{petition}', [TaskAssignmentPetitionController::class, 'destroy'])
         ->whereNumber('petition')
-        ->middleware('permission:task-assignment-petitions.destroy,web');
+        ->middleware('can:delete,petition');
     Route::patch('/{petition}/status', [TaskAssignmentPetitionController::class, 'changeStatus'])
         ->whereNumber('petition')
-        ->middleware('permission:task-assignment-petitions.changeStatus,web');
+        ->middleware('can:changeStatus,petition');
     Route::patch('/{petition}/progress', [TaskAssignmentPetitionController::class, 'updateProgress'])
         ->whereNumber('petition')
-        ->middleware('permission:task-assignment-petitions.update,web');
+        ->middleware('can:update,petition'); // updateProgress dùng chung quyền update
 });

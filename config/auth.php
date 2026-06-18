@@ -43,7 +43,7 @@ return [
         ],
         // Guard cho RESTful API (frontend gọi bằng Bearer token, Sanctum). Dùng cho Spatie permission/role.
         'api' => [
-            'driver' => 'session',
+            'driver' => 'sanctum',
             'provider' => 'users',
         ],
     ],

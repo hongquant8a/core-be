@@ -100,7 +100,7 @@ class PermissionSeeder extends Seeder
             ],
             'task-assignment-items' => [
                 'stats', 'index', 'show', 'store', 'update', 'destroy',
-                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'pause', 'cancel', 'export',
                 'updateProgress', 'markDone',
                 'statsByDepartment', 'statsByUser', 'statsByTime', 'overdue', 'upcomingDeadline',
                 'statsByItemType', 'statsByDocument', 'exportMonthlyReport',
@@ -116,7 +116,7 @@ class PermissionSeeder extends Seeder
             ],
             'task-assignment-petitions' => [
                 'stats', 'index', 'show', 'store', 'update', 'destroy',
-                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'pause', 'cancel', 'export',
             ],
             'my-received-tasks' => [
                 'index',
@@ -339,6 +339,8 @@ class PermissionSeeder extends Seeder
         'reorder' => 'Sắp xếp lại',
         'duplicate' => 'Sao chép',
         'driver-view' => 'Xem lịch phân công lái xe',
+        'pause' => 'Tạm dừng',
+        'cancel' => 'Hủy',
     ];
 
     /** Tạo đầy đủ permission từ danh sách PERMISSIONS (kèm description, sort_order, parent_id).
@@ -687,6 +689,8 @@ class PermissionSeeder extends Seeder
             'task-assignment-items.store',
             'task-assignment-items.update',
             'task-assignment-items.changeStatus',
+            'task-assignment-items.pause',
+            'task-assignment-items.cancel',
             'task-assignment-items.updateProgress',
 
             // Thống kê nâng cao (giai đoạn 2) - BE ép department_id phòng mình
@@ -732,6 +736,8 @@ class PermissionSeeder extends Seeder
             'task-assignment-items.update',
             'task-assignment-items.updateProgress',
             'task-assignment-items.changeStatus',
+            'task-assignment-items.pause',
+            'task-assignment-items.cancel',
 
             // Quá hạn + sắp đến hạn (giai đoạn 2) - BE ép department_id phòng mình
             'task-assignment-items.overdue',
