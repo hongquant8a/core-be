@@ -71,15 +71,31 @@ class MeetingVoteResponseSummaryExport extends AbstractExcelExport implements Fr
             $votedCount = (clone $base)->count();
             $eligibleCount = $eligibleCountByMeeting[$meetingId];
 
+            $agreeCount = (clone $base)->whereIn('option', ['agree', 'approve'])->count();
+            $disagreeCount = (clone $base)->whereIn('option', ['disagree', 'reject'])->count();
+            $abstainCount = (clone $base)->where('option', 'abstain')->count();
+            $notVotedCount = max(0, $eligibleCount - $votedCount);
+
             return [
                 'stt' => $i + 1,
                 'topic' => $topic->title,
-                'agree' => (clone $base)->whereIn('option', ['agree', 'approve'])->count(),
-                'disagree' => (clone $base)->whereIn('option', ['disagree', 'reject'])->count(),
-                'abstain' => (clone $base)->where('option', 'abstain')->count(),
-                'not_voted' => max(0, $eligibleCount - $votedCount),
+                'agree' => $this->formatVoteCell($agreeCount, $eligibleCount, $votedCount),
+                'disagree' => $this->formatVoteCell($disagreeCount, $eligibleCount, $votedCount),
+                'abstain' => $this->formatVoteCell($abstainCount, $eligibleCount, $votedCount),
+                'not_voted' => $notVotedCount . ($eligibleCount > 0 ? ' (' . round($notVotedCount / $eligibleCount * 100, 1) . '%)' : ''),
             ];
         });
+    }
+
+    private function formatVoteCell(int $count, int $total, int $present): string
+    {
+        if ($count === 0) {
+            return '0';
+        }
+        $pctTotal = $total > 0 ? round($count / $total * 100, 1) : 0;
+        $pctPresent = $present > 0 ? round($count / $present * 100, 1) : 0;
+
+        return sprintf("%d (Tổng: %s%% - Có mặt: %s%%)", $count, $pctTotal, $pctPresent);
     }
 
     public function headings(): array
