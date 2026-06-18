@@ -38,6 +38,11 @@ class MeetingSettingController extends Controller
      */
     public function update(UpdateMeetingSettingRequest $request)
     {
+        $validated = collect($request->validated())->except([
+            'projector_image', 'chairperson_signature', 'qr_icon',
+            'remove_projector_image', 'remove_chairperson_signature', 'remove_qr_icon'
+        ])->all();
+
         $files = [
             'projector_image' => $request->file('projector_image'),
             'chairperson_signature' => $request->file('chairperson_signature'),
@@ -49,7 +54,7 @@ class MeetingSettingController extends Controller
             'qr_icon' => (bool) $request->boolean('remove_qr_icon'),
         ];
 
-        $item = $this->service->update($files, $removeFlags);
+        $item = $this->service->update($files, $removeFlags, $validated);
 
         return $this->successResource(new MeetingSettingResource($item), 'Cập nhật cấu hình cuộc họp thành công!');
     }

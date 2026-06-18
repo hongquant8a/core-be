@@ -33,6 +33,7 @@ class UpdateMeetingSettingRequest extends FormRequest
             'remove_projector_image' => 'sometimes|boolean',
             'remove_chairperson_signature' => 'sometimes|boolean',
             'remove_qr_icon' => 'sometimes|boolean',
+            'allow_host_management' => 'sometimes|boolean',
         ];
     }
 
@@ -55,6 +56,7 @@ class UpdateMeetingSettingRequest extends FormRequest
             'remove_projector_image' => 'Xóa hình màn trình chiếu',
             'remove_chairperson_signature' => 'Xóa chữ ký chủ tọa',
             'remove_qr_icon' => 'Xóa icon QR code',
+            'allow_host_management' => 'Cho phép chủ trì điều hành',
         ];
     }
 
@@ -67,6 +69,7 @@ class UpdateMeetingSettingRequest extends FormRequest
             'remove_projector_image' => ['description' => 'Đặt true để xóa hình hiện tại (không upload mới).', 'example' => false],
             'remove_chairperson_signature' => ['description' => 'Xóa chữ ký hiện tại.', 'example' => false],
             'remove_qr_icon' => ['description' => 'Xóa icon QR hiện tại.', 'example' => false],
+            'allow_host_management' => ['description' => 'Tùy chọn chủ trì điều hành cuộc họp.', 'example' => true],
         ];
     }
 }

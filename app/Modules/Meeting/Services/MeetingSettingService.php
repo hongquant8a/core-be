@@ -31,19 +31,25 @@ class MeetingSettingService
     }
 
     /**
-     * Upsert — chấp nhận multipart với 1 hoặc nhiều file field.
+     * Upsert — chấp nhận multipart với 1 hoặc nhiều file field và data.
      * Field nào FE không gửi -> giữ nguyên giá trị cũ.
      *
      * @param  array<string, UploadedFile|null>  $files  key theo FIELD_MAP
      * @param  array<string, bool>  $removeFlags  key=field name, true=xóa file hiện tại
+     * @param  array  $data  Các field khác (allow_host_management, ...)
      */
-    public function update(array $files, array $removeFlags = []): MeetingSetting
+    public function update(array $files, array $removeFlags = [], array $data = []): MeetingSetting
     {
         $setting = $this->resolveForCurrentOrg();
 
         $storedFiles = [];
         try {
-            $setting = DB::transaction(function () use ($setting, $files, $removeFlags, &$storedFiles) {
+            $setting = DB::transaction(function () use ($setting, $files, $removeFlags, $data, &$storedFiles) {
+                // Cập nhật các trường thông thường
+                if (!empty($data)) {
+                    $setting->fill($data);
+                }
+
                 foreach (self::FIELD_MAP as $key => [$column, $collection]) {
                     $remove = (bool) ($removeFlags[$key] ?? false);
                     $file = $files[$key] ?? null;
