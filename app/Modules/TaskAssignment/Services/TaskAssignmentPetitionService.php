@@ -186,7 +186,7 @@ class TaskAssignmentPetitionService
 
         return \App\Modules\TaskAssignment\Models\TaskAssignmentDepartment::whereIn('id', $deptIds)
             ->where('status', 'active')
-            ->select(['id', 'name'])
+            ->select(['id', 'name', 'is_petition_overview'])
             ->orderBy('name')
             ->get();
     }

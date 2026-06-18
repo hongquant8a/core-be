@@ -21,6 +21,7 @@ class TaskAssignmentDepartment extends TenantModel
 
     protected $casts = [
         'sort_order' => 'integer',
+        'is_petition_overview' => 'boolean',
     ];
 
     protected static function booted()
