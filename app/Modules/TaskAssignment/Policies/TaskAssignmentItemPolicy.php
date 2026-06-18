@@ -46,8 +46,52 @@ class TaskAssignmentItemPolicy
     }
 
     /**
+     * Đổi trạng thái hàng loạt — cần quyền bulkUpdateStatus.
+     * Nếu chọn tạm dừng hoặc hủy thì phải là người giao việc của tất cả các task được chọn.
+     */
+    public function bulkUpdateStatus(User $user): bool
+    {
+        if (! $user->hasPermissionTo('task-assignment-items.bulkUpdateStatus')) {
+            return false;
+        }
+
+        $status = request('processing_status');
+        if (in_array($status, [\App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Paused->value, \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Cancelled->value], true)) {
+            $ids = request('ids', []);
+            if (! empty($ids)) {
+                $invalidCount = TaskAssignmentItem::whereIn('id', $ids)->where('assigned_by', '!=', $user->id)->count();
+                if ($invalidCount > 0) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Xóa hàng loạt — cần quyền bulkDestroy.
+     * Người xóa phải là người giao của tất cả các task được chọn.
+     */
+    public function bulkDestroy(User $user): bool
+    {
+        if (! $user->hasPermissionTo('task-assignment-items.bulkDestroy')) {
+            return false;
+        }
+
+        $ids = request('ids', []);
+        if (! empty($ids)) {
+            $invalidCount = TaskAssignmentItem::whereIn('id', $ids)->where('assigned_by', '!=', $user->id)->count();
+            if ($invalidCount > 0) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Cập nhật — cần có quyền update VÀ là người liên quan đến task:
-     *   - Người tạo (created_by)
      *   - Người giao (assigned_by)
      *   - Người được giao (pivot task_assignment_item_user)
      *
@@ -60,11 +104,15 @@ class TaskAssignmentItemPolicy
             return false;
         }
 
+        if (! $this->checkPauseCancelRestriction($user, $item)) {
+            return false;
+        }
+
         return $this->isOwnerOrAssigned($user, $item);
     }
 
     /**
-     * Xóa — cần có quyền destroy VÀ là người tạo hoặc người giao.
+     * Xóa — cần có quyền destroy VÀ là người giao.
      */
     public function delete(User $user, TaskAssignmentItem $item): bool
     {
@@ -72,8 +120,7 @@ class TaskAssignmentItemPolicy
             return false;
         }
 
-        return $item->created_by === $user->id
-            || $item->assigned_by === $user->id;
+        return (int) $item->assigned_by === $user->id;
     }
 
     /**
@@ -89,15 +136,7 @@ class TaskAssignmentItemPolicy
             return false;
         }
 
-        return $this->isOwnerOrAssigned($user, $item);
-    }
-
-    /**
-     * Cập nhật tiến độ — chỉ người được giao hoặc người tạo.
-     */
-    public function updateProgress(User $user, TaskAssignmentItem $item): bool
-    {
-        if (! $user->hasPermissionTo('task-assignment-items.updateProgress')) {
+        if (! $this->checkPauseCancelRestriction($user, $item)) {
             return false;
         }
 
@@ -105,7 +144,23 @@ class TaskAssignmentItemPolicy
     }
 
     /**
-     * Duyệt hoàn thành (mark-done) — chỉ người giao hoặc người tạo.
+     * Cập nhật tiến độ — chỉ người được giao hoặc người giao.
+     */
+    public function updateProgress(User $user, TaskAssignmentItem $item): bool
+    {
+        if (! $user->hasPermissionTo('task-assignment-items.updateProgress')) {
+            return false;
+        }
+
+        if (! $this->checkPauseCancelRestriction($user, $item)) {
+            return false;
+        }
+
+        return $this->isOwnerOrAssigned($user, $item);
+    }
+
+    /**
+     * Duyệt hoàn thành (mark-done) — chỉ người giao.
      * Nhân viên thực hiện task không được tự duyệt.
      */
     public function markDone(User $user, TaskAssignmentItem $item): bool
@@ -114,24 +169,36 @@ class TaskAssignmentItemPolicy
             return false;
         }
 
-        return $item->created_by === $user->id
-            || $item->assigned_by === $user->id;
+        return (int) $item->assigned_by === $user->id;
     }
 
     /**
      * Helper: kiểm tra user có liên quan đến task không.
-     * - Người tạo (created_by)
      * - Người giao (assigned_by)
      * - Người được giao (users pivot)
      */
     private function isOwnerOrAssigned(User $user, TaskAssignmentItem $item): bool
     {
-        if ($item->created_by === $user->id || $item->assigned_by === $user->id) {
+        if ((int) $item->assigned_by === $user->id) {
             return true;
         }
 
         // Kiểm tra trong pivot (tránh N+1: load nếu chưa có)
         $item->loadMissing('users');
         return $item->users->contains('id', $user->id);
+    }
+
+    /**
+     * Tạm dừng và hủy chỉ cho phép người giao việc (assigner) thực hiện.
+     */
+    private function checkPauseCancelRestriction(User $user, TaskAssignmentItem $item): bool
+    {
+        $status = request('processing_status');
+
+        if (in_array($status, [\App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Paused->value, \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Cancelled->value], true)) {
+            return (int) $item->assigned_by === $user->id;
+        }
+
+        return true;
     }
 }

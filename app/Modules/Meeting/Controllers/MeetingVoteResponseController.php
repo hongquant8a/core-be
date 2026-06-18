@@ -252,7 +252,7 @@ class MeetingVoteResponseController extends Controller
         $topicId = (int) $request->input('meeting_vote_topic_id');
 
         // Tenant guard: chặn export topic của meeting khác qua nested URL của meeting hiện tại.
-        $topic = MeetingVoteTopic::findOrFail($topicId);
+        $topic = MeetingVoteTopic::with('meeting')->findOrFail($topicId);
         if ((int) $topic->meeting_id !== (int) $meeting->id) {
             abort(404);
         }

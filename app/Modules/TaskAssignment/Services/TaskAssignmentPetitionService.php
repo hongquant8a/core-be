@@ -200,20 +200,20 @@ class TaskAssignmentPetitionService
             return $filters;
         }
 
+        $hasOverview = \App\Modules\TaskAssignment\Models\TaskAssignmentDepartment::whereIn('id', $userDeptIds)
+            ->where('is_petition_overview', true)
+            ->exists();
+
+        if ($hasOverview) {
+            return $filters;
+        }
+
         if (isset($filters['department_id'])) {
             $requestedDeptId = (int) $filters['department_id'];
             if (in_array($requestedDeptId, $userDeptIds, true)) {
                 return $filters;
             }
             $filters['department_id'] = 0;
-            return $filters;
-        }
-
-        $hasOverview = \App\Modules\TaskAssignment\Models\TaskAssignmentDepartment::whereIn('id', $userDeptIds)
-            ->where('is_petition_overview', true)
-            ->exists();
-
-        if ($hasOverview) {
             return $filters;
         }
 

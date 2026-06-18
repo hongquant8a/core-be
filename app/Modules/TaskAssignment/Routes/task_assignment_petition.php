@@ -20,7 +20,7 @@ Route::middleware('auth:sanctum')->group(function () {
         ->whereNumber('petition')
         ->middleware('can:update,petition');
     Route::delete('/bulk-delete', [TaskAssignmentPetitionController::class, 'bulkDestroy'])
-        ->middleware('permission:task-assignment-petitions.bulkDestroy,web'); // Bulk delete không cần model instance
+        ->middleware('can:bulkDestroy,\App\Modules\TaskAssignment\Models\TaskAssignmentPetition'); // Bulk delete sử dụng policy
     Route::delete('/{petition}', [TaskAssignmentPetitionController::class, 'destroy'])
         ->whereNumber('petition')
         ->middleware('can:delete,petition');

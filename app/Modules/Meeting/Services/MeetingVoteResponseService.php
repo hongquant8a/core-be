@@ -42,6 +42,18 @@ class MeetingVoteResponseService
             // if (! $isPrivileged && ! $topic->show_result_on_personal_device) {
             //     throw new AuthorizationException('Phiên biểu quyết này không cho phép xem kết quả tổng hợp ngoài quản lý/chủ trì.');
             // }
+
+            if ($topic->meeting->is_voting_result_hidden_until_end && $topic->derivePhase() !== 'closed') {
+                return [
+                    'total' => MeetingVoteResponse::query()->where('meeting_vote_topic_id', $topicId)->count(),
+                    'agree' => 0,
+                    'disagree' => 0,
+                    'approve' => 0,
+                    'reject' => 0,
+                    'abstain' => 0,
+                    'is_hidden' => true,
+                ];
+            }
         }
 
         $base = MeetingVoteResponse::query()
@@ -69,6 +81,10 @@ class MeetingVoteResponseService
                 ->where('organization_id', $organizationId)
                 ->with('meeting')
                 ->findOrFail($topicId);
+
+            if ($topic->meeting->is_voting_result_hidden_until_end && $topic->derivePhase() !== 'closed') {
+                throw new AuthorizationException('Kết quả biểu quyết đang được ẩn cho đến khi phiên kết thúc.');
+            }
 
             $this->ensureCanReadResponseDetail($topic);
         } else {
@@ -127,9 +143,16 @@ class MeetingVoteResponseService
             ->where('user_id', $userId)
             ->first();
 
-        // Spam cùng option → no-op + không broadcast (FE counter không bị cộng dồn).
+        // Spam cùng option
         if ($existing && $existing->option === $validated['option']) {
             return $existing->load(['topic', 'participant']);
+        }
+
+        // Nếu đã có phiếu mà cuộc họp không cho thay đổi phiếu
+        if ($existing && !$topic->meeting->is_vote_change_allowed) {
+            throw ValidationException::withMessages([
+                'meeting_vote_topic_id' => ['Cuộc họp này không cho phép thay đổi phiếu biểu quyết.'],
+            ]);
         }
 
         $previousOption = $existing?->option;
@@ -185,11 +208,18 @@ class MeetingVoteResponseService
 
         // Spec line 165: sau khi đóng biểu quyết thì không cho sửa phiếu.
         // Reload topic + derive phase (closed nếu manual close HOẶC timeout duration_minutes).
-        $topic = MeetingVoteTopic::find($meetingVoteResponse->meeting_vote_topic_id);
-        if ($topic && $topic->derivePhase() === 'closed') {
-            throw ValidationException::withMessages([
-                'meeting_vote_topic_id' => ['Chương trình biểu quyết đã đóng — không thể sửa phiếu.'],
-            ]);
+        $topic = MeetingVoteTopic::with('meeting')->find($meetingVoteResponse->meeting_vote_topic_id);
+        if ($topic) {
+            if ($topic->derivePhase() === 'closed') {
+                throw ValidationException::withMessages([
+                    'meeting_vote_topic_id' => ['Chương trình biểu quyết đã đóng — không thể sửa phiếu.'],
+                ]);
+            }
+            if (!$topic->meeting->is_vote_change_allowed) {
+                throw ValidationException::withMessages([
+                    'meeting_vote_topic_id' => ['Cuộc họp này không cho phép thay đổi phiếu biểu quyết.'],
+                ]);
+            }
         }
 
         $meetingVoteResponse->update([

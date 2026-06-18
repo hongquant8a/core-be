@@ -28,7 +28,7 @@ class StoreItemRequest extends BaseRequest
             'processing_status' => ['nullable', TaskProgressStatusEnum::selectableRule()],
             'completion_percent' => 'nullable|integer|min:0|max:100',
             'priority' => ['nullable', TaskPriorityEnum::rule()],
-            'assigned_by' => ['nullable', 'integer', function ($attribute, $value, $fail) {
+            'assigned_by' => ['required', 'integer', function ($attribute, $value, $fail) {
                 if (! $value) {
                     return;
                 }
@@ -101,6 +101,7 @@ class StoreItemRequest extends BaseRequest
     public function messages(): array
     {
         return [
+            'assigned_by.required' => 'Phải chọn người giao việc.',
             'users.required' => 'Phải phân công ít nhất 1 người thực hiện.',
             'users.required_without' => 'Phải cung cấp users hoặc departments.',
             'users.array' => 'Danh sách người thực hiện không hợp lệ.',

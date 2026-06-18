@@ -44,6 +44,10 @@ class TaskAssignmentPetitionPolicy
             return true;
         }
 
+        if ($this->isUserInOverviewDepartment($user)) {
+            return true;
+        }
+
         // Người trong phòng ban được giao của đơn thư cũng có quyền xem.
         if ($petition->department_id) {
             return TaskAssignmentUser::where('user_id', $user->id)
@@ -80,6 +84,10 @@ class TaskAssignmentPetitionPolicy
             return true;
         }
 
+        if ($this->isUserInOverviewDepartment($user)) {
+            return true;
+        }
+
         // Người trong phòng ban được giao của đơn thư cũng có quyền cập nhật.
         if ($petition->department_id) {
             return TaskAssignmentUser::where('user_id', $user->id)
@@ -99,7 +107,36 @@ class TaskAssignmentPetitionPolicy
             return false;
         }
 
+        if ($this->isUserInOverviewDepartment($user)) {
+            return true;
+        }
+
         return $petition->created_by === $user->id;
+    }
+
+    /**
+     * Xóa đơn thư hàng loạt — cần quyền bulkDestroy.
+     * Phòng ban tổng hợp có toàn quyền, nếu không phải là người tạo của tất cả đơn thư được chọn.
+     */
+    public function bulkDestroy(User $user): bool
+    {
+        if (! $user->hasPermissionTo('task-assignment-petitions.bulkDestroy')) {
+            return false;
+        }
+
+        if ($this->isUserInOverviewDepartment($user)) {
+            return true;
+        }
+
+        $ids = request('ids', []);
+        if (! empty($ids)) {
+            $invalidCount = TaskAssignmentPetition::whereIn('id', $ids)->where('created_by', '!=', $user->id)->count();
+            if ($invalidCount > 0) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -120,6 +157,10 @@ class TaskAssignmentPetitionPolicy
             return true;
         }
 
+        if ($this->isUserInOverviewDepartment($user)) {
+            return true;
+        }
+
         // Người trong phòng ban được giao mới có quyền đổi trạng thái.
         if ($petition->department_id) {
             return TaskAssignmentUser::where('user_id', $user->id)
@@ -131,7 +172,8 @@ class TaskAssignmentPetitionPolicy
     }
 
     /**
-     * Mở khóa đơn thư — cần có quyền manage VÀ là người trong phòng ban được giao.
+     * Mở khóa đơn thư — chỉ phòng ban tổng hợp mới được mở (và phải có quyền manage).
+     * Người tạo không liên quan.
      */
     public function unlock(User $user, TaskAssignmentPetition $petition): bool
     {
@@ -139,18 +181,22 @@ class TaskAssignmentPetitionPolicy
             return false;
         }
 
-        // Người tạo đơn thư (nếu có quyền manage) có quyền mở khóa.
-        if ($petition->created_by === $user->id) {
-            return true;
+        return $this->isUserInOverviewDepartment($user);
+    }
+
+    private function isUserInOverviewDepartment(User $user): bool
+    {
+        $deptIds = TaskAssignmentUser::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->pluck('task_assignment_department_id')
+            ->toArray();
+
+        if (empty($deptIds)) {
+            return false;
         }
 
-        // Chỉ người trong phòng ban được giao mới có quyền mở khóa.
-        if ($petition->department_id) {
-            return TaskAssignmentUser::where('user_id', $user->id)
-                ->where('task_assignment_department_id', $petition->department_id)
-                ->exists();
-        }
-
-        return false;
+        return \App\Modules\TaskAssignment\Models\TaskAssignmentDepartment::whereIn('id', $deptIds)
+            ->where('is_petition_overview', true)
+            ->exists();
     }
 }
