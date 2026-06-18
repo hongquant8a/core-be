@@ -15,6 +15,7 @@ use Maatwebsite\Excel\Concerns\FromCollection;
  * Anonymize tên nếu topic.ballot_mode = anonymous (đảm bảo bảo mật theo spec).
  *
  * Columns: STT, Nội dung biểu quyết, Tên đại biểu, Biểu quyết.
+ * Cuối file: 2 bảng tổng kết theo tổng đại biểu và theo đại biểu có mặt.
  */
 class MeetingVoteResponseDetailExport extends AbstractExcelExport implements FromCollection
 {
@@ -82,6 +83,7 @@ class MeetingVoteResponseDetailExport extends AbstractExcelExport implements Fro
         foreach ($voterRows as &$row) {
             $response = $responses->get($row['user_id']);
             $row['option'] = $response ? $this->optionLabel($response->option) : 'Chưa biểu quyết';
+            $row['raw_option'] = $response?->option;
         }
         unset($row);
 
@@ -89,18 +91,60 @@ class MeetingVoteResponseDetailExport extends AbstractExcelExport implements Fro
         usort($voterRows, function ($a, $b) {
             $aVoted = $a['option'] !== 'Chưa biểu quyết' ? 0 : 1;
             $bVoted = $b['option'] !== 'Chưa biểu quyết' ? 0 : 1;
-
             return $aVoted <=> $bVoted;
         });
 
-        return collect($voterRows)->values()->map(function ($r, $i) use ($topic, $isAnonymous) {
+        // --- Tính thống kê ---
+        $totalDelegates = count($voterRows);
+        $votedRows = array_filter($voterRows, fn ($r) => $r['option'] !== 'Chưa biểu quyết');
+        $presentCount = count($votedRows);
+
+        // Đếm từng lựa chọn
+        $optionCounts = [];
+        foreach ($votedRows as $r) {
+            $label = $r['option'];
+            $optionCounts[$label] = ($optionCounts[$label] ?? 0) + 1;
+        }
+        $notVotedCount = $totalDelegates - $presentCount;
+
+        // --- Build detail rows ---
+        $detailRows = collect($voterRows)->values()->map(function ($r, $i) use ($topic, $isAnonymous) {
             return [
-                'stt' => $i + 1,
-                'topic' => $topic->title,
-                'voter' => $isAnonymous ? 'Ẩn danh' : $r['name'],
+                'stt'    => $i + 1,
+                'topic'  => $topic->title,
+                'voter'  => $isAnonymous ? 'Ẩn danh' : $r['name'],
                 'option' => $r['option'],
             ];
         });
+
+        // --- Separator ---
+        $blank = ['stt' => '', 'topic' => '', 'voter' => '', 'option' => ''];
+
+        // --- Summary 1: Theo tổng đại biểu ---
+        $summary1 = collect();
+        $summary1->push(['stt' => '', 'topic' => 'KẾT QUẢ THEO TỔNG ĐẠI BIỂU', 'voter' => "Tổng: {$totalDelegates} đại biểu", 'option' => '']);
+        foreach ($optionCounts as $label => $count) {
+            $pct = $totalDelegates > 0 ? round($count / $totalDelegates * 100, 1) : 0;
+            $summary1->push(['stt' => '', 'topic' => '', 'voter' => $label, 'option' => "{$count}/{$totalDelegates} ({$pct}%)"]);
+        }
+        if ($notVotedCount > 0) {
+            $pct = $totalDelegates > 0 ? round($notVotedCount / $totalDelegates * 100, 1) : 0;
+            $summary1->push(['stt' => '', 'topic' => '', 'voter' => 'Chưa biểu quyết', 'option' => "{$notVotedCount}/{$totalDelegates} ({$pct}%)"]);
+        }
+
+        // --- Summary 2: Theo đại biểu có mặt ---
+        $summary2 = collect();
+        $summary2->push(['stt' => '', 'topic' => 'KẾT QUẢ THEO ĐẠI BIỂU CÓ MẶT', 'voter' => "Có mặt: {$presentCount}/{$totalDelegates} đại biểu", 'option' => '']);
+        foreach ($optionCounts as $label => $count) {
+            $pct = $presentCount > 0 ? round($count / $presentCount * 100, 1) : 0;
+            $summary2->push(['stt' => '', 'topic' => '', 'voter' => $label, 'option' => "{$count}/{$presentCount} ({$pct}%)"]);
+        }
+
+        return $detailRows
+            ->push($blank)
+            ->concat($summary1)
+            ->push($blank)
+            ->concat($summary2);
     }
 
     public function headings(): array
@@ -111,12 +155,12 @@ class MeetingVoteResponseDetailExport extends AbstractExcelExport implements Fro
     private function optionLabel(?string $option): string
     {
         return match ($option) {
-            'approve' => 'Tán thành',
-            'reject' => 'Không tán thành',
-            'agree' => 'Đồng ý',
+            'approve'  => 'Tán thành',
+            'reject'   => 'Không tán thành',
+            'agree'    => 'Đồng ý',
             'disagree' => 'Không đồng ý',
-            'abstain' => 'Không ý kiến',
-            default => (string) $option,
+            'abstain'  => 'Không ý kiến',
+            default    => (string) $option,
         };
     }
 }

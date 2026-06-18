@@ -94,7 +94,18 @@ class ScheduleResource extends JsonResource
                     $this->reminders->where('source', 'CUSTOM')
                 );
             }),
-            'attachments'          => $this->whenLoaded('attachments', function () {
+            'attachments'          => $this->whenLoaded('attachments', function () use ($request) {
+                // Lái xe (chỉ có driver-view, không có quyền xem lịch thường) không được thấy tài liệu đính kèm.
+                $user = $request->user();
+                $isDriverOnly = $user
+                    && ! $user->hasRole(['Super Admin', 'Admin'])
+                    && ! $user->hasAnyPermission([
+                        'schedules-executive.view', 'schedules-office.view', 'schedules.view',
+                        'schedules-executive.home', 'schedules-office.home',
+                    ]);
+                if ($isDriverOnly) {
+                    return [];
+                }
                 return $this->attachments->map(fn ($m) => [
                     'id'            => $m->id,
                     'media_id'      => null,
