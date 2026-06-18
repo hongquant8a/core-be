@@ -33,7 +33,6 @@ class UpdateMeetingSettingRequest extends FormRequest
             'remove_projector_image' => 'sometimes|boolean',
             'remove_chairperson_signature' => 'sometimes|boolean',
             'remove_qr_icon' => 'sometimes|boolean',
-            'allow_host_management' => 'sometimes|boolean',
         ];
     }
 

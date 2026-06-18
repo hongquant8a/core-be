@@ -57,8 +57,7 @@ class UpdateMeetingRequest extends FormRequest
             'attendance_close_at' => 'nullable|date|after_or_equal:attendance_open_at',
             'status' => ['sometimes', MeetingStatusEnum::rule()],
             'published_at' => 'nullable|date',
-            'is_voting_result_hidden_until_end' => 'nullable|boolean',
-            'is_vote_change_allowed' => 'nullable|boolean',
+            'allow_host_management' => 'nullable|boolean',
         ];
     }
 
@@ -125,8 +124,7 @@ class UpdateMeetingRequest extends FormRequest
             'end_time' => 'Thời gian kết thúc',
             'status' => 'Trạng thái',
             'published_at' => 'Thời gian công khai',
-            'is_voting_result_hidden_until_end' => 'Ẩn kết quả biểu quyết cho đến khi kết thúc',
-            'is_vote_change_allowed' => 'Cho phép thay đổi phiếu biểu quyết',
+            'allow_host_management' => 'Chủ trì có thể quản lý cuộc họp',
         ];
     }
     public function bodyParameters(): array
@@ -186,13 +184,9 @@ class UpdateMeetingRequest extends FormRequest
                 'description' => 'Thời gian ban hành.',
                 'example' => '2026-05-01 12:00:00',
             ],
-            'is_voting_result_hidden_until_end' => [
-                'description' => 'Ẩn kết quả biểu quyết cho đến khi phiên kết thúc (đóng).',
-                'example' => false,
-            ],
-            'is_vote_change_allowed' => [
-                'description' => 'Cho phép đại biểu thay đổi lựa chọn trong lúc phiên biểu quyết đang mở.',
-                'example' => false,
+            'allow_host_management' => [
+                'description' => 'Chủ trì có thể quản lý cuộc họp.',
+                'example' => true,
             ],
         ];
     }

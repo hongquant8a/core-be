@@ -47,8 +47,7 @@ class Meeting extends TenantModel implements HasMedia
         'current_meeting_discussion_registration_id',
         'qr_manager_user_id',
         'projector_image_media_id',
-        'is_voting_result_hidden_until_end',
-        'is_vote_change_allowed',
+        'allow_host_management',
         'created_by',
         'updated_by',
         'checkin_token',
@@ -68,8 +67,7 @@ class Meeting extends TenantModel implements HasMedia
         'attendance_locked' => 'boolean',
         'current_meeting_agenda_id' => 'integer',
         'current_meeting_discussion_registration_id' => 'integer',
-        'is_voting_result_hidden_until_end' => 'boolean',
-        'is_vote_change_allowed' => 'boolean',
+        'allow_host_management' => 'boolean',
     ];
 
     protected static function booted()

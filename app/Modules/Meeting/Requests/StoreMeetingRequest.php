@@ -44,8 +44,7 @@ class StoreMeetingRequest extends FormRequest
             'attendance_close_at' => 'nullable|date|after_or_equal:attendance_open_at',
             'status' => ['nullable', MeetingStatusEnum::rule()],
             'published_at' => 'nullable|date',
-            'is_voting_result_hidden_until_end' => 'nullable|boolean',
-            'is_vote_change_allowed' => 'nullable|boolean',
+            'allow_host_management' => 'nullable|boolean',
         ];
     }
 
@@ -116,8 +115,7 @@ class StoreMeetingRequest extends FormRequest
             'attendance_close_at' => 'Thời gian đóng điểm danh',
             'status' => 'Trạng thái',
             'published_at' => 'Thời gian công khai',
-            'is_voting_result_hidden_until_end' => 'Ẩn kết quả biểu quyết cho đến khi kết thúc',
-            'is_vote_change_allowed' => 'Cho phép thay đổi phiếu biểu quyết',
+            'allow_host_management' => 'Chủ trì có thể quản lý cuộc họp',
         ];
     }
     public function bodyParameters(): array
@@ -180,13 +178,9 @@ class StoreMeetingRequest extends FormRequest
                 'description' => 'Thời gian ban hành (nếu có).',
                 'example' => null,
             ],
-            'is_voting_result_hidden_until_end' => [
-                'description' => 'Ẩn kết quả biểu quyết cho đến khi phiên kết thúc (đóng).',
-                'example' => false,
-            ],
-            'is_vote_change_allowed' => [
-                'description' => 'Cho phép đại biểu thay đổi lựa chọn trong lúc phiên biểu quyết đang mở.',
-                'example' => false,
+            'allow_host_management' => [
+                'description' => 'Chủ trì có thể quản lý cuộc họp.',
+                'example' => true,
             ],
         ];
     }

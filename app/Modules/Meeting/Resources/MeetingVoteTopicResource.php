@@ -23,6 +23,10 @@ class MeetingVoteTopicResource extends JsonResource
             'ballot_mode' => $this->ballot_mode,
             'show_result_on_projector' => $this->show_result_on_projector,
             'show_result_on_personal_device' => $this->show_result_on_personal_device,
+            'is_voting_result_hidden_until_end' => (bool) $this->is_voting_result_hidden_until_end,
+            'is_vote_change_allowed' => (bool) $this->is_vote_change_allowed,
+            'calculate_by_total_delegates' => (bool) $this->calculate_by_total_delegates,
+            'calculate_by_present_delegates' => (bool) $this->calculate_by_present_delegates,
             'sort_order' => $this->sort_order,
             // status đã bỏ — BE compute `phase` derived (kèm timeout) thay cho FE.
             //   draft  = opened_at NULL

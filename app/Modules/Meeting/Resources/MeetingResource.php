@@ -52,8 +52,7 @@ class MeetingResource extends JsonResource
             'documents_count' => $this->when(isset($this->documents_count), (int) $this->documents_count),
             'published_at' => $this->published_at?->format('H:i:s d/m/Y'),
             'attendance_locked' => (bool) $this->attendance_locked,
-            'is_voting_result_hidden_until_end' => (bool) $this->is_voting_result_hidden_until_end,
-            'is_vote_change_allowed' => (bool) $this->is_vote_change_allowed,
+            'allow_host_management' => (bool) $this->allow_host_management,
             // FE dùng field này để show/hide button điều hành (end-early, lock-attendance, highlight, vote open/close).
             // Vai trò CHÍNH ưu tiên: FK chair > FK operator > participant entry. Chair có participant entry vẫn trả 'chairperson'.
             // Dùng Auth::guard('sanctum') fallback cho public route không có middleware auth:sanctum.

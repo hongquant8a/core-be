@@ -24,6 +24,10 @@ class UpdateMeetingVoteTopicRequest extends FormRequest
             'ballot_mode' => ['sometimes', MeetingBallotModeEnum::rule()],
             'show_result_on_projector' => 'nullable|boolean',
             'show_result_on_personal_device' => 'nullable|boolean',
+            'is_voting_result_hidden_until_end' => 'nullable|boolean',
+            'is_vote_change_allowed' => 'nullable|boolean',
+            'calculate_by_total_delegates' => 'nullable|boolean',
+            'calculate_by_present_delegates' => 'nullable|boolean',
             'sort_order' => 'nullable|integer|min:0',
         ];
     }
@@ -59,6 +63,10 @@ class UpdateMeetingVoteTopicRequest extends FormRequest
             'ballot_mode' => 'Hình thức bỏ phiếu',
             'show_result_on_projector' => 'show result on projector',
             'show_result_on_personal_device' => 'show result on personal device',
+            'is_voting_result_hidden_until_end' => 'Ẩn kết quả biểu quyết cho đến khi kết thúc',
+            'is_vote_change_allowed' => 'Cho phép thay đổi phiếu biểu quyết',
+            'calculate_by_total_delegates' => 'Tính kết quả theo tổng số đại biểu',
+            'calculate_by_present_delegates' => 'Tính kết quả theo đại biểu có mặt',
             'sort_order' => 'Thứ tự sắp xếp',
         ];
     }
@@ -72,6 +80,10 @@ class UpdateMeetingVoteTopicRequest extends FormRequest
             'ballot_mode' => ['description' => 'Chế độ biểu quyết.', 'example' => 'public_named'],
             'show_result_on_projector' => ['description' => 'Hiển thị kết quả trên màn chiếu.', 'example' => true],
             'show_result_on_personal_device' => ['description' => 'Hiển thị kết quả trên thiết bị cá nhân.', 'example' => true],
+            'is_voting_result_hidden_until_end' => ['description' => 'Ẩn kết quả biểu quyết cho đến khi kết thúc.', 'example' => false],
+            'is_vote_change_allowed' => ['description' => 'Cho phép thay đổi phiếu biểu quyết.', 'example' => false],
+            'calculate_by_total_delegates' => ['description' => 'Tính kết quả theo tổng số đại biểu.', 'example' => true],
+            'calculate_by_present_delegates' => ['description' => 'Tính kết quả theo đại biểu có mặt.', 'example' => true],
         ];
     }
 }

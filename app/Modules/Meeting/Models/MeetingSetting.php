@@ -33,13 +33,11 @@ class MeetingSetting extends TenantModel implements HasMedia
         'projector_image_media_id',
         'chairperson_signature_media_id',
         'qr_icon_media_id',
-        'allow_host_management',
         'created_by',
         'updated_by',
     ];
 
     protected $casts = [
-        'allow_host_management' => 'boolean',
     ];
 
     protected static function booted(): void
