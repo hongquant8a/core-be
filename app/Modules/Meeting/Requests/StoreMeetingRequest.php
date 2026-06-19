@@ -37,6 +37,7 @@ class StoreMeetingRequest extends FormRequest
             'projector_image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:10240',
             'title' => 'required|string|max:255',
             'is_public' => 'nullable|boolean',
+            'has_online_room' => 'nullable|boolean',
             'content' => 'nullable|string',
             'start_time' => 'nullable|date',
             'end_time' => 'nullable|date|after_or_equal:start_time',
@@ -108,6 +109,7 @@ class StoreMeetingRequest extends FormRequest
             'projector_image' => 'Ảnh nền màn chiếu',
             'title' => 'Tiêu đề',
             'is_public' => 'Trạng thái công khai',
+            'has_online_room' => 'Có phòng họp trực tuyến',
             'content' => 'Nội dung',
             'start_time' => 'Thời gian bắt đầu',
             'end_time' => 'Thời gian kết thúc',
@@ -148,6 +150,10 @@ class StoreMeetingRequest extends FormRequest
             ],
             'is_public' => [
                 'description' => 'Công khai cuộc họp hay không.',
+                'example' => false,
+            ],
+            'has_online_room' => [
+                'description' => 'Có phòng họp trực tuyến hay không.',
                 'example' => false,
             ],
             'content' => [

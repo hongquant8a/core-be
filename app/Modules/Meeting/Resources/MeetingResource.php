@@ -40,6 +40,7 @@ class MeetingResource extends JsonResource
             ]),
             'title' => $this->title,
             'is_public' => $this->is_public,
+            'has_online_room' => (bool) $this->has_online_room,
             'content' => $this->content,
             'start_time' => $this->start_time?->format('H:i:s d/m/Y'),
             'end_time' => $this->end_time?->format('H:i:s d/m/Y'),

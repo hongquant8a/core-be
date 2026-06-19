@@ -50,6 +50,7 @@ class UpdateMeetingRequest extends FormRequest
             'remove_projector_image' => 'nullable|boolean',
             'title' => 'sometimes|string|max:255',
             'is_public' => 'sometimes|boolean',
+            'has_online_room' => 'sometimes|boolean',
             'content' => 'nullable|string',
             'start_time' => 'sometimes|date',
             'end_time' => 'nullable|date|after_or_equal:start_time',
@@ -119,6 +120,7 @@ class UpdateMeetingRequest extends FormRequest
             'remove_projector_image' => 'Xóa ảnh nền màn chiếu',
             'title' => 'Tiêu đề',
             'is_public' => 'Trạng thái công khai',
+            'has_online_room' => 'Có phòng họp trực tuyến',
             'content' => 'Nội dung',
             'start_time' => 'Thời gian bắt đầu',
             'end_time' => 'Thời gian kết thúc',
@@ -162,6 +164,10 @@ class UpdateMeetingRequest extends FormRequest
             ],
             'is_public' => [
                 'description' => 'Công khai cuộc họp hay không.',
+                'example' => true,
+            ],
+            'has_online_room' => [
+                'description' => 'Có phòng họp trực tuyến hay không.',
                 'example' => true,
             ],
             'content' => [
