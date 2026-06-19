@@ -106,7 +106,7 @@ class TaskAssignmentItemService
 
     public function index(array $filters, int $limit)
     {
-        return TaskAssignmentItem::with(['document', 'itemType', 'users', 'assigner', 'creator.media', 'editor.media', 'attachments.media', 'reminders', 'reporter', 'approver'])
+        return TaskAssignmentItem::with(['document.type', 'document.attachments.media', 'document.creator.media', 'document.editor.media', 'itemType', 'users', 'assigner', 'creator.media', 'editor.media', 'attachments.media', 'reminders', 'reporter', 'approver'])
             ->withCount('reports')
             ->filter($filters)
             ->paginate($limit);
@@ -114,7 +114,7 @@ class TaskAssignmentItemService
 
     public function show(TaskAssignmentItem $item): TaskAssignmentItem
     {
-        $item->load(['document', 'itemType', 'users', 'reports', 'attachments.media', 'assigner', 'creator.media', 'editor.media', 'reminders', 'reporter', 'approver']);
+        $item->load(['document.type', 'document.attachments.media', 'document.creator.media', 'document.editor.media', 'itemType', 'users', 'reports', 'attachments.media', 'assigner', 'creator.media', 'editor.media', 'reminders', 'reporter', 'approver']);
         $item->loadCount(['reports', 'transfers', 'notes']);
 
         return $item;
@@ -140,7 +140,7 @@ class TaskAssignmentItemService
 
                 $this->fireTaskAssignedForNewUsers($item, $addedUserIds);
 
-                return $item->load(['document', 'itemType', 'users', 'attachments.media', 'creator.media', 'editor.media', 'reminders']);
+                return $item->load(['document.type', 'document.attachments.media', 'document.creator.media', 'document.editor.media', 'itemType', 'users', 'attachments.media', 'creator.media', 'editor.media', 'reminders']);
             });
 
             // Reminder operations nằm NGOÀI transaction để tránh deadlock khi
@@ -181,7 +181,7 @@ class TaskAssignmentItemService
 
                 $this->fireTaskAssignedForNewUsers($item, $addedUserIds);
 
-                return $item->load(['document', 'itemType', 'users', 'attachments.media', 'creator.media', 'editor.media', 'reminders']);
+                return $item->load(['document.type', 'document.attachments.media', 'document.creator.media', 'document.editor.media', 'itemType', 'users', 'attachments.media', 'creator.media', 'editor.media', 'reminders']);
             });
 
             // Sync CUSTOM reminders nằm NGOÀI transaction để tránh deadlock.
@@ -224,7 +224,7 @@ class TaskAssignmentItemService
 
         $item->update($data);
 
-        return $item->load(['document', 'itemType', 'users', 'creator.media', 'editor.media']);
+        return $item->load(['document.type', 'document.attachments.media', 'document.creator.media', 'document.editor.media', 'itemType', 'users', 'creator.media', 'editor.media']);
     }
 
     /**
@@ -246,7 +246,7 @@ class TaskAssignmentItemService
 
         $item->update($this->buildStatusUpdateData($status));
 
-        return $item->load(['document', 'itemType', 'users', 'creator.media', 'editor.media']);
+        return $item->load(['document.type', 'document.attachments.media', 'document.creator.media', 'document.editor.media', 'itemType', 'users', 'creator.media', 'editor.media']);
     }
 
     public function export(array $filters): BinaryFileResponse
@@ -281,7 +281,7 @@ class TaskAssignmentItemService
 
         $item->save();
 
-        return $item->load(['document', 'itemType', 'users', 'creator.media', 'editor.media']);
+        return $item->load(['document.type', 'document.attachments.media', 'document.creator.media', 'document.editor.media', 'itemType', 'users', 'creator.media', 'editor.media']);
     }
 
     /**
@@ -302,7 +302,7 @@ class TaskAssignmentItemService
             'rejection_reason' => $reason,
         ]);
 
-        return $item->load(['document', 'itemType', 'users', 'creator.media', 'editor.media']);
+        return $item->load(['document.type', 'document.attachments.media', 'document.creator.media', 'document.editor.media', 'itemType', 'users', 'creator.media', 'editor.media']);
     }
 
     /**
@@ -330,7 +330,7 @@ class TaskAssignmentItemService
 
         event(new \App\Services\Notification\Events\TaskConfirmed($item->fresh()));
 
-        return $item->load(['document', 'itemType', 'users', 'creator.media', 'editor.media']);
+        return $item->load(['document.type', 'document.attachments.media', 'document.creator.media', 'document.editor.media', 'itemType', 'users', 'creator.media', 'editor.media']);
     }
 
     private function buildStatusUpdateData(string $status): array
@@ -850,7 +850,7 @@ class TaskAssignmentItemService
     {
         $filters = $this->applyDepartmentRestriction($filters);
 
-        return TaskAssignmentItem::with(['document', 'itemType', 'users'])
+        return TaskAssignmentItem::with(['document.type', 'document.attachments.media', 'document.creator.media', 'document.editor.media', 'itemType', 'users'])
             ->withCount('reports')
             ->where('deadline_type', TaskDeadlineTypeEnum::HasDeadline->value)
             ->where('end_at', '<', now())
@@ -870,7 +870,7 @@ class TaskAssignmentItemService
         $filters = $this->applyDepartmentRestriction($filters);
         $days = (int) ($filters['days'] ?? 3);
 
-        return TaskAssignmentItem::with(['document', 'itemType', 'users'])
+        return TaskAssignmentItem::with(['document.type', 'document.attachments.media', 'document.creator.media', 'document.editor.media', 'itemType', 'users'])
             ->withCount('reports')
             ->where('deadline_type', TaskDeadlineTypeEnum::HasDeadline->value)
             ->where('end_at', '>=', now())
