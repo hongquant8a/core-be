@@ -120,7 +120,7 @@ class ItemResource extends JsonResource
             return 'on_time';
         }
 
-        if ($this->deadline_type === $hasDeadline && $this->end_at && \Carbon\Carbon::parse($this->end_at)->lt(now())) {
+        if ($this->deadline_type === $hasDeadline && $this->end_at && \Carbon\Carbon::parse($this->end_at)->endOfDay()->lt(now())) {
             return 'overdue';
         }
 

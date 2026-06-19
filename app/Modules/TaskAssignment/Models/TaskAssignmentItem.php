@@ -81,7 +81,7 @@ class TaskAssignmentItem extends TenantModel implements HasMedia
     {
         return $this->deadline_type === \App\Modules\TaskAssignment\Enums\TaskDeadlineTypeEnum::HasDeadline->value
             && $this->end_at
-            && $this->end_at->isPast()
+            && $this->end_at->endOfDay()->isPast()
             && ! in_array($this->processing_status, [
                 \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Done->value,
                 \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Cancelled->value,
@@ -97,7 +97,7 @@ class TaskAssignmentItem extends TenantModel implements HasMedia
             && $this->deadline_type === \App\Modules\TaskAssignment\Enums\TaskDeadlineTypeEnum::HasDeadline->value
             && $this->completed_at
             && $this->end_at
-            && $this->completed_at->greaterThan($this->end_at);
+            && $this->completed_at->toDateString() > $this->end_at->toDateString();
     }
 
     public function document()
@@ -199,16 +199,16 @@ class TaskAssignmentItem extends TenantModel implements HasMedia
                     $q->whereNotIn('processing_status', [$done, $cancelled])
                         ->where(fn ($sub) => $sub->where('deadline_type', '!=', $hasDeadline)
                             ->orWhereNull('end_at')
-                            ->orWhere('end_at', '>=', now())
+                            ->orWhere('end_at', '>=', now()->startOfDay())
                         );
                 } elseif ($timing === 'overdue') {
                     $q->whereNotIn('processing_status', [$done, $cancelled])
                         ->where('deadline_type', $hasDeadline)
-                        ->where('end_at', '<', now());
+                        ->where('end_at', '<', now()->startOfDay());
                 } elseif ($timing === 'late') {
                     $q->where('processing_status', $done)
                         ->where('deadline_type', $hasDeadline)
-                        ->whereColumn('completed_at', '>', 'end_at');
+                        ->whereRaw('DATE(completed_at) > DATE(end_at)');
                 } elseif ($timing === 'early') {
                     $q->where('processing_status', $done)
                         ->where('deadline_type', $hasDeadline)
@@ -251,7 +251,7 @@ class TaskAssignmentItem extends TenantModel implements HasMedia
             // "Đang trễ hạn" — task chưa hoàn thành mà quá `end_at`.
             ->when(isset($filters['is_overdue']) && filter_var($filters['is_overdue'], FILTER_VALIDATE_BOOLEAN), fn ($q) => $q
                 ->where('deadline_type', \App\Modules\TaskAssignment\Enums\TaskDeadlineTypeEnum::HasDeadline->value)
-                ->where('end_at', '<', now())
+                ->where('end_at', '<', now()->startOfDay())
                 ->whereNotIn('processing_status', [
                     \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Done->value,
                     \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Cancelled->value,
@@ -269,7 +269,7 @@ class TaskAssignmentItem extends TenantModel implements HasMedia
                 $hasDeadline = \App\Modules\TaskAssignment\Enums\TaskDeadlineTypeEnum::HasDeadline->value;
 
                 $q->orderByRaw("CASE priority WHEN 'urgent' THEN 4 WHEN 'high' THEN 3 WHEN 'medium' THEN 2 WHEN 'low' THEN 1 ELSE 0 END DESC")
-                    ->orderByRaw("CASE WHEN deadline_type = '$hasDeadline' AND end_at < NOW() AND processing_status NOT IN ($doneIn) THEN 1 ELSE 0 END DESC")
+                    ->orderByRaw("CASE WHEN deadline_type = '$hasDeadline' AND DATE(end_at) < DATE(NOW()) AND processing_status NOT IN ($doneIn) THEN 1 ELSE 0 END DESC")
                     ->orderByRaw('end_at IS NULL ASC')
                     ->orderBy('end_at', 'asc');
             }, function ($q) use ($filters) {

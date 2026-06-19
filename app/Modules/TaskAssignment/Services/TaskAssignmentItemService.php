@@ -49,7 +49,7 @@ class TaskAssignmentItemService
     {
         return (clone $base)
             ->where('deadline_type', TaskDeadlineTypeEnum::HasDeadline->value)
-            ->where('end_at', '<', now())
+            ->where('end_at', '<', now()->startOfDay())
             ->whereIn('processing_status', [
                 TaskProgressStatusEnum::Todo->value,
                 TaskProgressStatusEnum::InProgress->value,
@@ -64,20 +64,20 @@ class TaskAssignmentItemService
         $cancelled = TaskProgressStatusEnum::Cancelled->value;
         $hasDeadline = TaskDeadlineTypeEnum::HasDeadline->value;
 
-        // Upcoming: active statuses (todo/in_progress/paused/pending_approval), and (no deadline or end_at >= now)
+        // Upcoming: active statuses (todo/in_progress/paused/pending_approval), and (no deadline or end_at >= now()->startOfDay())
         $upcoming = (clone $base)->whereNotIn('processing_status', [$done, $cancelled])
             ->where(fn ($sub) => $sub->where('deadline_type', '!=', $hasDeadline)
                 ->orWhereNull('end_at')
-                ->orWhere('end_at', '>=', now())
+                ->orWhere('end_at', '>=', now()->startOfDay())
             )->count();
 
-        // Overdue: active statuses, has deadline, end_at < now
+        // Overdue: active statuses, has deadline, end_at < now()->startOfDay()
         $overdue = $this->countOverdue($base); // Reuse existing overdue logic
 
-        // Late: done status, has deadline, completed_at > end_at
+        // Late: done status, has deadline, DATE(completed_at) > DATE(end_at)
         $late = (clone $base)->where('processing_status', $done)
             ->where('deadline_type', $hasDeadline)
-            ->whereColumn('completed_at', '>', 'end_at')->count();
+            ->whereRaw('DATE(completed_at) > DATE(end_at)')->count();
 
         // Early: done status, has deadline, DATE(completed_at) < DATE(end_at)
         $early = (clone $base)->where('processing_status', $done)
@@ -557,9 +557,9 @@ class TaskAssignmentItemService
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$paused}' THEN 1 ELSE 0 END) as paused")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' THEN 1 ELSE 0 END) as done")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$cancelled}' THEN 1 ELSE 0 END) as cancelled")
-            ->selectRaw("SUM(CASE WHEN ti.processing_status NOT IN ('{$done}','{$cancelled}') AND (ti.deadline_type != '{$hasDeadline}' OR ti.end_at IS NULL OR ti.end_at >= NOW()) THEN 1 ELSE 0 END) as upcoming")
-            ->selectRaw("SUM(CASE WHEN ti.deadline_type = '{$hasDeadline}' AND ti.end_at < NOW() AND ti.processing_status IN ('{$todo}','{$inProgress}','{$pendingApproval}','{$paused}') THEN 1 ELSE 0 END) as overdue")
-            ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' AND ti.deadline_type = '{$hasDeadline}' AND ti.completed_at > ti.end_at THEN 1 ELSE 0 END) as late")
+            ->selectRaw("SUM(CASE WHEN ti.processing_status NOT IN ('{$done}','{$cancelled}') AND (ti.deadline_type != '{$hasDeadline}' OR ti.end_at IS NULL OR DATE(ti.end_at) >= DATE(NOW())) THEN 1 ELSE 0 END) as upcoming")
+            ->selectRaw("SUM(CASE WHEN ti.deadline_type = '{$hasDeadline}' AND DATE(ti.end_at) < DATE(NOW()) AND ti.processing_status IN ('{$todo}','{$inProgress}','{$pendingApproval}','{$paused}') THEN 1 ELSE 0 END) as overdue")
+            ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' AND ti.deadline_type = '{$hasDeadline}' AND DATE(ti.completed_at) > DATE(ti.end_at) THEN 1 ELSE 0 END) as late")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' AND ti.deadline_type = '{$hasDeadline}' AND DATE(ti.completed_at) < DATE(ti.end_at) THEN 1 ELSE 0 END) as early")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' AND (ti.deadline_type != '{$hasDeadline}' OR ti.end_at IS NULL OR DATE(ti.completed_at) = DATE(ti.end_at)) THEN 1 ELSE 0 END) as on_time");
 
@@ -635,9 +635,9 @@ class TaskAssignmentItemService
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$paused}' THEN 1 ELSE 0 END) as paused")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' THEN 1 ELSE 0 END) as done")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$cancelled}' THEN 1 ELSE 0 END) as cancelled")
-            ->selectRaw("SUM(CASE WHEN ti.processing_status NOT IN ('{$done}','{$cancelled}') AND (ti.deadline_type != '{$hasDeadline}' OR ti.end_at IS NULL OR ti.end_at >= NOW()) THEN 1 ELSE 0 END) as upcoming")
-            ->selectRaw("SUM(CASE WHEN ti.deadline_type = '{$hasDeadline}' AND ti.end_at < NOW() AND ti.processing_status IN ('{$todo}','{$inProgress}','{$pendingApproval}','{$paused}') THEN 1 ELSE 0 END) as overdue")
-            ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' AND ti.deadline_type = '{$hasDeadline}' AND ti.completed_at > ti.end_at THEN 1 ELSE 0 END) as late")
+            ->selectRaw("SUM(CASE WHEN ti.processing_status NOT IN ('{$done}','{$cancelled}') AND (ti.deadline_type != '{$hasDeadline}' OR ti.end_at IS NULL OR DATE(ti.end_at) >= DATE(NOW())) THEN 1 ELSE 0 END) as upcoming")
+            ->selectRaw("SUM(CASE WHEN ti.deadline_type = '{$hasDeadline}' AND DATE(ti.end_at) < DATE(NOW()) AND ti.processing_status IN ('{$todo}','{$inProgress}','{$pendingApproval}','{$paused}') THEN 1 ELSE 0 END) as overdue")
+            ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' AND ti.deadline_type = '{$hasDeadline}' AND DATE(ti.completed_at) > DATE(ti.end_at) THEN 1 ELSE 0 END) as late")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' AND ti.deadline_type = '{$hasDeadline}' AND DATE(ti.completed_at) < DATE(ti.end_at) THEN 1 ELSE 0 END) as early")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' AND (ti.deadline_type != '{$hasDeadline}' OR ti.end_at IS NULL OR DATE(ti.completed_at) = DATE(ti.end_at)) THEN 1 ELSE 0 END) as on_time");
 
@@ -853,7 +853,7 @@ class TaskAssignmentItemService
         return TaskAssignmentItem::with(['document.type', 'document.attachments.media', 'document.creator.media', 'document.editor.media', 'itemType', 'users'])
             ->withCount('reports')
             ->where('deadline_type', TaskDeadlineTypeEnum::HasDeadline->value)
-            ->where('end_at', '<', now())
+            ->where('end_at', '<', now()->startOfDay())
             ->whereNotIn('processing_status', [TaskProgressStatusEnum::Done->value, TaskProgressStatusEnum::Cancelled->value])
             ->when($filters['department_id'] ?? null, fn ($q, $v) => $q->whereHas('users', fn ($uq) => $uq->where('task_assignment_item_user.department_id', $v)))
             ->when($filters['user_id'] ?? null, fn ($q, $v) => $q->whereHas('users', fn ($uq) => $uq->where('user_id', $v)))
@@ -873,8 +873,8 @@ class TaskAssignmentItemService
         return TaskAssignmentItem::with(['document.type', 'document.attachments.media', 'document.creator.media', 'document.editor.media', 'itemType', 'users'])
             ->withCount('reports')
             ->where('deadline_type', TaskDeadlineTypeEnum::HasDeadline->value)
-            ->where('end_at', '>=', now())
-            ->where('end_at', '<=', now()->addDays($days))
+            ->where('end_at', '>=', now()->startOfDay())
+            ->where('end_at', '<=', now()->addDays($days)->endOfDay())
             ->whereNotIn('processing_status', [TaskProgressStatusEnum::Done->value, TaskProgressStatusEnum::Cancelled->value])
             ->when($filters['department_id'] ?? null, fn ($q, $v) => $q->whereHas('users', fn ($uq) => $uq->where('task_assignment_item_user.department_id', $v)))
             ->when($filters['user_id'] ?? null, fn ($q, $v) => $q->whereHas('users', fn ($uq) => $uq->where('user_id', $v)))
