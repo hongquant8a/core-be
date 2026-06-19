@@ -9,7 +9,7 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithTitle;
 
-class MeetingVoteResponseSummarySheet implements FromCollection, WithHeadings, WithTitle
+class MeetingVoteResponseSummarySheet extends \App\Modules\Core\Exports\AbstractExcelExport implements FromCollection, WithTitle
 {
     public function __construct(
         private string $type,

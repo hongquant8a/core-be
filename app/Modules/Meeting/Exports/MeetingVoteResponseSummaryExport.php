@@ -14,7 +14,7 @@ use Maatwebsite\Excel\Concerns\FromCollection;
  *
  * Columns: STT, Nội dung biểu quyết, Đồng ý / Tán thành, Không đồng ý / Không tán thành, Không ý kiến, Chưa biểu quyết.
  */
-class MeetingVoteResponseSummaryExport extends AbstractExcelExport implements \Maatwebsite\Excel\Concerns\WithMultipleSheets
+class MeetingVoteResponseSummaryExport implements \Maatwebsite\Excel\Concerns\WithMultipleSheets
 {
     /**
      * @param  ?int  $meetingId  filter mọi topic của meeting
