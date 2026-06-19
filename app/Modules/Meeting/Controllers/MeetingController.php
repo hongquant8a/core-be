@@ -11,6 +11,7 @@ use App\Modules\Meeting\Requests\ChangeStatusMeetingRequest;
 use App\Modules\Meeting\Requests\HighlightAgendaMeetingRequest;
 use App\Modules\Meeting\Requests\HighlightDiscussionMeetingRequest;
 use App\Modules\Meeting\Requests\StoreMeetingRequest;
+use App\Modules\Meeting\Requests\ToggleProjectorFileMeetingRequest;
 use App\Modules\Meeting\Requests\UpdateMeetingRequest;
 use App\Modules\Meeting\Resources\MeetingCollection;
 use App\Modules\Meeting\Resources\MeetingResource;
@@ -351,6 +352,24 @@ class MeetingController extends Controller
         $item = $this->meetingService->highlightDiscussion($meeting, $request->input('discussion_registration_id'));
 
         return $this->successResource(new MeetingResource($item), 'Đã cập nhật phát biểu đang chiếu.');
+    }
+
+    /**
+     * Tín hiệu để hiển thị file lên màn chiếu.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     */
+    public function toggleProjectorFile(ToggleProjectorFileMeetingRequest $request, Meeting $meeting)
+    {
+        $this->meetingService->toggleProjectorFile(
+            $meeting,
+            $request->input('file_url'),
+            $request->input('file_name'),
+            $request->input('file_type'),
+            (bool) $request->input('is_open')
+        );
+
+        return $this->success(null, 'Đã gửi tín hiệu chiếu file.');
     }
 
     /**

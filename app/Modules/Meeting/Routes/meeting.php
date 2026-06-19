@@ -63,6 +63,7 @@ Route::patch('/{meeting}/unlock-attendance', [MeetingController::class, 'unlockA
 Route::patch('/{meeting}/end-early', [MeetingController::class, 'endEarly'])->middleware('can:endEarly,meeting');
 Route::patch('/{meeting}/highlight-agenda', [MeetingController::class, 'highlightAgenda'])->middleware('can:highlight,meeting');
 Route::patch('/{meeting}/highlight-discussion', [MeetingController::class, 'highlightDiscussion'])->middleware('can:highlight,meeting');
+Route::patch('/{meeting}/toggle-projector-file', [MeetingController::class, 'toggleProjectorFile'])->middleware('can:highlight,meeting');
 
 // Tab 5 QR — Gate Policy (khóa ngoại): chair OR operator OR meeting.qr_manager_user_id.
 Route::get('/{meeting}/qr-token', [MeetingController::class, 'qrToken'])->middleware('can:showQrCode,meeting');

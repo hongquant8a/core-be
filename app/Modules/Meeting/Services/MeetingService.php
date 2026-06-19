@@ -861,6 +861,16 @@ class MeetingService
         ]);
     }
 
+    /**
+     * Bắn sự kiện realtime yêu cầu màn chiếu mở/đóng 1 file tài liệu.
+     */
+    public function toggleProjectorFile(Meeting $meeting, ?string $fileUrl, ?string $fileName, ?string $fileType, bool $isOpen): void
+    {
+        broadcast(new \App\Modules\Meeting\Events\MeetingProjectorFileToggled(
+            $meeting, $fileUrl, $fileName, $fileType, $isOpen
+        ))->toOthers();
+    }
+
     public function export(array $filters, ?string $fileName = null): BinaryFileResponse
     {
         return Excel::download(new MeetingExport($filters), $fileName ?? ExportFilename::make('cuoc-hop'));
