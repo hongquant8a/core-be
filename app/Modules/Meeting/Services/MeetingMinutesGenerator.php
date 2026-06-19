@@ -126,6 +126,9 @@ class MeetingMinutesGenerator
                 'v_agree_rate_present' => 'Tỷ lệ tán thành / ĐB có mặt (%)',
                 'v_disagree_rate_total' => 'Tỷ lệ không tán thành / tổng ĐB (%)',
                 'v_disagree_rate_present' => 'Tỷ lệ không tán thành / ĐB có mặt (%)',
+                'v_abstain_rate_total' => 'Tỷ lệ không ý kiến / tổng ĐB (%)',
+                'v_abstain_rate_present' => 'Tỷ lệ không ý kiến / ĐB có mặt (%)',
+                'v_not_voted_rate_total' => 'Tỷ lệ chưa biểu quyết / tổng ĐB (%)',
                 'v_result' => 'Kết quả (Thông qua / Không thông qua)',
             ],
         ],
@@ -781,7 +784,17 @@ class MeetingMinutesGenerator
             $tp->setValue("v_disagree_rate_total#{$idx}", (string) $disagreeRateTotal);
             $tp->setValue("v_disagree_rate_present#{$idx}", (string) $disagreeRatePresent);
 
-            // Kết quả (tính theo tỷ lệ tán thành / đại biểu có mặt)
+            // Tính tỷ lệ Không ý kiến
+            $abstainRateTotal = $eligibleCount > 0 ? round(($abstain / $eligibleCount) * 100, 1) : 0;
+            $abstainRatePresent = $voted > 0 ? round(($abstain / $voted) * 100, 1) : 0;
+            $tp->setValue("v_abstain_rate_total#{$idx}", (string) $abstainRateTotal);
+            $tp->setValue("v_abstain_rate_present#{$idx}", (string) $abstainRatePresent);
+
+            // Tính tỷ lệ Chưa biểu quyết (chỉ tính trên tổng)
+            $notVotedRateTotal = $eligibleCount > 0 ? round(($notVoted / $eligibleCount) * 100, 1) : 0;
+            $tp->setValue("v_not_voted_rate_total#{$idx}", (string) $notVotedRateTotal);
+
+            // Kết quả (tính theo tỷ lệ tán thành / tổng ĐB)
             $tp->setValue("v_result#{$idx}", $agreeRateTotal >= 50 ? 'Thông qua' : 'Không thông qua');
         }
     }
