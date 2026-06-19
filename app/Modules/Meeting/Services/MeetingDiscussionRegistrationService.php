@@ -77,14 +77,28 @@ class MeetingDiscussionRegistrationService
         $type = $validated['type'];
         $agendaId = (int) $validated['meeting_agenda_id'];
 
-        // Auto-derive meeting_participant_id từ auth user — tránh đại biểu A đăng ký hộ B.
-        $participant = MeetingParticipant::query()
-            ->where('meeting_id', $meetingId)
-            ->whereHas('attendee', fn ($q) => $q->where('user_id', $userId))
-            ->first();
+        $meeting = Meeting::findOrFail($meetingId);
+        $user = auth()->user();
+        $isOperator = $user ? in_array($meeting->userMeetingRole($user), ['chairperson', 'operator']) : false;
 
-        if (! $participant) {
-            throw new ModelNotFoundException('Bạn không phải đại biểu của cuộc họp này.');
+        if ($isOperator && !empty($validated['meeting_participant_id'])) {
+            $participant = MeetingParticipant::query()
+                ->where('meeting_id', $meetingId)
+                ->where('id', $validated['meeting_participant_id'])
+                ->first();
+            if (! $participant) {
+                throw new ModelNotFoundException('Không tìm thấy đại biểu được chỉ định trong cuộc họp này.');
+            }
+        } else {
+            // Auto-derive meeting_participant_id từ auth user
+            $participant = MeetingParticipant::query()
+                ->where('meeting_id', $meetingId)
+                ->whereHas('attendee', fn ($q) => $q->where('user_id', $userId))
+                ->first();
+
+            if (! $participant) {
+                throw new ModelNotFoundException('Bạn không phải đại biểu của cuộc họp này.');
+            }
         }
 
 

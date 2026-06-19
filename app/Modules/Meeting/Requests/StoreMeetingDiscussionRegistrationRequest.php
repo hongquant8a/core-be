@@ -41,6 +41,7 @@ class StoreMeetingDiscussionRegistrationRequest extends FormRequest
             'attachment' => 'nullable|file|max:10240',
             'status' => ['nullable', MeetingDiscussionStatusEnum::rule()],
             'sort_order' => 'nullable|integer|min:0',
+            'meeting_participant_id' => 'nullable|integer|exists:meeting_participants,id',
         ];
     }
 
@@ -75,6 +76,7 @@ class StoreMeetingDiscussionRegistrationRequest extends FormRequest
             'attachment' => 'Tệp đính kèm',
             'status' => 'Trạng thái',
             'sort_order' => 'Thứ tự sắp xếp',
+            'meeting_participant_id' => 'ID đại biểu (dành cho Điều hành đăng ký hộ)',
         ];
     }
     public function bodyParameters(): array
@@ -87,6 +89,7 @@ class StoreMeetingDiscussionRegistrationRequest extends FormRequest
             'attachment' => ['description' => 'Tệp đính kèm (slide, văn bản tham chiếu, ...) — đi qua MediaService, ≤10MB.'],
             'status' => ['description' => 'Trạng thái đăng ký.', 'example' => 'registered'],
             'sort_order' => ['description' => 'Thứ tự gọi.', 'example' => 1],
+            'meeting_participant_id' => ['description' => 'ID đại biểu (chỉ dành cho Chủ trì/Điều hành muốn đăng ký hộ đại biểu khác).', 'example' => 15],
         ];
     }
 }
