@@ -204,11 +204,43 @@ class TaskAssignmentItemService
 
     public function bulkDestroy(array $ids): void
     {
+        if (empty($ids)) {
+            return;
+        }
+
+        $user = auth()->user();
+        if ($user && ! $user->hasAnyRole(['Super Admin'])) {
+            $invalidCount = TaskAssignmentItem::withoutGlobalScope('issuedDocument')
+                ->whereIn('id', $ids)
+                ->where('assigned_by', '!=', $user->id)
+                ->count();
+            if ($invalidCount > 0) {
+                throw new \RuntimeException('Bạn chỉ được xóa công việc do chính bạn giao.');
+            }
+        }
+
         TaskAssignmentItem::withoutGlobalScope('issuedDocument')->where('organization_id', getPermissionsTeamId())->whereIn('id', $ids)->delete();
     }
 
     public function bulkUpdateStatus(array $ids, string $status): void
     {
+        if (empty($ids)) {
+            return;
+        }
+
+        $user = auth()->user();
+        if (in_array($status, [\App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Paused->value, \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Cancelled->value], true)) {
+            if ($user && ! $user->hasAnyRole(['Super Admin'])) {
+                $invalidCount = TaskAssignmentItem::withoutGlobalScope('issuedDocument')
+                    ->whereIn('id', $ids)
+                    ->where('assigned_by', '!=', $user->id)
+                    ->count();
+                if ($invalidCount > 0) {
+                    throw new \RuntimeException('Bạn chỉ được tạm dừng hoặc hủy công việc do chính bạn giao.');
+                }
+            }
+        }
+
         TaskAssignmentItem::withoutGlobalScope('issuedDocument')->where('organization_id', getPermissionsTeamId())->whereIn('id', $ids)->update($this->buildStatusUpdateData($status));
     }
 

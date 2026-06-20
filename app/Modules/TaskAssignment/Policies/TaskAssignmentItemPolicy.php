@@ -47,47 +47,20 @@ class TaskAssignmentItemPolicy
 
     /**
      * Đổi trạng thái hàng loạt — cần quyền bulkUpdateStatus.
-     * Nếu chọn tạm dừng hoặc hủy thì phải là người giao việc của tất cả các task được chọn.
+     * Quy tắc kiểm tra quyền sở hữu (ownership) chi tiết được xử lý ở Service.
      */
     public function bulkUpdateStatus(User $user): bool
     {
-        if (! $user->hasPermissionTo('task-assignment-items.bulkUpdateStatus')) {
-            return false;
-        }
-
-        $status = request('processing_status');
-        if (in_array($status, [\App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Paused->value, \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Cancelled->value], true)) {
-            $ids = request('ids', []);
-            if (! empty($ids)) {
-                $invalidCount = TaskAssignmentItem::whereIn('id', $ids)->where('assigned_by', '!=', $user->id)->count();
-                if ($invalidCount > 0) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
+        return $user->hasPermissionTo('task-assignment-items.bulkUpdateStatus');
     }
 
     /**
      * Xóa hàng loạt — cần quyền bulkDestroy.
-     * Người xóa phải là người giao của tất cả các task được chọn.
+     * Quy tắc kiểm tra quyền sở hữu (ownership) chi tiết được xử lý ở Service.
      */
     public function bulkDestroy(User $user): bool
     {
-        if (! $user->hasPermissionTo('task-assignment-items.bulkDestroy')) {
-            return false;
-        }
-
-        $ids = request('ids', []);
-        if (! empty($ids)) {
-            $invalidCount = TaskAssignmentItem::whereIn('id', $ids)->where('assigned_by', '!=', $user->id)->count();
-            if ($invalidCount > 0) {
-                return false;
-            }
-        }
-
-        return true;
+        return $user->hasPermissionTo('task-assignment-items.bulkDestroy');
     }
 
     /**

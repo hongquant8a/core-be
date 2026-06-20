@@ -682,7 +682,6 @@ class ScheduleService
             $personalQuery = [
                 'from_date' => $start,
                 'to_date'   => $end,
-                'status'    => \App\Modules\Scheduling\Enums\ScheduleStatus::PUBLISHED->value,
                 'view_mode' => 'personal',
             ];
             if ($originalModuleType) {
