@@ -68,7 +68,9 @@ class MeetingVoteResponseSummarySheet extends \App\Modules\Core\Exports\Abstract
             $agreeCount = (clone $base)->whereIn('option', ['agree', 'approve'])->count();
             $disagreeCount = (clone $base)->whereIn('option', ['disagree', 'reject'])->count();
             $abstainCount = (clone $base)->where('option', 'abstain')->count();
-            $notVotedCount = max(0, $eligibleCount - $votedCount);
+            $notVotedCount = $this->type === 'total'
+                ? max(0, $eligibleCount - $votedCount)
+                : max(0, $presentCount - $votedCount);
 
             return [
                 'stt' => $i + 1,
@@ -76,12 +78,12 @@ class MeetingVoteResponseSummarySheet extends \App\Modules\Core\Exports\Abstract
                 'agree' => $this->formatVoteCell($agreeCount, $eligibleCount, $presentCount),
                 'disagree' => $this->formatVoteCell($disagreeCount, $eligibleCount, $presentCount),
                 'abstain' => $this->formatVoteCell($abstainCount, $eligibleCount, $presentCount),
-                'not_voted' => $this->formatVoteCell($notVotedCount, $eligibleCount, $presentCount, true),
+                'not_voted' => $this->formatVoteCell($notVotedCount, $eligibleCount, $presentCount),
             ];
         });
     }
 
-    private function formatVoteCell(int $count, int $total, int $present, bool $isNotVoted = false): string
+    private function formatVoteCell(int $count, int $total, int $present): string
     {
         if ($count === 0) {
             return '0';
@@ -93,17 +95,6 @@ class MeetingVoteResponseSummarySheet extends \App\Modules\Core\Exports\Abstract
         }
 
         // type === 'present'
-        if ($isNotVoted) {
-            // Chưa biểu quyết đối với danh sách có mặt không thực sự có ý nghĩa nếu họ không vote.
-            // Nhưng nếu chia theo có mặt (người đã vote) thì phần trăm này có thể không cần chia.
-            // Hoặc có thể hiểu "có mặt" = $present, nhưng not_voted là những người không có mặt hoặc chưa vote.
-            // Thông thường sẽ lấy / $total, vì họ không nằm trong $present.
-            // Để giữ logic, ta dùng $total cho cột này nếu chọn 'present' hoặc tuỳ ý.
-            // Nhưng spec thường là: nếu đếm % trên tổng -> chia tổng. Đếm % trên có mặt -> chia người đã vote ($present).
-            $pct = $total > 0 ? round($count / $total * 100, 1) : 0;
-            return sprintf("%d (%s%%)", $count, $pct);
-        }
-
         $pct = $present > 0 ? round($count / $present * 100, 1) : 0;
         return sprintf("%d (%s%%)", $count, $pct);
     }

@@ -310,8 +310,8 @@ class MeetingMinutesGenerator
         $dr1->addCell(3500)->addText('${v_topic}');
         $dr1->addCell(1500)->addText('${v_agree} (${v_agree_rate_total}%)', null, $center);
         $dr1->addCell(1500)->addText('${v_disagree} (${v_disagree_rate_total}%)', null, $center);
-        $dr1->addCell(1000)->addText('${v_abstain}', null, $center);
-        $dr1->addCell(1000)->addText('${v_not_voted}', null, $center);
+        $dr1->addCell(1000)->addText('${v_abstain} (${v_abstain_rate_total}%)', null, $center);
+        $dr1->addCell(1000)->addText('${v_not_voted} (${v_not_voted_rate_total}%)', null, $center);
         $dr1->addCell(1500)->addText('${v_result}', null, $center);
         $section->addTextBreak(1);
 
@@ -331,8 +331,8 @@ class MeetingMinutesGenerator
         $dr2->addCell(3500)->addText('${vp_topic}');
         $dr2->addCell(1500)->addText('${vp_agree} (${vp_agree_rate_present}%)', null, $center);
         $dr2->addCell(1500)->addText('${vp_disagree} (${vp_disagree_rate_present}%)', null, $center);
-        $dr2->addCell(1000)->addText('${vp_abstain}', null, $center);
-        $dr2->addCell(1000)->addText('${vp_not_voted}', null, $center);
+        $dr2->addCell(1000)->addText('${vp_abstain} (${vp_abstain_rate_present}%)', null, $center);
+        $dr2->addCell(1000)->addText('${vp_not_voted} (${vp_not_voted_rate_present}%)', null, $center);
         $dr2->addCell(1500)->addText('${vp_result}', null, $center);
         $section->addTextBreak(1);
 
