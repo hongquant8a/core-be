@@ -745,7 +745,15 @@ class MeetingService
      */
     public function endEarly(Meeting $meeting): Meeting
     {
-        $meeting->update(['status' => MeetingStatusEnum::Completed->value]);
+        $payload = ['status' => MeetingStatusEnum::Completed->value];
+
+        // Tự động ghi nhận thời gian kết thúc thực tế nếu chưa có.
+        // Dùng cho biên bản họp (MeetingMinutesGenerator) khi xuất sau khi kết thúc.
+        if ($meeting->end_time === null) {
+            $payload['end_time'] = now();
+        }
+
+        $meeting->update($payload);
 
         broadcast(new \App\Modules\Meeting\Events\MeetingEndedEarly($meeting))->toOthers();
 

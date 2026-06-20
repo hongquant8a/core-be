@@ -43,17 +43,6 @@ class MeetingVoteResponseService
             //     throw new AuthorizationException('Phiên biểu quyết này không cho phép xem kết quả tổng hợp ngoài quản lý/chủ trì.');
             // }
 
-            // if ($topic->is_voting_result_hidden_until_end && $topic->derivePhase() !== 'closed') {
-            //     return [
-            //         'total' => MeetingVoteResponse::query()->where('meeting_vote_topic_id', $topicId)->count(),
-            //         'agree' => 0,
-            //         'disagree' => 0,
-            //         'approve' => 0,
-            //         'reject' => 0,
-            //         'abstain' => 0,
-            //         'is_hidden' => true,
-            //     ];
-            // }
         }
 
         $base = MeetingVoteResponse::query()
@@ -81,10 +70,6 @@ class MeetingVoteResponseService
                 ->where('organization_id', $organizationId)
                 ->with('meeting')
                 ->findOrFail($topicId);
-
-            // if ($topic->is_voting_result_hidden_until_end && $topic->derivePhase() !== 'closed') {
-            //     throw new AuthorizationException('Kết quả biểu quyết đang được ẩn cho đến khi phiên kết thúc.');
-            // }
 
             $this->ensureCanReadResponseDetail($topic);
         } else {
