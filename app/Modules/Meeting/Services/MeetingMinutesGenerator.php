@@ -584,8 +584,8 @@ class MeetingMinutesGenerator
         $participants = $m->participants ?? collect();
         $totalParticipants = $participants->count();
         $presentCount = $participants->filter(fn ($p) => $p->attendance && $p->attendance->status === 'present')->count();
-        // Vắng mặt = có row attendance với status=absent (KHÔNG tính total-present vì pending/null cũng bị tính sai).
-        $absentCount = $participants->filter(fn ($p) => $p->attendance && $p->attendance->status === 'absent')->count();
+        // Vắng mặt = những người chưa được điểm danh có mặt (pending, absent, hoặc chưa có record)
+        $absentCount = $totalParticipants - $presentCount;
         $rate = $totalParticipants > 0 ? round(($presentCount / $totalParticipants) * 100, 1) : 0;
         $hasQuorum = $rate >= 50;
 
@@ -670,7 +670,7 @@ class MeetingMinutesGenerator
     private function fillAbsenceTable(TemplateProcessor $tp, Meeting $m): void
     {
         $rows = ($m->participants ?? collect())->filter(
-            fn ($p) => $p->attendance && $p->attendance->status === 'absent'
+            fn ($p) => ! $p->attendance || $p->attendance->status !== 'present'
         )->values();
         $tp->cloneRow('a_stt', max($rows->count(), 0));
         foreach ($rows as $i => $p) {
