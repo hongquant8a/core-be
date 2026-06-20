@@ -26,21 +26,10 @@ class WeeklyScheduleExcelExport extends AbstractExcelExport implements FromColle
     public function collection()
     {
         $query = Schedule::with(['host', 'driver'])
+            ->filter($this->filters)
             ->orderBy('date_time', 'asc')
             ->orderBy('session', 'asc')
             ->orderBy('sort_order', 'asc');
-
-        // Apply filters (org scope is applied via tenant model boot)
-        if (!empty($this->filters['week_number']) && !empty($this->filters['year'])) {
-            $query->where('year', (int)$this->filters['year'])
-                  ->where('week_number', (int)$this->filters['week_number']);
-        }
-        if (!empty($this->filters['module_type'])) {
-            $query->where('module_type', $this->filters['module_type']);
-        }
-        if (isset($this->filters['status'])) {
-            $query->where('status', $this->filters['status']);
-        }
 
         return $query->get()
             ->values()

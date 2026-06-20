@@ -22,21 +22,10 @@ class WeeklySchedulePdfExporter
     public function generate(array $filters): string
     {
         $query = Schedule::with(['host', 'driver'])
+            ->filter($filters)
             ->orderBy('date_time', 'asc')
             ->orderBy('session', 'asc')
             ->orderBy('sort_order', 'asc');
-
-        // Apply filters
-        if (!empty($filters['week_number']) && !empty($filters['year'])) {
-            $query->where('year', (int)$filters['year'])
-                  ->where('week_number', (int)$filters['week_number']);
-        }
-        if (!empty($filters['module_type'])) {
-            $query->where('module_type', $filters['module_type']);
-        }
-        if (isset($filters['status'])) {
-            $query->where('status', $filters['status']);
-        }
 
         $schedulesList = $query->get();
 

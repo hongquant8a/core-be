@@ -31,23 +31,10 @@ class WeeklyScheduleWordExporter
         $tp = new TemplateProcessor($templatePath);
 
         $query = Schedule::with(['host', 'driver'])
+            ->filter($filters)
             ->orderBy('date_time', 'asc')
             ->orderBy('session', 'asc')
             ->orderBy('sort_order', 'asc');
-
-        // Apply filters
-        if (!empty($filters['week_number'])) {
-            $query->where('week_number', $filters['week_number']);
-        }
-        if (!empty($filters['year'])) {
-            $query->where('year', $filters['year']);
-        }
-        if (!empty($filters['module_type'])) {
-            $query->where('module_type', $filters['module_type']);
-        }
-        if (isset($filters['status'])) {
-            $query->where('status', $filters['status']);
-        }
 
         $schedulesList = $query->get();
 
