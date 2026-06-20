@@ -31,16 +31,15 @@ class MeetingVoteResponseDetailExport extends AbstractExcelExport implements Fro
         $isAnonymous = $topic->ballot_mode === MeetingBallotModeEnum::Anonymous->value;
         $meeting = $topic->meeting;
 
-        // Tập hợp tất cả người có quyền biểu quyết:
-        // 1. Đại biểu được mời (MeetingParticipant)
-        // 2. Chủ trì cuộc họp (chairperson)
+        // Tập hợp những người có quyền biểu quyết VÀ có mặt
         $voterRows = [];
         $seenUserIds = [];
 
-        // Đại biểu (participants) — dedup theo user_id
+        // Đại biểu (participants) có mặt — dedup theo user_id
         $participants = MeetingParticipant::query()
-            ->with('attendee.user')
+            ->with(['attendee.user'])
             ->where('meeting_id', $meeting->id)
+            ->whereHas('attendance', fn ($q) => $q->where('status', 'present'))
             ->get();
 
         foreach ($participants as $p) {
@@ -60,17 +59,6 @@ class MeetingVoteResponseDetailExport extends AbstractExcelExport implements Fro
             if ($userId) {
                 $seenUserIds[] = $userId;
             }
-        }
-
-        // Chủ trì (chairperson) — thêm nếu chưa có trong danh sách đại biểu
-        $chairAttendee = $meeting->chairperson;
-        if ($chairAttendee && ! in_array($chairAttendee->user_id, $seenUserIds, true)) {
-            $voterRows[] = [
-                'user_id' => $chairAttendee->user_id,
-                'name' => $chairAttendee->user?->name ?? '',
-                'option' => null,
-            ];
-            $seenUserIds[] = $chairAttendee->user_id;
         }
 
         // Lấy phiếu đã bỏ, index theo user_id

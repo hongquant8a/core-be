@@ -110,8 +110,8 @@ class MeetingMinutesGenerator
             ],
         ],
         'vote' => [
-            'label' => 'Biểu quyết',
-            'description' => 'VII. Biểu quyết — mỗi row = 1 chương trình biểu quyết',
+            'label' => 'Biểu quyết (Tỷ lệ trên Tổng đại biểu)',
+            'description' => 'VII. Biểu quyết (Tỷ lệ / Tổng ĐB) — mỗi row = 1 nội dung',
             'columns' => [
                 'v_stt' => 'STT',
                 'v_topic' => 'Nội dung biểu quyết',
@@ -129,6 +129,24 @@ class MeetingMinutesGenerator
                 'v_abstain_rate_present' => 'Tỷ lệ không ý kiến / ĐB có mặt (%)',
                 'v_not_voted_rate_total' => 'Tỷ lệ chưa biểu quyết / tổng ĐB (%)',
                 'v_result' => 'Kết quả (Thông qua / Không thông qua)',
+            ],
+        ],
+        'vote_present' => [
+            'label' => 'Biểu quyết (Tỷ lệ trên Đại biểu có mặt)',
+            'description' => 'VII. Biểu quyết (Tỷ lệ / ĐB có mặt) — mỗi row = 1 nội dung',
+            'columns' => [
+                'vp_stt' => 'STT',
+                'vp_topic' => 'Nội dung biểu quyết',
+                'vp_agree' => 'Số phiếu tán thành',
+                'vp_disagree' => 'Số phiếu không tán thành',
+                'vp_abstain' => 'Số phiếu không ý kiến',
+                'vp_not_voted' => 'Số phiếu chưa biểu quyết (trong số có mặt)',
+                'vp_total_voted' => 'Số đại biểu có mặt',
+                'vp_agree_rate_present' => 'Tỷ lệ tán thành (%)',
+                'vp_disagree_rate_present' => 'Tỷ lệ không tán thành (%)',
+                'vp_abstain_rate_present' => 'Tỷ lệ không ý kiến (%)',
+                'vp_not_voted_rate_present' => 'Tỷ lệ chưa biểu quyết (%)',
+                'vp_result' => 'Kết quả (Thông qua / Không thông qua)',
             ],
         ],
     ];
@@ -274,23 +292,48 @@ class MeetingMinutesGenerator
         // VII. Biểu quyết
         $section->addText('VII. CÁC NỘI DUNG BIỂU QUYẾT VÀ KẾT QUẢ', $h1);
         $section->addText('Hội đồng nhân dân tiến hành biểu quyết các nội dung sau:');
-        $t = $section->addTable('MainTable');
-        $hr = $t->addRow();
-        $hr->addCell(700, $headerRow)->addText('STT', ['bold' => true], $center);
-        $hr->addCell(3500, $headerRow)->addText('Nội dung biểu quyết', ['bold' => true], $center);
-        $hr->addCell(1500, $headerRow)->addText('Tán thành (Số phiếu / Tổng ĐB / Có mặt)', ['bold' => true], $center);
-        $hr->addCell(1500, $headerRow)->addText('Không tán thành', ['bold' => true], $center);
-        $hr->addCell(1000, $headerRow)->addText('Không ý kiến', ['bold' => true], $center);
-        $hr->addCell(1000, $headerRow)->addText('Chưa biểu quyết', ['bold' => true], $center);
-        $hr->addCell(1500, $headerRow)->addText('Kết quả', ['bold' => true], $center);
-        $dr = $t->addRow();
-        $dr->addCell(700)->addText('${v_stt}', null, $center);
-        $dr->addCell(3500)->addText('${v_topic}');
-        $dr->addCell(1500)->addText('${v_agree} (${v_agree_rate_total}% / ${v_agree_rate_present}%)', null, $center);
-        $dr->addCell(1500)->addText('${v_disagree} (${v_disagree_rate_total}% / ${v_disagree_rate_present}%)', null, $center);
-        $dr->addCell(1000)->addText('${v_abstain}', null, $center);
-        $dr->addCell(1000)->addText('${v_not_voted}', null, $center);
-        $dr->addCell(1500)->addText('${v_result}', null, $center);
+        
+        $section->addTextBreak(1);
+        $section->addText('1. Kết quả biểu quyết tính trên tổng số đại biểu', ['bold' => true]);
+        $t1 = $section->addTable('MainTable');
+        $hr1 = $t1->addRow();
+        $hr1->addCell(700, $headerRow)->addText('STT', ['bold' => true], $center);
+        $hr1->addCell(3500, $headerRow)->addText('Nội dung biểu quyết', ['bold' => true], $center);
+        $hr1->addCell(1500, $headerRow)->addText('Tán thành (Số phiếu / Tỷ lệ)', ['bold' => true], $center);
+        $hr1->addCell(1500, $headerRow)->addText('Không tán thành', ['bold' => true], $center);
+        $hr1->addCell(1000, $headerRow)->addText('Không ý kiến', ['bold' => true], $center);
+        $hr1->addCell(1000, $headerRow)->addText('Chưa biểu quyết', ['bold' => true], $center);
+        $hr1->addCell(1500, $headerRow)->addText('Kết quả', ['bold' => true], $center);
+        
+        $dr1 = $t1->addRow();
+        $dr1->addCell(700)->addText('${v_stt}', null, $center);
+        $dr1->addCell(3500)->addText('${v_topic}');
+        $dr1->addCell(1500)->addText('${v_agree} (${v_agree_rate_total}%)', null, $center);
+        $dr1->addCell(1500)->addText('${v_disagree} (${v_disagree_rate_total}%)', null, $center);
+        $dr1->addCell(1000)->addText('${v_abstain}', null, $center);
+        $dr1->addCell(1000)->addText('${v_not_voted}', null, $center);
+        $dr1->addCell(1500)->addText('${v_result}', null, $center);
+        $section->addTextBreak(1);
+
+        $section->addText('2. Kết quả biểu quyết tính trên số đại biểu có mặt', ['bold' => true]);
+        $t2 = $section->addTable('MainTable');
+        $hr2 = $t2->addRow();
+        $hr2->addCell(700, $headerRow)->addText('STT', ['bold' => true], $center);
+        $hr2->addCell(3500, $headerRow)->addText('Nội dung biểu quyết', ['bold' => true], $center);
+        $hr2->addCell(1500, $headerRow)->addText('Tán thành (Số phiếu / Tỷ lệ)', ['bold' => true], $center);
+        $hr2->addCell(1500, $headerRow)->addText('Không tán thành', ['bold' => true], $center);
+        $hr2->addCell(1000, $headerRow)->addText('Không ý kiến', ['bold' => true], $center);
+        $hr2->addCell(1000, $headerRow)->addText('Chưa biểu quyết', ['bold' => true], $center);
+        $hr2->addCell(1500, $headerRow)->addText('Kết quả', ['bold' => true], $center);
+
+        $dr2 = $t2->addRow();
+        $dr2->addCell(700)->addText('${vp_stt}', null, $center);
+        $dr2->addCell(3500)->addText('${vp_topic}');
+        $dr2->addCell(1500)->addText('${vp_agree} (${vp_agree_rate_present}%)', null, $center);
+        $dr2->addCell(1500)->addText('${vp_disagree} (${vp_disagree_rate_present}%)', null, $center);
+        $dr2->addCell(1000)->addText('${vp_abstain}', null, $center);
+        $dr2->addCell(1000)->addText('${vp_not_voted}', null, $center);
+        $dr2->addCell(1500)->addText('${vp_result}', null, $center);
         $section->addTextBreak(1);
 
         // VIII. Kết luận
@@ -741,7 +784,12 @@ class MeetingMinutesGenerator
                 $t->sort_order ?? 0
             ))
             ->values();
-        $tp->cloneRow('v_stt', max($rows->count(), 0));
+        try {
+            $tp->cloneRow('v_stt', max($rows->count(), 0));
+        } catch (\Exception $e) {}
+        try {
+            $tp->cloneRow('vp_stt', max($rows->count(), 0));
+        } catch (\Exception $e) {}
 
         // Tính tổng số đại biểu và số đại biểu có mặt
         $participantUserIds = collect($m->participants)->pluck('attendee.user_id')->filter()->unique();
@@ -757,41 +805,56 @@ class MeetingMinutesGenerator
             $disagree = (clone $base)->whereIn('option', ['disagree', 'reject'])->count();
             $abstain = (clone $base)->where('option', 'abstain')->count();
             $voted = $agree + $disagree + $abstain;
-            $notVoted = max(0, $eligibleCount - $voted);
+            
+            // Tính số "Chưa biểu quyết" cho 2 bảng riêng biệt
+            $notVotedTotal = max(0, $eligibleCount - $voted);
+            $notVotedPresent = max(0, $presentCount - $voted);
 
+            // BẢNG 1: TÍNH TRÊN TỔNG ĐẠI BIỂU (v_)
             $tp->setValue("v_stt#{$idx}", (string) $idx);
             $tp->setValue("v_topic#{$idx}", $this->cleanText($t->title));
             $tp->setValue("v_agree#{$idx}", (string) $agree);
             $tp->setValue("v_disagree#{$idx}", (string) $disagree);
             $tp->setValue("v_abstain#{$idx}", (string) $abstain);
-            $tp->setValue("v_not_voted#{$idx}", (string) $notVoted);
+            $tp->setValue("v_not_voted#{$idx}", (string) $notVotedTotal);
             $tp->setValue("v_total_eligible#{$idx}", (string) $eligibleCount);
-            $tp->setValue("v_total_voted#{$idx}", (string) $presentCount);
+            $tp->setValue("v_total_voted#{$idx}", (string) $presentCount); // Support cũ
 
-            // Tính tỷ lệ Tán thành
             $agreeRateTotal = $eligibleCount > 0 ? round(($agree / $eligibleCount) * 100, 1) : 0;
-            $agreeRatePresent = $presentCount > 0 ? round(($agree / $presentCount) * 100, 1) : 0;
-            $tp->setValue("v_agree_rate_total#{$idx}", (string) $agreeRateTotal);
-            $tp->setValue("v_agree_rate_present#{$idx}", (string) $agreeRatePresent);
-
-            // Tính tỷ lệ Không tán thành
             $disagreeRateTotal = $eligibleCount > 0 ? round(($disagree / $eligibleCount) * 100, 1) : 0;
-            $disagreeRatePresent = $presentCount > 0 ? round(($disagree / $presentCount) * 100, 1) : 0;
-            $tp->setValue("v_disagree_rate_total#{$idx}", (string) $disagreeRateTotal);
-            $tp->setValue("v_disagree_rate_present#{$idx}", (string) $disagreeRatePresent);
-
-            // Tính tỷ lệ Không ý kiến
             $abstainRateTotal = $eligibleCount > 0 ? round(($abstain / $eligibleCount) * 100, 1) : 0;
-            $abstainRatePresent = $presentCount > 0 ? round(($abstain / $presentCount) * 100, 1) : 0;
+            $notVotedRateTotal = $eligibleCount > 0 ? round(($notVotedTotal / $eligibleCount) * 100, 1) : 0;
+
+            $tp->setValue("v_agree_rate_total#{$idx}", (string) $agreeRateTotal);
+            $tp->setValue("v_disagree_rate_total#{$idx}", (string) $disagreeRateTotal);
             $tp->setValue("v_abstain_rate_total#{$idx}", (string) $abstainRateTotal);
-            $tp->setValue("v_abstain_rate_present#{$idx}", (string) $abstainRatePresent);
-
-            // Tính tỷ lệ Chưa biểu quyết (chỉ tính trên tổng)
-            $notVotedRateTotal = $eligibleCount > 0 ? round(($notVoted / $eligibleCount) * 100, 1) : 0;
             $tp->setValue("v_not_voted_rate_total#{$idx}", (string) $notVotedRateTotal);
-
-            // Kết quả (tính theo tỷ lệ tán thành / tổng ĐB)
             $tp->setValue("v_result#{$idx}", $agreeRateTotal >= 50 ? 'Thông qua' : 'Không thông qua');
+
+            // BẢNG 2: TÍNH TRÊN ĐẠI BIỂU CÓ MẶT (vp_)
+            $tp->setValue("vp_stt#{$idx}", (string) $idx);
+            $tp->setValue("vp_topic#{$idx}", $this->cleanText($t->title));
+            $tp->setValue("vp_agree#{$idx}", (string) $agree);
+            $tp->setValue("vp_disagree#{$idx}", (string) $disagree);
+            $tp->setValue("vp_abstain#{$idx}", (string) $abstain);
+            $tp->setValue("vp_not_voted#{$idx}", (string) $notVotedPresent);
+            $tp->setValue("vp_total_voted#{$idx}", (string) $presentCount);
+
+            $agreeRatePresent = $presentCount > 0 ? round(($agree / $presentCount) * 100, 1) : 0;
+            $disagreeRatePresent = $presentCount > 0 ? round(($disagree / $presentCount) * 100, 1) : 0;
+            $abstainRatePresent = $presentCount > 0 ? round(($abstain / $presentCount) * 100, 1) : 0;
+            $notVotedRatePresent = $presentCount > 0 ? round(($notVotedPresent / $presentCount) * 100, 1) : 0;
+
+            $tp->setValue("vp_agree_rate_present#{$idx}", (string) $agreeRatePresent);
+            $tp->setValue("vp_disagree_rate_present#{$idx}", (string) $disagreeRatePresent);
+            $tp->setValue("vp_abstain_rate_present#{$idx}", (string) $abstainRatePresent);
+            $tp->setValue("vp_not_voted_rate_present#{$idx}", (string) $notVotedRatePresent);
+            $tp->setValue("vp_result#{$idx}", $agreeRateTotal >= 50 ? 'Thông qua' : 'Không thông qua');
+
+            // Gán giá trị rate_present cho template cũ vẫn đang gọi v_
+            $tp->setValue("v_agree_rate_present#{$idx}", (string) $agreeRatePresent);
+            $tp->setValue("v_disagree_rate_present#{$idx}", (string) $disagreeRatePresent);
+            $tp->setValue("v_abstain_rate_present#{$idx}", (string) $abstainRatePresent);
         }
     }
 }
