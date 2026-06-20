@@ -150,7 +150,7 @@ class TaskAssignmentItemService
             }
             $this->reminderScheduler->scheduleFor($item);
 
-            return $item;
+            return $item->load('reminders');
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);
             throw $exception;
@@ -190,7 +190,7 @@ class TaskAssignmentItemService
                 $this->syncReminders($item, $reminders);
             }
 
-            return $item;
+            return $item->load('reminders');
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);
             throw $exception;
