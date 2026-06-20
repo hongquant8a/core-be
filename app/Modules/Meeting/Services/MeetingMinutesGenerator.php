@@ -678,7 +678,7 @@ class MeetingMinutesGenerator
             $tp->setValue("a_stt#{$idx}", (string) $idx);
             $tp->setValue("a_name#{$idx}", $this->cleanText($p->display_name ?: $p->attendee?->user?->name));
             $tp->setValue("a_dept#{$idx}", $this->cleanText($p->department_name));
-            $tp->setValue("a_reason#{$idx}", $this->cleanText($p->attendance?->note));
+            $tp->setValue("a_reason#{$idx}", $this->cleanText($p->absence_reason ?: $p->attendance?->note));
         }
     }
 
