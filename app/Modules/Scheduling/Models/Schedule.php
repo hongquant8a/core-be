@@ -179,6 +179,7 @@ class Schedule extends TenantModel
                 if ($mode === 'personal') {
                     $userId = auth()->id();
                     $q->where('status', \App\Modules\Scheduling\Enums\ScheduleStatus::PUBLISHED->value)
+                        ->where('approval_status', \App\Modules\Scheduling\Enums\ApprovalStatus::APPROVED->value)
                         ->where(function ($sub) use ($userId) {
                         $sub->where('host_id', $userId)
                             ->orWhere('driver_id', $userId)
