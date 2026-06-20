@@ -605,15 +605,22 @@ class ScheduleService
                 ];
             }
 
-            // Upsert theo schedule_id + reminder_type + source (đồng bộ với Meeting/TaskAssignment)
-            $existing = \App\Modules\Scheduling\Models\ScheduleReminder::where('schedule_id', $schedule->id)
-                ->where('reminder_type', $reminderType)
-                ->where('source', 'CUSTOM')
-                ->first();
-
-            if ($existing) {
-                $existing->update($attributes);
-                $keptIds[] = $existing->id;
+            if (! empty($r['id'])) {
+                $existing = \App\Modules\Scheduling\Models\ScheduleReminder::where('id', $r['id'])
+                    ->where('schedule_id', $schedule->id)
+                    ->where('source', 'CUSTOM')
+                    ->first();
+                
+                if ($existing) {
+                    if ($existing->status !== 'pending') {
+                        $attributes['status'] = $existing->status;
+                    }
+                    $existing->update($attributes);
+                    $keptIds[] = $existing->id;
+                } else {
+                    $new = \App\Modules\Scheduling\Models\ScheduleReminder::create($attributes);
+                    $keptIds[] = $new->id;
+                }
             } else {
                 $new = \App\Modules\Scheduling\Models\ScheduleReminder::create($attributes);
                 $keptIds[] = $new->id;
