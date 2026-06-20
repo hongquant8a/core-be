@@ -149,9 +149,9 @@ class MeetingVoteResponseService
         }
 
         // Nếu đã có phiếu mà cuộc họp không cho thay đổi phiếu
-        if ($existing && !$topic->meeting->is_vote_change_allowed) {
+        if ($existing && !$topic->is_vote_change_allowed) {
             throw ValidationException::withMessages([
-                'meeting_vote_topic_id' => ['Cuộc họp này không cho phép thay đổi phiếu biểu quyết.'],
+                'meeting_vote_topic_id' => ['Phiên biểu quyết này không cho phép thay đổi phiếu.'],
             ]);
         }
 
@@ -215,9 +215,9 @@ class MeetingVoteResponseService
                     'meeting_vote_topic_id' => ['Chương trình biểu quyết đã đóng — không thể sửa phiếu.'],
                 ]);
             }
-            if (!$topic->meeting->is_vote_change_allowed) {
+            if (!$topic->is_vote_change_allowed) {
                 throw ValidationException::withMessages([
-                    'meeting_vote_topic_id' => ['Cuộc họp này không cho phép thay đổi phiếu biểu quyết.'],
+                    'meeting_vote_topic_id' => ['Phiên biểu quyết này không cho phép thay đổi phiếu.'],
                 ]);
             }
         }
