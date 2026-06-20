@@ -87,7 +87,6 @@ class MeetingMinutesGenerator
                 'a_stt' => 'STT',
                 'a_name' => 'Họ và tên',
                 'a_dept' => 'Đơn vị / Tổ đại biểu',
-                'a_reason' => 'Lý do (note từ markAbsent)',
             ],
         ],
         'discussion' => [
@@ -223,14 +222,12 @@ class MeetingMinutesGenerator
         $t = $section->addTable('MainTable');
         $hr = $t->addRow();
         $hr->addCell(800, $headerRow)->addText('STT', ['bold' => true], $center);
-        $hr->addCell(3500, $headerRow)->addText('Họ và tên', ['bold' => true], $center);
-        $hr->addCell(2500, $headerRow)->addText('Đơn vị', ['bold' => true], $center);
-        $hr->addCell(3000, $headerRow)->addText('Lý do', ['bold' => true], $center);
+        $hr->addCell(4500, $headerRow)->addText('Họ và tên', ['bold' => true], $center);
+        $hr->addCell(4500, $headerRow)->addText('Đơn vị', ['bold' => true], $center);
         $dr = $t->addRow();
         $dr->addCell(800)->addText('${a_stt}', null, $center);
-        $dr->addCell(3500)->addText('${a_name}');
-        $dr->addCell(2500)->addText('${a_dept}');
-        $dr->addCell(3000)->addText('${a_reason}');
+        $dr->addCell(4500)->addText('${a_name}');
+        $dr->addCell(4500)->addText('${a_dept}');
         $section->addTextBreak(1);
 
         // IV. Điểm danh
@@ -678,7 +675,7 @@ class MeetingMinutesGenerator
             $tp->setValue("a_stt#{$idx}", (string) $idx);
             $tp->setValue("a_name#{$idx}", $this->cleanText($p->display_name ?: $p->attendee?->user?->name));
             $tp->setValue("a_dept#{$idx}", $this->cleanText($p->department_name));
-            $tp->setValue("a_reason#{$idx}", $this->cleanText($p->absence_reason ?: $p->attendance?->note));
+            $tp->setValue("a_reason#{$idx}", ''); // Giữ lại để không bị hiện text literal nếu template cũ còn dùng
         }
     }
 
