@@ -121,7 +121,7 @@ class MeetingMinutesGenerator
                 'v_abstain' => 'Số phiếu không ý kiến',
                 'v_not_voted' => 'Số phiếu chưa biểu quyết',
                 'v_total_eligible' => 'Tổng số đại biểu',
-                'v_total_voted' => 'Số đại biểu đã biểu quyết (có mặt)',
+                'v_total_voted' => 'Số đại biểu có mặt',
                 'v_agree_rate_total' => 'Tỷ lệ tán thành / tổng ĐB (%)',
                 'v_agree_rate_present' => 'Tỷ lệ tán thành / ĐB có mặt (%)',
                 'v_disagree_rate_total' => 'Tỷ lệ không tán thành / tổng ĐB (%)',
@@ -662,7 +662,7 @@ class MeetingMinutesGenerator
         foreach ($rows->values() as $i => $p) {
             $idx = $i + 1;
             $tp->setValue("p_stt#{$idx}", (string) $idx);
-            $tp->setValue("p_name#{$idx}", $this->cleanText($p->display_name));
+            $tp->setValue("p_name#{$idx}", $this->cleanText($p->display_name ?: $p->attendee?->user?->name));
             $tp->setValue("p_position#{$idx}", $this->cleanText(trim(($p->position_name ?? '').' / '.($p->department_name ?? ''), ' /')));
         }
     }
@@ -676,7 +676,7 @@ class MeetingMinutesGenerator
         foreach ($rows as $i => $p) {
             $idx = $i + 1;
             $tp->setValue("a_stt#{$idx}", (string) $idx);
-            $tp->setValue("a_name#{$idx}", $this->cleanText($p->display_name));
+            $tp->setValue("a_name#{$idx}", $this->cleanText($p->display_name ?: $p->attendee?->user?->name));
             $tp->setValue("a_dept#{$idx}", $this->cleanText($p->department_name));
             $tp->setValue("a_reason#{$idx}", $this->cleanText($p->attendance?->note));
         }
@@ -746,13 +746,12 @@ class MeetingMinutesGenerator
             ->values();
         $tp->cloneRow('v_stt', max($rows->count(), 0));
 
-        // Tính tổng số người có quyền biểu quyết (tương tự như Excel export)
+        // Tính tổng số đại biểu và số đại biểu có mặt
         $participantUserIds = collect($m->participants)->pluck('attendee.user_id')->filter()->unique();
-        $chairUserId = $m->chairperson?->user_id;
-        if ($chairUserId && ! $participantUserIds->contains($chairUserId)) {
-            $participantUserIds->push($chairUserId);
-        }
+        $presentUserIds = collect($m->participants)->filter(fn ($p) => $p->attendance && $p->attendance->status === 'present')->pluck('attendee.user_id')->filter()->unique();
+
         $eligibleCount = $participantUserIds->count();
+        $presentCount = $presentUserIds->count();
 
         foreach ($rows->values() as $i => $t) {
             $idx = $i + 1;
@@ -770,23 +769,23 @@ class MeetingMinutesGenerator
             $tp->setValue("v_abstain#{$idx}", (string) $abstain);
             $tp->setValue("v_not_voted#{$idx}", (string) $notVoted);
             $tp->setValue("v_total_eligible#{$idx}", (string) $eligibleCount);
-            $tp->setValue("v_total_voted#{$idx}", (string) $voted);
+            $tp->setValue("v_total_voted#{$idx}", (string) $presentCount);
 
             // Tính tỷ lệ Tán thành
             $agreeRateTotal = $eligibleCount > 0 ? round(($agree / $eligibleCount) * 100, 1) : 0;
-            $agreeRatePresent = $voted > 0 ? round(($agree / $voted) * 100, 1) : 0;
+            $agreeRatePresent = $presentCount > 0 ? round(($agree / $presentCount) * 100, 1) : 0;
             $tp->setValue("v_agree_rate_total#{$idx}", (string) $agreeRateTotal);
             $tp->setValue("v_agree_rate_present#{$idx}", (string) $agreeRatePresent);
 
             // Tính tỷ lệ Không tán thành
             $disagreeRateTotal = $eligibleCount > 0 ? round(($disagree / $eligibleCount) * 100, 1) : 0;
-            $disagreeRatePresent = $voted > 0 ? round(($disagree / $voted) * 100, 1) : 0;
+            $disagreeRatePresent = $presentCount > 0 ? round(($disagree / $presentCount) * 100, 1) : 0;
             $tp->setValue("v_disagree_rate_total#{$idx}", (string) $disagreeRateTotal);
             $tp->setValue("v_disagree_rate_present#{$idx}", (string) $disagreeRatePresent);
 
             // Tính tỷ lệ Không ý kiến
             $abstainRateTotal = $eligibleCount > 0 ? round(($abstain / $eligibleCount) * 100, 1) : 0;
-            $abstainRatePresent = $voted > 0 ? round(($abstain / $voted) * 100, 1) : 0;
+            $abstainRatePresent = $presentCount > 0 ? round(($abstain / $presentCount) * 100, 1) : 0;
             $tp->setValue("v_abstain_rate_total#{$idx}", (string) $abstainRateTotal);
             $tp->setValue("v_abstain_rate_present#{$idx}", (string) $abstainRatePresent);
 

@@ -41,31 +41,29 @@ class MeetingVoteResponseSummarySheet extends \App\Modules\Core\Exports\Abstract
             ->values();
 
         $eligibleCountByMeeting = [];
+        $presentCountByMeeting = [];
 
-        return $topics->values()->map(function ($topic, $i) use (&$eligibleCountByMeeting) {
+        return $topics->values()->map(function ($topic, $i) use (&$eligibleCountByMeeting, &$presentCountByMeeting) {
             $base = MeetingVoteResponse::query()->where('meeting_vote_topic_id', $topic->id);
 
             $meetingId = $topic->meeting_id;
             if (! isset($eligibleCountByMeeting[$meetingId])) {
-                $participantUserIds = MeetingParticipant::query()
+                $participants = MeetingParticipant::query()
                     ->where('meeting_id', $meetingId)
-                    ->with('attendee')
-                    ->get()
-                    ->pluck('attendee.user_id')
-                    ->filter()
-                    ->unique()
-                    ->values();
+                    ->with(['attendee', 'attendance'])
+                    ->get();
 
-                $chairUserId = $topic->meeting?->chairperson?->user_id;
-                if ($chairUserId && ! $participantUserIds->contains($chairUserId)) {
-                    $participantUserIds->push($chairUserId);
-                }
+                $participantUserIds = $participants->pluck('attendee.user_id')->filter()->unique()->values();
+                $presentUserIds = $participants->filter(fn ($p) => $p->attendance && $p->attendance->status === 'present')
+                    ->pluck('attendee.user_id')->filter()->unique()->values();
 
                 $eligibleCountByMeeting[$meetingId] = $participantUserIds->count();
+                $presentCountByMeeting[$meetingId] = $presentUserIds->count();
             }
 
-            $votedCount = (clone $base)->count();
             $eligibleCount = $eligibleCountByMeeting[$meetingId];
+            $presentCount = $presentCountByMeeting[$meetingId];
+            $votedCount = (clone $base)->count();
 
             $agreeCount = (clone $base)->whereIn('option', ['agree', 'approve'])->count();
             $disagreeCount = (clone $base)->whereIn('option', ['disagree', 'reject'])->count();
@@ -75,10 +73,10 @@ class MeetingVoteResponseSummarySheet extends \App\Modules\Core\Exports\Abstract
             return [
                 'stt' => $i + 1,
                 'topic' => $topic->title,
-                'agree' => $this->formatVoteCell($agreeCount, $eligibleCount, $votedCount),
-                'disagree' => $this->formatVoteCell($disagreeCount, $eligibleCount, $votedCount),
-                'abstain' => $this->formatVoteCell($abstainCount, $eligibleCount, $votedCount),
-                'not_voted' => $this->formatVoteCell($notVotedCount, $eligibleCount, $votedCount, true),
+                'agree' => $this->formatVoteCell($agreeCount, $eligibleCount, $presentCount),
+                'disagree' => $this->formatVoteCell($disagreeCount, $eligibleCount, $presentCount),
+                'abstain' => $this->formatVoteCell($abstainCount, $eligibleCount, $presentCount),
+                'not_voted' => $this->formatVoteCell($notVotedCount, $eligibleCount, $presentCount, true),
             ];
         });
     }
