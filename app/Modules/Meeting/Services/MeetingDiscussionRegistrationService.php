@@ -176,13 +176,11 @@ class MeetingDiscussionRegistrationService
         }
 
         // Filter field theo vai trò:
-        //   Non-owner       -> chỉ cho update operator_note + answer_content + answer_attachment (operator-only fields).
+        //   Non-owner && Non-operator -> 404 ở trên.
         //   Non-operator    -> không được set operator_note + answer_content + answer_attachment (strip).
+        //   Operator        -> được phép sửa toàn bộ (bao gồm content, attachment của người khác).
         $operatorOnlyFields = ['operator_note', 'answer_content', 'answer_attachment', 'remove_answer_attachment'];
-        if (! $isOwner) {
-            $validated = array_intersect_key($validated, array_flip($operatorOnlyFields));
-            $file = null;
-        }
+
         if (! $canOperate) {
             foreach ($operatorOnlyFields as $f) {
                 unset($validated[$f]);
