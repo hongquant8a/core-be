@@ -7,7 +7,7 @@ use App\Modules\Scheduling\Enums\ScheduleStatus;
 use App\Services\Notification\Events\SchedulePublished;
 use App\Services\Notification\Events\ScheduleUpdated;
 use App\Services\Notification\Events\ScheduleCancelled;
-use App\Services\Notification\Services\ScheduleReminderScheduler;
+use App\Services\Notification\Services\ReminderScheduler;
 use Illuminate\Support\Facades\Event;
 
 class ScheduleObserver
@@ -18,7 +18,7 @@ class ScheduleObserver
         'location',
     ];
 
-    public function __construct(protected ScheduleReminderScheduler $scheduler) {}
+    public function __construct(protected ReminderScheduler $scheduler) {}
 
     public function saved(Schedule $schedule): void
     {

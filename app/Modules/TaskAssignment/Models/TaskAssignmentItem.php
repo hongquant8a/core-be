@@ -7,8 +7,16 @@ use App\Modules\Core\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use App\Services\Notification\Contracts\Remindable;
+use App\Services\Notification\Enums\NotificationModuleEnum;
+use App\Services\Notification\Enums\NotificationEventEnum;
+use App\Models\Reminder;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Collection;
+use Carbon\Carbon;
+use App\Modules\TaskAssignment\Enums\TaskAssignmentDocumentStatusEnum;
 
-class TaskAssignmentItem extends TenantModel implements HasMedia
+class TaskAssignmentItem extends TenantModel implements HasMedia, Remindable
 {
     use HasFactory;
     use InteractsWithMedia;
@@ -117,10 +125,61 @@ class TaskAssignmentItem extends TenantModel implements HasMedia
             ->withTimestamps();
     }
 
-    public function reminders()
+    // -- Bắt đầu implement Remindable --
+
+    public function getReminderDeadline(): ?Carbon
     {
-        return $this->hasMany(TaskAssignmentReminder::class, 'task_assignment_item_id');
+        return $this->end_at;
     }
+
+    public function getReminderOrganizationId(): int
+    {
+        return (int) ($this->document?->organization_id ?? 0);
+    }
+
+    public function getReminderModuleKey(): string
+    {
+        return NotificationModuleEnum::TaskAssignment->value; // 'task_assignment'
+    }
+
+    public function getReminderEventKeys(): array
+    {
+        return [
+            NotificationEventEnum::ReminderBefore->value, // 'reminder_before'
+            NotificationEventEnum::ReminderOn->value,     // 'reminder_on'
+            NotificationEventEnum::ReminderAfter->value,  // 'reminder_after'
+        ];
+    }
+
+    public function getReminderEventKey(?string $moment): string
+    {
+        return "reminder_{$moment}";
+    }
+
+    public function resolveReminderRecipients(): Collection
+    {
+        return $this->users;
+    }
+
+    public function resolveGuestReminderRecipients(): Collection
+    {
+        return collect();
+    }
+
+    public function isValidForReminder(): bool
+    {
+        $this->loadMissing('document');
+
+        return !in_array($this->processing_status, ['done', 'cancelled'], true)
+            && ($this->document?->status ?? null) === TaskAssignmentDocumentStatusEnum::Issued->value;
+    }
+
+    public function reminders(): MorphMany
+    {
+        return $this->morphMany(Reminder::class, 'remindable');
+    }
+
+    // -- Kết thúc implement Remindable --
 
     public function departments()
     {

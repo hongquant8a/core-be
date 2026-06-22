@@ -40,6 +40,7 @@ use Illuminate\Support\ServiceProvider;
 use Knuckles\Scribe\Scribe;
 use Maatwebsite\Excel\Imports\HeadingRowFormatter;
 use Throwable;
+use Illuminate\Database\Eloquent\Relations\Relation;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -56,6 +57,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Relation::enforceMorphMap([
+            'task_assignment_item' => \App\Modules\TaskAssignment\Models\TaskAssignmentItem::class,
+            'meeting'              => \App\Modules\Meeting\Models\Meeting::class,
+            'schedule'             => \App\Modules\Scheduling\Models\Schedule::class,
+        ]);
+
         // Auto-create UserProfile mỗi khi tạo User.
         User::observe(UserObserver::class);
 

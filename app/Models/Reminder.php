@@ -1,47 +1,46 @@
 <?php
 
-namespace App\Modules\Meeting\Models;
+namespace App\Models;
 
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use App\Modules\Core\Models\NotificationSchedule;
-use App\Modules\Core\Models\TenantModel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class MeetingReminder extends TenantModel
+class Reminder extends Model
 {
-    protected $table = 'meeting_reminders';
+    protected $table = 'reminders';
 
     protected $fillable = [
+        'remindable_type',
+        'remindable_id',
         'organization_id',
-        'meeting_id',
         'reminder_type',
+        'source',
         'notification_schedule_id',
         'moment',
         'offset_minutes',
-        'channels',
-        'source',
         'remind_at',
-        'scheduled_at',
-        'sent_at',
+        'channels',
+        'status',
         'fired_at',
         'message',
-        'status',
         'created_by',
     ];
 
     protected $casts = [
         'offset_minutes' => 'integer',
         'channels'       => 'array',
-        'scheduled_at'   => 'datetime',
-        'sent_at'        => 'datetime',
-        'fired_at'       => 'datetime',
         'remind_at'      => 'datetime',
+        'fired_at'       => 'datetime',
     ];
 
-    public function meeting()
+    public function remindable(): MorphTo
     {
-        return $this->belongsTo(Meeting::class);
+        return $this->morphTo();
     }
 
-    public function schedule()
+    public function notificationSchedule(): BelongsTo
     {
         return $this->belongsTo(NotificationSchedule::class, 'notification_schedule_id');
     }

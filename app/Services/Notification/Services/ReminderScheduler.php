@@ -2,103 +2,93 @@
 
 namespace App\Services\Notification\Services;
 
+use App\Models\Reminder;
 use App\Modules\Core\Models\NotificationEventConfig;
-use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
-use App\Modules\TaskAssignment\Models\TaskAssignmentReminder;
-use App\Services\Notification\Enums\NotificationEventEnum;
-use App\Services\Notification\Enums\NotificationModuleEnum;
+use App\Services\Notification\Contracts\Remindable;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
 
 class ReminderScheduler
 {
-    /**
-     * (Re)create pending reminders for item theo schedules của 3 reminder event config.
-     * Chỉ xóa/recreate PRESET — CUSTOM per-record reminders giữ nguyên.
-     */
-    public function scheduleFor(TaskAssignmentItem $item): void
+    public function scheduleFor(Model&Remindable $remindable): void
     {
-        if (! $item->end_at || in_array($item->processing_status, ['done', 'cancelled'], true)) {
-            $this->cancelPending($item);
-
+        if (!$remindable->isValidForReminder()) {
+            $this->cancelPending($remindable);
             return;
         }
 
-        $item->loadMissing('document');
-        if (($item->document->status ?? null) !== \App\Modules\TaskAssignment\Enums\TaskAssignmentDocumentStatusEnum::Issued->value) {
-            return;
-        }
+        $deadline       = $remindable->getReminderDeadline();
+        $organizationId = $remindable->getReminderOrganizationId();
 
-        $organizationId = (int) ($item->document->organization_id ?? 0);
-        if ($organizationId === 0) {
-            return;
-        }
+        if (!$deadline || !$organizationId) return;
 
-        // Chỉ xóa pending PRESET reminders; giữ CUSTOM per-record reminders.
-        TaskAssignmentReminder::where('task_assignment_item_id', $item->id)
+        // 1. Xóa PRESET cũ, giữ CUSTOM
+        $remindable->reminders()
             ->where('status', 'pending')
             ->where('source', 'PRESET')
             ->delete();
 
-        $reminderEventKeys = [
-            NotificationEventEnum::ReminderBefore->value,
-            NotificationEventEnum::ReminderOn->value,
-            NotificationEventEnum::ReminderAfter->value,
-        ];
-        $configs = NotificationEventConfig::with('schedules')
-            ->where('module_key', NotificationModuleEnum::TaskAssignment->value)
+        // 2. Tạo PRESET mới từ config
+        NotificationEventConfig::with('schedules')
+            ->where('module_key', $remindable->getReminderModuleKey())
             ->where('organization_id', $organizationId)
-            ->whereIn('event_key', $reminderEventKeys)
-            ->get();
+            ->whereIn('event_key', $remindable->getReminderEventKeys())
+            ->get()
+            ->each(function (NotificationEventConfig $config) use ($remindable, $deadline, $organizationId) {
+                foreach ($config->schedules as $schedule) {
+                    $remindAt = $this->computeRemindAt(
+                        $deadline,
+                        $schedule->moment,
+                        (int) $schedule->offset_minutes,
+                    );
+                    if (!$remindAt) continue;
 
-        foreach ($configs as $config) {
-            foreach ($config->schedules as $schedule) {
-                $remindAt = $this->computeRemindAt($item->end_at, $schedule->moment, (int) $schedule->offset_minutes);
-                if ($remindAt === null) {
-                    continue;
+                    Reminder::create([
+                        'remindable_type'          => $remindable->getMorphClass(),
+                        'remindable_id'            => $remindable->getKey(),
+                        'organization_id'          => $organizationId,
+                        'reminder_type'            => 'scheduled',
+                        'source'                   => 'PRESET',
+                        'notification_schedule_id' => $schedule->id,
+                        'moment'                   => $schedule->moment,
+                        'offset_minutes'           => (int) $schedule->offset_minutes,
+                        'remind_at'                => $remindAt,
+                        'status'                   => 'pending',
+                    ]);
                 }
+            });
 
-                TaskAssignmentReminder::create([
-                    'task_assignment_item_id' => $item->id,
-                    'notification_schedule_id' => $schedule->id,
-                    'moment'                   => $schedule->moment,
-                    'offset_minutes'           => (int) $schedule->offset_minutes,
-                    'source'                   => 'PRESET',
-                    'remind_at'                => $remindAt,
-                    'status'                   => 'pending',
-                ]);
-            }
-        }
-
-        // Compute remind_at cho CUSTOM per-record reminders (PRESET đã có remind_at khi tạo).
-        $customPending = TaskAssignmentReminder::where('task_assignment_item_id', $item->id)
+        // 3. Cập nhật remind_at cho CUSTOM
+        $remindable->reminders()
             ->where('status', 'pending')
             ->where('source', 'CUSTOM')
-            ->get();
-
-        foreach ($customPending as $reminder) {
-            $remindAt = $this->computeRemindAt($item->end_at, $reminder->moment, (int) $reminder->offset_minutes);
-            if ($remindAt !== null) {
-                $reminder->update(['remind_at' => $remindAt]);
-            }
-        }
+            ->get()
+            ->each(function (Reminder $reminder) use ($deadline) {
+                $remindAt = $this->computeRemindAt(
+                    $deadline,
+                    $reminder->moment,
+                    (int) $reminder->offset_minutes,
+                );
+                if ($remindAt) $reminder->update(['remind_at' => $remindAt]);
+            });
     }
 
-    public function cancelPending(TaskAssignmentItem $item): void
+    public function cancelPending(Model&Remindable $remindable): void
     {
-        TaskAssignmentReminder::where('task_assignment_item_id', $item->id)
+        $remindable->reminders()
             ->where('status', 'pending')
             ->update(['status' => 'cancelled']);
     }
 
-    private function computeRemindAt(?\Carbon\Carbon $deadline, string $moment, int $offsetMinutes): ?\Carbon\Carbon
+    public function computeRemindAt(?Carbon $deadline, ?string $moment, int $offsetMinutes = 0): ?Carbon
     {
-        if (! $deadline) {
-            return null;
-        }
+        if (!$deadline) return null;
 
         return match ($moment) {
             'before' => $offsetMinutes ? $deadline->copy()->subMinutes($offsetMinutes) : null,
             'on'     => $deadline->copy(),
             'after'  => $offsetMinutes ? $deadline->copy()->addMinutes($offsetMinutes) : null,
+            null     => now(), // instant
             default  => null,
         };
     }

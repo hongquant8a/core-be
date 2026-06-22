@@ -4,7 +4,9 @@ namespace App\Modules\Meeting\Observers;
 
 use App\Modules\Meeting\Models\Meeting;
 use App\Services\Notification\Events\MeetingUpdated;
-use App\Services\Notification\Services\MeetingReminderScheduler;
+use App\Services\Notification\Events\MeetingPublished;
+use App\Services\Notification\Events\MeetingCancelled;
+use App\Services\Notification\Services\ReminderScheduler;
 use Illuminate\Support\Facades\Event;
 
 class MeetingObserver
@@ -18,7 +20,7 @@ class MeetingObserver
         'content',
     ];
 
-    public function __construct(private MeetingReminderScheduler $scheduler) {}
+    public function __construct(private ReminderScheduler $scheduler) {}
 
     public function updated(Meeting $meeting): void
     {
@@ -52,6 +54,19 @@ class MeetingObserver
         if ($meeting->status === 'published'
             && ($meeting->wasChanged(['start_time', 'status']) || $meeting->wasRecentlyCreated)) {
             $this->scheduler->scheduleFor($meeting);
+        }
+
+        $isPublished  = $meeting->status === 'published';
+        $wasPublished = $meeting->getOriginal('status') === 'published';
+
+        // Published (thay vì fire trong MeetingService::changeStatus)
+        if ($isPublished && !$wasPublished) {
+            Event::dispatch(new MeetingPublished($meeting));
+        }
+
+        // Cancelled
+        if (!$isPublished && $wasPublished && $meeting->status === 'cancelled') {
+            Event::dispatch(new MeetingCancelled($meeting));
         }
     }
 

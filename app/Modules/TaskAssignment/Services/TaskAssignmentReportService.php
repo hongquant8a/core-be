@@ -84,8 +84,6 @@ class TaskAssignmentReportService
                         ]);
                 }
 
-                event(new TaskCompleted($report->item));
-
                 return $loaded;
             });
         } catch (\Throwable $exception) {

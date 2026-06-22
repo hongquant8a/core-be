@@ -360,8 +360,6 @@ class TaskAssignmentItemService
             'rejection_reason' => null,
         ]);
 
-        event(new \App\Services\Notification\Events\TaskConfirmed($item->fresh()));
-
         return $item->load(['document.type', 'document.attachments.media', 'document.creator.media', 'document.editor.media', 'itemType', 'users', 'creator.media', 'editor.media']);
     }
 

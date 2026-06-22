@@ -8,8 +8,15 @@ use App\Modules\Core\Support\VietnameseSort;
 use App\Modules\Scheduling\Enums\{ModuleType, SessionType, Nature, ScheduleStatus};
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Services\Notification\Contracts\Remindable;
+use App\Services\Notification\Enums\NotificationModuleEnum;
+use App\Services\Notification\Enums\NotificationEventEnum;
+use App\Models\Reminder;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Collection;
+use Carbon\Carbon;
 
-class Schedule extends TenantModel
+class Schedule extends TenantModel implements Remindable
 {
     use HasFactory, SoftDeletes;
 
@@ -90,10 +97,80 @@ class Schedule extends TenantModel
             ->withPivot('group_id');
     }
 
-    public function reminders()
+    // -- Bắt đầu implement Remindable --
+
+    public function getReminderDeadline(): ?Carbon
     {
-        return $this->hasMany(ScheduleReminder::class, 'schedule_id');
+        // date_time + session (S=07:30, C=13:30, T=19:30)
+        if (!$this->date_time) return null;
+
+        $dateStr = Carbon::parse($this->date_time)->format('Y-m-d');
+        $sessionVal = $this->session instanceof SessionType
+            ? $this->session->value
+            : $this->session;
+
+        $timeStr = match ($sessionVal) {
+            'S'     => '07:30:00',
+            'C'     => '13:30:00',
+            'T'     => '19:30:00',
+            default => '08:00:00',
+        };
+
+        return Carbon::parse("{$dateStr} {$timeStr}");
     }
+
+    public function getReminderOrganizationId(): int
+    {
+        return (int) $this->organization_id;
+    }
+
+    public function getReminderModuleKey(): string
+    {
+        return NotificationModuleEnum::Scheduling->value; // 'scheduling'
+    }
+
+    public function getReminderEventKeys(): array
+    {
+        return [NotificationEventEnum::ScheduleReminder->value]; // ['schedule_reminder']
+    }
+
+    public function getReminderEventKey(?string $moment): string
+    {
+        return NotificationEventEnum::ScheduleReminder->value; // không phân biệt before/on/after
+    }
+
+    public function resolveReminderRecipients(): Collection
+    {
+        $this->loadMissing(['recipients.user', 'host', 'driver']);
+
+        $users = $this->recipients->map->user->filter();
+
+        if ($this->host) $users->push($this->host);
+        if ($this->driver) $users->push($this->driver);
+
+        return $users->unique('id')->values();
+    }
+
+    public function resolveGuestReminderRecipients(): Collection
+    {
+        return collect();
+    }
+
+    public function isValidForReminder(): bool
+    {
+        $statusVal = $this->status instanceof ScheduleStatus
+            ? $this->status->value
+            : (int) $this->status;
+
+        return $statusVal === ScheduleStatus::PUBLISHED->value;
+    }
+
+    public function reminders(): MorphMany
+    {
+        return $this->morphMany(Reminder::class, 'remindable');
+    }
+
+    // -- Kết thúc implement Remindable --
 
     public function setStatusAttribute($value)
     {

@@ -270,7 +270,7 @@ class TaskAssignmentDocumentService
             foreach ($document->items as $item) {
                 $this->reminderScheduler->scheduleFor($item);
             }
-            // event(new DocumentIssued($document->fresh()));
+            event(new DocumentIssued($document->fresh()));
         }
 
         return $document->load(['type', 'attachments.media', 'creator.media', 'editor.media']);

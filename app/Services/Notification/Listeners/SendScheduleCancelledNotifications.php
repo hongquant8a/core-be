@@ -7,7 +7,7 @@ use App\Services\Notification\Enums\NotificationModuleEnum;
 use App\Services\Notification\Events\ScheduleCancelled;
 use App\Services\Notification\Services\NotificationDispatcher;
 use App\Services\Notification\Services\ContentBuilderRegistry;
-use App\Services\Notification\Services\ScheduleReminderScheduler;
+use App\Services\Notification\Services\ReminderScheduler;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
 class SendScheduleCancelledNotifications implements ShouldQueue
@@ -15,7 +15,7 @@ class SendScheduleCancelledNotifications implements ShouldQueue
     public function __construct(
         protected NotificationDispatcher $dispatcher,
         protected ContentBuilderRegistry $registry,
-        protected ScheduleReminderScheduler $scheduler
+        protected ReminderScheduler $scheduler
     ) {}
 
     public function handle(ScheduleCancelled $event): void
@@ -34,7 +34,7 @@ class SendScheduleCancelledNotifications implements ShouldQueue
             return;
         }
 
-        $recipients = $this->scheduler->resolveRecipients($schedule);
+        $recipients = $schedule->resolveReminderRecipients();
         $builder = $this->registry->for('schedule_cancelled');
 
         foreach ($recipients as $user) {
