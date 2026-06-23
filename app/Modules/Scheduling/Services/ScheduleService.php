@@ -680,9 +680,11 @@ class ScheduleService
         $userId = auth()->id();
         if ($userId) {
             $personalQuery = [
-                'from_date' => $start,
-                'to_date'   => $end,
-                'view_mode' => 'personal',
+                'from_date'       => $start,
+                'to_date'         => $end,
+                'status'          => \App\Modules\Scheduling\Enums\ScheduleStatus::PUBLISHED->value,
+                'approval_status' => \App\Modules\Scheduling\Enums\ApprovalStatus::APPROVED->value,
+                'view_mode'       => 'personal',
             ];
             if ($originalModuleType) {
                 $personalQuery['module_type'] = $originalModuleType;
