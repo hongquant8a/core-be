@@ -178,20 +178,13 @@ class Schedule extends TenantModel
             ->when($filters['view_mode'] ?? null, function ($q, $mode) {
                 if ($mode === 'personal') {
                     $userId = auth()->id();
-                    $q->where(function ($query) use ($userId) {
-                        // Nếu là lịch do chính user tạo -> thấy hết bất chấp trạng thái
-                        $query->where('created_by', $userId)
-                              // Nếu là lịch người khác tạo -> chỉ thấy khi đã ban hành + đã duyệt + có mặt user
-                              ->orWhere(function ($sub) use ($userId) {
-                                  $sub->where('status', \App\Modules\Scheduling\Enums\ScheduleStatus::PUBLISHED->value)
-                                      ->where('approval_status', \App\Modules\Scheduling\Enums\ApprovalStatus::APPROVED->value)
-                                      ->where(function ($sub2) use ($userId) {
-                                          $sub2->where('host_id', $userId)
-                                               ->orWhere('driver_id', $userId)
-                                               ->orWhereHas('recipients', fn ($p) => $p->where('user_id', $userId));
-                                      });
-                              });
-                    });
+                    $q->where('status', \App\Modules\Scheduling\Enums\ScheduleStatus::PUBLISHED->value)
+                      ->where('approval_status', \App\Modules\Scheduling\Enums\ApprovalStatus::APPROVED->value)
+                      ->where(function ($sub) use ($userId) {
+                          $sub->where('host_id', $userId)
+                              ->orWhere('driver_id', $userId)
+                              ->orWhereHas('recipients', fn ($p) => $p->where('user_id', $userId));
+                      });
                 } elseif ($mode === 'managed') {
                     $q->where('host_id', auth()->id());
                 }
