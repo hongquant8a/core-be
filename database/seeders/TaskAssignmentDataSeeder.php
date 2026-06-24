@@ -44,7 +44,7 @@ class TaskAssignmentDataSeeder extends Seeder
     public function run(): void
     {
         // Đăng nhập tạm để model booted() không ghi đè created_by/updated_by = null
-        auth()->login(User::first());
+        auth()->setUser(User::first());
 
         // Đặt organization_id = 1 cho Spatie Permission và Global Scope của model
         if (function_exists('setPermissionsTeamId')) {
@@ -57,7 +57,7 @@ class TaskAssignmentDataSeeder extends Seeder
         $this->assignUsersToDepartments();
         $this->seedDocumentsAndItems();
 
-        auth()->logout();
+        auth()->forgetUser();
     }
 
     // ─── Phòng ban ───────────────────────────────────────────────
