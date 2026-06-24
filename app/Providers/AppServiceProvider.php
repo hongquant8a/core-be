@@ -58,9 +58,13 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Relation::enforceMorphMap([
-            'task_assignment_item' => \App\Modules\TaskAssignment\Models\TaskAssignmentItem::class,
-            'meeting'              => \App\Modules\Meeting\Models\Meeting::class,
-            'schedule'             => \App\Modules\Scheduling\Models\Schedule::class,
+            'user'                    => \App\Modules\Core\Models\User::class,
+            'setting'                 => \App\Modules\Core\Models\Setting::class,
+            'task_assignment_item'    => \App\Modules\TaskAssignment\Models\TaskAssignmentItem::class,
+            'meeting'                 => \App\Modules\Meeting\Models\Meeting::class,
+            'schedule'                => \App\Modules\Scheduling\Models\Schedule::class,
+            'meeting_document'        => \App\Modules\Meeting\Models\MeetingDocument::class,
+            'reminder'                => \App\Models\Reminder::class,
         ]);
 
         // Auto-create UserProfile mỗi khi tạo User.
