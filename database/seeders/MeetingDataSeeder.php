@@ -65,7 +65,7 @@ class MeetingDataSeeder extends Seeder
 
             return;
         }
-        auth()->login($admin);
+        auth()->setUser($admin);
         if (function_exists('setPermissionsTeamId')) {
             setPermissionsTeamId($this->orgId);
         }
@@ -106,7 +106,7 @@ class MeetingDataSeeder extends Seeder
         $this->seedDraftMeeting($catalogs, now()->addMonths(1)->setTime(14, 0), 'kỳ chuyên đề');
         $this->seedDraftMeeting($catalogs, now()->addMonths(3)->setTime(8, 0), 'kỳ thường niên');
 
-        auth()->logout();
+        auth()->forgetUser();
 
         if ($this->demoDocxPath && is_file($this->demoDocxPath)) {
             @unlink($this->demoDocxPath);
