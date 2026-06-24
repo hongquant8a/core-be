@@ -173,7 +173,7 @@ class MeetingDataSeeder extends Seeder
 
     private function upsertUser(string $email, string $name, string $userName): User
     {
-        $user = User::firstWhere('email', $email);
+        $user = User::where('user_name', $userName)->orWhere('email', $email)->first();
         if (! $user) {
             $user = User::create([
                 'email' => $email,
