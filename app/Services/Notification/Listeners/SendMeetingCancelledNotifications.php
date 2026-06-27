@@ -29,6 +29,8 @@ use Throwable;
  */
 class SendMeetingCancelledNotifications implements ShouldQueue
 {
+    public $afterCommit = true;
+
     public function __construct(
         private NotificationDispatcher $dispatcher,
         private ContentBuilderRegistry $registry,
