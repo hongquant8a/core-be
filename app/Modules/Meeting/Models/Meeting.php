@@ -257,7 +257,14 @@ class Meeting extends TenantModel implements HasMedia, Remindable
 
     public function getReminderEventKey(?string $moment): string
     {
-        return "meeting_reminder_{$moment}";
+        // null = instant (do event publish handle, không qua cron)
+        return match ($moment) {
+            null    => 'meeting_published',
+            'before'=> NotificationEventEnum::MeetingReminderBefore->value,
+            'on'    => NotificationEventEnum::MeetingReminderOn->value,
+            'after' => NotificationEventEnum::MeetingReminderAfter->value,
+            default => "meeting_reminder_{$moment}",
+        };
     }
 
     public function resolveReminderRecipients(): Collection

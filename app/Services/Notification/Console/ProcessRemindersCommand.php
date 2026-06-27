@@ -35,11 +35,15 @@ class ProcessRemindersCommand extends Command
 
         // 2. Instant CUSTOM reminders: status='active', remind_at=null
         // Đây là loại reminder do user tự cấu hình per-record, không do PRESET config sinh ra.
-        // Chúng không có remind_at nên cần xử lý riêng — fire ngay và mark 'fired'.
+        // NGOẠI TRỪ Meeting: instant reminder của Meeting được handle bởi
+        // SendMeetingPublishedNotifications listener ngay khi meeting published.
+        // Nếu cron chạy lại sẽ dùng sai flow (resolveReminderRecipients thay vì invitations).
+        $meetingMorphClass = \App\Modules\Meeting\Models\Meeting::class;
         Reminder::with(['remindable'])
             ->where('status', 'active')
             ->where('reminder_type', 'instant')
             ->whereNull('remind_at')
+            ->where('remindable_type', '!=', $meetingMorphClass)
             ->chunkById(100, function (Collection $reminders) use ($dispatcher, $registry, $notifier, &$count) {
                 foreach ($reminders as $reminder) {
                     $this->fire($reminder, $dispatcher, $registry, $notifier);
