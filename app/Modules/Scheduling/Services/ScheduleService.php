@@ -562,20 +562,22 @@ class ScheduleService
     private function syncReminders(Schedule $schedule, array $reminders): void
     {
         $keptIds = [];
+        $orgId   = (int) $schedule->organization_id;
+
         foreach ($reminders as $r) {
             $reminderType = $r['reminder_type'] ?? 'scheduled';
             $channels = array_values(array_unique(array_map('strtoupper', (array) ($r['channels'] ?? []))));
 
             if ($reminderType === 'instant') {
                 $attributes = [
-                    'schedule_id'    => $schedule->id,
-                    'reminder_type'  => 'instant',
-                    'moment'         => null,
-                    'offset_minutes' => 0,
-                    'channels'       => $channels,
-                    'source'         => 'CUSTOM',
-                    'status'         => 'active',
-                    'remind_at'      => null,
+                    'organization_id' => $orgId,
+                    'reminder_type'   => 'instant',
+                    'moment'          => null,
+                    'offset_minutes'  => 0,
+                    'channels'        => $channels,
+                    'source'          => 'CUSTOM',
+                    'status'          => 'active',
+                    'remind_at'       => null,
                 ];
             } else {
                 $moment = $r['moment'] ?? 'before';
@@ -594,23 +596,23 @@ class ScheduleService
                     : null;
 
                 $attributes = [
-                    'schedule_id'    => $schedule->id,
-                    'reminder_type'  => 'scheduled',
-                    'moment'         => $moment,
-                    'offset_minutes' => $rawOffset,
-                    'channels'       => $channels,
-                    'source'         => 'CUSTOM',
-                    'status'         => 'pending',
-                    'remind_at'      => $remindAt,
+                    'organization_id' => $orgId,
+                    'reminder_type'   => 'scheduled',
+                    'moment'          => $moment,
+                    'offset_minutes'  => $rawOffset,
+                    'channels'        => $channels,
+                    'source'          => 'CUSTOM',
+                    'status'          => 'pending',
+                    'remind_at'       => $remindAt,
                 ];
             }
 
             if (! empty($r['id'])) {
-                $existing = \App\Modules\Scheduling\Models\ScheduleReminder::where('id', $r['id'])
-                    ->where('schedule_id', $schedule->id)
+                $existing = $schedule->reminders()
+                    ->where('id', $r['id'])
                     ->where('source', 'CUSTOM')
                     ->first();
-                
+
                 if ($existing) {
                     if ($existing->status !== 'pending') {
                         $attributes['status'] = $existing->status;
@@ -618,11 +620,11 @@ class ScheduleService
                     $existing->update($attributes);
                     $keptIds[] = $existing->id;
                 } else {
-                    $new = \App\Modules\Scheduling\Models\ScheduleReminder::create($attributes);
+                    $new = $schedule->reminders()->create($attributes);
                     $keptIds[] = $new->id;
                 }
             } else {
-                $new = \App\Modules\Scheduling\Models\ScheduleReminder::create($attributes);
+                $new = $schedule->reminders()->create($attributes);
                 $keptIds[] = $new->id;
             }
         }

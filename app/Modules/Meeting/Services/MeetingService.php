@@ -10,7 +10,6 @@ use App\Modules\Meeting\Exports\MeetingExport;
 use App\Modules\Meeting\Models\Meeting;
 use App\Modules\Meeting\Models\MeetingInvitation;
 use App\Modules\Meeting\Models\MeetingParticipant;
-use App\Modules\Meeting\Models\MeetingReminder;
 use App\Services\Notification\Events\MeetingPublished;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\UploadedFile;
@@ -537,14 +536,15 @@ class MeetingService
     private function syncReminders(Meeting $meeting, array $reminders): void
     {
         $keptIds = [];
+        $orgId   = (int) $meeting->organization_id;
+
         foreach ($reminders as $r) {
             $reminderType = $r['reminder_type'] ?? 'scheduled';
             $channels = array_values(array_unique(array_map('strtoupper', (array) ($r['channels'] ?? []))));
 
             if ($reminderType === 'instant') {
                 $attributes = [
-                    'organization_id' => (int) $meeting->organization_id,
-                    'meeting_id'      => $meeting->id,
+                    'organization_id' => $orgId,
                     'reminder_type'   => 'instant',
                     'moment'          => null,
                     'offset_minutes'  => 0,
@@ -552,7 +552,6 @@ class MeetingService
                     'source'          => 'CUSTOM',
                     'status'          => 'active',
                     'remind_at'       => null,
-                    'scheduled_at'    => null,
                 ];
             } else {
                 $moment = $r['moment'] ?? 'before';
@@ -568,8 +567,7 @@ class MeetingService
                     : null;
 
                 $attributes = [
-                    'organization_id' => (int) $meeting->organization_id,
-                    'meeting_id'      => $meeting->id,
+                    'organization_id' => $orgId,
                     'reminder_type'   => 'scheduled',
                     'moment'          => $moment,
                     'offset_minutes'  => $offset,
@@ -577,13 +575,12 @@ class MeetingService
                     'source'          => 'CUSTOM',
                     'status'          => 'pending',
                     'remind_at'       => $remindAt,
-                    'scheduled_at'    => $remindAt,
                 ];
             }
 
             if (! empty($r['id'])) {
-                $existing = MeetingReminder::where('id', $r['id'])
-                    ->where('meeting_id', $meeting->id)
+                $existing = $meeting->reminders()
+                    ->where('id', $r['id'])
                     ->where('source', 'CUSTOM')
                     ->first();
                 if ($existing) {
@@ -593,11 +590,11 @@ class MeetingService
                     $existing->update($attributes);
                     $keptIds[] = $existing->id;
                 } else {
-                    $new = MeetingReminder::create($attributes);
+                    $new = $meeting->reminders()->create($attributes);
                     $keptIds[] = $new->id;
                 }
             } else {
-                $new = MeetingReminder::create($attributes);
+                $new = $meeting->reminders()->create($attributes);
                 $keptIds[] = $new->id;
             }
         }
