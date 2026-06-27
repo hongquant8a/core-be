@@ -152,12 +152,18 @@ class SendMeetingPublishedNotifications implements ShouldQueue
     private function resolveChannels(Meeting $meeting, int $organizationId): array
     {
         // Per-record: kiểm tra meeting.reminders có reminder_type=instant không.
-        $instantChannels = $meeting->reminders()
+        $instantReminders = $meeting->reminders()
             ->where('reminder_type', 'instant')
             ->where('status', 'active')
-            ->value('channels');
-        if (! empty($instantChannels)) {
-            return $instantChannels;
+            ->get();
+
+        if ($instantReminders->isNotEmpty()) {
+            $channels = $instantReminders->first()->channels ?? [];
+            // Mark fired để cron không gửi lại.
+            $instantReminders->each(fn ($r) => $r->update(['status' => 'fired', 'fired_at' => now()]));
+            if (! empty($channels)) {
+                return $channels;
+            }
         }
 
         $config = NotificationEventConfig::with('schedules')

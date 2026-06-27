@@ -52,13 +52,20 @@ class SendSchedulePublishedNotifications implements ShouldQueue
     private function resolveChannels(int $organizationId, \App\Modules\Scheduling\Models\Schedule $schedule): array
     {
         // Per-record: kiểm tra schedule.reminders có reminder_type=instant (active).
-        $instantChannels = $schedule->reminders()
+        $instantReminders = $schedule->reminders()
             ->where('reminder_type', 'instant')
             ->where('source', 'CUSTOM')
             ->where('status', 'active')
-            ->value('channels');
-        if (! empty($instantChannels)) {
-            return $instantChannels;
+            ->get();
+
+        if ($instantReminders->isNotEmpty()) {
+            // Lấy channels từ reminder đầu tiên (merge nếu cần).
+            $channels = $instantReminders->first()->channels ?? [];
+            // Mark tất cả instant reminders là fired để cron không fire lại.
+            $instantReminders->each(fn ($r) => $r->update(['status' => 'fired', 'fired_at' => now()]));
+            if (! empty($channels)) {
+                return $channels;
+            }
         }
         $config = NotificationEventConfig::with('schedules')
             ->where('module_key', NotificationModuleEnum::Scheduling->value)
