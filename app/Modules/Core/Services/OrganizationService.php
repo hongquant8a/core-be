@@ -63,6 +63,7 @@ class OrganizationService
     public function tree(?string $status)
     {
         $query = Organization::query()
+            ->with('editor')
             ->when($status, fn ($q, $value) => $q->where('status', $value));
         $items = $query->orderBy('sort_order')->orderBy('id')->get();
 
