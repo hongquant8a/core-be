@@ -135,6 +135,7 @@ Route::prefix('{meeting}/attendances')->group(function () {
     Route::post('/manual-checkin', [MeetingAttendanceController::class, 'manualCheckinInMeeting'])->middleware('can:manageAttendance,meeting');
     Route::patch('/{meetingAttendance}/approve', [MeetingAttendanceController::class, 'approveInMeeting'])->middleware('can:approve,meetingAttendance');
     Route::patch('/{meetingAttendance}/reject', [MeetingAttendanceController::class, 'rejectInMeeting'])->middleware('can:reject,meetingAttendance');
+    Route::delete('/{meetingAttendance}/cancel', [MeetingAttendanceController::class, 'cancelInMeeting'])->middleware('can:cancel,meetingAttendance');
 });
 
 // Participants — list participant+ xem; self respond invitation.
