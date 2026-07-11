@@ -51,6 +51,14 @@ class MeetingAttendancePolicy
     }
 
     /**
+     * Hủy điểm danh — chair OR operator.
+     */
+    public function cancel(User $user, MeetingAttendance $attendance): bool
+    {
+        return $this->approve($user, $attendance);
+    }
+
+    /**
      * Lấy Meeting từ attendance — ưu tiên FK trực tiếp, fallback qua participant.
      */
     private function resolveMeeting(MeetingAttendance $attendance): ?Meeting

@@ -121,6 +121,25 @@ class MeetingAttendanceService
     }
 
     /**
+     * Operator hủy điểm danh (lỡ điểm danh nhầm) — xóa bản ghi điểm danh và revert RSVP (tùy chọn).
+     */
+    public function cancel(MeetingAttendance $attendance): void
+    {
+        // Phóng event trước khi xóa để client cập nhật UI (chuyển về chưa điểm danh)
+        broadcast(new \App\Modules\Meeting\Events\MeetingAttendanceCancelled($attendance))->toOthers();
+
+        // Sync RSVP cho participant về trạng thái pending (vì đã bị hủy điểm danh)
+        if ($attendance->participant) {
+            $attendance->participant->update([
+                'response_status' => MeetingParticipantResponseStatusEnum::Pending->value,
+                'responded_at' => null,
+            ]);
+        }
+
+        $attendance->delete();
+    }
+
+    /**
      * Đại biểu tự điểm danh — status=pending chờ operator duyệt.
      * Idempotent qua unique (meeting_id, meeting_participant_id) — F5/click lần 2 không tạo trùng.
      */

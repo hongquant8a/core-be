@@ -146,6 +146,18 @@ class MeetingAttendanceController extends Controller
     }
 
     /**
+     * Operator hủy điểm danh (lỡ điểm danh nhầm) — xóa bản ghi.
+     *
+     * @urlParam meetingAttendance integer required ID điểm danh. Example: 1
+     */
+    public function cancel(MeetingAttendance $meetingAttendance)
+    {
+        $this->meetingAttendanceService->cancel($meetingAttendance);
+
+        return $this->success(null, 'Đã hủy điểm danh.');
+    }
+
+    /**
      * Đại biểu tự điểm danh — auto-derive participant từ auth user.
      *
      * Status=`pending` chờ operator duyệt (Tab 7 sẽ có approve/reject ở Sprint 1).
@@ -264,6 +276,17 @@ class MeetingAttendanceController extends Controller
     public function rejectInMeeting(Meeting $meeting, MeetingAttendance $meetingAttendance)
     {
         return $this->reject($meetingAttendance);
+    }
+
+    /**
+     * Nested route `DELETE /api/meetings/{meeting}/attendances/{att}/cancel` — gate cancel.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     * @urlParam meetingAttendance integer required ID điểm danh. Example: 1
+     */
+    public function cancelInMeeting(Meeting $meeting, MeetingAttendance $meetingAttendance)
+    {
+        return $this->cancel($meetingAttendance);
     }
 
     /**
