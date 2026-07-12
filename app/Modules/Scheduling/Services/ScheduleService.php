@@ -10,7 +10,6 @@ use App\Modules\Scheduling\Enums\SessionType;
 use App\Modules\Scheduling\Models\Schedule;
 use App\Modules\Scheduling\Models\ScheduleAttachment;
 use App\Modules\Core\Services\MediaService;
-use App\Modules\Scheduling\Models\ScheduleReminder;
 use App\Modules\Scheduling\Models\OrgSchedulingSettings;
 use App\Modules\Core\Models\User;
 use Illuminate\Support\Facades\DB;

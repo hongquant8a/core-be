@@ -154,7 +154,7 @@ class TaskAssignmentItem extends TenantModel implements HasMedia, Remindable
     public function getReminderEventKey(?string $moment): string
     {
         return match ($moment) {
-            null    => NotificationEventEnum::DocumentIssued->value ?? 'task_reminder',
+            null    => NotificationEventEnum::DocumentIssued->value,
             'before'=> NotificationEventEnum::ReminderBefore->value,
             'on'    => NotificationEventEnum::ReminderOn->value,
             'after' => NotificationEventEnum::ReminderAfter->value,

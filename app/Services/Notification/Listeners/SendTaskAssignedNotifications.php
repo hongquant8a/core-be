@@ -24,7 +24,7 @@ class SendTaskAssignedNotifications implements ShouldQueue
             return;
         }
 
-        $channels = $this->resolveChannels($item, $organizationId);
+        [$channels, $instantReminders] = $this->resolveChannels($item, $organizationId);
         if (empty($channels)) {
             return;
         }
@@ -39,28 +39,39 @@ class SendTaskAssignedNotifications implements ShouldQueue
             builder: $builder,
             organizationId: $organizationId,
         );
+
+        // Mark instant CUSTOM reminders fired SAU khi dispatch xong.
+        // Nếu không mark, cron sẽ bắn lại reminder với getReminderEventKey(null) = 'document_issued' — sai event.
+        if ($instantReminders->isNotEmpty()) {
+            $instantReminders->each(fn ($r) => $r->update(['status' => 'fired', 'fired_at' => now()]));
+        }
     }
 
     private function resolveChannels(\App\Modules\TaskAssignment\Models\TaskAssignmentItem $item, int $organizationId): array
     {
         // Per-record: kiểm tra item.reminders có reminder_type=instant không.
-        $perRecord = $item->reminders()
+        $instantReminders = $item->reminders()
             ->where('reminder_type', 'instant')
             ->where('status', 'active')
-            ->value('channels');
-        if (! empty($perRecord)) {
-            return $perRecord;
+            ->get();
+
+        if ($instantReminders->isNotEmpty()) {
+            $channels = $instantReminders->first()->channels ?? [];
+            if (! empty($channels)) {
+                return [array_map('strtolower', $channels), $instantReminders];
+            }
         }
+
         $config = NotificationEventConfig::with('schedules')
             ->where('module_key', NotificationModuleEnum::TaskAssignment->value)
             ->where('organization_id', $organizationId)
             ->where('event_key', 'task_assigned')
             ->first();
         if (! $config || ! $config->enabled) {
-            return [];
+            return [[], collect()];
         }
         $instant = $config->schedules->firstWhere('moment', null);
 
-        return $instant?->channels ?? [];
+        return [$instant?->channels ?? [], collect()];
     }
 }

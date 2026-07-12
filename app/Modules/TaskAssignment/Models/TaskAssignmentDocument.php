@@ -53,11 +53,6 @@ class TaskAssignmentDocument extends TenantModel implements HasMedia
         return $this->hasMany(TaskAssignmentItem::class, 'task_assignment_document_id');
     }
 
-    public function reminders()
-    {
-        return $this->hasMany(TaskAssignmentReminder::class, 'task_assignment_document_id');
-    }
-
     public function attachments()
     {
         return $this->hasMany(TaskAssignmentDocumentAttachment::class, 'task_assignment_document_id');
