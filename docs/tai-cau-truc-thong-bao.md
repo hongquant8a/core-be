@@ -543,6 +543,12 @@ class ProcessRemindersCommand extends Command
 
 ### 3.6 Thống nhất cơ chế kích hoạt Event — tất cả dùng Observer
 
+> ⚠️ CẬP NHẬT (đã triển khai khác kế hoạch): Phần 3.6 và Phase 3 bên dưới mô tả phương án
+> "đưa dispatch event vào Observer". Phương án cuối cùng **KHÔNG làm vậy** — theo quy ước
+> Event-Driven trong `CLAUDE.md`, **event vẫn fire trong Service** (`MeetingService`,
+> `ScheduleService`), còn Observer chỉ lo lập lịch reminder (`ReminderScheduler->scheduleFor()`).
+> Đọc phần dưới như bối cảnh thiết kế ban đầu, không phải hiện trạng code.
+
 #### TaskAssignment — chuyển từ Service sang Observer
 
 ```php
