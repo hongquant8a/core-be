@@ -38,9 +38,9 @@ class ProcessRemindersCommand extends Command
         // NGOẠI TRỪ Meeting: instant reminder của Meeting được handle bởi
         // SendMeetingPublishedNotifications listener ngay khi meeting published.
         // Nếu cron chạy lại sẽ dùng sai flow (resolveReminderRecipients thay vì invitations).
-        // Dùng getMorphClass() — khi enforceMorphMap bật, DB lưu alias 'meeting' chứ không phải FQCN.
-        // So sánh với Meeting::class luôn true (alias != FQCN) → guard vô hiệu → gửi trùng.
-        $meetingMorphAlias = \App\Modules\Meeting\Models\Meeting::getMorphClass();
+        // enforceMorphMap đăng ký 'meeting' => Meeting::class, DB lưu alias chứ không phải FQCN.
+        // Dùng alias trực tiếp — getMorphClass() là instance method, không gọi static được (PHP 8.x fatal).
+        $meetingMorphAlias = 'meeting';
         Reminder::with(['remindable'])
             ->where('status', 'active')
             ->where('reminder_type', 'instant')
