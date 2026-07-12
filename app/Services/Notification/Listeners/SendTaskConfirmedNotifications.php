@@ -11,6 +11,9 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 
 class SendTaskConfirmedNotifications implements ShouldQueue
 {
+    /** Đẩy vào queue tier `notifications` (Horizon supervisor riêng), không dồn vào `default`. */
+    public $queue = 'notifications';
+
     public function __construct(
         private NotificationDispatcher $dispatcher,
         private ContentBuilderRegistry $registry,

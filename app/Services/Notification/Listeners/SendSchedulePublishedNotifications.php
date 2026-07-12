@@ -12,6 +12,9 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 
 class SendSchedulePublishedNotifications implements ShouldQueue
 {
+    /** Đẩy vào queue tier `notifications` (Horizon supervisor riêng), không dồn vào `default`. */
+    public $queue = 'notifications';
+
     public function __construct(
         protected NotificationDispatcher $dispatcher,
         protected ContentBuilderRegistry $registry,
