@@ -245,6 +245,8 @@ class TaskAssignmentItemService
 
     public function changeStatus(TaskAssignmentItem $item, string $status): TaskAssignmentItem
     {
+        $prevStatus = $item->processing_status;
+
         $data = $this->buildStatusUpdateData($status);
 
         // Reopen from done/pending_approval -> clear completed_at
@@ -254,6 +256,10 @@ class TaskAssignmentItemService
         }
 
         $item->update($data);
+
+        if ($status === TaskProgressStatusEnum::Done->value && $prevStatus !== TaskProgressStatusEnum::Done->value) {
+            event(new \App\Services\Notification\Events\TaskConfirmed($item->fresh()));
+        }
 
         return $item->load(['document.type', 'document.attachments.media', 'document.creator.media', 'document.editor.media', 'itemType', 'users', 'creator.media', 'editor.media']);
     }
@@ -312,6 +318,10 @@ class TaskAssignmentItemService
 
         $item->save();
 
+        if ((int) ($item->completion_percent ?? 0) >= 100) {
+            event(new \App\Services\Notification\Events\TaskCompleted($item));
+        }
+
         return $item->load(['document.type', 'document.attachments.media', 'document.creator.media', 'document.editor.media', 'itemType', 'users', 'creator.media', 'editor.media']);
     }
 
@@ -358,6 +368,10 @@ class TaskAssignmentItemService
             'approved_by' => auth()->id(),
             'rejection_reason' => null,
         ]);
+
+        // Cả hai event đều cần fire: TaskConfirmed (status→done) + TaskCompleted (percent=100).
+        event(new \App\Services\Notification\Events\TaskConfirmed($item->fresh()));
+        event(new \App\Services\Notification\Events\TaskCompleted($item));
 
         return $item->load(['document.type', 'document.attachments.media', 'document.creator.media', 'document.editor.media', 'itemType', 'users', 'creator.media', 'editor.media']);
     }

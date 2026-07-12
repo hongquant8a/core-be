@@ -12,8 +12,6 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 
 class SendSchedulePublishedNotifications implements ShouldQueue
 {
-    public $afterCommit = true;
-
     public function __construct(
         protected NotificationDispatcher $dispatcher,
         protected ContentBuilderRegistry $registry,

@@ -4,6 +4,7 @@ namespace App\Services\Notification\Events;
 
 use App\Modules\Core\Models\User;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
+use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 
 /**
  * Phát khi 1 user mới được giao 1 task (item) trong văn bản đã ban hành.
@@ -15,7 +16,7 @@ use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
  *
  * KHÔNG phát khi document còn draft — đợi DocumentIssued cover.
  */
-class TaskAssigned
+class TaskAssigned implements ShouldDispatchAfterCommit
 {
     public function __construct(public TaskAssignmentItem $item, public User $user) {}
 }

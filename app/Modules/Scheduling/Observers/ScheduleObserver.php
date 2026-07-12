@@ -35,27 +35,17 @@ class ScheduleObserver
         // 1. Transition: Draft -> Published
         if ($isPublishedNow && (!$wasPublishedBefore || $schedule->wasRecentlyCreated)) {
             $this->scheduler->scheduleFor($schedule);
-            Event::dispatch(new SchedulePublished($schedule));
             return;
         }
 
         // 2. Already published, but key fields changed
         if ($isPublishedNow && $wasPublishedBefore) {
-            $changedFields = array_filter(
-                self::NOTIFY_FIELDS,
-                fn ($f) => $schedule->wasChanged($f)
-            );
-
-            if (!empty($changedFields)) {
-                Event::dispatch(new ScheduleUpdated($schedule, array_values($changedFields)));
-            }
             return;
         }
 
         // 3. Transition: Published -> Draft/Pending/Cancelled/etc. (Unpublished)
         if (!$isPublishedNow && $wasPublishedBefore) {
             $this->scheduler->cancelPending($schedule);
-            Event::dispatch(new ScheduleCancelled($schedule));
             return;
         }
     }
@@ -65,9 +55,7 @@ class ScheduleObserver
         $originalStatus = $schedule->getOriginal('status');
         $originalStatusVal = $originalStatus instanceof ScheduleStatus ? $originalStatus->value : (int)$originalStatus;
 
-        if ($originalStatusVal === ScheduleStatus::PUBLISHED->value) {
-            Event::dispatch(new ScheduleCancelled($schedule));
-        } else {
+        if ($originalStatusVal !== ScheduleStatus::PUBLISHED->value) {
             $this->scheduler->cancelPending($schedule);
         }
     }

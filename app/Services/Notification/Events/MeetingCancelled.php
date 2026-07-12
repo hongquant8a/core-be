@@ -3,6 +3,7 @@
 namespace App\Services\Notification\Events;
 
 use App\Modules\Meeting\Models\Meeting;
+use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 
 /**
  * Meeting bị hủy (status chuyển từ `published` → `cancelled`).
@@ -12,7 +13,7 @@ use App\Modules\Meeting\Models\Meeting;
  *
  * KHÔNG bắn khi chuyển từ draft → cancelled (chưa publish thì chưa ai biết).
  */
-class MeetingCancelled
+class MeetingCancelled implements ShouldDispatchAfterCommit
 {
     public function __construct(public Meeting $meeting) {}
 }

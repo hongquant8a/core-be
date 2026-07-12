@@ -3,9 +3,10 @@
 namespace App\Services\Notification\Events;
 
 use App\Modules\Scheduling\Models\Schedule;
+use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Queue\SerializesModels;
 
-class ScheduleCancelled
+class ScheduleCancelled implements ShouldDispatchAfterCommit
 {
     use SerializesModels;
 

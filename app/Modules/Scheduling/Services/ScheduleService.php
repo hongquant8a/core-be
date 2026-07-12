@@ -258,6 +258,9 @@ class ScheduleService
                         $this->uploadAttachment($schedule, $file, $index, $customName, $storedFiles);
                     }
                 }
+                if ($schedule->status === ScheduleStatus::PUBLISHED->value) {
+                    \Illuminate\Support\Facades\Event::dispatch(new \App\Services\Notification\Events\SchedulePublished($schedule));
+                }
 
                 return $this->show($schedule);
             });
@@ -299,7 +302,29 @@ class ScheduleService
                     }
                 }
 
+                $wasPublishedBefore = $schedule->status instanceof ScheduleStatus ? $schedule->status === ScheduleStatus::PUBLISHED : (int)$schedule->status === ScheduleStatus::PUBLISHED->value;
+
                 $schedule->update($data);
+
+                $isPublishedNow = $schedule->status instanceof ScheduleStatus ? $schedule->status === ScheduleStatus::PUBLISHED : (int)$schedule->status === ScheduleStatus::PUBLISHED->value;
+
+                if ($isPublishedNow && !$wasPublishedBefore) {
+                    \Illuminate\Support\Facades\Event::dispatch(new \App\Services\Notification\Events\SchedulePublished($schedule));
+                }
+
+                if ($isPublishedNow && $wasPublishedBefore) {
+                    $changedFields = array_filter(
+                        ['content', 'date_time', 'location'],
+                        fn ($f) => $schedule->wasChanged($f)
+                    );
+                    if (!empty($changedFields)) {
+                        \Illuminate\Support\Facades\Event::dispatch(new \App\Services\Notification\Events\ScheduleUpdated($schedule, array_values($changedFields)));
+                    }
+                }
+
+                if (!$isPublishedNow && $wasPublishedBefore) {
+                    \Illuminate\Support\Facades\Event::dispatch(new \App\Services\Notification\Events\ScheduleCancelled($schedule));
+                }
 
                 if ($participants !== null) {
                     $this->syncRecipients($schedule, $participants);
@@ -363,7 +388,11 @@ class ScheduleService
      */
     public function destroy(Schedule $schedule): void
     {
+        $wasPublishedBefore = $schedule->status instanceof ScheduleStatus ? $schedule->status === ScheduleStatus::PUBLISHED : (int)$schedule->status === ScheduleStatus::PUBLISHED->value;
         $schedule->delete();
+        if ($wasPublishedBefore) {
+            \Illuminate\Support\Facades\Event::dispatch(new \App\Services\Notification\Events\ScheduleCancelled($schedule));
+        }
     }
 
     public function bulkDestroy(array $ids): void
@@ -414,7 +443,15 @@ class ScheduleService
             $updateData['approval_status'] = null;
         }
 
+        $wasPublishedBefore = $schedule->status instanceof ScheduleStatus ? $schedule->status === ScheduleStatus::PUBLISHED : (int)$schedule->status === ScheduleStatus::PUBLISHED->value;
+
         $schedule->update($updateData);
+
+        if ($statusInt === ScheduleStatus::PUBLISHED->value && !$wasPublishedBefore) {
+            \Illuminate\Support\Facades\Event::dispatch(new \App\Services\Notification\Events\SchedulePublished($schedule));
+        } elseif ($statusInt === ScheduleStatus::DRAFT->value && $wasPublishedBefore) {
+            \Illuminate\Support\Facades\Event::dispatch(new \App\Services\Notification\Events\ScheduleCancelled($schedule));
+        }
 
         return $this->show($schedule->fresh());
     }

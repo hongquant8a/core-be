@@ -442,9 +442,21 @@ class MeetingService
         $storedFiles = [];
         try {
             return DB::transaction(function () use ($meeting, $validated, $projectorImage, $guests, $reminders, &$storedFiles) {
+                $wasPublished = $meeting->status === MeetingStatusEnum::Published->value;
                 $removeProjector = (bool) ($validated['remove_projector_image'] ?? false);
                 unset($validated['remove_projector_image']);
                 $meeting->update($validated);
+
+                if ($wasPublished) {
+                    $changedNotifyFields = array_filter(
+                        ['title', 'start_time', 'end_time', 'meeting_location_id', 'content'],
+                        fn ($f) => $meeting->wasChanged($f),
+                    );
+
+                    if (! empty($changedNotifyFields)) {
+                        Event::dispatch(new \App\Services\Notification\Events\MeetingUpdated($meeting, array_values($changedNotifyFields)));
+                    }
+                }
 
                 // Xóa ảnh cũ nếu remove flag bật hoặc upload mới (replace).
                 if (($removeProjector || $projectorImage) && $meeting->projector_image_media_id) {
@@ -651,6 +663,14 @@ class MeetingService
                         ->whereIn('status', ['sent', 'failed'])
                         ->update(['status' => 'pending', 'sent_at' => null]);
                 }
+            }
+
+            if ($status === MeetingStatusEnum::Published->value && $previous !== MeetingStatusEnum::Published->value) {
+                Event::dispatch(new \App\Services\Notification\Events\MeetingPublished($meeting));
+            }
+
+            if ($status === MeetingStatusEnum::Cancelled->value && $previous === MeetingStatusEnum::Published->value) {
+                Event::dispatch(new \App\Services\Notification\Events\MeetingCancelled($meeting));
             }
         });
 
