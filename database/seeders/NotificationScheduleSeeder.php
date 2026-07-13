@@ -179,8 +179,30 @@ class NotificationScheduleSeeder extends Seeder
             $schedule->save();
         }
 
-        // Reminder (schedule_reminder): không tạo NotificationSchedule.
-        // Lịch reminder dùng channels lưu trực tiếp trên ScheduleReminder,
-        // không qua NotificationEventConfig → NotificationSchedule.
+        // Reminder PRESET: trước 1 ngày + 30 phút, đúng giờ.
+        // Channels mặc định [] — admin tự bật qua UI.
+        $reminderDefaults = [
+            NotificationEventEnum::ScheduleReminderBefore->value => [
+                ['moment' => 'before', 'offset_minutes' => 1440, 'label' => 'Nhắc trước 1 ngày',   'sort_order' => 1],
+                ['moment' => 'before', 'offset_minutes' => 30,   'label' => 'Nhắc trước 30 phút', 'sort_order' => 2],
+            ],
+            NotificationEventEnum::ScheduleReminderOn->value => [
+                ['moment' => 'on', 'offset_minutes' => null, 'label' => 'Đến giờ lịch', 'sort_order' => 1],
+            ],
+        ];
+
+        foreach ($reminderDefaults as $eventKey => $schedules) {
+            $reminderConfigs = NotificationEventConfig::where('module_key', $moduleKey)
+                ->where('event_key', $eventKey)
+                ->get();
+            foreach ($reminderConfigs as $config) {
+                foreach ($schedules as $s) {
+                    NotificationSchedule::firstOrCreate(
+                        ['notification_event_config_id' => $config->id, 'moment' => $s['moment'], 'offset_minutes' => $s['offset_minutes']],
+                        ['channels' => [], 'label' => $s['label'], 'sort_order' => $s['sort_order']]
+                    );
+                }
+            }
+        }
     }
 }

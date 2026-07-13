@@ -118,12 +118,21 @@ class Schedule extends TenantModel implements Remindable
 
     public function getReminderEventKeys(): array
     {
-        return [NotificationEventEnum::ScheduleReminder->value]; // ['schedule_reminder']
+        return [
+            NotificationEventEnum::ScheduleReminderBefore->value,
+            NotificationEventEnum::ScheduleReminderOn->value,
+            NotificationEventEnum::ScheduleReminderAfter->value,
+        ];
     }
 
     public function getReminderEventKey(?string $moment): string
     {
-        return NotificationEventEnum::ScheduleReminder->value; // không phân biệt before/on/after
+        return match ($moment) {
+            'before' => NotificationEventEnum::ScheduleReminderBefore->value,
+            'on'     => NotificationEventEnum::ScheduleReminderOn->value,
+            'after'  => NotificationEventEnum::ScheduleReminderAfter->value,
+            default  => NotificationEventEnum::ScheduleReminderBefore->value,
+        };
     }
 
     public function resolveReminderRecipients(): Collection
