@@ -53,8 +53,8 @@ jobs:
 
       - name: Set permissions
         run: |
-          chmod -R 775 /www/wwwroot/danatec-test.theworkpc.com/backend/storage
-          chmod -R 775 /www/wwwroot/danatec-test.theworkpc.com/backend/bootstrap/cache
+          chmod -R 775 /www/wwwroot/danatec-test.theworkpc.com/backend/storage || true
+          chmod -R 775 /www/wwwroot/danatec-test.theworkpc.com/backend/bootstrap/cache || true
 
       - name: Gửi thông báo Telegram 📩
         if: always()
