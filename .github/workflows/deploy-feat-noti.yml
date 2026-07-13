@@ -1,0 +1,58 @@
+name: Deploy (feat/refactor-noti)
+
+on:
+  push:
+    branches: [feat/refactor-noti]
+
+jobs:
+  deploy:
+    name: Deploy danatec-test backend
+    runs-on: self-hosted
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create deployment dirs
+        run: |
+          mkdir -p /www/wwwroot/danatec-test.theworkpc.com/backend
+
+      - name: Sync code to backend directory
+        run: |
+          rsync -av --delete \
+            --exclude '.env' \
+            --exclude 'vendor/' \
+            --exclude 'node_modules/' \
+            --exclude '.github/' \
+            --exclude 'storage/logs/*' \
+            --exclude 'storage/framework/cache/data/*' \
+            --exclude 'storage/framework/sessions/*' \
+            --exclude 'storage/framework/views/*' \
+            ./ \
+            /www/wwwroot/danatec-test.theworkpc.com/backend/
+
+      - name: Composer install
+        working-directory: /www/wwwroot/danatec-test.theworkpc.com/backend
+        run: |
+          composer install --no-dev --optimize-autoloader
+
+      - name: Run migrations
+        working-directory: /www/wwwroot/danatec-test.theworkpc.com/backend
+        run: |
+          php artisan migrate --force
+
+      - name: Optimize
+        working-directory: /www/wwwroot/danatec-test.theworkpc.com/backend
+        run: |
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+          php artisan event:cache
+
+      - name: Set permissions
+        run: |
+          chmod -R 775 /www/wwwroot/danatec-test.theworkpc.com/backend/storage
+          chmod -R 775 /www/wwwroot/danatec-test.theworkpc.com/backend/bootstrap/cache
