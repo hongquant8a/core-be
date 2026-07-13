@@ -101,22 +101,9 @@ class Schedule extends TenantModel implements Remindable
 
     public function getReminderDeadline(): ?Carbon
     {
-        // date_time + session (S=07:30, C=13:30, T=19:30)
-        if (!$this->date_time) return null;
-
-        $dateStr = Carbon::parse($this->date_time)->format('Y-m-d');
-        $sessionVal = $this->session instanceof SessionType
-            ? $this->session->value
-            : $this->session;
-
-        $timeStr = match ($sessionVal) {
-            'S'     => '07:30:00',
-            'C'     => '13:30:00',
-            'T'     => '19:30:00',
-            default => '08:00:00',
-        };
-
-        return Carbon::parse("{$dateStr} {$timeStr}");
+        // Dùng date_time trực tiếp — đã là datetime đầy đủ (cast 'datetime').
+        // Không override giờ bằng slot buổi: lịch 10:00 sáng, remind before 30' → 09:30, không phải 07:00.
+        return $this->date_time ? Carbon::parse($this->date_time) : null;
     }
 
     public function getReminderOrganizationId(): int

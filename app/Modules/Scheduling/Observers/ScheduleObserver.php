@@ -38,8 +38,12 @@ class ScheduleObserver
             return;
         }
 
-        // 2. Already published, but key fields changed
+        // 2. Already published + key fields changed → reschedule nếu date_time đổi
         if ($isPublishedNow && $wasPublishedBefore) {
+            if ($schedule->wasChanged('date_time')) {
+                // date_time đổi → deadline mới → tính lại remind_at cho tất cả reminders
+                $this->scheduler->scheduleFor($schedule);
+            }
             return;
         }
 
