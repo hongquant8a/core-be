@@ -21,10 +21,9 @@ jobs:
           # URL kèm token để clone/fetch repo private; không lưu token vào .git/config
           AUTH_URL="https://x-access-token:${GH_TOKEN}@github.com/hongquant8a/core-be.git"
           CLEAN_URL="https://github.com/hongquant8a/core-be.git"
-          RUNNER_OWNER="$(id -un):$(id -gn)"
-          sudo mkdir -p "$DIR"
-          # Giành lại quyền cho user runner (thư mục có thể đang thuộc www từ lần deploy trước)
-          sudo chown -R "$RUNNER_OWNER" "$DIR"
+          mkdir -p "$DIR"
+          # Thư mục có thể đang thuộc www từ lần deploy trước -> giành lại quyền cho user runner (webserver)
+          sudo chown -R "$(id -un):$(id -gn)" "$DIR"
           cd "$DIR"
           # Lần đầu chuyển từ rsync sang git: khởi tạo repo tại chỗ, KHÔNG xóa thư mục
           # để giữ nguyên .env, storage (uploads/logs), vendor đã có sẵn trên server.
