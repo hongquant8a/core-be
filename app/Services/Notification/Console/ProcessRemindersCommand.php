@@ -35,17 +35,10 @@ class ProcessRemindersCommand extends Command
 
         // 2. Instant CUSTOM reminders: status='active', remind_at=null
         // Đây là loại reminder do user tự cấu hình per-record, không do PRESET config sinh ra.
-        // NGOẠI TRỪ Meeting: instant reminder của Meeting được handle bởi
-        // SendMeetingPublishedNotifications listener ngay khi meeting published.
-        // Nếu cron chạy lại sẽ dùng sai flow (resolveReminderRecipients thay vì invitations).
-        // enforceMorphMap đăng ký 'meeting' => Meeting::class, DB lưu alias chứ không phải FQCN.
-        // Dùng alias trực tiếp — getMorphClass() là instance method, không gọi static được (PHP 8.x fatal).
-        $meetingMorphAlias = 'meeting';
         Reminder::with(['remindable'])
             ->where('status', 'active')
             ->where('reminder_type', 'instant')
             ->whereNull('remind_at')
-            ->where('remindable_type', '!=', $meetingMorphAlias)
             ->chunkById(100, function (Collection $reminders) use ($dispatcher, $registry, $notifier, &$count) {
                 foreach ($reminders as $reminder) {
                     $this->fire($reminder, $dispatcher, $registry, $notifier);

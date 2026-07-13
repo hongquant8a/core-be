@@ -32,6 +32,7 @@ class ReminderScheduler
         NotificationEventConfig::with('schedules')
             ->where('module_key', $remindable->getReminderModuleKey())
             ->where('organization_id', $organizationId)
+            ->where('enabled', 1)
             ->whereIn('event_key', $remindable->getReminderEventKeys())
             ->get()
             ->each(function (NotificationEventConfig $config) use ($remindable, $deadline, $organizationId) {

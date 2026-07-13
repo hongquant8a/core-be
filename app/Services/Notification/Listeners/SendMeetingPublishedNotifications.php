@@ -37,7 +37,7 @@ class SendMeetingPublishedNotifications implements ShouldQueue
             return;
         }
 
-        [$channels, $instantReminders] = $this->resolveChannels($meeting, $organizationId);
+        $channels = $this->resolveChannels($meeting, $organizationId);
         if (empty($channels)) {
             return;
         }
@@ -96,11 +96,6 @@ class SendMeetingPublishedNotifications implements ShouldQueue
                 $invitation->update(['status' => 'failed', 'error_message' => $e->getMessage()]);
             }
         }
-
-        // Mark instant CUSTOM reminders fired SAU khi đã dispatch xong.
-        if ($instantReminders->isNotEmpty()) {
-            $instantReminders->each(fn ($r) => $r->update(['status' => 'fired', 'fired_at' => now()]));
-        }
     }
 
     /**
@@ -149,35 +144,20 @@ class SendMeetingPublishedNotifications implements ShouldQueue
         }
     }
 
-    /**
-     * Trả về [channels, instantReminders] để mark fired SAU khi dispatch.
-     */
     private function resolveChannels(Meeting $meeting, int $organizationId): array
     {
-        // Per-record: kiểm tra meeting.reminders có reminder_type=instant không.
-        $instantReminders = $meeting->reminders()
-            ->where('reminder_type', 'instant')
-            ->where('status', 'active')
-            ->get();
-
-        if ($instantReminders->isNotEmpty()) {
-            $channels = $instantReminders->first()->channels ?? [];
-            if (! empty($channels)) {
-                // Trả về cả reminders để caller mark fired sau khi dispatch.
-                return [array_map('strtolower', $channels), $instantReminders];
-            }
-        }
-
         $config = NotificationEventConfig::with('schedules')
             ->where('module_key', NotificationModuleEnum::Meeting->value)
             ->where('organization_id', $organizationId)
             ->where('event_key', 'meeting_published')
             ->first();
+            
         if (! $config || ! $config->enabled) {
-            return [[], collect()];
+            return [];
         }
+        
         $instant = $config->schedules->firstWhere('moment', null);
 
-        return [$instant?->channels ?? [], collect()];
+        return $instant?->channels ?? [];
     }
 }

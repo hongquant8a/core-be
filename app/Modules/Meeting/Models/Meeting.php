@@ -284,6 +284,7 @@ class Meeting extends TenantModel implements HasMedia, Remindable
 
     public function resolveGuestReminderRecipients(): Collection
     {
+        $this->loadMissing('guests');
         return $this->guests ?? collect();
     }
 
