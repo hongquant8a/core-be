@@ -21,10 +21,8 @@ jobs:
           # URL kèm token để clone/fetch repo private; không lưu token vào .git/config
           AUTH_URL="https://x-access-token:${GH_TOKEN}@github.com/hongquant8a/core-be.git"
           CLEAN_URL="https://github.com/hongquant8a/core-be.git"
-          RUNNER_OWNER="$(id -un):$(id -gn)"
-          sudo mkdir -p "$DIR"
-          # Giành lại quyền cho user runner (thư mục có thể đang thuộc www từ lần deploy trước)
-          sudo chown -R "$RUNNER_OWNER" "$DIR"
+          # Runner chạy bằng user webserver và đã sở hữu thư mục deploy -> không cần sudo
+          mkdir -p "$DIR"
           cd "$DIR"
           # Lần đầu chuyển từ rsync sang git: khởi tạo repo tại chỗ, KHÔNG xóa thư mục
           # để giữ nguyên .env, storage (uploads/logs), vendor đã có sẵn trên server.
@@ -55,9 +53,8 @@ jobs:
           php artisan view:cache
           php artisan event:cache
 
-      - name: Set ownership + permissions
+      - name: Set permissions
         run: |
-          sudo chown -R www:www /www/wwwroot/xuanphu.theworkpc.com/backend/
           sudo chmod -R 775 /www/wwwroot/xuanphu.theworkpc.com/backend/storage || true
           sudo chmod -R 775 /www/wwwroot/xuanphu.theworkpc.com/backend/bootstrap/cache || true
 
