@@ -622,8 +622,17 @@ class ScheduleService
                 }
                 $rawOffset = (int) ($r['offset_minutes'] ?? 0);
 
-                // Không tự tính remind_at ở đây — để null và giao cho ReminderScheduler::scheduleFor()
-                // (gọi qua ScheduleObserver sau khi save). Tránh 2 nguồn tính với công thức có thể lệch.
+                // Tính remind_at ngay tại đây vì syncReminders chạy SAU Observer (scheduleFor đã qua).
+                // Reminder mới tạo cần remind_at được set — scheduleFor sẽ không thấy chúng nữa.
+                $remindAt = $schedule->date_time
+                    ? match ($moment) {
+                        \App\Modules\Scheduling\Enums\ReminderMomentEnum::Before->value => $rawOffset ? $schedule->date_time->copy()->subMinutes($rawOffset) : null,
+                        \App\Modules\Scheduling\Enums\ReminderMomentEnum::On->value     => $schedule->date_time->copy(),
+                        \App\Modules\Scheduling\Enums\ReminderMomentEnum::After->value  => $rawOffset ? $schedule->date_time->copy()->addMinutes($rawOffset) : null,
+                        default => null,
+                    }
+                    : null;
+
                 $attributes = [
                     'organization_id' => $orgId,
                     'reminder_type'   => 'scheduled',
@@ -632,7 +641,7 @@ class ScheduleService
                     'channels'        => $channels,
                     'source'          => 'CUSTOM',
                     'status'          => 'pending',
-                    'remind_at'       => null,
+                    'remind_at'       => $remindAt,
                 ];
             }
 
