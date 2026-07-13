@@ -13,31 +13,29 @@ jobs:
         shell: bash
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Create deployment dirs
+      - name: Deploy code using git pull
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          mkdir -p /www/wwwroot/xuanphu.theworkpc.com/backend
-
-      - name: Sync code to backend directory
-        run: |
-          rsync -rlv --delete \
-            --exclude '.env' \
-            --exclude 'vendor/' \
-            --exclude 'node_modules/' \
-            --exclude '.github/' \
-            --exclude '.git/' \
-            --exclude 'storage/' \
-            --exclude 'bootstrap/cache/' \
-            ./ \
-            /www/wwwroot/xuanphu.theworkpc.com/backend/
-
-      - name: Fix ownership
-        run: |
-          sudo chown -R www:www /www/wwwroot/xuanphu.theworkpc.com/backend/
-          sudo chmod -R 775 /www/wwwroot/xuanphu.theworkpc.com/backend/storage
-          sudo chmod -R 775 /www/wwwroot/xuanphu.theworkpc.com/backend/bootstrap/cache
+          DIR="/www/wwwroot/xuanphu.theworkpc.com/backend"
+          # URL kèm token để clone/fetch repo private; không lưu token vào .git/config
+          AUTH_URL="https://x-access-token:${GH_TOKEN}@github.com/hongquant8a/core-be.git"
+          CLEAN_URL="https://github.com/hongquant8a/core-be.git"
+          RUNNER_OWNER="$(id -un):$(id -gn)"
+          sudo mkdir -p "$DIR"
+          # Giành lại quyền cho user runner (thư mục có thể đang thuộc www từ lần deploy trước)
+          sudo chown -R "$RUNNER_OWNER" "$DIR"
+          cd "$DIR"
+          # Lần đầu chuyển từ rsync sang git: khởi tạo repo tại chỗ, KHÔNG xóa thư mục
+          # để giữ nguyên .env, storage (uploads/logs), vendor đã có sẵn trên server.
+          if [ ! -d "$DIR/.git" ]; then
+            git init -q
+            git remote add origin "$CLEAN_URL"
+          fi
+          git fetch "$AUTH_URL" main --depth 1
+          git reset --hard FETCH_HEAD
+          # git clean -fd KHÔNG xóa file gitignore (.env, /vendor, storage/* runtime) -> an toàn dữ liệu
+          git clean -fd
 
       - name: Composer install
         working-directory: /www/wwwroot/xuanphu.theworkpc.com/backend
@@ -57,8 +55,9 @@ jobs:
           php artisan view:cache
           php artisan event:cache
 
-      - name: Set permissions
+      - name: Set ownership + permissions
         run: |
+          sudo chown -R www:www /www/wwwroot/xuanphu.theworkpc.com/backend/
           sudo chmod -R 775 /www/wwwroot/xuanphu.theworkpc.com/backend/storage || true
           sudo chmod -R 775 /www/wwwroot/xuanphu.theworkpc.com/backend/bootstrap/cache || true
 
