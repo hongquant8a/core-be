@@ -33,6 +33,12 @@ jobs:
             ./ \
             /www/wwwroot/xuanphu.theworkpc.com/backend/
 
+      - name: Fix ownership
+        run: |
+          sudo chown -R www:www /www/wwwroot/xuanphu.theworkpc.com/backend/
+          sudo chmod -R 775 /www/wwwroot/xuanphu.theworkpc.com/backend/storage
+          sudo chmod -R 775 /www/wwwroot/xuanphu.theworkpc.com/backend/bootstrap/cache
+
       - name: Composer install
         working-directory: /www/wwwroot/xuanphu.theworkpc.com/backend
         run: |
@@ -53,8 +59,8 @@ jobs:
 
       - name: Set permissions
         run: |
-          chmod -R 775 /www/wwwroot/xuanphu.theworkpc.com/backend/storage || true
-          chmod -R 775 /www/wwwroot/xuanphu.theworkpc.com/backend/bootstrap/cache || true
+          sudo chmod -R 775 /www/wwwroot/xuanphu.theworkpc.com/backend/storage || true
+          sudo chmod -R 775 /www/wwwroot/xuanphu.theworkpc.com/backend/bootstrap/cache || true
 
       - name: Gửi thông báo Telegram 📩
         if: always()
