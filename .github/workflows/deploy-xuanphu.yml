@@ -22,7 +22,7 @@ jobs:
 
       - name: Sync code to backend directory
         run: |
-          rsync -av --delete --no-owner --no-group --no-perms \
+          rsync -rlv --delete \
             --exclude '.env' \
             --exclude 'vendor/' \
             --exclude 'node_modules/' \
