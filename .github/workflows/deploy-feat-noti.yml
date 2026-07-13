@@ -27,7 +27,9 @@ jobs:
             --exclude 'vendor/' \
             --exclude 'node_modules/' \
             --exclude '.github/' \
+            --exclude '.git/' \
             --exclude 'storage/' \
+            --exclude 'bootstrap/cache/' \
             ./ \
             /www/wwwroot/danatec-test.theworkpc.com/backend/
 
