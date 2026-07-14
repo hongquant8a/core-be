@@ -31,9 +31,14 @@ jobs:
             git init -q
             git remote add origin "$CLEAN_URL"
           fi
-          # -c credential.helper= : tắt credential helper của runner (đang chèn user/mật khẩu cũ
-          # đè lên token) để git dùng đúng token x-access-token trong AUTH_URL
-          git -c credential.helper= fetch "$AUTH_URL" feat/refactor-noti --depth 1
+          # Chẩn đoán: in TÊN các config auth kế thừa (không in giá trị/token) để lần sau dễ soi
+          git config --list --show-origin --name-only 2>/dev/null | grep -iE 'extraheader|credential|insteadof' || echo "khong co config auth ke thua"
+          # Xóa credential helper + extraHeader kế thừa từ config runner (một lần checkout/clone cũ
+          # để lại Authorization header với token đã hết hạn), buộc git dùng token trong AUTH_URL.
+          git -c credential.helper= \
+              -c http.extraHeader= \
+              -c 'http.https://github.com/.extraHeader=' \
+              fetch "$AUTH_URL" feat/refactor-noti --depth 1
           git reset --hard FETCH_HEAD
           # git clean -fd KHÔNG xóa file gitignore (.env, /vendor, storage/* runtime) -> an toàn dữ liệu
           git clean -fd
