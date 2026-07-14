@@ -107,7 +107,7 @@ class MeetingAttendeeService
                 $sub->select(DB::raw(1))
                     ->from('model_has_roles')
                     ->whereColumn('model_has_roles.model_id', 'users.id')
-                    ->where('model_has_roles.model_type', User::class)
+                    ->where('model_has_roles.model_type', (new User())->getMorphClass())
                     ->where('model_has_roles.organization_id', $orgId);
             })
             ->when($filters['search'] ?? null, function ($q, $search) {

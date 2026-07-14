@@ -210,7 +210,7 @@ class SimulateNotificationFlowCommand extends Command
                 // Xóa notifications polymorphic (không có FK cascade → phải xóa tay).
                 // Deliveries cascade theo notification FK nên không cần xóa riêng.
                 if ($createdIds['item']) {
-                    Notification::where('notifiable_type', TaskAssignmentItem::class)
+                    Notification::where('notifiable_type', (new TaskAssignmentItem())->getMorphClass())
                         ->where('notifiable_id', $createdIds['item'])
                         ->delete();
                     TaskAssignmentItem::find($createdIds['item'])?->delete();

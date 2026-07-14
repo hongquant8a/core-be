@@ -94,7 +94,7 @@ class UpdateMeetingRequest extends FormRequest
             }
             $hasAccess = \Illuminate\Support\Facades\DB::table('model_has_roles')
                 ->where('model_id', $value)
-                ->where('model_type', \App\Modules\Core\Models\User::class)
+                ->where('model_type', (new \App\Modules\Core\Models\User())->getMorphClass())
                 ->where('organization_id', $orgId)
                 ->exists();
             if (! $hasAccess) {

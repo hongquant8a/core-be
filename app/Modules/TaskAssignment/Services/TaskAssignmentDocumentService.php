@@ -207,7 +207,7 @@ class TaskAssignmentDocumentService
             return;
         }
 
-        $notificationIds = Notification::where('notifiable_type', TaskAssignmentItem::class)
+        $notificationIds = Notification::where('notifiable_type', (new TaskAssignmentItem())->getMorphClass())
             ->whereIn('notifiable_id', $itemIds)
             ->pluck('id')
             ->all();
@@ -294,7 +294,7 @@ class TaskAssignmentDocumentService
         }
 
         // 2. Cancel Notification + Delivery pending của items này
-        $notificationIds = Notification::where('notifiable_type', TaskAssignmentItem::class)
+        $notificationIds = Notification::where('notifiable_type', (new TaskAssignmentItem())->getMorphClass())
             ->whereIn('notifiable_id', $itemIds)
             ->pluck('id')
             ->all();

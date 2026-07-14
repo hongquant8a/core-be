@@ -57,14 +57,33 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Morph map bắt buộc — MỌI model tham gia quan hệ polymorphic phải khai báo ở đây.
+        // Áp cho: media.model_type (Spatie HasMedia), reminders.remindable_type,
+        // notifications.notifiable_type, model_has_roles.model_type (Spatie permission).
+        // Thiếu 1 alias → getMorphClass() ném ClassMorphViolationException → 500 khi ghi/đọc quan hệ đó.
+        // Quy ước alias: snake_case số ít của tên Model.
         Relation::enforceMorphMap([
-            'user'                    => \App\Modules\Core\Models\User::class,
-            'setting'                 => \App\Modules\Core\Models\Setting::class,
-            'task_assignment_item'    => \App\Modules\TaskAssignment\Models\TaskAssignmentItem::class,
-            'meeting'                 => \App\Modules\Meeting\Models\Meeting::class,
-            'schedule'                => \App\Modules\Scheduling\Models\Schedule::class,
-            'meeting_document'        => \App\Modules\Meeting\Models\MeetingDocument::class,
-            'reminder'                => \App\Models\Reminder::class,
+            // Core
+            'user'                          => \App\Modules\Core\Models\User::class,
+            'setting'                       => \App\Modules\Core\Models\Setting::class,
+            'reminder'                      => \App\Models\Reminder::class,
+
+            // Meeting
+            'meeting'                       => \App\Modules\Meeting\Models\Meeting::class,
+            'meeting_setting'               => \App\Modules\Meeting\Models\MeetingSetting::class,
+            'meeting_document'              => \App\Modules\Meeting\Models\MeetingDocument::class,
+            'meeting_discussion_registration' => \App\Modules\Meeting\Models\MeetingDiscussionRegistration::class,
+            'meeting_invitation_template'   => \App\Modules\Meeting\Models\MeetingInvitationTemplate::class,
+            'meeting_minutes_template'      => \App\Modules\Meeting\Models\MeetingMinutesTemplate::class,
+
+            // Scheduling
+            'schedule'                      => \App\Modules\Scheduling\Models\Schedule::class,
+
+            // TaskAssignment
+            'task_assignment_item'          => \App\Modules\TaskAssignment\Models\TaskAssignmentItem::class,
+            'task_assignment_item_report'   => \App\Modules\TaskAssignment\Models\TaskAssignmentItemReport::class,
+            'task_assignment_petition'      => \App\Modules\TaskAssignment\Models\TaskAssignmentPetition::class,
+            'task_assignment_document'      => \App\Modules\TaskAssignment\Models\TaskAssignmentDocument::class,
         ]);
 
         // Auto-create UserProfile mỗi khi tạo User.

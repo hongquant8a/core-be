@@ -223,7 +223,7 @@ class SimulateReminderTimingCommand extends Command
                 $this->newLine();
                 $this->info('Cleanup...');
                 if ($createdIds['item']) {
-                    Notification::where('notifiable_type', TaskAssignmentItem::class)
+                    Notification::where('notifiable_type', (new TaskAssignmentItem())->getMorphClass())
                         ->where('notifiable_id', $createdIds['item'])
                         ->delete();
                     TaskAssignmentItem::find($createdIds['item'])?->delete();
