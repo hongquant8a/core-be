@@ -13,6 +13,8 @@ use Throwable;
 
 class MailChannel implements NotificationChannel
 {
+    private static ?string $cachedConfigHash = null;
+
     public function __construct(private SettingService $settings) {}
 
     public function key(): string
@@ -53,6 +55,13 @@ class MailChannel implements NotificationChannel
                     'encryption' => $cfg['encryption'],
                 ],
             ]);
+
+            // Tối ưu: Chỉ purge (xoá cache bộ nhớ) nếu config thực sự bị đổi
+            $currentConfigHash = md5(serialize($cfg));
+            if (self::$cachedConfigHash !== $currentConfigHash) {
+                Mail::purge('notification_smtp');
+                self::$cachedConfigHash = $currentConfigHash;
+            }
 
             Mail::mailer('notification_smtp')
                 ->html($payload->content, function (Message $message) use ($recipient, $subject, $cfg) {
