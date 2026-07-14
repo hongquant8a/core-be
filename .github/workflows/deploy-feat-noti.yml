@@ -31,7 +31,9 @@ jobs:
             git init -q
             git remote add origin "$CLEAN_URL"
           fi
-          git fetch "$AUTH_URL" feat/refactor-noti --depth 1
+          # -c credential.helper= : tắt credential helper của runner (đang chèn user/mật khẩu cũ
+          # đè lên token) để git dùng đúng token x-access-token trong AUTH_URL
+          git -c credential.helper= fetch "$AUTH_URL" feat/refactor-noti --depth 1
           git reset --hard FETCH_HEAD
           # git clean -fd KHÔNG xóa file gitignore (.env, /vendor, storage/* runtime) -> an toàn dữ liệu
           git clean -fd
