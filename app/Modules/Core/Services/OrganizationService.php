@@ -63,14 +63,18 @@ class OrganizationService
     public function tree(?string $status)
     {
         $query = Organization::query()
+            ->with('editor')
             ->when($status, fn ($q, $value) => $q->where('status', $value));
         $items = $query->orderBy('sort_order')->orderBy('id')->get();
 
-        // Calculate user counts per organization
+        // Calculate user counts per organization.
+        // Join users để loại bỏ user đã bị xoá (mass delete qua bulkDestroy để lại
+        // orphan rows trong model_has_roles vì không fire model event của Spatie).
         $userCounts = \Illuminate\Support\Facades\DB::table('model_has_roles')
-            ->select('organization_id', \Illuminate\Support\Facades\DB::raw('count(distinct model_id) as count'))
-            ->where('model_type', \App\Modules\Core\Models\User::class)
-            ->groupBy('organization_id')
+            ->join('users', 'users.id', '=', 'model_has_roles.model_id')
+            ->select('model_has_roles.organization_id', \Illuminate\Support\Facades\DB::raw('count(distinct model_has_roles.model_id) as count'))
+            ->where('model_has_roles.model_type', \App\Modules\Core\Models\User::class)
+            ->groupBy('model_has_roles.organization_id')
             ->pluck('count', 'organization_id');
 
         // Append user_count to each item
