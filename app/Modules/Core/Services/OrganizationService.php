@@ -73,7 +73,7 @@ class OrganizationService
         $userCounts = \Illuminate\Support\Facades\DB::table('model_has_roles')
             ->join('users', 'users.id', '=', 'model_has_roles.model_id')
             ->select('model_has_roles.organization_id', \Illuminate\Support\Facades\DB::raw('count(distinct model_has_roles.model_id) as count'))
-            ->where('model_has_roles.model_type', \App\Modules\Core\Models\User::class)
+            ->where('model_has_roles.model_type', (new \App\Modules\Core\Models\User())->getMorphClass())
             ->groupBy('model_has_roles.organization_id')
             ->pluck('count', 'organization_id');
 

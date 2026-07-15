@@ -11,6 +11,9 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 
 class SendTaskAssignedNotifications implements ShouldQueue
 {
+    /** Đẩy vào queue tier `notifications` (Horizon supervisor riêng), không dồn vào `default`. */
+    public $queue = 'notifications';
+
     public function __construct(
         private NotificationDispatcher $dispatcher,
         private ContentBuilderRegistry $registry,
@@ -43,22 +46,16 @@ class SendTaskAssignedNotifications implements ShouldQueue
 
     private function resolveChannels(\App\Modules\TaskAssignment\Models\TaskAssignmentItem $item, int $organizationId): array
     {
-        // Per-record: kiểm tra item.reminders có reminder_type=instant không.
-        $perRecord = $item->reminders()
-            ->where('reminder_type', 'instant')
-            ->where('status', 'active')
-            ->value('channels');
-        if (! empty($perRecord)) {
-            return $perRecord;
-        }
         $config = NotificationEventConfig::with('schedules')
             ->where('module_key', NotificationModuleEnum::TaskAssignment->value)
             ->where('organization_id', $organizationId)
             ->where('event_key', 'task_assigned')
             ->first();
+            
         if (! $config || ! $config->enabled) {
             return [];
         }
+        
         $instant = $config->schedules->firstWhere('moment', null);
 
         return $instant?->channels ?? [];

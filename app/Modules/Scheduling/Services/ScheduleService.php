@@ -10,7 +10,6 @@ use App\Modules\Scheduling\Enums\SessionType;
 use App\Modules\Scheduling\Models\Schedule;
 use App\Modules\Scheduling\Models\ScheduleAttachment;
 use App\Modules\Core\Services\MediaService;
-use App\Modules\Scheduling\Models\ScheduleReminder;
 use App\Modules\Scheduling\Models\OrgSchedulingSettings;
 use App\Modules\Core\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -258,6 +257,9 @@ class ScheduleService
                         $this->uploadAttachment($schedule, $file, $index, $customName, $storedFiles);
                     }
                 }
+                if ($schedule->status === ScheduleStatus::PUBLISHED->value) {
+                    \Illuminate\Support\Facades\Event::dispatch(new \App\Services\Notification\Events\SchedulePublished($schedule));
+                }
 
                 return $this->show($schedule);
             });
@@ -299,7 +301,29 @@ class ScheduleService
                     }
                 }
 
+                $wasPublishedBefore = $schedule->status instanceof ScheduleStatus ? $schedule->status === ScheduleStatus::PUBLISHED : (int)$schedule->status === ScheduleStatus::PUBLISHED->value;
+
                 $schedule->update($data);
+
+                $isPublishedNow = $schedule->status instanceof ScheduleStatus ? $schedule->status === ScheduleStatus::PUBLISHED : (int)$schedule->status === ScheduleStatus::PUBLISHED->value;
+
+                if ($isPublishedNow && !$wasPublishedBefore) {
+                    \Illuminate\Support\Facades\Event::dispatch(new \App\Services\Notification\Events\SchedulePublished($schedule));
+                }
+
+                if ($isPublishedNow && $wasPublishedBefore) {
+                    $changedFields = array_filter(
+                        ['content', 'date_time', 'location'],
+                        fn ($f) => $schedule->wasChanged($f)
+                    );
+                    if (!empty($changedFields)) {
+                        \Illuminate\Support\Facades\Event::dispatch(new \App\Services\Notification\Events\ScheduleUpdated($schedule, array_values($changedFields)));
+                    }
+                }
+
+                if (!$isPublishedNow && $wasPublishedBefore) {
+                    \Illuminate\Support\Facades\Event::dispatch(new \App\Services\Notification\Events\ScheduleCancelled($schedule));
+                }
 
                 if ($participants !== null) {
                     $this->syncRecipients($schedule, $participants);
@@ -363,7 +387,11 @@ class ScheduleService
      */
     public function destroy(Schedule $schedule): void
     {
+        $wasPublishedBefore = $schedule->status instanceof ScheduleStatus ? $schedule->status === ScheduleStatus::PUBLISHED : (int)$schedule->status === ScheduleStatus::PUBLISHED->value;
         $schedule->delete();
+        if ($wasPublishedBefore) {
+            \Illuminate\Support\Facades\Event::dispatch(new \App\Services\Notification\Events\ScheduleCancelled($schedule));
+        }
     }
 
     public function bulkDestroy(array $ids): void
@@ -414,7 +442,15 @@ class ScheduleService
             $updateData['approval_status'] = null;
         }
 
+        $wasPublishedBefore = $schedule->status instanceof ScheduleStatus ? $schedule->status === ScheduleStatus::PUBLISHED : (int)$schedule->status === ScheduleStatus::PUBLISHED->value;
+
         $schedule->update($updateData);
+
+        if ($statusInt === ScheduleStatus::PUBLISHED->value && !$wasPublishedBefore) {
+            \Illuminate\Support\Facades\Event::dispatch(new \App\Services\Notification\Events\SchedulePublished($schedule));
+        } elseif ($statusInt === ScheduleStatus::DRAFT->value && $wasPublishedBefore) {
+            \Illuminate\Support\Facades\Event::dispatch(new \App\Services\Notification\Events\ScheduleCancelled($schedule));
+        }
 
         return $this->show($schedule->fresh());
     }
@@ -562,20 +598,22 @@ class ScheduleService
     private function syncReminders(Schedule $schedule, array $reminders): void
     {
         $keptIds = [];
+        $orgId   = (int) $schedule->organization_id;
+
         foreach ($reminders as $r) {
             $reminderType = $r['reminder_type'] ?? 'scheduled';
             $channels = array_values(array_unique(array_map('strtoupper', (array) ($r['channels'] ?? []))));
 
             if ($reminderType === 'instant') {
                 $attributes = [
-                    'schedule_id'    => $schedule->id,
-                    'reminder_type'  => 'instant',
-                    'moment'         => null,
-                    'offset_minutes' => 0,
-                    'channels'       => $channels,
-                    'source'         => 'CUSTOM',
-                    'status'         => 'active',
-                    'remind_at'      => null,
+                    'organization_id' => $orgId,
+                    'reminder_type'   => 'instant',
+                    'moment'          => null,
+                    'offset_minutes'  => 0,
+                    'channels'        => $channels,
+                    'source'          => 'CUSTOM',
+                    'status'          => 'active',
+                    'remind_at'       => null,
                 ];
             } else {
                 $moment = $r['moment'] ?? 'before';
@@ -584,33 +622,35 @@ class ScheduleService
                 }
                 $rawOffset = (int) ($r['offset_minutes'] ?? 0);
 
+                // Tính remind_at ngay tại đây vì syncReminders chạy SAU Observer (scheduleFor đã qua).
+                // Reminder mới tạo cần remind_at được set — scheduleFor sẽ không thấy chúng nữa.
                 $remindAt = $schedule->date_time
                     ? match ($moment) {
                         \App\Modules\Scheduling\Enums\ReminderMomentEnum::Before->value => $rawOffset ? $schedule->date_time->copy()->subMinutes($rawOffset) : null,
                         \App\Modules\Scheduling\Enums\ReminderMomentEnum::On->value     => $schedule->date_time->copy(),
                         \App\Modules\Scheduling\Enums\ReminderMomentEnum::After->value  => $rawOffset ? $schedule->date_time->copy()->addMinutes($rawOffset) : null,
-                        default  => null,
+                        default => null,
                     }
                     : null;
 
                 $attributes = [
-                    'schedule_id'    => $schedule->id,
-                    'reminder_type'  => 'scheduled',
-                    'moment'         => $moment,
-                    'offset_minutes' => $rawOffset,
-                    'channels'       => $channels,
-                    'source'         => 'CUSTOM',
-                    'status'         => 'pending',
-                    'remind_at'      => $remindAt,
+                    'organization_id' => $orgId,
+                    'reminder_type'   => 'scheduled',
+                    'moment'          => $moment,
+                    'offset_minutes'  => $rawOffset,
+                    'channels'        => $channels,
+                    'source'          => 'CUSTOM',
+                    'status'          => 'pending',
+                    'remind_at'       => $remindAt,
                 ];
             }
 
             if (! empty($r['id'])) {
-                $existing = \App\Modules\Scheduling\Models\ScheduleReminder::where('id', $r['id'])
-                    ->where('schedule_id', $schedule->id)
+                $existing = $schedule->reminders()
+                    ->where('id', $r['id'])
                     ->where('source', 'CUSTOM')
                     ->first();
-                
+
                 if ($existing) {
                     if ($existing->status !== 'pending') {
                         $attributes['status'] = $existing->status;
@@ -618,11 +658,11 @@ class ScheduleService
                     $existing->update($attributes);
                     $keptIds[] = $existing->id;
                 } else {
-                    $new = \App\Modules\Scheduling\Models\ScheduleReminder::create($attributes);
+                    $new = $schedule->reminders()->create($attributes);
                     $keptIds[] = $new->id;
                 }
             } else {
-                $new = \App\Modules\Scheduling\Models\ScheduleReminder::create($attributes);
+                $new = $schedule->reminders()->create($attributes);
                 $keptIds[] = $new->id;
             }
         }

@@ -35,7 +35,7 @@ class NotificationDispatcher
             'user_id' => $recipient->id,
             'organization_id' => $organizationId,
             'event_key' => $eventKey,
-            'notifiable_type' => get_class($notifiable),
+            'notifiable_type' => $notifiable->getMorphClass(),
             'notifiable_id' => $notifiable->getKey(),
             'title' => $builder->title($recipient, $notifiable, ...$extraArgs),
             'body' => $builder->shortBody($recipient, $notifiable, ...$extraArgs),

@@ -207,7 +207,7 @@ class TaskAssignmentDocumentService
             return;
         }
 
-        $notificationIds = Notification::where('notifiable_type', TaskAssignmentItem::class)
+        $notificationIds = Notification::where('notifiable_type', (new TaskAssignmentItem())->getMorphClass())
             ->whereIn('notifiable_id', $itemIds)
             ->pluck('id')
             ->all();
@@ -270,7 +270,7 @@ class TaskAssignmentDocumentService
             foreach ($document->items as $item) {
                 $this->reminderScheduler->scheduleFor($item);
             }
-            // event(new DocumentIssued($document->fresh()));
+            event(new DocumentIssued($document->fresh()));
         }
 
         return $document->load(['type', 'attachments.media', 'creator.media', 'editor.media']);
@@ -294,7 +294,7 @@ class TaskAssignmentDocumentService
         }
 
         // 2. Cancel Notification + Delivery pending của items này
-        $notificationIds = Notification::where('notifiable_type', TaskAssignmentItem::class)
+        $notificationIds = Notification::where('notifiable_type', (new TaskAssignmentItem())->getMorphClass())
             ->whereIn('notifiable_id', $itemIds)
             ->pluck('id')
             ->all();

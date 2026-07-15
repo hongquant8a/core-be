@@ -81,7 +81,7 @@ class SetPermissionsTeamId
         $teamForeignKey = $columnNames['team_foreign_key'] ?? 'organization_id';
         $modelHasRolesTable = $tableNames['model_has_roles'] ?? 'model_has_roles';
         $modelHasPermissionsTable = $tableNames['model_has_permissions'] ?? 'model_has_permissions';
-        $modelType = \App\Modules\Core\Models\User::class;
+        $modelType = (new \App\Modules\Core\Models\User)->getMorphClass();
 
         $hasRole = DB::table($modelHasRolesTable)
             ->where($modelMorphKey, $userId)

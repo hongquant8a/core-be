@@ -3,6 +3,7 @@
 namespace App\Services\Notification\Events;
 
 use App\Modules\Meeting\Models\Meeting;
+use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 
 /**
  * Meeting đã ban hành (status=published) bị cập nhật các trường quan trọng
@@ -11,7 +12,7 @@ use App\Modules\Meeting\Models\Meeting;
  *
  * @param  list<string>  $changedFields  Danh sách field đã đổi (cho diff content nếu cần).
  */
-class MeetingUpdated
+class MeetingUpdated implements ShouldDispatchAfterCommit
 {
     public function __construct(
         public Meeting $meeting,

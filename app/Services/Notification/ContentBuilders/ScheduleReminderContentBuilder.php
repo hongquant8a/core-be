@@ -14,6 +14,9 @@ use Illuminate\Support\Str;
 class ScheduleReminderContentBuilder implements ContentBuilder
 {
     use BuildZns;
+
+    public function __construct(private string $moment = 'before') {}
+
     public function build(string $channelKey, User $recipient, Model $notifiable, mixed ...$extraArgs): ?NotificationPayload
     {
         if (! $notifiable instanceof Schedule) {
@@ -21,28 +24,38 @@ class ScheduleReminderContentBuilder implements ContentBuilder
         }
 
         return match ($channelKey) {
-            'sms' => $this->toSms($recipient, $notifiable),
-            'mail' => $this->toMail($recipient, $notifiable),
-            'zalo' => $this->toZalo($recipient, $notifiable),
+            'sms'      => $this->toSms($recipient, $notifiable),
+            'mail'     => $this->toMail($recipient, $notifiable),
+            'zalo'     => $this->toZalo($recipient, $notifiable),
             'zalo_zns' => $this->buildZnsPayload($recipient, $notifiable),
-            'fcm' => $this->toFcm($recipient, $notifiable),
+            'fcm'      => $this->toFcm($recipient, $notifiable),
             'telegram' => $this->toTelegram($recipient, $notifiable),
-            default => null,
+            default    => null,
         };
     }
 
     public function title(User $recipient, Model $notifiable, mixed ...$extraArgs): string
     {
-        return 'Nhắc lịch công tác sắp diễn ra';
+        return match ($this->moment) {
+            'before' => 'Nhắc trước giờ lịch công tác',
+            'on'     => 'Đến giờ lịch công tác',
+            'after'  => 'Nhắc sau giờ lịch công tác',
+            default  => 'Nhắc lịch công tác',
+        };
     }
 
     public function shortBody(User $recipient, Model $notifiable, mixed ...$extraArgs): string
     {
-        if ($notifiable instanceof Schedule) {
-            return "Lịch sắp đến: {$notifiable->content}";
+        if (! $notifiable instanceof Schedule) {
+            return 'Nhắc lịch công tác.';
         }
 
-        return 'Nhắc lịch công tác sắp diễn ra.';
+        return match ($this->moment) {
+            'before' => "Sắp đến: {$notifiable->content}",
+            'on'     => "Bắt đầu ngay: {$notifiable->content}",
+            'after'  => "Đã qua: {$notifiable->content}",
+            default  => "Lịch sắp đến: {$notifiable->content}",
+        };
     }
 
     public function inAppContext(User $recipient, Model $notifiable, mixed ...$extraArgs): array

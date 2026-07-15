@@ -8,6 +8,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use App\Services\Notification\Contracts\Remindable;
+use App\Services\Notification\Enums\NotificationModuleEnum;
+use App\Services\Notification\Enums\NotificationEventEnum;
+use App\Models\Reminder;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Collection;
+use Carbon\Carbon;
 
 /**
  * @property bool $is_public
@@ -18,7 +25,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  * @property-read ?\App\Modules\Meeting\Models\MeetingAttendee $chairperson
  * @property-read ?\App\Modules\Meeting\Models\MeetingAttendee $operator
  */
-class Meeting extends TenantModel implements HasMedia
+class Meeting extends TenantModel implements HasMedia, Remindable
 {
     use HasFactory;
     use InteractsWithMedia;
@@ -222,10 +229,76 @@ class Meeting extends TenantModel implements HasMedia
         return $participant && $participant->attendance?->status === 'present';
     }
 
-    public function reminders()
+    // -- Bắt đầu implement Remindable --
+
+    public function getReminderDeadline(): ?Carbon
     {
-        return $this->hasMany(MeetingReminder::class, 'meeting_id');
+        return $this->start_time;
     }
+
+    public function getReminderOrganizationId(): int
+    {
+        return (int) $this->organization_id;
+    }
+
+    public function getReminderModuleKey(): string
+    {
+        return NotificationModuleEnum::Meeting->value; // 'meeting'
+    }
+
+    public function getReminderEventKeys(): array
+    {
+        return [
+            NotificationEventEnum::MeetingReminderBefore->value,
+            NotificationEventEnum::MeetingReminderOn->value,
+            NotificationEventEnum::MeetingReminderAfter->value,
+        ];
+    }
+
+    public function getReminderEventKey(?string $moment): string
+    {
+        // null = instant (do event publish handle, không qua cron)
+        return match ($moment) {
+            null    => 'meeting_published',
+            'before'=> NotificationEventEnum::MeetingReminderBefore->value,
+            'on'    => NotificationEventEnum::MeetingReminderOn->value,
+            'after' => NotificationEventEnum::MeetingReminderAfter->value,
+            default => "meeting_reminder_{$moment}",
+        };
+    }
+
+    public function resolveReminderRecipients(): Collection
+    {
+        $this->loadMissing(['participants.attendee', 'chairperson', 'operator']);
+
+        $userIds = $this->participants
+            ->pluck('attendee.user_id')
+            ->filter();
+
+        foreach ([$this->chairperson?->user_id, $this->operator?->user_id] as $id) {
+            if ($id) $userIds->push($id);
+        }
+
+        return User::whereIn('id', $userIds->unique())->get();
+    }
+
+    public function resolveGuestReminderRecipients(): Collection
+    {
+        $this->loadMissing('guests');
+        return $this->guests ?? collect();
+    }
+
+    public function isValidForReminder(): bool
+    {
+        return $this->status !== 'cancelled';
+    }
+
+    public function reminders(): MorphMany
+    {
+        return $this->morphMany(Reminder::class, 'remindable');
+    }
+
+    // -- Kết thúc implement Remindable --
 
     public function agendas()
     {

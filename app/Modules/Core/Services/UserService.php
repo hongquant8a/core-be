@@ -292,7 +292,7 @@ class UserService
 
         DB::table($modelHasRolesTable)
             ->where($modelMorphKey, $user->id)
-            ->where('model_type', User::class)
+            ->where('model_type', (new User())->getMorphClass())
             ->delete();
 
         if (empty($assignments)) {
@@ -305,7 +305,7 @@ class UserService
                 $rows[] = [
                     $teamForeignKey => (int) $organizationId,
                     $rolePivotKey => (int) $roleId,
-                    'model_type' => User::class,
+                    'model_type' => (new User())->getMorphClass(),
                     $modelMorphKey => $user->id,
                 ];
             }

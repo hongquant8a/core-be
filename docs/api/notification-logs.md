@@ -1,13 +1,22 @@
 # API Nhật ký gửi thông báo (Admin) – Core
 
-Xem lịch sử gửi thông báo toàn hệ thống: list, detail, stats. Dùng cho audit + dashboard.
+> Cập nhật lần cuối: 15:10:25 15/07/2026 — sửa path endpoint (thực tế scope theo module, không có endpoint `/api/notifications/logs` chung), bổ sung endpoint export/delete đã tồn tại trong code nhưng thiếu trong doc gốc.
+
+Xem lịch sử gửi thông báo **theo từng module** (`task-assignment`, `meeting`, `schedules`): list, detail, stats, export, xóa. Dùng cho audit + dashboard.
 
 **Auth:** Bearer token (Sanctum).
 **Permissions:**
 - `notifications.logs.index` — xem list + stats
 - `notifications.logs.show` — xem detail
+- `notifications.logs.export` — export
+- `notifications.logs.destroy` / `notifications.logs.bulkDestroy` — xóa 1 log / xóa hàng loạt
 
 Super Admin + Admin auto nhận.
+
+**Base path theo module** (dùng chung 1 `NotificationLogController`, không có endpoint gộp toàn hệ thống):
+- `/api/task-assignment/notification-config/logs`
+- `/api/meeting/notification-config/logs`
+- `/api/schedules/notification-config/logs`
 
 ---
 
@@ -16,7 +25,7 @@ Super Admin + Admin auto nhận.
 | | |
 |---|---|
 | **Method** | GET |
-| **Path** | `/api/notifications/logs` |
+| **Path** | `/api/{module}/notification-config/logs` (vd `/api/task-assignment/notification-config/logs`) |
 | **Permission** | `notifications.logs.index` |
 
 ### Query filters
@@ -24,14 +33,14 @@ Super Admin + Admin auto nhận.
 | Param | Type | Mô tả |
 |---|---|---|
 | `user_id` | int | Filter theo user nhận |
-| `event_key` | string | `document_issued`/`task_completed`/`task_confirmed`/`reminder_before`/`reminder_on`/`reminder_after` |
+| `event_key` | string | Tùy module — vd task_assignment: `task_assigned`/`document_issued`/`task_completed`/`task_confirmed`/`reminder_before`/`reminder_on`/`reminder_after` |
 | `notifiable_type` | string | Class name entity (vd `App\Modules\TaskAssignment\Models\TaskAssignmentItem`) |
 | `notifiable_id` | int | ID entity |
 | `from_date` | date | Lọc từ ngày (YYYY-MM-DD) |
 | `to_date` | date | Lọc đến ngày |
 | `search` | string | Match trong title/body |
 | `delivery_status` | string | `pending`/`sent`/`failed`/`skipped` — có ít nhất 1 delivery với status này |
-| `channel` | string | `sms`/`mail`/`zalo`/`fcm` — có ít nhất 1 delivery qua channel này |
+| `channel` | string | `sms`/`mail`/`zalo`/`zalo_zns`/`fcm`/`telegram` — có ít nhất 1 delivery qua channel này |
 | `limit` | int | Mỗi trang, default 20 |
 | `page` | int | Trang |
 
@@ -78,7 +87,7 @@ Order: `id DESC` (mới nhất trước).
 | | |
 |---|---|
 | **Method** | GET |
-| **Path** | `/api/notifications/logs/{id}` |
+| **Path** | `/api/{module}/notification-config/logs/{id}` |
 | **Permission** | `notifications.logs.show` |
 
 **Response:** giống 1 item trong list, kèm user relation + deliveries.
@@ -102,7 +111,7 @@ Order: `id DESC` (mới nhất trước).
 | | |
 |---|---|
 | **Method** | GET |
-| **Path** | `/api/notifications/logs/stats` |
+| **Path** | `/api/{module}/notification-config/logs/stats` |
 | **Permission** | `notifications.logs.index` |
 
 Chấp nhận **cùng filter** như list — để tính stats trong phạm vi filter (vd stats trong tháng, stats của 1 user, v.v.).
@@ -117,6 +126,7 @@ Chấp nhận **cùng filter** như list — để tính stats trong phạm vi f
     "today": 42,
     "this_week": 300,
     "by_event": {
+      "task_assigned": 500,
       "document_issued": 400,
       "task_completed": 300,
       "task_confirmed": 250,
@@ -134,7 +144,9 @@ Chấp nhận **cùng filter** như list — để tính stats trong phạm vi f
       "sms": 700,
       "mail": 900,
       "zalo": 100,
-      "fcm": 534
+      "zalo_zns": 40,
+      "fcm": 534,
+      "telegram": 20
     }
   }
 }
@@ -147,7 +159,26 @@ Lưu ý:
 
 ---
 
-## 4. Flow UI admin
+## 4. Export
+
+| | |
+|---|---|
+| **Method** | GET |
+| **Path** | `/api/{module}/notification-config/logs/export` |
+| **Permission** | `notifications.logs.export` |
+
+Chấp nhận cùng filter như list.
+
+## 5. Xóa log
+
+| | |
+|---|---|
+| **Xóa 1** | `DELETE /api/{module}/notification-config/logs/{id}` — permission `notifications.logs.destroy` |
+| **Xóa hàng loạt** | `DELETE /api/{module}/notification-config/logs/bulk-delete` — permission `notifications.logs.bulkDestroy` |
+
+---
+
+## 6. Flow UI admin
 
 ### Trang "Nhật ký thông báo"
 
@@ -175,9 +206,10 @@ Click "Chi tiết" → modal/page hiện đầy đủ deliveries + error message
 
 ---
 
-## 5. Lưu ý
+## 7. Lưu ý
 
 1. **Stats chạy cùng filter:** FE nên call stats + list song song với cùng params để số liệu đồng bộ.
 2. **by_status/by_channel tính từ deliveries**, không phải notifications → tổng 2 cái này ≠ `total`.
-3. **Không có endpoint delete** cho admin — log audit bất biến. Nếu cần dọn dẹp → cron truncate theo ngày (future).
+3. **Có endpoint xóa** (`DELETE .../logs/{id}` và `.../logs/bulk-delete`, permission riêng `destroy`/`bulkDestroy`) — log KHÔNG bất biến như tài liệu trước đây mô tả. Admin có thể chủ động dọn log cũ.
 4. **Permission phân tách `index` vs `show`** để phòng hờ case chỉ cho manager thấy list tóm tắt, không xem content chi tiết.
+5. **Không có endpoint gộp toàn hệ thống** — mọi truy vấn log phải chỉ định module qua path prefix (`task-assignment`/`meeting`/`schedules`).

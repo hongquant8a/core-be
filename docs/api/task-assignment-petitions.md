@@ -1,5 +1,7 @@
 # API: Đơn thư (task-assignment-petitions)
 
+> Cập nhật lần cuối: 15/07/2026 — bổ sung 2 endpoint chưa được doc: `available-departments`, `unlock`.
+
 Status: **Đã implement**
 
 Base URL: `/api/task-assignment-petitions`
@@ -99,6 +101,18 @@ Permission: `task-assignment-petitions.index`
 | `cancelled` | Đã hủy |
 
 `is_overdue`: boolean flag, true khi chưa done/cancelled + đã quá `deadline_date`.
+
+---
+
+## 1b. Danh sách phòng ban khả dụng (để lọc/tạo đơn)
+
+```
+GET /api/task-assignment-petitions/available-departments
+```
+
+Auth: đăng nhập (không yêu cầu permission riêng ngoài `auth:sanctum`).
+
+Trả về danh sách phòng ban mà user hiện tại được phép thao tác đơn thư (dựa theo `taskAssignmentUsers` đang active của user). Dùng cho dropdown lọc/tạo đơn ở FE.
 
 ---
 
@@ -243,6 +257,28 @@ Permission: `task-assignment-petitions.changeStatus`
 {
   "success": true,
   "message": "Cập nhật trạng thái thành công!",
+  "data": { ... }
+}
+```
+
+---
+
+## 6b. Mở khóa đơn thư (unlock)
+
+```
+PATCH /api/task-assignment-petitions/{petition}/unlock
+```
+
+Permission: `task-assignment-petitions.manage`, và user phải thuộc phòng ban "tổng hợp đơn thư" (`is_petition_overview = true`) — người tạo đơn không tự mở khóa được, kể cả có quyền `update`.
+
+Chuyển đơn thư về trạng thái `processing` (dùng lại logic của endpoint đổi trạng thái) — dùng khi cần mở lại đơn đã `completed`/`cancelled` để xử lý tiếp.
+
+### Response
+
+```json
+{
+  "success": true,
+  "message": "Đã mở khóa đơn thư thành công!",
   "data": { ... }
 }
 ```

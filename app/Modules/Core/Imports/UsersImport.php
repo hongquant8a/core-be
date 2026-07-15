@@ -148,14 +148,14 @@ class UsersImport implements ToModel, WithHeadingRow, WithValidation
         
         DB::table($modelHasRolesTable)
             ->where('model_id', $user->id)
-            ->where('model_type', User::class)
+            ->where('model_type', (new User())->getMorphClass())
             ->where('organization_id', $orgId)
             ->delete();
 
         DB::table($modelHasRolesTable)->insert([
             'organization_id' => $orgId,
             'role_id' => $roleId,
-            'model_type' => User::class,
+            'model_type' => (new User())->getMorphClass(),
             'model_id' => $user->id,
         ]);
     }

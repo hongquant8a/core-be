@@ -1,6 +1,8 @@
 # API Người dùng (User) – Core
 
-Quản lý tài khoản người dùng: thống kê, danh sách, chi tiết, CRUD, xóa/bulk status, đổi trạng thái, xuất/nhập Excel.
+> Cập nhật lần cuối: 15/07/2026 — bổ sung 7 endpoint chưa được doc (stats/by-organization, self-service `/me`, `/me/profile`, `/{user}/profile`), sửa method `bulk-delete` (POST → DELETE).
+
+Quản lý tài khoản người dùng: thống kê, danh sách, chi tiết, CRUD, xóa/bulk status, đổi trạng thái, xuất/nhập Excel, hồ sơ cá nhân (profile).
 
 **Base path:** `/api/users`
 
@@ -14,6 +16,18 @@ Quản lý tài khoản người dùng: thống kê, danh sách, chi tiết, CRU
 | **Path** | `/api/users/stats` |
 | **Query** | `search` (name, email), `status` (active \| inactive \| banned), `from_date` (Y-m-d), `to_date` (Y-m-d), `sort_by`, `sort_order`, `limit` (1-100). Cùng bộ lọc với index. |
 | **Response** | `{ "total": 100, "active": 80, "inactive": 20 }` — total (sau lọc), active, inactive (gồm banned). |
+
+---
+
+## Thống kê theo tổ chức
+
+| | |
+|---|---|
+| **Method** | GET |
+| **Path** | `/api/users/stats/by-organization` |
+| **Permission** | `users.stats` |
+| **Query** | `limit` (optional, mặc định 10) — số tổ chức top trả về, cộng bộ lọc chung như index. |
+| **Response** | Breakdown số user theo từng tổ chức, dùng cho biểu đồ dashboard. |
 
 ---
 
@@ -93,7 +107,7 @@ Quản lý tài khoản người dùng: thống kê, danh sách, chi tiết, CRU
 
 | | |
 |---|---|
-| **Method** | POST |
+| **Method** | DELETE |
 | **Path** | `/api/users/bulk-delete` |
 | **Body** | `ids` (array) — danh sách ID người dùng. |
 | **Response** | `{ "message": "Đã xóa thành công các tài khoản được chọn!" }`. |
@@ -152,3 +166,62 @@ Quản lý tài khoản người dùng: thống kê, danh sách, chi tiết, CRU
 | **Path** | `/api/users/import-template` |
 | **Auth** | Bắt buộc (permission: users.import). |
 | **Response** | File `import-users-template.xlsx` — chỉ có header row: `name`, `email`, `user_name`, `password`, `status`. |
+
+---
+
+## Self-service (không cần permission, chỉ cần đăng nhập)
+
+Nhóm endpoint này KHÔNG dùng permission Spatie — Controller tự ép `id = auth()->id()`, user chỉ thao tác được trên chính mình.
+
+### Lấy thông tin bản thân
+
+| | |
+|---|---|
+| **Method** | GET |
+| **Path** | `/api/users/me` |
+| **Response** | Object người dùng hiện tại (UserResource). |
+
+### Cập nhật thông tin bản thân
+
+| | |
+|---|---|
+| **Method** | PUT / PATCH |
+| **Path** | `/api/users/me` |
+| **Body** | Giống "Cập nhật người dùng" (trừ `status` — user không tự đổi trạng thái tài khoản của mình được). |
+| **Response** | Object người dùng đã cập nhật. |
+
+### Xem hồ sơ cá nhân (profile) của bản thân
+
+| | |
+|---|---|
+| **Method** | GET |
+| **Path** | `/api/users/me/profile` |
+| **Response** | Object `UserProfile` — gồm các field mở rộng như `telegram_chat_id`. |
+
+### Cập nhật hồ sơ cá nhân (profile) của bản thân
+
+| | |
+|---|---|
+| **Method** | PUT |
+| **Path** | `/api/users/me/profile` |
+| **Body** | Field thuộc `UserProfile` (vd `telegram_chat_id` — dùng để nhận thông báo qua kênh Telegram). |
+| **Response** | Object `UserProfile` đã cập nhật. |
+
+### Xem hồ sơ cá nhân (profile) của user khác (admin)
+
+| | |
+|---|---|
+| **Method** | GET |
+| **Path** | `/api/users/{user}/profile` |
+| **Permission** | `users.show` |
+| **Response** | Object `UserProfile` của user chỉ định. |
+
+### Cập nhật hồ sơ cá nhân (profile) của user khác (admin)
+
+| | |
+|---|---|
+| **Method** | PUT |
+| **Path** | `/api/users/{user}/profile` |
+| **Permission** | `users.update` |
+| **Body** | Field thuộc `UserProfile`. |
+| **Response** | Object `UserProfile` đã cập nhật. |

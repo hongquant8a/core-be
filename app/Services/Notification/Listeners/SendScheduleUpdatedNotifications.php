@@ -7,15 +7,18 @@ use App\Services\Notification\Enums\NotificationModuleEnum;
 use App\Services\Notification\Events\ScheduleUpdated;
 use App\Services\Notification\Services\NotificationDispatcher;
 use App\Services\Notification\Services\ContentBuilderRegistry;
-use App\Services\Notification\Services\ScheduleReminderScheduler;
+use App\Services\Notification\Services\ReminderScheduler;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
 class SendScheduleUpdatedNotifications implements ShouldQueue
 {
+    /** Đẩy vào queue tier `notifications` (Horizon supervisor riêng), không dồn vào `default`. */
+    public $queue = 'notifications';
+
     public function __construct(
         protected NotificationDispatcher $dispatcher,
         protected ContentBuilderRegistry $registry,
-        protected ScheduleReminderScheduler $scheduler
+        protected ReminderScheduler $scheduler
     ) {}
 
     public function handle(ScheduleUpdated $event): void
@@ -35,7 +38,7 @@ class SendScheduleUpdatedNotifications implements ShouldQueue
             return;
         }
 
-        $recipients = $this->scheduler->resolveRecipients($schedule);
+        $recipients = $schedule->resolveReminderRecipients();
         $builder = $this->registry->for('schedule_updated');
 
         foreach ($recipients as $user) {

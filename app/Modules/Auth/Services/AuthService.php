@@ -200,7 +200,7 @@ class AuthService
         $columnNames = config('permission.column_names');
         $modelMorphKey = $columnNames['model_morph_key'] ?? 'model_id';
         $teamForeignKey = $columnNames['team_foreign_key'] ?? 'organization_id';
-        $modelType = \App\Modules\Core\Models\User::class;
+        $modelType = (new \App\Modules\Core\Models\User)->getMorphClass();
 
         $roleOrgIds = DB::table($tableNames['model_has_roles'] ?? 'model_has_roles')
             ->where($modelMorphKey, $userId)

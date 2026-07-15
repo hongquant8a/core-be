@@ -52,7 +52,7 @@ class UserResource extends JsonResource
 
         $rows = DB::table($modelHasRolesTable)
             ->where($modelMorphKey, $this->id)
-            ->where('model_type', \App\Modules\Core\Models\User::class)
+            ->where('model_type', (new \App\Modules\Core\Models\User())->getMorphClass())
             ->select([$teamForeignKey.' as organization_id', $rolePivotKey.' as role_id'])
             ->get();
 

@@ -110,7 +110,7 @@ Quản lý organization (tổ chức) phân cấp theo `parent_id`: thống kê,
 
 | | |
 |---|---|
-| **Method** | POST |
+| **Method** | DELETE |
 | **Path** | `/api/organizations/bulk-delete` |
 | **Body** | `ids` (array) — danh sách ID organization. |
 | **Response** | `{ "message": "Đã xóa thành công các organization được chọn!" }`. |
@@ -156,7 +156,7 @@ Quản lý organization (tổ chức) phân cấp theo `parent_id`: thống kê,
 |---|---|
 | **Method** | POST |
 | **Path** | `/api/organizations/import` |
-| **Body** | `file` (required) — xlsx, xls, csv. Cột: name, slug, description, status. |
+| **Body** | `file` (required) — xlsx, xls, csv. Cột bắt buộc: name, slug, description, status. Cột không bắt buộc: sort_order, parent_slug (khớp với header của "Tải mẫu import" bên dưới). |
 | **Response** | `{ "message": "Import organization thành công." }`. |
 
 ---

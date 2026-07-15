@@ -195,7 +195,7 @@ class User extends Authenticatable implements HasMedia
                 $sub->select(\DB::raw(1))
                     ->from('model_has_roles')
                     ->whereColumn('model_has_roles.model_id', 'users.id')
-                    ->where('model_has_roles.model_type', self::class)
+                    ->where('model_has_roles.model_type', (new self())->getMorphClass())
                     ->where('model_has_roles.role_id', $roleId);
                 if ($teamId) {
                     $sub->where('model_has_roles.organization_id', $teamId);
@@ -206,7 +206,7 @@ class User extends Authenticatable implements HasMedia
                 $sub->select(\DB::raw(1))
                     ->from('model_has_roles')
                     ->whereColumn('model_has_roles.model_id', 'users.id')
-                    ->where('model_has_roles.model_type', self::class)
+                    ->where('model_has_roles.model_type', (new self())->getMorphClass())
                     ->where('model_has_roles.organization_id', $orgId);
             });
         })->when($filters['sort_by'] ?? 'created_at', function ($query, $sortBy) use ($filters) {

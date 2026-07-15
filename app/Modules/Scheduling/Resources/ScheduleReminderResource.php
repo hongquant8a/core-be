@@ -16,7 +16,7 @@ class ScheduleReminderResource extends JsonResource
 
         return [
             'id'             => $this->id,
-            'schedule_id'    => $this->schedule_id,
+            'schedule_id'    => $this->schedule_id ?? $this->remindable_id,
             'moment'         => $this->moment,
             'offset_minutes' => $this->offset_minutes,
             'channels'       => $this->channels,

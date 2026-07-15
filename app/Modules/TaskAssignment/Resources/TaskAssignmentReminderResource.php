@@ -16,8 +16,8 @@ class TaskAssignmentReminderResource extends JsonResource
 
         return [
             'id'              => $this->id,
-            'task_assignment_document_id' => $this->task_assignment_document_id,
-            'task_assignment_item_id' => $this->task_assignment_item_id,
+            'task_assignment_document_id' => $this->task_assignment_document_id ?? $this->remindable?->task_assignment_document_id,
+            'task_assignment_item_id' => $this->task_assignment_item_id ?? $this->remindable_id,
             'moment'          => $this->moment,
             'offset_minutes'  => $this->offset_minutes,
             'channels'        => $this->channels,

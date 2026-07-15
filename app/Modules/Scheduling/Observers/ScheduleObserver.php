@@ -7,7 +7,7 @@ use App\Modules\Scheduling\Enums\ScheduleStatus;
 use App\Services\Notification\Events\SchedulePublished;
 use App\Services\Notification\Events\ScheduleUpdated;
 use App\Services\Notification\Events\ScheduleCancelled;
-use App\Services\Notification\Services\ScheduleReminderScheduler;
+use App\Services\Notification\Services\ReminderScheduler;
 use Illuminate\Support\Facades\Event;
 
 class ScheduleObserver
@@ -18,7 +18,7 @@ class ScheduleObserver
         'location',
     ];
 
-    public function __construct(protected ScheduleReminderScheduler $scheduler) {}
+    public function __construct(protected ReminderScheduler $scheduler) {}
 
     public function saved(Schedule $schedule): void
     {
@@ -35,19 +35,14 @@ class ScheduleObserver
         // 1. Transition: Draft -> Published
         if ($isPublishedNow && (!$wasPublishedBefore || $schedule->wasRecentlyCreated)) {
             $this->scheduler->scheduleFor($schedule);
-            Event::dispatch(new SchedulePublished($schedule));
             return;
         }
 
-        // 2. Already published, but key fields changed
+        // 2. Already published + key fields changed → reschedule nếu date_time đổi
         if ($isPublishedNow && $wasPublishedBefore) {
-            $changedFields = array_filter(
-                self::NOTIFY_FIELDS,
-                fn ($f) => $schedule->wasChanged($f)
-            );
-
-            if (!empty($changedFields)) {
-                Event::dispatch(new ScheduleUpdated($schedule, array_values($changedFields)));
+            if ($schedule->wasChanged('date_time')) {
+                // date_time đổi → deadline mới → tính lại remind_at cho tất cả reminders
+                $this->scheduler->scheduleFor($schedule);
             }
             return;
         }
@@ -55,7 +50,6 @@ class ScheduleObserver
         // 3. Transition: Published -> Draft/Pending/Cancelled/etc. (Unpublished)
         if (!$isPublishedNow && $wasPublishedBefore) {
             $this->scheduler->cancelPending($schedule);
-            Event::dispatch(new ScheduleCancelled($schedule));
             return;
         }
     }
@@ -65,9 +59,7 @@ class ScheduleObserver
         $originalStatus = $schedule->getOriginal('status');
         $originalStatusVal = $originalStatus instanceof ScheduleStatus ? $originalStatus->value : (int)$originalStatus;
 
-        if ($originalStatusVal === ScheduleStatus::PUBLISHED->value) {
-            Event::dispatch(new ScheduleCancelled($schedule));
-        } else {
+        if ($originalStatusVal !== ScheduleStatus::PUBLISHED->value) {
             $this->scheduler->cancelPending($schedule);
         }
     }

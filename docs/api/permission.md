@@ -86,7 +86,7 @@ Quản lý quyền (permission): thống kê, danh sách, cây, chi tiết, CRUD
 
 | | |
 |---|---|
-| **Method** | POST |
+| **Method** | DELETE |
 | **Path** | `/api/permissions/bulk-delete` |
 | **Body** | `ids` (array) — danh sách ID permission. |
 | **Response** | `{ "message": "Đã xóa thành công các quyền được chọn!" }`. |

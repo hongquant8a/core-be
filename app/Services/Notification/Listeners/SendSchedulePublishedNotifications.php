@@ -7,15 +7,18 @@ use App\Services\Notification\Enums\NotificationModuleEnum;
 use App\Services\Notification\Events\SchedulePublished;
 use App\Services\Notification\Services\NotificationDispatcher;
 use App\Services\Notification\Services\ContentBuilderRegistry;
-use App\Services\Notification\Services\ScheduleReminderScheduler;
+use App\Services\Notification\Services\ReminderScheduler;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
 class SendSchedulePublishedNotifications implements ShouldQueue
 {
+    /** Đẩy vào queue tier `notifications` (Horizon supervisor riêng), không dồn vào `default`. */
+    public $queue = 'notifications';
+
     public function __construct(
         protected NotificationDispatcher $dispatcher,
         protected ContentBuilderRegistry $registry,
-        protected ScheduleReminderScheduler $scheduler
+        protected ReminderScheduler $scheduler
     ) {}
 
     public function handle(SchedulePublished $event): void
@@ -34,7 +37,7 @@ class SendSchedulePublishedNotifications implements ShouldQueue
             return;
         }
 
-        $recipients = $this->scheduler->resolveRecipients($schedule);
+        $recipients = $schedule->resolveReminderRecipients();
         $builder = $this->registry->for('schedule_published');
 
         foreach ($recipients as $user) {
@@ -51,15 +54,6 @@ class SendSchedulePublishedNotifications implements ShouldQueue
 
     private function resolveChannels(int $organizationId, \App\Modules\Scheduling\Models\Schedule $schedule): array
     {
-        // Per-record: kiểm tra schedule.reminders có reminder_type=instant (active).
-        $instantChannels = $schedule->reminders()
-            ->where('reminder_type', 'instant')
-            ->where('source', 'CUSTOM')
-            ->where('status', 'active')
-            ->value('channels');
-        if (! empty($instantChannels)) {
-            return $instantChannels;
-        }
         $config = NotificationEventConfig::with('schedules')
             ->where('module_key', NotificationModuleEnum::Scheduling->value)
             ->where('organization_id', $organizationId)

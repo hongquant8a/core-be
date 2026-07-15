@@ -1,6 +1,8 @@
 # API Văn bản giao việc (Task Assignment Document)
 
-Quản lý văn bản giao việc liên phòng ban: thống kê, danh sách, chi tiết, CRUD, xóa/cập nhật trạng thái hàng loạt, chuyển trạng thái (nháp/ban hành), xuất/nhập Excel. Hỗ trợ đính kèm tệp và quản lý các công việc con (`items`).
+> Cập nhật lần cuối: 15/07/2026 — xóa mục Import (route không tồn tại), sửa `task_assignment_type_id` thành optional, sửa response mẫu (field `type` thay vì `task_assignment_type_id`/`task_assignment_type`, bổ sung `completed_items_count`/`completion_percent`), sửa method `bulk-delete`.
+
+Quản lý văn bản giao việc liên phòng ban: thống kê, danh sách, chi tiết, CRUD, xóa/cập nhật trạng thái hàng loạt, chuyển trạng thái (nháp/ban hành), xuất Excel. Hỗ trợ đính kèm tệp và quản lý các công việc con (`items`). **Không hỗ trợ import Excel cho Document** (chỉ Department/Type/Item Type mới có).
 
 **Header bắt buộc:** `Authorization: Bearer {token}` và `X-Organization-Id: {organization_id}`.
 
@@ -65,7 +67,7 @@ Quản lý văn bản giao việc liên phòng ban: thống kê, danh sách, chi
 | **Method** | POST |
 | **Path** | `/api/task-assignment-documents` |
 | **Auth** | Bắt buộc. |
-| **Body** | `name` (required), `summary` (optional), `issue_date` (optional, định dạng YYYY-MM-DD), `task_assignment_type_id` (required, ID loại văn bản), `status` (required: draft \| issued), `attachments[]` (optional, tệp đính kèm, có thể nhiều file). Form-data hoặc JSON. |
+| **Body** | `name` (required), `summary` (optional), `issue_date` (optional, định dạng YYYY-MM-DD), `task_assignment_type_id` (optional, ID loại văn bản), `status` (required: draft \| issued), `attachments[]` (optional, tệp đính kèm, có thể nhiều file). Form-data hoặc JSON. |
 | **Response** | 201, object văn bản (kèm attachments) + `"message": "Văn bản giao việc đã được tạo thành công!"`. |
 
 ---
@@ -97,7 +99,7 @@ Quản lý văn bản giao việc liên phòng ban: thống kê, danh sách, chi
 
 | | |
 |---|---|
-| **Method** | POST |
+| **Method** | DELETE |
 | **Path** | `/api/task-assignment-documents/bulk-delete` |
 | **Auth** | Bắt buộc. |
 | **Body** | `ids` (array) — danh sách ID văn bản. |
@@ -141,29 +143,6 @@ Quản lý văn bản giao việc liên phòng ban: thống kê, danh sách, chi
 
 ---
 
-## Nhập Excel
-
-| | |
-|---|---|
-| **Method** | POST |
-| **Path** | `/api/task-assignment-documents/import` |
-| **Auth** | Bắt buộc. |
-| **Body** | `file` (required) — xlsx, xls, csv. Cột theo chuẩn export. |
-| **Response** | `{ "message": "Import văn bản giao việc thành công." }`. |
-
----
-
-## Tải mẫu import
-
-| | |
-|---|---|
-| **Method** | GET |
-| **Path** | `/api/task-assignment-documents/import-template` |
-| **Auth** | Bắt buộc (permission: import). |
-| **Response** | File `import-documents-template.xlsx` — chỉ có header row: `name`, `summary`, `issue_date`, `type`, `status`. |
-
----
-
 ## Business Logic
 
 **Chuyển trạng thái sang `issued`:**
@@ -184,11 +163,12 @@ Quản lý văn bản giao việc liên phòng ban: thống kê, danh sách, chi
   "name": "Quyết định số 01/QĐ-HĐQT về giao nhiệm vụ Q1/2026",
   "summary": "Giao nhiệm vụ cho các phòng ban trong quý 1 năm 2026",
   "issue_date": "2026-01-10",
-  "task_assignment_type_id": 1,
-  "task_assignment_type": { "id": 1, "name": "Quyết định" },
+  "type": { "id": 1, "name": "Quyết định" },
   "status": "issued",
   "issued_at": "09:00:00 10/01/2026",
   "items_count": 5,
+  "completed_items_count": 3,
+  "completion_percent": 60,
   "attachments": [
     { "id": 1, "name": "quyet-dinh-01.pdf", "url": "https://..." }
   ],

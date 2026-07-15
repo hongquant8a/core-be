@@ -1,5 +1,7 @@
 # Hướng dẫn & Tài liệu Tích hợp API & CASL - Phân hệ Lịch công tác (Scheduling Module)
 
+> Cập nhật lần cuối: 16:02:45 15/07/2026
+
 Tài liệu này cung cấp mô tả chi tiết, cấu trúc dữ liệu gửi lên (Request Payload), phản hồi trả về (Response Body), và đặc tả phân quyền **CASL (Client-side Authorization)** của tất cả các API thuộc module **Lịch công tác (Scheduling)** để phục vụ việc phát triển giao diện người dùng (Frontend).
 
 ---
@@ -18,28 +20,60 @@ Mọi yêu cầu gửi tới các API dưới đây đều cần các headers b�
 Hệ thống sử dụng thư viện `@casl/ability` ở Frontend để kiểm soát việc hiển thị UI (nút bấm, menu, form hành động) dựa trên danh sách quyền được trả về từ Backend.
 
 ### 2.1. Danh sách Permission tương ứng với CASL Abilities
+
+> ⚠️ Từ **2026-06-05**, hệ thống KHÔNG còn dùng permission phẳng `schedules.*` cho API `/api/schedules/*`.
+> Middleware `App\Modules\Scheduling\Middleware\CheckScheduleModulePermission` (alias route `schedule.module`) đọc
+> `module_type` trên request (`EXECUTIVE` hoặc `OFFICE`) và map động sang resource permission theo phân hệ,
+> qua bảng `MODULE_MAP`:
+> ```php
+> protected const MODULE_MAP = [
+>     'EXECUTIVE' => 'schedules-executive',
+>     'OFFICE'    => 'schedules-office',
+> ];
+> ```
+> Tức là mỗi action thực chất kiểm tra quyền `schedules-executive.{action}` hoặc `schedules-office.{action}`
+> tùy `module_type` gửi lên (fallback về `schedules.{action}` cũ nếu permission đó còn tồn tại trong DB, chỉ
+> để tương thích ngược dữ liệu cũ — **không dùng để cấp quyền mới**). Xem chi tiết danh sách action hợp lệ
+> trong `database/seeders/PermissionSeeder.php` (nhóm `Scheduling`).
+
 Các quyền Spatie ở Backend được map trực tiếp sang CASL `action` và `subject` theo quy tắc sau:
 
 | Backend Spatie Permission | CASL Subject | CASL Action | Ý nghĩa / UI áp dụng |
 | :--- | :--- | :--- | :--- |
-| `schedules.index` | `Schedule` | `read` | Xem danh sách lịch tuần/ngày, ma trận tuần. |
-| `schedules.show` | `Schedule` | `read` | Xem chi tiết một lịch công tác cụ thể. |
-| `schedules.store` | `Schedule` | `create` | Hiển thị nút "Tạo lịch", form thêm mới. |
-| `schedules.update` | `Schedule` | `update` | Hiển thị nút "Sửa", cho phép kéo thả sắp xếp (`reorder`). |
-| `schedules.destroy` | `Schedule` | `delete` | Hiển thị nút "Xóa" lịch đơn lẻ hoặc xóa hàng loạt. |
-| `schedules.approve` | `Schedule` | `approve` | Hiển thị nút "Duyệt" (Publish) hoặc "Từ chối" (Reject). |
-| `schedules.store` | `Schedule` | `duplicate` | Hiển thị nút "Sao chép lịch" (Duplicate). |
-| `schedules.driver-view` | `Schedule` | `driver-view` | Dành riêng cho tài xế xem danh sách/chi tiết chuyến đi của mình. |
+| `schedules-executive.index` / `schedules-office.index` | `Schedule` | `read` | Xem danh sách lịch tuần/ngày, ma trận tuần (theo từng phân hệ). |
+| `schedules-executive.show` / `schedules-office.show` | `Schedule` | `read` | Xem chi tiết một lịch công tác cụ thể. |
+| `schedules-executive.store` / `schedules-office.store` | `Schedule` | `create` | Hiển thị nút "Tạo lịch", form thêm mới. |
+| `schedules-executive.update` / `schedules-office.update` | `Schedule` | `update` | Hiển thị nút "Sửa"; cũng là quyền dùng cho kéo thả sắp xếp (`PATCH /reorder`, xem [schedule-reorder.md](schedule-reorder.md)). |
+| `schedules-executive.destroy` / `schedules-office.destroy` | `Schedule` | `delete` | Hiển thị nút "Xóa" lịch đơn lẻ hoặc xóa hàng loạt (`bulk-delete`). |
+| `schedules-executive.bulkUpdateStatus` / `schedules-office.bulkUpdateStatus` | `Schedule` | `update` | Cập nhật trạng thái hàng loạt (`bulk-status`). |
+| `schedules-executive.changeStatus` / `schedules-office.changeStatus` | `Schedule` | `update` | Đổi trạng thái một lịch (`{id}/status`). |
+| `schedules-executive.approve` / `schedules-office.approve` | `Schedule` | `approve` | Hiển thị nút "Duyệt" (Publish) hoặc "Từ chối" (Reject). |
+| `schedules-executive.duplicate` / `schedules-office.duplicate` | `Schedule` | `duplicate` | Hiển thị nút "Sao chép lịch" (Duplicate). |
+| `schedules-executive.export` / `schedules-office.export` | `Schedule` | `export` | Hiển thị nút xuất Excel/PDF/Word. |
+| `schedules-executive.stats` / `schedules-office.stats` | `Schedule` | `read` | Xem số liệu thống kê (`/stats`). |
+| `schedules-executive.home` / `schedules-office.home` | `Schedule` | `read` | Truy cập trang tổng quan lịch của phân hệ. |
+| `schedules-executive.driver-view` / `schedules-office.driver-view` | `Schedule` | `driver-view` | Dành riêng cho tài xế xem danh sách/chi tiết chuyến đi của mình. |
 | `scheduling-employees.index` | `SchedulingEmployee` | `read` | Xem danh sách cán bộ tham gia module lịch. |
 | `scheduling-employees.store` | `SchedulingEmployee` | `create` | Thêm cán bộ mới vào danh sách. |
-| `scheduling-employees.update` | `SchedulingEmployee` | `update` | Cập nhật ghi chú/trạng thái cán bộ. |
-| `scheduling-employees.destroy` | `SchedulingEmployee` | `delete` | Xóa cán bộ khỏi danh sách. |
+| `scheduling-employees.update` | `SchedulingEmployee` | `update` | Cập nhật ghi chú/trạng thái cán bộ, đồng bộ nhóm (`sync-groups`). |
+| `scheduling-employees.destroy` | `SchedulingEmployee` | `delete` | Xóa cán bộ khỏi danh sách (đơn/hàng loạt). |
+| `scheduling-employees.stats` | `SchedulingEmployee` | `read` | Xem thống kê cán bộ (`/stats`). |
+| `scheduling-employees.export` | `SchedulingEmployee` | `export` | Xuất Excel danh sách cán bộ. |
+| `scheduling-employees.import` | `SchedulingEmployee` | `import` | Nhập Excel danh sách cán bộ. |
 | `scheduling-employee-groups.index` | `SchedulingEmployeeGroup` | `read` | Xem danh sách nhóm cán bộ lịch. |
 | `scheduling-employee-groups.store` | `SchedulingEmployeeGroup` | `create` | Tạo nhóm cán bộ mới. |
-| `scheduling-employee-groups.update` | `SchedulingEmployeeGroup` | `update` | Cập nhật thông tin/thành viên nhóm. |
-| `scheduling-employee-groups.destroy` | `SchedulingEmployeeGroup` | `delete` | Xóa nhóm cán bộ. |
-| `scheduling-settings.show` | `SchedulingSetting` | `read` | Xem cấu hình phê duyệt và khung giờ làm việc của đơn vị. |
+| `scheduling-employee-groups.update` | `SchedulingEmployeeGroup` | `update` | Cập nhật thông tin/thành viên nhóm, đồng bộ thành viên (`sync-members`). |
+| `scheduling-employee-groups.destroy` | `SchedulingEmployeeGroup` | `delete` | Xóa nhóm cán bộ (đơn/hàng loạt). |
+| `scheduling-employee-groups.stats` | `SchedulingEmployeeGroup` | `read` | Xem thống kê nhóm cán bộ (`/stats`). |
+| `scheduling-settings.show`* | `SchedulingSetting` | `read` | Xem cấu hình phê duyệt và khung giờ làm việc của đơn vị. |
 | `scheduling-settings.update` | `SchedulingSetting` | `update` | Cập nhật cấu hình phê duyệt/khung giờ. |
+
+\* `scheduling-settings.show` tồn tại trong danh sách permission (Spatie) nhưng route `GET /api/scheduling-settings`
+hiện **không** gắn middleware `permission:` — mọi user đã đăng nhập và có `X-Organization-Id` hợp lệ đều xem được
+cấu hình của tổ chức mình. Chỉ `POST /api/scheduling-settings` (cập nhật) bị chặn bởi `scheduling-settings.update`.
+
+**Endpoint `/options` của `scheduling-employees` và `scheduling-employee-groups` không gắn permission** (chỉ cần
+đã qua middleware `ensure.route.org` ở nhóm route cha) — dùng cho dropdown, không cần CASL ability riêng.
 
 ### 2.2. Cách định nghĩa CASL Ability trong Vue/React
 Khi người dùng đăng nhập thành công, API Auth sẽ trả về danh sách `permissions`. Frontend khởi tạo CASL Ability như sau:
@@ -55,13 +89,14 @@ export function defineAbilitiesFor(permissions) {
   } else {
     // Duyệt qua danh sách permission thô từ Backend và map sang CASL
     permissions.forEach((perm) => {
-      const [resource, action] = perm.split('.'); // ví dụ: "schedules.store"
-      
+      const [resource, action] = perm.split('.'); // ví dụ: "schedules-executive.store"
+
       let caslAction = action;
       let caslSubject = resource;
 
-      // Chuẩn hóa tên subject
-      if (resource === 'schedules') caslSubject = 'Schedule';
+      // Chuẩn hóa tên subject — cả 2 phân hệ đều map về cùng subject "Schedule",
+      // FE tự phân biệt UI theo module_type đang active (không tách subject riêng theo phân hệ)
+      if (resource === 'schedules-executive' || resource === 'schedules-office') caslSubject = 'Schedule';
       if (resource === 'scheduling-employees') caslSubject = 'SchedulingEmployee';
       if (resource === 'scheduling-employee-groups') caslSubject = 'SchedulingEmployeeGroup';
       if (resource === 'scheduling-settings') caslSubject = 'SchedulingSetting';
@@ -82,6 +117,9 @@ export function defineAbilitiesFor(permissions) {
 ---
 
 ## 📅 3. API TRUNG TÂM - LỊCH CÔNG TÁC (`/api/schedules`)
+
+> Sắp xếp lại thứ tự lịch (`PATCH /api/schedules/reorder`) không được mô tả lại ở đây — xem chi tiết đầy đủ
+> (query params, request body, permission, ví dụ) tại [schedule-reorder.md](schedule-reorder.md).
 
 ### 3.1. Danh sách các Trường dữ liệu gửi lên (POST / PUT Payload)
 FormRequest của hệ thống tự động chuẩn hóa (normalization) một số trường alias/legacy từ Frontend để đảm bảo tương thích ngược:
@@ -270,6 +308,12 @@ Khi lấy thông tin chi tiết hoặc danh sách lịch, Backend trả về đ�
 }
 ```
 
+#### 3.3.2. Thống kê (GET /api/schedules/stats)
+* **Endpoint:** `GET /api/schedules/stats`
+* **Permission:** `schedules-executive.stats` hoặc `schedules-office.stats` (theo `module_type` gửi lên).
+* **Query Params:** `module_type` (required), `search`, `from_date`, `to_date`, `session`.
+* Trả về object thống kê số lượng lịch theo trạng thái (cấu trúc do `ScheduleService::stats()` build).
+
 ---
 
 ## 👥 4. QUẢN LÝ CÁN BỘ LỊCH CÔNG TÁC (`/api/scheduling-employees`)
@@ -334,6 +378,25 @@ Nghiệp vụ quản lý danh sách cán bộ được phép làm người chủ
     "created_at": "2026-06-01T15:30:00Z",
     "updated_at": "2026-06-01T15:30:00Z"
   }
+}
+```
+
+---
+
+### 4.3. Các endpoint bổ sung
+
+| Endpoint | Method | Permission | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `/api/scheduling-employees/stats` | `GET` | `scheduling-employees.stats` | Thống kê cán bộ (`search`, `status`). |
+| `/api/scheduling-employees/options` | `GET` | Không yêu cầu permission riêng | Danh sách rút gọn `{id, user_id, name}` các cán bộ `status=active`, dùng cho dropdown chọn chủ trì/lái xe. |
+| `/api/scheduling-employees/export` | `GET` | `scheduling-employees.export` | Xuất danh sách cán bộ ra Excel. |
+| `/api/scheduling-employees/import` | `POST` | `scheduling-employees.import` | Nhập danh sách cán bộ từ file Excel (`.xlsx`, `.xls`, `.csv`). Body: `file` (required). |
+| `/api/scheduling-employees/{id}/sync-groups` | `POST` | `scheduling-employees.update` | Đồng bộ danh sách nhóm mà cán bộ trực thuộc. Body: `group_ids` (array, required). |
+
+* **Ví dụ Request `sync-groups`:**
+```json
+{
+  "group_ids": [1, 2]
 }
 ```
 
@@ -408,23 +471,74 @@ Hỗ trợ nhóm nhiều cán bộ nhận tin lại với nhau (như nhóm "Ban 
 
 ---
 
+### 5.3. Các endpoint bổ sung
+
+| Endpoint | Method | Permission | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `/api/scheduling-employee-groups/stats` | `GET` | `scheduling-employee-groups.stats` | Thống kê nhóm cán bộ (`search`). |
+| `/api/scheduling-employee-groups/options` | `GET` | Không yêu cầu permission riêng | Danh sách rút gọn `{id, name}` các nhóm `status=active`, dùng cho dropdown. |
+| `/api/scheduling-employee-groups/{id}/sync-members` | `POST` | `scheduling-employee-groups.update` | Đồng bộ toàn bộ thành viên của nhóm. Body: `employee_ids` (array, required). |
+
+> Nhóm cán bộ **không có** endpoint `export`/`import` (chỉ `scheduling-employees` có).
+
+* **Ví dụ Request `sync-members`:**
+```json
+{
+  "employee_ids": [1, 2, 5]
+}
+```
+
+---
+
 ## 🛠️ 6. API CẤU HÌNH HỆ THỐNG LỊCH (`/api/scheduling-settings`)
 
-Dành riêng cho Quản trị viên điều hành cấu hình duyệt lịch của đơn vị.
+Dành riêng cho Quản trị viên điều hành cấu hình duyệt lịch của đơn vị. **Từ 2026-06-08**, cấu hình phê duyệt và
+khung giờ làm việc được **tách riêng theo từng phân hệ** (`executive_*` / `office_*`) — không còn 1 cấu hình
+`requires_approval`/`working_sessions` dùng chung cho cả 2 phân hệ như thiết kế cũ.
+
+Backend lưu trên 2 bảng: `org_scheduling_settings` (các trường `*_requires_approval`, `*_working_sessions` —
+Model `App\Modules\Scheduling\Models\OrgSchedulingSettings`) và `scheduling_settings` (chỉ còn `default_channels`
+— Model `App\Modules\Scheduling\Models\SchedulingSetting`, các trường legacy `approval_enabled` /
+`approval_module_types` / `requires_approval` đã bị xóa khỏi schema). Controller `SchedulingSettingController`
+gộp cả 2 bảng lại thành một response phẳng duy nhất.
 
 ### 6.1. Chi tiết API Cập nhật & Trả về
 
-* **Endpoint lấy cấu hình:** `GET /api/scheduling-settings`
-* **Endpoint cập nhật:** `POST /api/scheduling-settings`
+* **Endpoint lấy cấu hình:** `GET /api/scheduling-settings` (không yêu cầu permission riêng, chỉ cần đăng nhập + `X-Organization-Id`)
+* **Endpoint cập nhật:** `POST /api/scheduling-settings` (yêu cầu permission `scheduling-settings.update`)
 
 #### Các trường cấu hình trong cấu trúc Payload và Response:
 
-| Khóa Cấu Hình | Kiểu dữ liệu | Bắt buộc | Mô tả chi tiết |
+| Khóa Cấu Hình | Kiểu dữ liệu | Bắt buộc khi cập nhật | Mô tả chi tiết |
 | :--- | :--- | :--- | :--- |
-| `requires_approval`| `boolean` | **Có** | Lịch công tác có cần được phê duyệt trước khi công bố ra lưới hay không. |
-| `approval_enabled` | `boolean` | Không | (Legacy) Trạng thái bật/tắt duyệt chung. |
-| `default_channels` | `array` | Không | Mảng danh sách các kênh thông báo mặc định (ví dụ: `["inapp", "email"]`). |
-| `working_sessions` | `object` | Không | Khung giờ làm việc các buổi Sáng/Chiều/Tối (MORNING, AFTERNOON, EVENING) gồm thời gian bắt đầu (`start`) và kết thúc (`end`). |
+| `organization_id` | `integer` | — (chỉ có ở Response) | ID tổ chức sở hữu cấu hình (lấy theo `X-Organization-Id`, không nhận từ client khi update). |
+| `executive_requires_approval` | `boolean` | **Có** (theo `StoreOrgSchedulingSettingsRequest::rules()`) | Lịch phân hệ **Thường trực (EXECUTIVE)** có cần phê duyệt trước khi công bố hay không. |
+| `office_requires_approval` | `boolean` | **Có** | Lịch phân hệ **Văn phòng (OFFICE)** có cần phê duyệt trước khi công bố hay không. |
+| `executive_working_sessions` | `object` \| `null` | Không (chỉ cập nhật nếu request có key này — FormRequest không validate cấu trúc, BE nhận nguyên payload) | Khung giờ làm việc các buổi của phân hệ Thường trực. Cấu trúc gồm 3 khóa `MORNING`, `AFTERNOON`, `EVENING`, mỗi khóa có `start`/`end` (`HH:mm`). |
+| `office_working_sessions` | `object` \| `null` | Không | Khung giờ làm việc các buổi của phân hệ Văn phòng — cùng cấu trúc như trên, độc lập với `executive_working_sessions`. |
+| `default_channels` | `array` | Không | Mảng kênh thông báo mặc định, dùng chung cho cả 2 phân hệ (ví dụ: `["inapp", "email"]`). Lưu ở bảng `scheduling_settings` riêng. |
+
+> Lưu ý: `POST /api/scheduling-settings` chỉ cập nhật những key thực sự có mặt trong request (`$request->has(...)`)
+> — không gửi key nào thì giữ nguyên giá trị cũ của key đó.
+
+* **Ví dụ Request cập nhật (POST):**
+```json
+{
+  "executive_requires_approval": true,
+  "office_requires_approval": false,
+  "executive_working_sessions": {
+    "MORNING": { "start": "07:00", "end": "11:30" },
+    "AFTERNOON": { "start": "13:30", "end": "17:30" },
+    "EVENING": { "start": "19:00", "end": "21:00" }
+  },
+  "office_working_sessions": {
+    "MORNING": { "start": "07:30", "end": "11:30" },
+    "AFTERNOON": { "start": "13:30", "end": "17:00" },
+    "EVENING": { "start": "19:00", "end": "21:00" }
+  },
+  "default_channels": ["inapp"]
+}
+```
 
 * **Phản hồi mẫu thành công (200 OK / Lấy hoặc Lưu):**
 ```json
@@ -432,25 +546,18 @@ Dành riêng cho Quản trị viên điều hành cấu hình duyệt lịch c�
   "success": true,
   "data": {
     "organization_id": 1,
-    "requires_approval": true,
-    "approval_enabled": false,
-    "approval_module_types": [],
-    "default_channels": [
-      "inapp"
-    ],
-    "working_sessions": {
-      "MORNING": {
-        "start": "07:30",
-        "end": "11:30"
-      },
-      "AFTERNOON": {
-        "start": "13:30",
-        "end": "17:00"
-      },
-      "EVENING": {
-        "start": "19:00",
-        "end": "21:00"
-      }
+    "default_channels": ["inapp"],
+    "executive_requires_approval": true,
+    "office_requires_approval": false,
+    "executive_working_sessions": {
+      "MORNING": { "start": "07:00", "end": "11:30" },
+      "AFTERNOON": { "start": "13:30", "end": "17:30" },
+      "EVENING": { "start": "19:00", "end": "21:00" }
+    },
+    "office_working_sessions": {
+      "MORNING": { "start": "07:30", "end": "11:30" },
+      "AFTERNOON": { "start": "13:30", "end": "17:00" },
+      "EVENING": { "start": "19:00", "end": "21:00" }
     }
   }
 }

@@ -230,7 +230,7 @@ class SimulateMeetingReminderTimingCommand extends Command
 
             $this->info('=== Notifications created ===');
             $notis = Notification::where('notifiable_id', $meeting->id)
-                ->where('notifiable_type', Meeting::class)
+                ->where('notifiable_type', (new Meeting())->getMorphClass())
                 ->with('deliveries')
                 ->get();
             foreach ($notis as $n) {
@@ -251,7 +251,7 @@ class SimulateMeetingReminderTimingCommand extends Command
                 $this->newLine();
                 $this->info('Cleanup test data...');
                 if ($createdIds['meeting']) {
-                    Notification::where('notifiable_type', Meeting::class)
+                    Notification::where('notifiable_type', (new Meeting())->getMorphClass())
                         ->where('notifiable_id', $createdIds['meeting'])
                         ->delete();
                     MeetingReminder::where('meeting_id', $createdIds['meeting'])->delete();

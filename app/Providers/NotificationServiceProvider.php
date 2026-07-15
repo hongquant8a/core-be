@@ -102,7 +102,10 @@ class NotificationServiceProvider extends ServiceProvider
         $registry->register('schedule_published', $this->app->make(SchedulePublishedContentBuilder::class));
         $registry->register('schedule_updated', $this->app->make(ScheduleUpdatedContentBuilder::class));
         $registry->register('schedule_cancelled', $this->app->make(ScheduleCancelledContentBuilder::class));
-        $registry->register('schedule_reminder', $this->app->make(ScheduleReminderContentBuilder::class));
+        $registry->register('schedule_reminder',        $this->app->make(ScheduleReminderContentBuilder::class)); // legacy
+        $registry->register('schedule_reminder_before', new ScheduleReminderContentBuilder('before'));
+        $registry->register('schedule_reminder_on',     new ScheduleReminderContentBuilder('on'));
+        $registry->register('schedule_reminder_after',  new ScheduleReminderContentBuilder('after'));
 
         // Register event listeners
         Event::listen(DocumentIssued::class, SendDocumentIssuedNotifications::class);

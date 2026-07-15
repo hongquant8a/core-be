@@ -22,13 +22,14 @@ class NotificationLogsExport extends AbstractExcelExport implements FromCollecti
     ];
 
     /**
-     * Map basename của notifiable_type (FQN class) → nhãn tiếng Việt.
-     * Thiếu key → fallback class basename (vd "Meeting" thay vì full FQN).
+     * Map alias morph của notifiable_type → nhãn tiếng Việt.
+     * Với enforceMorphMap, notifiable_type lưu alias (vd "meeting") thay vì FQN.
+     * Thiếu key → fallback nguyên alias.
      */
     private const NOTIFIABLE_TYPE_LABELS = [
-        'Meeting' => 'Cuộc họp',
-        'TaskAssignmentItem' => 'Công việc',
-        'TaskAssignmentDocument' => 'Văn bản',
+        'meeting' => 'Cuộc họp',
+        'task_assignment_item' => 'Công việc',
+        'task_assignment_document' => 'Văn bản',
     ];
 
     public function __construct(
@@ -77,14 +78,13 @@ class NotificationLogsExport extends AbstractExcelExport implements FromCollecti
         });
     }
 
-    private function notifiableTypeLabel(?string $fqn): string
+    private function notifiableTypeLabel(?string $type): string
     {
-        if (! $fqn) {
+        if (! $type) {
             return '';
         }
-        $basename = class_basename($fqn);
 
-        return self::NOTIFIABLE_TYPE_LABELS[$basename] ?? $basename;
+        return self::NOTIFIABLE_TYPE_LABELS[$type] ?? class_basename($type);
     }
 
     public function headings(): array

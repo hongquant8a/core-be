@@ -20,6 +20,9 @@ use Throwable;
 
 class SendMeetingPublishedNotifications implements ShouldQueue
 {
+    /** Đẩy vào queue tier `notifications` (Horizon supervisor riêng), không dồn vào `default`. */
+    public $queue = 'notifications';
+
     public function __construct(
         private NotificationDispatcher $dispatcher,
         private ContentBuilderRegistry $registry,
@@ -41,22 +44,18 @@ class SendMeetingPublishedNotifications implements ShouldQueue
 
         $builder = $this->registry->for('meeting_published');
 
-        // Invitation = participant (đại biểu) HOẶC attendee trực tiếp (chủ trì + thư ký)
-        // HOẶC guest (khách mời, không có user account).
-        // Resolve recipient linh hoạt theo nguồn — luôn track audit trail qua status row.
         $invitations = MeetingInvitation::with(['participant.attendee', 'attendee', 'guest'])
             ->where('meeting_id', $meeting->id)
             ->where('organization_id', $organizationId)
             ->where('status', 'pending')
             ->get();
 
-        $sentUserIds = [];
+        $sentUserIds  = [];
         $sentGuestIds = [];
 
         foreach ($invitations as $invitation) {
             try {
                 if ($invitation->meeting_guest_id !== null) {
-                    // Guest (no user account): dispatch raw email/SMS.
                     $guestId = (int) $invitation->meeting_guest_id;
                     if (in_array($guestId, $sentGuestIds, true)) {
                         continue;
@@ -68,11 +67,9 @@ class SendMeetingPublishedNotifications implements ShouldQueue
                     $this->sendToGuest($meeting, $guest, $channels);
                     $invitation->update(['status' => 'sent', 'sent_at' => now()]);
                     $sentGuestIds[] = $guestId;
-
                     continue;
                 }
 
-                // Participant/Attendee → resolve user_id → dispatch qua channels của user.
                 $userId = (int) (
                     $invitation->participant?->attendee?->user_id
                     ?? $invitation->attendee?->user_id
@@ -114,7 +111,6 @@ class SendMeetingPublishedNotifications implements ShouldQueue
         $bodyHtml = '<p>Kính gửi '.e($guest->name).',</p><p>'.e($bodyText).'</p>';
 
         foreach ($channels as $channelKey) {
-            // Guest không có device token → skip FCM.
             if ($channelKey === 'fcm') {
                 continue;
             }
@@ -133,7 +129,6 @@ class SendMeetingPublishedNotifications implements ShouldQueue
                     content: Str::ascii($bodyText),
                 ));
             }
-            // Zalo OA chỉ gửi khi guest có zalo_user_id (admin nhập thủ công).
             if ($channelKey === 'zalo' && $guest->zalo_user_id) {
                 $this->notificationService->send(new NotificationPayload(
                     channels: ['zalo'],
@@ -151,23 +146,16 @@ class SendMeetingPublishedNotifications implements ShouldQueue
 
     private function resolveChannels(Meeting $meeting, int $organizationId): array
     {
-        // Per-record: kiểm tra meeting.reminders có reminder_type=instant không.
-        $instantChannels = $meeting->reminders()
-            ->where('reminder_type', 'instant')
-            ->where('status', 'active')
-            ->value('channels');
-        if (! empty($instantChannels)) {
-            return $instantChannels;
-        }
-
         $config = NotificationEventConfig::with('schedules')
             ->where('module_key', NotificationModuleEnum::Meeting->value)
             ->where('organization_id', $organizationId)
             ->where('event_key', 'meeting_published')
             ->first();
+            
         if (! $config || ! $config->enabled) {
             return [];
         }
+        
         $instant = $config->schedules->firstWhere('moment', null);
 
         return $instant?->channels ?? [];

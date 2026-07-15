@@ -1,5 +1,7 @@
 # API Loại công việc (Task Assignment Item Type)
 
+> Cập nhật lần cuối: 15/07/2026 — sửa path public (`/api/public/...`), sửa method `bulk-delete` (POST → DELETE).
+
 Quản lý loại công việc trong hệ thống giao việc liên phòng ban: thống kê, danh sách, chi tiết, CRUD, xóa/cập nhật trạng thái hàng loạt, đổi trạng thái, xuất/nhập Excel. Hỗ trợ endpoint công khai không cần xác thực.
 
 **Header bắt buộc (với endpoint cần xác thực):** `Authorization: Bearer {token}` và `X-Organization-Id: {organization_id}`.
@@ -15,7 +17,7 @@ Quản lý loại công việc trong hệ thống giao việc liên phòng ban: 
 | | |
 |---|---|
 | **Method** | GET |
-| **Path** | `/api/task-assignment-item-types/public` |
+| **Path** | `/api/public/task-assignment-item-types` |
 | **Auth** | Không yêu cầu. |
 | **Query** | `search` (tên), `status` (active \| inactive), `sort_by`, `sort_order`, `limit` (1-100). |
 | **Response** | Danh sách loại công việc (không phân trang). |
@@ -27,7 +29,7 @@ Quản lý loại công việc trong hệ thống giao việc liên phòng ban: 
 | | |
 |---|---|
 | **Method** | GET |
-| **Path** | `/api/task-assignment-item-types/public-options` |
+| **Path** | `/api/public/task-assignment-item-types/options` |
 | **Auth** | Không yêu cầu. |
 | **Response** | Mảng `[{ "id": 1, "name": "Nhiệm vụ thường xuyên" }]` — dùng cho dropdown/select. |
 
@@ -108,7 +110,7 @@ Quản lý loại công việc trong hệ thống giao việc liên phòng ban: 
 
 | | |
 |---|---|
-| **Method** | POST |
+| **Method** | DELETE |
 | **Path** | `/api/task-assignment-item-types/bulk-delete` |
 | **Auth** | Bắt buộc. |
 | **Body** | `ids` (array) — danh sách ID loại công việc. |

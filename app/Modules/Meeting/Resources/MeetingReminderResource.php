@@ -16,7 +16,7 @@ class MeetingReminderResource extends JsonResource
 
         return [
             'id'              => $this->id,
-            'meeting_id'      => $this->meeting_id,
+            'meeting_id'      => $this->meeting_id ?? $this->remindable_id,
             'moment'          => $this->moment,
             'offset_minutes'  => $this->offset_minutes,
             'channels'        => $this->channels,
