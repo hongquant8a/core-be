@@ -4,7 +4,6 @@ namespace App\Modules\Meeting\Services;
 
 use App\Modules\Meeting\Enums\MeetingAttendanceStatusEnum;
 use App\Modules\Meeting\Enums\MeetingCheckinMethodEnum;
-use App\Modules\Meeting\Enums\MeetingParticipantResponseStatusEnum;
 use App\Modules\Meeting\Models\MeetingAttendance;
 use App\Modules\Meeting\Models\MeetingParticipant;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -84,10 +83,6 @@ class MeetingAttendanceService
             'checked_in_by' => auth()->id(),
         ]);
 
-        // Sync RSVP cho participant nếu còn pending → accepted (đại biểu đã có mặt).
-        if ($attendance->participant) {
-            $this->syncParticipantResponseFromAttendance($attendance->participant, MeetingParticipantResponseStatusEnum::Accepted->value);
-        }
 
         broadcast(new \App\Modules\Meeting\Events\MeetingAttendanceApproved($attendance))->toOthers();
 
@@ -110,10 +105,6 @@ class MeetingAttendanceService
             'checked_in_by' => auth()->id(),
         ]);
 
-        // Sync RSVP cho participant nếu còn pending → declined (operator xác nhận vắng).
-        if ($attendance->participant) {
-            $this->syncParticipantResponseFromAttendance($attendance->participant, MeetingParticipantResponseStatusEnum::Declined->value);
-        }
 
         broadcast(new \App\Modules\Meeting\Events\MeetingAttendanceRejected($attendance))->toOthers();
 
@@ -128,13 +119,6 @@ class MeetingAttendanceService
         // Phóng event trước khi xóa để client cập nhật UI (chuyển về chưa điểm danh)
         broadcast(new \App\Modules\Meeting\Events\MeetingAttendanceCancelled($attendance))->toOthers();
 
-        // Sync RSVP cho participant về trạng thái pending (vì đã bị hủy điểm danh)
-        if ($attendance->participant) {
-            $attendance->participant->update([
-                'response_status' => MeetingParticipantResponseStatusEnum::Pending->value,
-                'responded_at' => null,
-            ]);
-        }
 
         $attendance->delete();
     }
@@ -164,8 +148,6 @@ class MeetingAttendanceService
             ]
         )->load('participant.attendee');
 
-        // Đã checkin → infer RSVP = accepted nếu còn pending (đại biểu k bấm respond riêng).
-        $this->syncParticipantResponseFromAttendance($participant, MeetingParticipantResponseStatusEnum::Accepted->value);
 
         broadcast(new \App\Modules\Meeting\Events\MeetingAttendanceCheckedIn($attendance))->toOthers();
 
@@ -228,8 +210,6 @@ class MeetingAttendanceService
             ]
         )->load('participant.attendee');
 
-        // Tự báo vắng → infer RSVP = declined nếu còn pending.
-        $this->syncParticipantResponseFromAttendance($participant, MeetingParticipantResponseStatusEnum::Declined->value);
 
         // markAbsent cũng phát event checked-in để Tab điều hành cập nhật list (status=absent → loại khỏi pending list).
         broadcast(new \App\Modules\Meeting\Events\MeetingAttendanceCheckedIn($attendance))->toOthers();
@@ -283,31 +263,12 @@ class MeetingAttendanceService
             ]
         )->load('participant.attendee');
 
-        // Manual checkin từ thư ký → infer RSVP cho participant nếu còn pending.
-        $rsvp = $status === MeetingAttendanceStatusEnum::Present->value
-            ? MeetingParticipantResponseStatusEnum::Accepted->value
-            : MeetingParticipantResponseStatusEnum::Declined->value;
-        $this->syncParticipantResponseFromAttendance($participant, $rsvp);
 
         broadcast(new \App\Modules\Meeting\Events\MeetingAttendanceCheckedIn($attendance))->toOthers();
 
         return $attendance;
     }
 
-    /**
-     * Đồng bộ participant.response_status sau khi điểm danh — chỉ overwrite nếu đang Pending,
-     * tránh ghi đè quyết định RSVP đại biểu đã chủ động bấm trước đó (Accepted/Declined).
-     */
-    private function syncParticipantResponseFromAttendance(MeetingParticipant $participant, string $rsvp): void
-    {
-        if ($participant->response_status !== MeetingParticipantResponseStatusEnum::Pending->value) {
-            return;
-        }
-        $participant->update([
-            'response_status' => $rsvp,
-            'responded_at' => now(),
-        ]);
-    }
 
     /**
      * Chặn self-action (checkin/markAbsent) khi meeting đã khoá điểm danh.
