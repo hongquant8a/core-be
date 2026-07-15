@@ -1,5 +1,7 @@
 # API Thông báo cho User – Core
 
+> Cập nhật lần cuối: 15:10:25 15/07/2026 — bổ sung event `task_assigned` (module task_assignment thực tế có 7 event, không phải 6).
+
 Notification list cho user đang đăng nhập (inbox trong app). Chỉ thao tác được notification của chính user hiện tại — không cần permission, chỉ cần auth.
 
 **Base path:** `/api/notifications/me`
@@ -39,7 +41,7 @@ Thiếu header `X-Organization-Id` → 422 validation error từ middleware `Set
 | Field | Mô tả |
 |---|---|
 | `organization_id` | Tổ chức (Spatie team) sở hữu notification. Luôn khớp với `X-Organization-Id` của request hiện tại |
-| `event_key` | 1 trong 6: `document_issued`, `task_completed`, `task_confirmed`, `reminder_before`, `reminder_on`, `reminder_after` |
+| `event_key` | 1 trong 7: `task_assigned`, `document_issued`, `task_completed`, `task_confirmed`, `reminder_before`, `reminder_on`, `reminder_after` |
 | `notifiable_type` / `notifiable_id` | Entity liên quan (Phase B/C đều là `TaskAssignmentItem`) |
 | `title` | Tiêu đề ngắn hiển thị trong list |
 | `body` | Dòng mô tả ngắn |
@@ -181,7 +183,8 @@ Với mỗi `event_key`, `context.url` chỉ đến trang tương ứng:
 
 | event_key | context.url ví dụ | Ý nghĩa |
 |---|---|---|
-| `document_issued` | `/task-assignment-items/42` | Mở chi tiết công việc được giao |
+| `task_assigned` | `/task-assignment-items/42` | Mở chi tiết công việc vừa được giao/chuyển giao |
+| `document_issued` | `/task-assignment-items/42` | Mở chi tiết công việc được giao (⚠️ hiện listener gửi tin đang tắt — xem `notification-config.md`) |
 | `task_completed` | `/task-assignment-items/42` | Manager vào xem + confirm |
 | `task_confirmed` | `/task-assignment-items/42` | Assignee xem xác nhận |
 | `reminder_before/on/after` | `/task-assignment-items/42` | Xem công việc để làm/giải trình |
@@ -194,6 +197,7 @@ FE redirect user tới `context.url` khi click; đồng thời mark read.
 
 | event_key | Icon | Màu |
 |---|---|---|
+| `task_assigned` | 📌 (pin) | Xanh (info) |
 | `document_issued` | 📄 (document) | Xanh (info) |
 | `task_completed` | ✅ (check) | Cam (warning — cần action) |
 | `task_confirmed` | ✔️ (done) | Xanh lá (success) |

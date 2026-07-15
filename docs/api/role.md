@@ -1,6 +1,8 @@
 # API Role (Core)
 
-Quản lý vai trò (role) theo chuẩn Spatie Laravel Permission: thống kê, danh sách, chi tiết, CRUD, xóa hàng loạt, xuất/nhập Excel. Bảng roles chỉ có các cột mặc định (id, name, guard_name, team_id, timestamps), không có cột status.
+> Cập nhật lần cuối: 16:02:55 15/07/2026 — sửa team_id → organization_id (client không tự set), permission_ids là tên permission (string) không phải ID, bổ sung organization/users_count vào response, sửa method bulk-delete thành DELETE.
+
+Quản lý vai trò (role) theo chuẩn Spatie Laravel Permission: thống kê, danh sách, chi tiết, CRUD, xóa hàng loạt, xuất/nhập Excel. Bảng roles có cột `organization_id` nhưng route CRUD hiện tại luôn hardcode giá trị này là `null` khi tạo/cập nhật — client không tự set tenant scope qua API này được. Không có cột status.
 
 **Base path:** `/api/roles`
 
@@ -24,7 +26,7 @@ Quản lý vai trò (role) theo chuẩn Spatie Laravel Permission: thống kê, 
 | **Method** | GET |
 | **Path** | `/api/roles` |
 | **Query** | `search`, `from_date`, `to_date`, `sort_by` (id \| name \| guard_name \| created_at \| updated_at), `sort_order` (asc \| desc), `limit` (1-100). |
-| **Response** | Paginated collection (RoleResource), mỗi item có `team`, `permissions`. |
+| **Response** | Paginated collection (RoleResource), mỗi item có `organization`, `permissions`, `users_count`. |
 
 ---
 
@@ -35,7 +37,7 @@ Quản lý vai trò (role) theo chuẩn Spatie Laravel Permission: thống kê, 
 | **Method** | GET |
 | **Path** | `/api/roles/{id}` |
 | **UrlParam** | `id` — ID role. |
-| **Response** | Object role (RoleResource), kèm `team`, `permissions`. |
+| **Response** | Object role (RoleResource), kèm `organization`, `permissions`, `users_count`. |
 
 ---
 
@@ -45,7 +47,7 @@ Quản lý vai trò (role) theo chuẩn Spatie Laravel Permission: thống kê, 
 |---|---|
 | **Method** | POST |
 | **Path** | `/api/roles` |
-| **Body** | `name` (required), `guard_name` (optional), `team_id` (optional), `permission_ids` (optional, array ID permission). |
+| **Body** | `name` (required), `guard_name` (optional), `permission_ids` (optional, array **tên** permission, vd `["users.index", "users.store"]` — không phải ID số). `organization_id` KHÔNG nhận từ client, server luôn set `null`. |
 | **Response** | 201, object role + `"message": "Vai trò đã được tạo thành công!"`. |
 
 ---
@@ -56,7 +58,7 @@ Quản lý vai trò (role) theo chuẩn Spatie Laravel Permission: thống kê, 
 |---|---|
 | **Method** | PUT / PATCH |
 | **Path** | `/api/roles/{id}` |
-| **Body** | `name`, `guard_name`, `team_id`, `permission_ids` (sync danh sách quyền). |
+| **Body** | `name`, `guard_name`, `permission_ids` (array **tên** permission, sync danh sách quyền — không phải ID số). `organization_id` KHÔNG nhận từ client, server luôn set `null`. |
 | **Response** | Object role + `"message": "Vai trò đã được cập nhật!"`. |
 
 ---
@@ -75,7 +77,7 @@ Quản lý vai trò (role) theo chuẩn Spatie Laravel Permission: thống kê, 
 
 | | |
 |---|---|
-| **Method** | POST |
+| **Method** | DELETE |
 | **Path** | `/api/roles/bulk-delete` |
 | **Body** | `ids` (array) — danh sách ID role. |
 | **Response** | `{ "message": "Đã xóa thành công các vai trò được chọn!" }`. |
@@ -122,10 +124,13 @@ Quản lý vai trò (role) theo chuẩn Spatie Laravel Permission: thống kê, 
   "id": 1,
   "name": "admin",
   "guard_name": "web",
-  "team_id": 1,
-  "team": { "id": 1, "name": "Công ty A" },
+  "organization_id": null,
+  "organization": null,
   "permissions": ["posts.create", "posts.update"],
+  "users_count": 5,
   "created_at": "14:30:00 17/02/2026",
   "updated_at": "14:30:00 17/02/2026"
 }
 ```
+
+> `organization_id`/`organization` hiện luôn `null` vì `RoleService::store`/`update` hardcode `organization_id = null` — API này chưa hỗ trợ client tự gán tenant scope cho role.

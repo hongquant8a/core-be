@@ -1,5 +1,7 @@
 # API Cấu hình Notification (Admin) – Core
 
+> Cập nhật lần cuối: 15:10:25 15/07/2026 — bổ sung event `task_assigned` (module task_assignment thực tế có 7 event, không phải 6) và channel `zalo_zns` (đã có trong validation nhưng thiếu trong doc gốc).
+
 Cấu hình notification **theo từng module**. Schedule là child của Event — channels nằm ở schedule. Event chỉ có toggle `enabled`.
 
 **Auth:** Bearer token (Sanctum).
@@ -15,7 +17,7 @@ NotificationEventConfig (1 per event per module)
   └── schedules[] (child)
        ├── moment: before|on|after | null
        ├── offset_minutes: int | null
-       ├── channels: ['sms','mail','zalo','fcm']
+       ├── channels: ['sms','mail','zalo','zalo_zns','fcm']  (telegram chưa mở qua UI cấu hình này)
        └── label, sort_order
 ```
 
@@ -23,8 +25,10 @@ NotificationEventConfig (1 per event per module)
 
 | Loại | Event keys | Cấu trúc schedule |
 |---|---|---|
-| **Non-reminder** (fire tức thì khi trigger) | `document_issued`, `task_completed`, `task_confirmed` | **1 schedule duy nhất** với `moment=null`, `offset=null` (instant). FE chỉ edit channels. |
+| **Non-reminder** (fire tức thì khi trigger) | `task_assigned`, `document_issued`, `task_completed`, `task_confirmed` | **1 schedule duy nhất** với `moment=null`, `offset=null` (instant). FE chỉ edit channels. |
 | **Reminder** (fire theo lịch deadline) | `reminder_before`, `reminder_on`, `reminder_after` | **N schedule** với `moment` + `offset_minutes` + channels. FE CRUD được. |
+
+> ⚠️ `document_issued` hiện có config nhưng listener xử lý gửi tin đang bị comment (dead code) — bật `enabled=true` cho event này chưa có tác dụng gửi thông báo thực tế.
 
 ### Resolve channels khi fire
 
@@ -50,6 +54,7 @@ NotificationEventConfig (1 per event per module)
       "key": "task_assignment",
       "label": "Giao việc",
       "events": [
+        { "key": "task_assigned",    "label": "Được giao việc mới", "is_reminder": false },
         { "key": "document_issued",  "label": "Văn bản được ban hành", "is_reminder": false },
         { "key": "task_completed",   "label": "Công việc báo cáo hoàn thành", "is_reminder": false },
         { "key": "task_confirmed",   "label": "Công việc được xác nhận", "is_reminder": false },
@@ -152,7 +157,7 @@ Chỉ 1 field `enabled`. Channels/schedules quản lý qua endpoint schedules.
 |---|---|---|---|
 | `moment` | string | | `before`/`on`/`after` (chỉ cho reminder; non-reminder bị BE reset null) |
 | `offset_minutes` | integer | | `>= 0` (chỉ dùng với `before`/`after`) |
-| `channels` | array | | `sms`/`mail`/`zalo`/`fcm` |
+| `channels` | array | | `sms`/`mail`/`zalo`/`zalo_zns`/`fcm` (validation: `in:sms,mail,zalo,zalo_zns,fcm`; `telegram` chưa được cho phép qua endpoint này) |
 | `label` | string | ✅ | ≤ 255 ký tự |
 | `sort_order` | integer | | |
 
@@ -179,7 +184,7 @@ Render các event rows. UI khác nhau theo `is_reminder`:
 
 **Non-reminder event** (vd Văn bản được ban hành):
 ```
-Văn bản được ban hành    [Toggle enabled]    [Channels: ☐SMS ☐Email ☐Zalo ☐FCM]
+Văn bản được ban hành    [Toggle enabled]    [Channels: ☐SMS ☐Email ☐Zalo ☐Zalo ZNS ☐FCM]
 ```
 Channel checkboxes edit **inline** — save → `PUT /schedules/{instant_schedule_id}` với body `{ channels: [...] }`.
 

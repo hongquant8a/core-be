@@ -1,6 +1,8 @@
 # API Xác thực (Auth)
 
-Đăng nhập, đăng xuất, quên mật khẩu, đặt lại mật khẩu, chuyển tổ chức làm việc. Response đăng nhập trả về user, danh sách organization, **roles** và **permissions** (theo tổ chức hiện tại khi đã xác định được) để Vue Casl lưu và sử dụng. Tổ chức gần nhất được lưu trong bảng **`user_preferences`**; `POST /api/auth/switch-organization` cập nhật bản ghi này.
+> Cập nhật lần cuối: 15/07/2026 — bổ sung endpoint `request-account`, bổ sung field còn thiếu trong response `/api/user` (me), ghi chú header `X-Device-Id` khi logout.
+
+Đăng nhập, đăng xuất, quên mật khẩu, đặt lại mật khẩu, chuyển tổ chức làm việc, gửi yêu cầu mở tài khoản (guest). Response đăng nhập trả về user, danh sách organization, **roles** và **permissions** (theo tổ chức hiện tại khi đã xác định được) để Vue Casl lưu và sử dụng. Tổ chức gần nhất được lưu trong bảng **`user_preferences`**; `POST /api/auth/switch-organization` cập nhật bản ghi này.
 
 **Base path:** `/api/auth`
 
@@ -28,9 +30,9 @@
 | **Method** | GET |
 | **Path** | `/api/user` |
 | **Header** | `Authorization: Bearer {access_token}` (required), `X-Organization-Id` (required). |
-| **Response 200** | `{ "success": true, "data": { "user": {...}, "roles": ["admin"], "permissions": ["users.index", ...], "abilities": [{ "action": "read", "subject": "User" }, ...] } }`. |
+| **Response 200** | `{ "success": true, "data": { "user": {...}, "current_organization_id": 2, "available_organizations": [...], "roles": ["admin"], "permissions": ["users.index", ...], "abilities": [{ "action": "read", "subject": "User" }, ...] } }`. |
 
-Dùng để Vue Casl khởi tạo ability khi refresh trang. Cần header `X-Organization-Id`.
+Dùng để Vue Casl khởi tạo ability khi refresh trang. Cần header `X-Organization-Id`. Response gồm thêm `current_organization_id`/`available_organizations` (giống response `login`) để FE không cần gọi API riêng khi refresh trang.
 
 ---
 
@@ -40,8 +42,21 @@ Dùng để Vue Casl khởi tạo ability khi refresh trang. Cần header `X-Org
 |---|---|
 | **Method** | POST |
 | **Path** | `/api/auth/logout` |
-| **Header** | `Authorization: Bearer {access_token}` (required). |
+| **Header** | `Authorization: Bearer {access_token}` (required). `X-Device-Id` (optional) — nếu gửi, chỉ xóa FCM token của đúng thiết bị đó; không gửi sẽ xóa toàn bộ FCM token của user (đăng xuất khỏi mọi thiết bị push). |
 | **Response** | `{ "message": "Đã đăng xuất" }`. |
+
+---
+
+## Gửi yêu cầu mở tài khoản (guest)
+
+| | |
+|---|---|
+| **Method** | POST |
+| **Path** | `/api/auth/request-account` |
+| **Auth** | Không cần (public, throttle 5 lần/10 phút). |
+| **Body** | `full_name` (required, max 150), `phone` (required, max 20), `email` (required, email, max 150), `content` (required, max 2000). |
+| **Response 200** | `{ "message": "Yêu cầu đã được gửi." }` — hệ thống forward nội dung tới email liên hệ cấu hình sẵn (`contact_email` setting). |
+| **Response 503** | `{ "message": "Hệ thống chưa cấu hình email tiếp nhận. Vui lòng liên hệ quản trị." }` — khi chưa cấu hình email nhận. |
 
 ---
 

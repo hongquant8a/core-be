@@ -1,6 +1,8 @@
 # WebSocket — Phòng họp không giấy (Reverb)
 
-Tài liệu hướng dẫn FE implement WebSocket cho realtime trong phòng họp. BE đã setup Laravel Reverb (2026-05-07), 11 event broadcast trên private channel `meeting.{id}`.
+> Cập nhật lần cuối: 15/07/2026 — bổ sung 3 event mới (`attendance.cancelled`, `participant.responded`, `meeting.projector-file-toggled`, 11→14), sửa claim "Spatie role không áp dụng" (thực tế có fallback role privileged), sửa path vote-topic close đã chuyển sang dạng nested.
+
+Tài liệu hướng dẫn FE implement WebSocket cho realtime trong phòng họp. BE đã setup Laravel Reverb (2026-05-07), 14 event broadcast trên private channel `meeting.{id}`.
 
 > **Lý do dùng WS thay polling**: realtime <1s cho popup biểu quyết, count vote live, list điểm danh chờ duyệt, highlight chương trình, ... Polling 3s vẫn để được làm fallback nếu FE chưa kịp tích hợp Echo, **không bị xoá** — REST endpoints `GET /meetings/{id}` etc. tồn tại song song.
 
@@ -12,7 +14,7 @@ Tài liệu hướng dẫn FE implement WebSocket cho realtime trong phòng họ
 - `.env` đã có 6 biến: `REVERB_APP_ID`, `REVERB_APP_KEY`, `REVERB_APP_SECRET`, `REVERB_HOST=localhost`, `REVERB_PORT=8080`, `REVERB_SCHEME=http`.
 - `BROADCAST_CONNECTION=reverb`.
 - `routes/channels.php` định nghĩa private channel `meeting.{meetingId}`.
-- 11 event class trong `app/Modules/Meeting/Events/`.
+- 14 event class trong `app/Modules/Meeting/Events/`.
 - `broadcast(...)` calls trong các service runtime (vote, attendance, discussion, highlight, end-early).
 
 ### Khởi động Reverb worker
@@ -96,11 +98,11 @@ VITE_REVERB_SCHEME=http
 - Route: `POST /api/broadcasting/auth` (prefix `api`).
 - Middleware: `api` + `auth:sanctum` — FE phải gửi `Authorization: Bearer {token}`. **Không** dùng cookie/CSRF/web session.
 - Register: trong [bootstrap/app.php](../../bootstrap/app.php) qua `->withBroadcasting('routes/channels.php', ['prefix' => 'api', 'middleware' => ['api', 'auth:sanctum']])`.
-- Callback: [routes/channels.php](../../routes/channels.php) — xác thực user là chair / operator / participant của meeting (FK match qua `meeting_attendees.user_id` + `meeting_participants`). Spatie role check **không** áp dụng (xem comment trong file để biết lý do).
+- Callback: [routes/channels.php](../../routes/channels.php) — xác thực user là chair / operator / participant của meeting (FK match qua `meeting_attendees.user_id` + `meeting_participants`). **Có fallback Spatie role**: nếu user không phải chair/operator/participant nhưng có role `Super Admin`/`Admin`/`Quản trị` (check qua `setPermissionsTeamId((int) $meeting->organization_id)` + `hasAnyRole()`) thì vẫn được subscribe — dùng cho admin theo dõi phòng họp không tham gia trực tiếp.
 
 ---
 
-## 3. Channel + 11 Events
+## 3. Channel + 14 Events
 
 **Channel**: `private-meeting.{meetingId}` (Echo dùng tên `meeting.{meetingId}`, prefix `private-` được Echo tự thêm).
 
@@ -119,6 +121,9 @@ VITE_REVERB_SCHEME=http
 | 9 | `attendance.approved` | Operator approve điểm danh | `id, meeting_id, meeting_participant_id, status` |
 | 10 | `attendance.rejected` | Operator reject điểm danh | `id, meeting_id, meeting_participant_id, status` |
 | 11 | `meeting.ended-early` | Operator bấm `/end-early` | `meeting_id, end_time` |
+| 12 | `attendance.cancelled` | Operator hủy 1 bản ghi điểm danh | `id, meeting_id, meeting_participant_id, status='cancelled'` |
+| 13 | `participant.responded` | Đại biểu phản hồi mời họp (accepted/declined) qua `PATCH .../participants/{id}/respond` | `id, meeting_id, meeting_attendee_id, user_id, display_name, response_status, absence_reason, responded_at` |
+| 14 | `meeting.projector-file-toggled` | Operator mở/đóng 1 file tài liệu trên màn chiếu qua `PATCH .../toggle-projector-file` | `meeting_id, file_url, file_name, file_type, is_open` |
 
 > **Convention tên event**: dot-notation `resource.action`. Khi listen ở Echo phải prefix với `.` để Laravel gọi đúng event raw name (không namespace App\\Events\\...).
 
@@ -126,7 +131,7 @@ VITE_REVERB_SCHEME=http
 
 | Case | Trigger | Có WS event? | FE handle |
 |---|---|---|---|
-| **A. Manual close** | Operator bấm `PATCH /meeting-vote-topics/{id}/close` | ✅ `vote-topic.closed` | Listen event → đóng popup |
+| **A. Manual close** | Operator bấm `PATCH /api/meetings/{meeting}/vote-topics/{id}/close` | ✅ `vote-topic.closed` | Listen event → đóng popup |
 | **B. Timeout** | `now > opened_at + duration_minutes` | ❌ Không có event | FE `setTimeout(closeVotePopup, expires_at_iso - now)` ngay khi mở popup |
 
 **Lý do không có event timeout**: BE derive `phase='closed'` runtime khi có request, không có background worker bắn event. Khi đại biểu submit vote sau timeout → BE trả 422 (đã chặn). FE phải đóng popup local trước khi user kịp submit muộn.
@@ -386,7 +391,7 @@ channel.listen('.meeting.ended-early', (e) => {
 WS không thay REST. FE pattern khuyến nghị:
 
 1. **Mount component** → fetch REST `GET /meetings/{id}` để có initial state đầy đủ.
-2. **Subscribe** Echo channel ngay sau khi REST trả → listen 11 events để patch state realtime.
+2. **Subscribe** Echo channel ngay sau khi REST trả → listen 14 events để patch state realtime.
 3. **Unmount** → `echo.leave(...)` để cleanup connection.
 
 Polling 3s ở các tab dashboard có thể giữ lại làm safety net — nếu WS drop thì poll vẫn fetch state mới. Khi WS hoạt động ổn → giảm interval polling lên 30s hoặc bỏ hẳn.

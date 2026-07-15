@@ -1,5 +1,7 @@
 # API Loại văn bản giao việc (Task Assignment Type)
 
+> Cập nhật lần cuối: 15/07/2026 — sửa path public (`/api/public/...`), sửa method `bulk-delete` (POST → DELETE).
+
 Quản lý loại văn bản trong hệ thống giao việc liên phòng ban: thống kê, danh sách, chi tiết, CRUD, xóa/cập nhật trạng thái hàng loạt, đổi trạng thái, xuất/nhập Excel. Hỗ trợ endpoint công khai không cần xác thực.
 
 **Header bắt buộc (với endpoint cần xác thực):** `Authorization: Bearer {token}` và `X-Organization-Id: {organization_id}`.
@@ -15,7 +17,7 @@ Quản lý loại văn bản trong hệ thống giao việc liên phòng ban: th
 | | |
 |---|---|
 | **Method** | GET |
-| **Path** | `/api/task-assignment-types/public` |
+| **Path** | `/api/public/task-assignment-types` |
 | **Auth** | Không yêu cầu. |
 | **Query** | `search` (tên), `status` (active \| inactive), `sort_by`, `sort_order`, `limit` (1-100). |
 | **Response** | Danh sách loại văn bản (không phân trang). |
@@ -27,7 +29,7 @@ Quản lý loại văn bản trong hệ thống giao việc liên phòng ban: th
 | | |
 |---|---|
 | **Method** | GET |
-| **Path** | `/api/task-assignment-types/public-options` |
+| **Path** | `/api/public/task-assignment-types/options` |
 | **Auth** | Không yêu cầu. |
 | **Response** | Mảng `[{ "id": 1, "name": "Quyết định" }]` — dùng cho dropdown/select. |
 
@@ -108,7 +110,7 @@ Quản lý loại văn bản trong hệ thống giao việc liên phòng ban: th
 
 | | |
 |---|---|
-| **Method** | POST |
+| **Method** | DELETE |
 | **Path** | `/api/task-assignment-types/bulk-delete` |
 | **Auth** | Bắt buộc. |
 | **Body** | `ids` (array) — danh sách ID loại văn bản. |

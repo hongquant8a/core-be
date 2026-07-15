@@ -1,5 +1,7 @@
 # Sắp xếp lịch công tác (Reorder)
 
+> Xem tổng quan API module Scheduling tại [api_docs_scheduling_module.md](api_docs_scheduling_module.md).
+
 ## `PATCH /api/schedules/reorder`
 
 Dùng cho kéo thả sắp xếp lại vị trí các lịch trong cùng một ngày + buổi. Gửi danh sách ID theo thứ tự mong muốn, BE gán lại `sort_order` từ 1 → N.

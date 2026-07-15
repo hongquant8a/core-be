@@ -1,5 +1,7 @@
 # API Danh mục module Meeting (Catalogs)
 
+> Cập nhật lần cuối: 15/07/2026 — sửa path public/public-options (đổi prefix thành `/api/public/...`, commit `f6bd612` 14/05/2026).
+
 Tài liệu API cho FE implement các trang quản lý danh mục của module Cuộc họp:
 
 | Danh mục | Base path | Tên hiển thị |
@@ -46,8 +48,8 @@ Có endpoint công khai (không cần auth) để FE landing/portal dùng.
 
 | Method | Path | Mô tả |
 |---|---|---|
-| GET | `/api/meeting-types/public` | Danh sách (không phân trang), chỉ status=active. Query: `search`, `sort_by`, `sort_order`. |
-| GET | `/api/meeting-types/public-options` | Dropdown tối giản `[{id, name, description}]`. Sắp xếp theo `name asc`. |
+| GET | `/api/public/meeting-types` | Danh sách (không phân trang), chỉ status=active. Query: `search`, `sort_by`, `sort_order`. |
+| GET | `/api/public/meeting-types/options` | Dropdown tối giản `[{id, name, description}]`. Sắp xếp theo `name asc`. |
 
 ### 1.2 Authenticated CRUD
 
@@ -59,7 +61,7 @@ Có endpoint công khai (không cần auth) để FE landing/portal dùng.
 | POST | `/api/meeting-types` | Tạo mới. Body: xem [Catalog body](#catalog-body). |
 | PUT \| PATCH | `/api/meeting-types/{id}` | Cập nhật. |
 | DELETE | `/api/meeting-types/{id}` | Xóa. |
-| POST | `/api/meeting-types/bulk-delete` | Body `{ "ids": [1,2,3] }`. |
+| DELETE | `/api/meeting-types/bulk-delete` | Body `{ "ids": [1,2,3] }`. |
 | PATCH | `/api/meeting-types/bulk-status` | Body `{ "ids": [...], "status": "active\|inactive" }`. |
 | PATCH | `/api/meeting-types/{id}/status` | Body `{ "status": "active\|inactive" }`. |
 | GET | `/api/meeting-types/export` | Tải Excel `meeting-types.xlsx`. Query giống index. |
@@ -94,15 +96,15 @@ Có endpoint public + public-options giống mục 1.
 
 | Method | Path | Mô tả |
 |---|---|---|
-| GET | `/api/meeting-locations/public` | Danh sách công khai. |
-| GET | `/api/meeting-locations/public-options` | Dropdown `[{id, name, description}]`. |
+| GET | `/api/public/meeting-locations` | Danh sách công khai. |
+| GET | `/api/public/meeting-locations/options` | Dropdown `[{id, name, description}]`. |
 | GET | `/api/meeting-locations/stats` | `{ total, active, inactive }`. |
 | GET | `/api/meeting-locations` | Danh sách phân trang. Query giống mục 1.2. |
 | GET | `/api/meeting-locations/{id}` | Chi tiết. |
 | POST | `/api/meeting-locations` | Tạo. Body: [Catalog body](#catalog-body) — **địa điểm dùng cả `address`, `google_maps_url`**. |
 | PUT \| PATCH | `/api/meeting-locations/{id}` | Cập nhật. |
 | DELETE | `/api/meeting-locations/{id}` | Xóa. |
-| POST | `/api/meeting-locations/bulk-delete` | Body `{ "ids": [...] }`. |
+| DELETE | `/api/meeting-locations/bulk-delete` | Body `{ "ids": [...] }`. |
 | PATCH | `/api/meeting-locations/bulk-status` | Body `{ "ids": [...], "status": "active\|inactive" }`. |
 | PATCH | `/api/meeting-locations/{id}/status` | Body `{ "status": "active\|inactive" }`. |
 | GET | `/api/meeting-locations/export` | Tải Excel `meeting-locations.xlsx`. |
@@ -119,15 +121,15 @@ Có public + public-options.
 
 | Method | Path | Mô tả |
 |---|---|---|
-| GET | `/api/meeting-document-types/public` | Danh sách công khai. |
-| GET | `/api/meeting-document-types/public-options` | Dropdown. |
+| GET | `/api/public/meeting-document-types` | Danh sách công khai. |
+| GET | `/api/public/meeting-document-types/options` | Dropdown. |
 | GET | `/api/meeting-document-types/stats` | Thống kê. |
 | GET | `/api/meeting-document-types` | Danh sách phân trang. |
 | GET | `/api/meeting-document-types/{id}` | Chi tiết. |
 | POST | `/api/meeting-document-types` | Tạo. |
 | PUT \| PATCH | `/api/meeting-document-types/{id}` | Cập nhật. |
 | DELETE | `/api/meeting-document-types/{id}` | Xóa. |
-| POST | `/api/meeting-document-types/bulk-delete` | Bulk xóa. |
+| DELETE | `/api/meeting-document-types/bulk-delete` | Bulk xóa. |
 | PATCH | `/api/meeting-document-types/bulk-status` | Bulk đổi trạng thái. |
 | PATCH | `/api/meeting-document-types/{id}/status` | Đổi trạng thái. |
 | GET | `/api/meeting-document-types/export` | Tải Excel `meeting-document-types.xlsx`. |
@@ -150,7 +152,7 @@ Body và response giống mục 1.
 | POST | `/api/meeting-attendee-groups` | Tạo. Body: [Catalog body](#catalog-body) (chỉ dùng `name`, `description`, `status`). |
 | PUT \| PATCH | `/api/meeting-attendee-groups/{id}` | Cập nhật. |
 | DELETE | `/api/meeting-attendee-groups/{id}` | Xóa. |
-| POST | `/api/meeting-attendee-groups/bulk-delete` | Bulk xóa. |
+| DELETE | `/api/meeting-attendee-groups/bulk-delete` | Bulk xóa. |
 | PATCH | `/api/meeting-attendee-groups/bulk-status` | Bulk đổi trạng thái. |
 | PATCH | `/api/meeting-attendee-groups/{id}/status` | Đổi trạng thái. |
 | GET | `/api/meeting-attendee-groups/export` | Tải Excel `meeting-attendee-groups.xlsx`. |
@@ -174,7 +176,7 @@ Response: `CatalogResource`.
 | POST | `/api/meeting-attendees` | Tạo. Body: [Attendee body](#attendee-body). |
 | PUT \| PATCH | `/api/meeting-attendees/{id}` | Cập nhật. |
 | DELETE | `/api/meeting-attendees/{id}` | Xóa. |
-| POST | `/api/meeting-attendees/bulk-delete` | Bulk xóa. |
+| DELETE | `/api/meeting-attendees/bulk-delete` | Bulk xóa. |
 | PATCH | `/api/meeting-attendees/bulk-status` | Bulk đổi trạng thái. |
 | PATCH | `/api/meeting-attendees/{id}/status` | Đổi trạng thái. |
 | GET | `/api/meeting-attendees/export` | Tải Excel `meeting-attendees.xlsx`. Query: `search`, `meeting_attendee_group_id`, `status`. |
@@ -288,7 +290,7 @@ Ví dụ tạo loại cuộc họp / loại tài liệu / nhóm đại biểu:
 ## Patterns dùng chung
 
 ### Bulk delete
-- **Method:** `POST /api/{resource}/bulk-delete`
+- **Method:** `DELETE /api/{resource}/bulk-delete`
 - **Body:** `{ "ids": [1, 2, 3] }`
 - **Response:** `{ "success": true, "message": "Xóa hàng loạt thành công!" }`
 
