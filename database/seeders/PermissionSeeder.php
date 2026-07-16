@@ -197,6 +197,30 @@ class PermissionSeeder extends Seeder
                 'show', 'update',
             ],
         ],
+        'Beneficiary' => [
+            'beneficiaries' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
+            ],
+            'beneficiary-households' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'export', 'import',
+            ],
+            'beneficiary-dependents' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'export', 'import', 'storeRelation', 'destroyRelation',
+            ],
+            'beneficiary-subsidy-policies' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'export', 'import', 'renew',
+            ],
+            'beneficiary-subsidy-grants' => [
+                'index', 'store', 'changeStatus',
+            ],
+            'beneficiary-visit-schedules' => [
+                'index', 'show', 'changeStatus',
+            ],
+        ],
     ];
 
     /** Trả về danh sách permission dạng phẳng [resource => actions] từ cấu trúc module. */
@@ -248,6 +272,7 @@ class PermissionSeeder extends Seeder
         'TaskAssignment' => 'Quản lý công việc',
         'Meeting'        => 'Phòng họp không giấy',
         'Scheduling'     => 'Lịch công tác',
+        'Beneficiary'    => 'Người có công',
     ];
 
     /** Nhãn nhóm permission theo resource (để description). */
@@ -296,6 +321,12 @@ class PermissionSeeder extends Seeder
         'scheduling-employees' => 'Nhân viên lịch công tác',
         'scheduling-employee-groups' => 'Nhóm nhân viên lịch công tác',
         'scheduling-settings' => 'Cấu hình lịch công tác',
+        'beneficiaries' => 'Người có công',
+        'beneficiary-households' => 'Hộ gia đình',
+        'beneficiary-dependents' => 'Thân nhân',
+        'beneficiary-subsidy-policies' => 'Chính sách trợ cấp',
+        'beneficiary-subsidy-grants' => 'Trợ cấp',
+        'beneficiary-visit-schedules' => 'Lịch viếng thăm',
     ];
 
     /** Nhãn action (để description). */
@@ -342,6 +373,9 @@ class PermissionSeeder extends Seeder
         'pause' => 'Tạm dừng',
         'cancel' => 'Hủy',
         'manage' => 'Quản lý (Mở khóa)',
+        'storeRelation' => 'Thêm quan hệ thân nhân',
+        'destroyRelation' => 'Xóa quan hệ thân nhân',
+        'renew' => 'Ban hành chính sách mới',
     ];
 
     /** Tạo đầy đủ permission từ danh sách PERMISSIONS (kèm description, sort_order, parent_id).

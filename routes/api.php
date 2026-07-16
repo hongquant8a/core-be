@@ -222,4 +222,29 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
     Route::prefix('scheduling-settings')->group(function () {
         require base_path('app/Modules/Scheduling/Routes/scheduling_setting.php');
     });
+
+    // Beneficiary module — quản lý người có công theo hộ gia đình & thân nhân.
+    Route::prefix('beneficiaries')->middleware('ensure.route.org')->group(function () {
+        require base_path('app/Modules/Beneficiary/Routes/beneficiary.php');
+    });
+    Route::prefix('beneficiary-households')->middleware('ensure.route.org')->group(function () {
+        require base_path('app/Modules/Beneficiary/Routes/household.php');
+    });
+    Route::prefix('beneficiary-dependents')->middleware('ensure.route.org')->group(function () {
+        require base_path('app/Modules/Beneficiary/Routes/dependent.php');
+    });
+    Route::prefix('beneficiary-subsidy-policies')->group(function () {
+        require base_path('app/Modules/Beneficiary/Routes/subsidy_policy.php');
+    });
+    Route::prefix('beneficiary-subsidy-grants')->middleware('ensure.route.org')->group(function () {
+        require base_path('app/Modules/Beneficiary/Routes/subsidy_grant.php');
+    });
+    Route::prefix('beneficiary-visit-schedules')->middleware('ensure.route.org')->group(function () {
+        require base_path('app/Modules/Beneficiary/Routes/visit_schedule.php');
+    });
+
+    // Notification config scoped cho module Beneficiary
+    Route::prefix('beneficiary/notification-config')->group(function () {
+        require base_path('app/Modules/Beneficiary/Routes/notification_config.php');
+    });
 });
