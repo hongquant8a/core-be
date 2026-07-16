@@ -37,6 +37,11 @@ class StoreBeneficiaryRequest extends BaseRequest
      * classifications.*.field) — Scribe không render đúng ví dụ curl cho mảng object lồng
      * qua rule wildcard, gây lỗi "stdClass could not be converted to string" khi
      * scribe:generate build ví dụ bash cho TOÀN BỘ project, không riêng endpoint này.
+     *
+     * Chỉ bắt buộc `type` (loại đối tượng — thông tin cơ bản nhất). `decision_no`/
+     * `decision_date`/`issued_by` là giấy tờ hành chính, cho phép bổ sung sau khi cán bộ
+     * có đủ hồ sơ — không chặn nhập liệu ngay từ đầu. `is_primary` chỉ validate "không quá 1",
+     * không bắt buộc phải chọn ngay (chưa chọn thì chưa có loại chính, bổ sung sau).
      */
     public function withValidator(Validator $validator): void
     {
@@ -59,14 +64,14 @@ class StoreBeneficiaryRequest extends BaseRequest
                 if (empty($classification['type']) || ! in_array($classification['type'], BeneficiaryTypeEnum::values(), true)) {
                     $validator->errors()->add("classifications.{$index}.type", 'Loại đối tượng không được để trống hoặc không hợp lệ.');
                 }
-                if (empty($classification['decision_no']) || ! is_string($classification['decision_no']) || strlen($classification['decision_no']) > 255) {
-                    $validator->errors()->add("classifications.{$index}.decision_no", 'Số quyết định không được để trống.');
+                if (! empty($classification['decision_no']) && (! is_string($classification['decision_no']) || strlen($classification['decision_no']) > 255)) {
+                    $validator->errors()->add("classifications.{$index}.decision_no", 'Số quyết định không hợp lệ.');
                 }
-                if (empty($classification['decision_date']) || ! strtotime($classification['decision_date'])) {
-                    $validator->errors()->add("classifications.{$index}.decision_date", 'Ngày quyết định không được để trống hoặc không hợp lệ.');
+                if (! empty($classification['decision_date']) && ! strtotime($classification['decision_date'])) {
+                    $validator->errors()->add("classifications.{$index}.decision_date", 'Ngày quyết định không hợp lệ.');
                 }
-                if (empty($classification['issued_by']) || ! is_string($classification['issued_by']) || strlen($classification['issued_by']) > 255) {
-                    $validator->errors()->add("classifications.{$index}.issued_by", 'Cơ quan ban hành không được để trống.');
+                if (! empty($classification['issued_by']) && (! is_string($classification['issued_by']) || strlen($classification['issued_by']) > 255)) {
+                    $validator->errors()->add("classifications.{$index}.issued_by", 'Cơ quan ban hành không hợp lệ.');
                 }
 
                 if ((bool) ($classification['is_primary'] ?? false)) {
@@ -74,8 +79,8 @@ class StoreBeneficiaryRequest extends BaseRequest
                 }
             }
 
-            if (count($classifications) > 0 && $primaryCount !== 1) {
-                $validator->errors()->add('classifications', 'Phải chọn đúng 1 phân loại là loại chính (is_primary = true).');
+            if ($primaryCount > 1) {
+                $validator->errors()->add('classifications', 'Chỉ được chọn tối đa 1 phân loại là loại chính (is_primary = true).');
             }
         });
     }
@@ -116,7 +121,7 @@ class StoreBeneficiaryRequest extends BaseRequest
             'longitude' => ['description' => 'Kinh độ (tra cứu bản đồ).', 'example' => 108.2208],
             'phone' => ['description' => 'Số điện thoại.', 'example' => null],
             'note' => ['description' => 'Ghi chú.', 'example' => null],
-            'classifications' => ['description' => 'Danh sách phân loại đối tượng.', 'example' => []],
+            'classifications' => ['description' => 'Danh sách phân loại đối tượng. Mỗi phần tử chỉ bắt buộc `type` — `decision_no`/`decision_date`/`issued_by` có thể bổ sung sau khi có đủ giấy tờ.', 'example' => []],
         ];
     }
 

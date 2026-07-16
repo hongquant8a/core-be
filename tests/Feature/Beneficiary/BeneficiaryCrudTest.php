@@ -52,6 +52,24 @@ class BeneficiaryCrudTest extends TestCase
         $this->assertDatabaseHas('beneficiary_classifications', ['decision_no' => 'QD-1', 'is_primary' => true]);
     }
 
+    public function test_store_allows_classification_without_decision_details(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        // Chỉ type là bắt buộc — decision_no/decision_date/issued_by bổ sung sau khi có
+        // đủ giấy tờ, và không bắt buộc phải chọn is_primary ngay.
+        $res = $this->postJson('/api/beneficiaries', [
+            'full_name' => 'Trần Văn D',
+            'gender' => 'male',
+            'classifications' => [
+                ['type' => 'war_invalid'],
+            ],
+        ], ['X-Organization-Id' => $this->orgA->id]);
+
+        $res->assertCreated();
+        $this->assertDatabaseHas('beneficiary_classifications', ['type' => 'war_invalid', 'decision_no' => null, 'is_primary' => false]);
+    }
+
     public function test_store_rejects_multiple_primary_classifications(): void
     {
         Sanctum::actingAs($this->admin);

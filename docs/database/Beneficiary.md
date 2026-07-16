@@ -1,7 +1,7 @@
 # DATABASE DESIGN — Module Beneficiary (Người có công)
 
 > Ngày tạo: 11:05:00 16/07/2026
-> Cập nhật lần cuối: 15:19:08 16/07/2026 — thêm `birth_year`/`latitude`/`longitude` vào `beneficiaries`, `latitude`/`longitude` vào `beneficiary_households`
+> Cập nhật lần cuối: 15:30:00 16/07/2026 — thêm `birth_year`/`latitude`/`longitude` vào `beneficiaries`, `latitude`/`longitude` vào `beneficiary_households`; nới `beneficiary_households.address` và `beneficiary_classifications.decision_no/decision_date/issued_by` thành nullable để không chặn nhập liệu khi chưa có đủ thông tin
 
 Quản lý người có công theo hộ gia đình & thân nhân (TP Đà Nẵng). Module đa tổ chức — bảng nghiệp vụ có `organization_id` scope theo tenant hiện tại (`organization_id = NULL` chỉ dùng cho catalog áp dụng toàn TP). Mọi model có `organization_id` **extends `TenantModel`**, không `extends Model`.
 
@@ -68,7 +68,7 @@ organizations (phường/xã)
 | household_code | varchar(255) | No | — | Format `{org_code}-HGD-{seq}` hoặc nhập tay |
 | head_name | varchar(255) | No | — | Chủ hộ — dùng `VietnameseSort::apply()` khi sort |
 | head_id_number | varchar(255) | Yes | null | CCCD chủ hộ |
-| address | varchar(255) | No | — | |
+| address | varchar(255) | Yes | null | Cho phép tạo hộ trước, bổ sung sau khi xác minh thực địa (migration `2026_07_16_153000`) |
 | latitude | decimal(10,7) | Yes | null | Vĩ độ — phục vụ tra cứu bản đồ (thêm migration `2026_07_16_151909`) |
 | longitude | decimal(10,7) | Yes | null | Kinh độ — phục vụ tra cứu bản đồ (thêm migration `2026_07_16_151909`) |
 | phone | varchar(255) | Yes | null | |
@@ -117,9 +117,9 @@ organizations (phường/xã)
 | id | bigint unsigned | No | — | PK |
 | beneficiary_id | bigint unsigned | No | — | FK → beneficiaries.id, cascadeOnDelete |
 | type | varchar(50) | No | — | `BeneficiaryTypeEnum` — 12 nhóm theo Pháp lệnh 02/2020/UBTVQH14 |
-| decision_no | varchar(255) | No | — | Số quyết định công nhận loại này |
-| decision_date | date | No | — | |
-| issued_by | varchar(255) | No | — | Cơ quan ban hành |
+| decision_no | varchar(255) | Yes | null | Số quyết định công nhận loại này — cho phép bổ sung sau khi có đủ giấy tờ (migration `2026_07_16_153001`) |
+| decision_date | date | Yes | null | Cho phép bổ sung sau (migration `2026_07_16_153001`) |
+| issued_by | varchar(255) | Yes | null | Cơ quan ban hành — cho phép bổ sung sau (migration `2026_07_16_153001`) |
 | is_primary | boolean | No | false | Loại chính dùng để tính trợ cấp ưu tiên — **chỉ 1 bản ghi `is_primary=true` / beneficiary** (validate ở Service, không ràng buộc DB unique vì cần cho phép tạm thời 0 primary khi đang sửa) |
 | created_at / updated_at | timestamp | Yes | null | |
 

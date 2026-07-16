@@ -11,7 +11,9 @@ class StoreHouseholdRequest extends BaseRequest
             'household_code' => 'nullable|string|max:255',
             'head_name' => 'required|string|max:255',
             'head_id_number' => 'nullable|string|max:255',
-            'address' => 'required|string|max:255',
+            // Chỉ tên chủ hộ là bắt buộc — cho phép tạo hồ sơ sơ bộ trước, bổ sung địa chỉ
+            // sau khi cán bộ xác minh thực địa (không chặn nhập liệu khi chưa có đủ thông tin).
+            'address' => 'nullable|string|max:255',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
             'phone' => 'nullable|string|max:255',
@@ -30,7 +32,6 @@ class StoreHouseholdRequest extends BaseRequest
             'head_name.required' => 'Tên chủ hộ không được để trống.',
             'head_name.string' => 'Tên chủ hộ phải là một chuỗi ký tự.',
             'head_name.max' => 'Tên chủ hộ không được vượt quá 255 ký tự.',
-            'address.required' => 'Địa chỉ không được để trống.',
             'latitude.between' => 'Vĩ độ phải trong khoảng -90 đến 90.',
             'longitude.between' => 'Kinh độ phải trong khoảng -180 đến 180.',
             'beneficiary_ids.array' => 'Danh sách người có công phải là một mảng.',
@@ -47,7 +48,7 @@ class StoreHouseholdRequest extends BaseRequest
             'household_code' => ['description' => 'Mã hộ (để trống sẽ tự sinh).', 'example' => 'HGD-00001'],
             'head_name' => ['description' => 'Tên chủ hộ.', 'example' => 'Nguyễn Văn A'],
             'head_id_number' => ['description' => 'CCCD chủ hộ.', 'example' => '049123456789'],
-            'address' => ['description' => 'Địa chỉ.', 'example' => '12 Trần Phú, Hải Châu'],
+            'address' => ['description' => 'Địa chỉ (có thể để trống, bổ sung sau khi xác minh thực địa).', 'example' => '12 Trần Phú, Hải Châu'],
             'latitude' => ['description' => 'Vĩ độ (tra cứu bản đồ).', 'example' => 16.0678],
             'longitude' => ['description' => 'Kinh độ (tra cứu bản đồ).', 'example' => 108.2208],
             'phone' => ['description' => 'Số điện thoại.', 'example' => '0905123456'],

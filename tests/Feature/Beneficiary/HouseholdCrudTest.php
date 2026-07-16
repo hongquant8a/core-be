@@ -42,6 +42,19 @@ class HouseholdCrudTest extends TestCase
         $this->assertNotEmpty($res->json('data.household_code'));
     }
 
+    public function test_store_allows_household_without_address(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        // Chỉ head_name là bắt buộc — address có thể bổ sung sau khi xác minh thực địa.
+        $res = $this->postJson('/api/beneficiary-households', [
+            'head_name' => 'Nguyễn Văn B',
+        ], ['X-Organization-Id' => $this->orgA->id]);
+
+        $res->assertCreated();
+        $res->assertJsonPath('data.address', null);
+    }
+
     public function test_household_observer_updates_member_count_when_beneficiary_assigned(): void
     {
         Sanctum::actingAs($this->admin);
