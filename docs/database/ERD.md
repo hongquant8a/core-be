@@ -1,7 +1,7 @@
 # Sơ đồ thiết kế cơ sở dữ liệu (TỔNG QUAN)
 
 > Ngày tạo: 00:00:00 16/06/2026  
-> Cập nhật lần cuối: 00:00:00 28/06/2026
+> Cập nhật lần cuối: 12:00:00 16/07/2026
 
 Tài liệu index — chi tiết từng module xem file riêng.
 
@@ -14,7 +14,8 @@ app/Modules/
 ├── Core/            Nền tảng: users, orgs, roles, permissions, settings, notification config, logs
 ├── Meeting/         Phòng họp không giấy
 ├── TaskAssignment/  Giao việc liên phòng ban
-└── Scheduling/      Lịch công tác tuần (EXECUTIVE / OFFICE)
+├── Scheduling/      Lịch công tác tuần (EXECUTIVE / OFFICE)
+└── Beneficiary/     Người có công theo hộ gia đình & thân nhân
 ```
 
 ---
@@ -27,6 +28,7 @@ app/Modules/
 | **TaskAssignment** | [TaskAssignment.md](TaskAssignment.md) | task_assignment_items, task_assignment_types, task_assignment_departments, task_assignment_documents, task_assignment_petitions ... |
 | **Meeting** | [Meeting.md](Meeting.md) | meetings, meeting_agendas, meeting_documents, meeting_participants, meeting_vote_topics, meeting_discussion_registrations, meeting_attendees ... |
 | **Scheduling** | [Scheduling.md](Scheduling.md) | schedules, schedule_reminders, schedule_notifications, scheduling_employees, org_scheduling_settings ... |
+| **Beneficiary** | [Beneficiary.md](Beneficiary.md) | beneficiaries, beneficiary_households, beneficiary_dependents, beneficiary_dependent_relations, beneficiary_subsidy_policies, beneficiary_subsidy_grants, beneficiary_status_histories, beneficiary_visit_schedules, beneficiary_residential_areas ... |
 
 ---
 
@@ -47,6 +49,7 @@ notifications (log gửi)
 | `meeting` | Meeting |
 | `task_assignment` | TaskAssignment |
 | `scheduling` | Scheduling |
+| `beneficiary` | Beneficiary |
 
 Events per module được define trong `NotificationEventEnum` và `NotificationModuleEnum`.
 
