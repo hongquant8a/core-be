@@ -107,7 +107,11 @@ class TaskAssignmentDocumentController extends Controller
      * @bodyParam title string required Tiêu đề văn bản. Example: Quyết định giao việc tháng 4
      * @bodyParam type_id integer required ID loại văn bản. Example: 1
      * @bodyParam status string required Trạng thái. Example: draft
-     * @bodyParam reminders array Danh sách reminders. Mỗi reminder có reminder_type (instant|scheduled), channels (mảng string: mail, sms, zalo, zalo_zns, fcm). Với scheduled thêm moment (before|on|after) và offset_minutes (phút). Example: [{"reminder_type":"instant","channels":["mail"]}]
+     * @bodyParam reminders object[] Danh sách reminders. Gửi mảng rỗng [] nếu không có.
+     * @bodyParam reminders.*.reminder_type string Loại reminder: instant hoặc scheduled. Example: instant
+     * @bodyParam reminders.*.moment string Thời điểm nhắc: before, on, after. Bỏ qua nếu reminder_type=instant. Example: before
+     * @bodyParam reminders.*.offset_minutes integer Phút offset. Bỏ qua nếu reminder_type=instant. Example: 30
+     * @bodyParam reminders.*.channels string[] Kênh gửi: mail, sms, zalo, zalo_zns, fcm. Example: ["mail"]
      * @bodyParam attachments[] file Tệp đính kèm (tối đa 10 tệp, multipart/form-data).
      *
      * @apiResource App\Modules\TaskAssignment\Resources\DocumentResource status=201
@@ -131,7 +135,11 @@ class TaskAssignmentDocumentController extends Controller
      * @bodyParam title string Tiêu đề văn bản.
      * @bodyParam type_id integer ID loại văn bản.
      * @bodyParam status string Trạng thái.
-     * @bodyParam reminders array Danh sách reminders. Mỗi reminder có reminder_type (instant|scheduled), channels (mảng string). Với scheduled thêm moment (before|on|after) và offset_minutes (phút). Example: [{"reminder_type":"instant","channels":["mail"]}]
+     * @bodyParam reminders object[] Danh sách reminders. Không gửi key này = giữ nguyên; gửi mảng rỗng [] = xóa hết.
+     * @bodyParam reminders.*.reminder_type string Loại reminder: instant hoặc scheduled. Example: instant
+     * @bodyParam reminders.*.moment string Thời điểm nhắc: before, on, after. Bỏ qua nếu reminder_type=instant. Example: before
+     * @bodyParam reminders.*.offset_minutes integer Phút offset. Bỏ qua nếu reminder_type=instant. Example: 30
+     * @bodyParam reminders.*.channels string[] Kênh gửi: mail, sms, zalo, zalo_zns, fcm. Example: ["mail"]
      * @bodyParam attachments[] file Tệp đính kèm mới (append, multipart/form-data).
      * @bodyParam remove_attachment_ids array Mảng ID đính kèm cần xóa.
      *
