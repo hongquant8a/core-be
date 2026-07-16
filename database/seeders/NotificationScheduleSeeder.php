@@ -15,6 +15,7 @@ class NotificationScheduleSeeder extends Seeder
         $this->seedTaskAssignment();
         $this->seedMeeting();
         $this->seedScheduling();
+        $this->seedBeneficiary();
     }
 
     private function seedTaskAssignment(): void
@@ -188,6 +189,38 @@ class NotificationScheduleSeeder extends Seeder
             ],
             NotificationEventEnum::ScheduleReminderOn->value => [
                 ['moment' => 'on', 'offset_minutes' => null, 'label' => 'Đến giờ lịch', 'sort_order' => 1],
+            ],
+        ];
+
+        foreach ($reminderDefaults as $eventKey => $schedules) {
+            $reminderConfigs = NotificationEventConfig::where('module_key', $moduleKey)
+                ->where('event_key', $eventKey)
+                ->get();
+            foreach ($reminderConfigs as $config) {
+                foreach ($schedules as $s) {
+                    NotificationSchedule::firstOrCreate(
+                        ['notification_event_config_id' => $config->id, 'moment' => $s['moment'], 'offset_minutes' => $s['offset_minutes']],
+                        ['channels' => [], 'label' => $s['label'], 'sort_order' => $s['sort_order']]
+                    );
+                }
+            }
+        }
+    }
+
+    private function seedBeneficiary(): void
+    {
+        $moduleKey = NotificationModuleEnum::Beneficiary->value;
+
+        // Chỉ có reminder events (nhắc lịch viếng thăm) — không có instant event ở bản đầu
+        // (BeneficiaryStatusChanged/DependentEligibilityExpired/SubsidyGranted/Terminated
+        // chưa đăng ký NotificationEventEnum, xem docs/answer/... mục 7).
+        $reminderDefaults = [
+            NotificationEventEnum::BeneficiaryVisitReminderBefore->value => [
+                ['moment' => 'before', 'offset_minutes' => 4320, 'label' => 'Nhắc trước 3 ngày', 'sort_order' => 1],
+                ['moment' => 'before', 'offset_minutes' => 1440, 'label' => 'Nhắc trước 1 ngày', 'sort_order' => 2],
+            ],
+            NotificationEventEnum::BeneficiaryVisitReminderOn->value => [
+                ['moment' => 'on', 'offset_minutes' => null, 'label' => 'Đến ngày viếng thăm', 'sort_order' => 1],
             ],
         ];
 
