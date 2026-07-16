@@ -19,9 +19,9 @@ class Beneficiary extends TenantModel
     protected $table = 'beneficiaries';
 
     protected $fillable = [
-        'household_id', 'full_name', 'date_of_birth', 'gender', 'id_number', 'injury_rate',
-        'recognition_decision_no', 'recognition_date', 'status', 'death_date', 'address', 'phone',
-        'note', 'organization_id', 'created_by', 'updated_by',
+        'household_id', 'full_name', 'date_of_birth', 'birth_year', 'gender', 'id_number', 'injury_rate',
+        'recognition_decision_no', 'recognition_date', 'status', 'death_date', 'address', 'latitude',
+        'longitude', 'phone', 'note', 'organization_id', 'created_by', 'updated_by',
     ];
 
     protected $casts = [
@@ -29,6 +29,8 @@ class Beneficiary extends TenantModel
         'recognition_date' => 'date',
         'death_date' => 'date',
         'injury_rate' => 'decimal:2',
+        'latitude' => 'decimal:7',
+        'longitude' => 'decimal:7',
     ];
 
     protected static function booted()

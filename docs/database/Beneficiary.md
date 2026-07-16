@@ -1,7 +1,7 @@
 # DATABASE DESIGN — Module Beneficiary (Người có công)
 
 > Ngày tạo: 11:05:00 16/07/2026
-> Cập nhật lần cuối: 11:05:00 16/07/2026
+> Cập nhật lần cuối: 15:19:08 16/07/2026 — thêm `birth_year`/`latitude`/`longitude` vào `beneficiaries`, `latitude`/`longitude` vào `beneficiary_households`
 
 Quản lý người có công theo hộ gia đình & thân nhân (TP Đà Nẵng). Module đa tổ chức — bảng nghiệp vụ có `organization_id` scope theo tenant hiện tại (`organization_id = NULL` chỉ dùng cho catalog áp dụng toàn TP). Mọi model có `organization_id` **extends `TenantModel`**, không `extends Model`.
 
@@ -69,6 +69,8 @@ organizations (phường/xã)
 | head_name | varchar(255) | No | — | Chủ hộ — dùng `VietnameseSort::apply()` khi sort |
 | head_id_number | varchar(255) | Yes | null | CCCD chủ hộ |
 | address | varchar(255) | No | — | |
+| latitude | decimal(10,7) | Yes | null | Vĩ độ — phục vụ tra cứu bản đồ (thêm migration `2026_07_16_151909`) |
+| longitude | decimal(10,7) | Yes | null | Kinh độ — phục vụ tra cứu bản đồ (thêm migration `2026_07_16_151909`) |
 | phone | varchar(255) | Yes | null | |
 | member_count | integer | No | 0 | **Denormalized** — cập nhật qua `HouseholdObserver` khi thêm/xóa thành viên, không `COUNT()` runtime |
 | note | text | Yes | null | |
@@ -87,7 +89,8 @@ organizations (phường/xã)
 | organization_id | bigint unsigned | No | — | FK, TenantModel |
 | household_id | bigint unsigned | Yes | null | FK → beneficiary_households.id, nullOnDelete — có thể chưa gán hộ |
 | full_name | varchar(255) | No | — | Áp `VietnameseSort::apply()` khi sort, whitelist column trước khi truyền |
-| date_of_birth | date | Yes | null | |
+| date_of_birth | date | Yes | null | Dùng khi biết đầy đủ ngày/tháng/năm sinh |
+| birth_year | varchar(20) | Yes | null | Năm sinh dạng text — dùng khi không rõ đầy đủ ngày/tháng (nhiều người có công thời chiến chỉ nhớ năm hoặc năm ước lượng, VD "1950", "khoảng 1948"). Thêm migration `2026_07_16_151908` |
 | gender | varchar(20) | No | — | `GenderEnum` |
 | id_number | varchar(255) | Yes | null | CCCD/CMND — **unique theo `organization_id`** (không unique global, tránh chặn nhầm khi 2 tenant khác nhau) |
 | injury_rate | decimal(5,2) | Yes | null | Tỷ lệ thương tật % (thương binh) |
@@ -96,6 +99,8 @@ organizations (phường/xã)
 | status | varchar(20) | No | 'pending' | `BeneficiaryStatusEnum` |
 | death_date | date | Yes | null | |
 | address | varchar(255) | Yes | null | Nếu khác địa chỉ hộ |
+| latitude | decimal(10,7) | Yes | null | Vĩ độ — phục vụ tra cứu bản đồ, độc lập với hộ vì Beneficiary có thể ở địa chỉ khác hộ. Thêm migration `2026_07_16_151908` |
+| longitude | decimal(10,7) | Yes | null | Kinh độ — phục vụ tra cứu bản đồ. Thêm migration `2026_07_16_151908` |
 | phone | varchar(255) | Yes | null | |
 | note | text | Yes | null | |
 | created_by / updated_by | bigint unsigned | Yes | null | FK → users.id |

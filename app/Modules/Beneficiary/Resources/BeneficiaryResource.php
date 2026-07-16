@@ -25,6 +25,7 @@ class BeneficiaryResource extends JsonResource
 
             'full_name' => $this->full_name,
             'date_of_birth' => $this->date_of_birth?->format('d/m/Y'),
+            'birth_year' => $this->birth_year,
             'gender' => $this->gender,
             'gender_label' => GenderEnum::tryFrom((string) $this->gender)?->label() ?? $this->gender,
             'id_number' => $this->id_number,
@@ -35,6 +36,8 @@ class BeneficiaryResource extends JsonResource
             'status_label' => BeneficiaryStatusEnum::tryFrom((string) $this->status)?->label() ?? $this->status,
             'death_date' => $this->death_date?->format('d/m/Y'),
             'address' => $this->address,
+            'latitude' => $this->latitude,
+            'longitude' => $this->longitude,
             'phone' => $this->phone,
             'note' => $this->note,
 

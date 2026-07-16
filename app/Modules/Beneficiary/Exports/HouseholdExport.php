@@ -24,6 +24,8 @@ class HouseholdExport extends AbstractExcelExport implements FromCollection
                 'head_id_number' => $household->head_id_number,
                 'residential_area' => $household->residentialArea?->name,
                 'address' => $household->address,
+                'latitude' => $household->latitude,
+                'longitude' => $household->longitude,
                 'phone' => $household->phone,
                 'member_count' => $household->member_count,
                 'created_by' => $household->creator?->name ?? 'N/A',
@@ -36,6 +38,6 @@ class HouseholdExport extends AbstractExcelExport implements FromCollection
 
     public function headings(): array
     {
-        return ['STT', 'Mã hộ', 'Chủ hộ', 'CCCD chủ hộ', 'Tổ dân phố', 'Địa chỉ', 'SĐT', 'Số thành viên', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
+        return ['STT', 'Mã hộ', 'Chủ hộ', 'CCCD chủ hộ', 'Tổ dân phố', 'Địa chỉ', 'Vĩ độ', 'Kinh độ', 'SĐT', 'Số thành viên', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
     }
 }

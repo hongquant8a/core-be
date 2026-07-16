@@ -20,11 +20,14 @@ class Household extends TenantModel
 
     protected $fillable = [
         'residential_area_id', 'household_code', 'head_name', 'head_id_number',
-        'address', 'phone', 'member_count', 'note', 'organization_id', 'created_by', 'updated_by',
+        'address', 'latitude', 'longitude', 'phone', 'member_count', 'note',
+        'organization_id', 'created_by', 'updated_by',
     ];
 
     protected $casts = [
         'member_count' => 'integer',
+        'latitude' => 'decimal:7',
+        'longitude' => 'decimal:7',
     ];
 
     protected static function booted()

@@ -23,6 +23,8 @@ class HouseholdResource extends JsonResource
             'head_name' => $this->head_name,
             'head_id_number' => $this->head_id_number,
             'address' => $this->address,
+            'latitude' => $this->latitude,
+            'longitude' => $this->longitude,
             'phone' => $this->phone,
             'member_count' => $this->member_count,
             'note' => $this->note,

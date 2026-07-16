@@ -1,6 +1,6 @@
 # API Người có công (Beneficiary)
 
-> Cập nhật lần cuối: 16/07/2026 — tạo mới cùng module Beneficiary (migration `2026_07_16_*`).
+> Cập nhật lần cuối: 16/07/2026 — thêm `birth_year` (năm sinh dạng text), `latitude`/`longitude` (tra cứu bản đồ).
 
 Quản lý hồ sơ người có công: thống kê, danh sách, chi tiết, CRUD, xóa/cập nhật trạng thái hàng loạt, đổi trạng thái (kèm ghi lịch sử + tự dừng trợ cấp), xuất/nhập Excel, lịch sử thay đổi trạng thái. Không có endpoint công khai (dữ liệu cá nhân nhạy cảm).
 
@@ -50,7 +50,7 @@ Quản lý hồ sơ người có công: thống kê, danh sách, chi tiết, CRU
 |---|---|
 | **Method** | POST |
 | **Path** | `/api/beneficiaries` |
-| **Body** | `household_id` (nullable, exists), `full_name` (required, max 255), `date_of_birth` (nullable date), `gender` (required: male \| female \| other), `id_number` (nullable), `injury_rate` (nullable, 0-100), `recognition_decision_no`, `recognition_date`, `status` (nullable, mặc định `pending`), `address`, `phone`, `note`, `classifications[]` (mảng, mỗi phần tử: `type` — 1 trong 12 nhóm `BeneficiaryTypeEnum`, `decision_no`, `decision_date`, `issued_by`, `is_primary`). |
+| **Body** | `household_id` (nullable, exists), `full_name` (required, max 255), `date_of_birth` (nullable date — dùng khi biết đầy đủ ngày/tháng/năm), `birth_year` (nullable, text max 20 — dùng khi không rõ đầy đủ ngày/tháng sinh, VD "1950"), `gender` (required: male \| female \| other), `id_number` (nullable), `injury_rate` (nullable, 0-100), `recognition_decision_no`, `recognition_date`, `status` (nullable, mặc định `pending`), `address`, `latitude` (nullable, -90 đến 90), `longitude` (nullable, -180 đến 180), `phone`, `note`, `classifications[]` (mảng, mỗi phần tử: `type` — 1 trong 12 nhóm `BeneficiaryTypeEnum`, `decision_no`, `decision_date`, `issued_by`, `is_primary`). |
 | **Validate riêng** | Nếu có `classifications`, bắt buộc đúng **1** phần tử `is_primary = true` (lỗi field `classifications` nếu không đúng 1). |
 | **Response** | 201, `BeneficiaryResource`. |
 
@@ -127,7 +127,7 @@ Quản lý hồ sơ người có công: thống kê, danh sách, chi tiết, CRU
 |---|---|
 | **Method** | GET |
 | **Path** | `/api/beneficiaries/export` |
-| **Cột xuất** | STT, Họ tên, Ngày sinh, Giới tính, CCCD/CMND, Mã hộ, Trạng thái, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID. |
+| **Cột xuất** | STT, Họ tên, Ngày sinh, Năm sinh, Giới tính, CCCD/CMND, Mã hộ, Trạng thái, Vĩ độ, Kinh độ, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID. |
 
 ---
 
@@ -151,6 +151,7 @@ Quản lý hồ sơ người có công: thống kê, danh sách, chi tiết, CRU
   "household": { "id": 3, "household_code": "HGD-00001", "head_name": "Nguyễn Văn A" },
   "full_name": "Trần Văn B",
   "date_of_birth": "20/05/1950",
+  "birth_year": null,
   "gender": "male",
   "gender_label": "Nam",
   "id_number": "049123456789",
@@ -161,6 +162,8 @@ Quản lý hồ sơ người có công: thống kê, danh sách, chi tiết, CRU
   "status_label": "Đang hưởng",
   "death_date": null,
   "address": null,
+  "latitude": null,
+  "longitude": null,
   "phone": null,
   "note": null,
   "classifications": [

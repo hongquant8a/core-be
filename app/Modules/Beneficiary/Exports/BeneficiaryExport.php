@@ -23,10 +23,13 @@ class BeneficiaryExport extends AbstractExcelExport implements FromCollection
                 'stt' => $i + 1,
                 'full_name' => $b->full_name,
                 'date_of_birth' => $b->date_of_birth?->format('d/m/Y'),
+                'birth_year' => $b->birth_year,
                 'gender' => GenderEnum::tryFrom((string) $b->gender)?->label() ?? $b->gender,
                 'id_number' => $b->id_number,
                 'household_code' => $b->household?->household_code,
                 'status' => BeneficiaryStatusEnum::tryFrom((string) $b->status)?->label() ?? $b->status,
+                'latitude' => $b->latitude,
+                'longitude' => $b->longitude,
                 'created_by' => $b->creator?->name ?? 'N/A',
                 'updated_by' => $b->editor?->name ?? 'N/A',
                 'created_at' => $b->created_at?->format('H:i:s d/m/Y'),
@@ -37,6 +40,6 @@ class BeneficiaryExport extends AbstractExcelExport implements FromCollection
 
     public function headings(): array
     {
-        return ['STT', 'Họ tên', 'Ngày sinh', 'Giới tính', 'CCCD/CMND', 'Mã hộ', 'Trạng thái', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
+        return ['STT', 'Họ tên', 'Ngày sinh', 'Năm sinh', 'Giới tính', 'CCCD/CMND', 'Mã hộ', 'Trạng thái', 'Vĩ độ', 'Kinh độ', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
     }
 }

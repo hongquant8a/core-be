@@ -1,6 +1,6 @@
 # API Hộ gia đình (Beneficiary Household)
 
-> Cập nhật lần cuối: 16/07/2026 — tạo mới cùng module Beneficiary.
+> Cập nhật lần cuối: 16/07/2026 — thêm `latitude`/`longitude` (tra cứu bản đồ).
 
 Quản lý hộ gia đình có người có công. **Không có** endpoint `bulk-status`/`{id}/status` — bảng `beneficiary_households` không có cột `status` (không có vòng đời trạng thái theo thiết kế).
 
@@ -47,7 +47,7 @@ Quản lý hộ gia đình có người có công. **Không có** endpoint `bulk
 |---|---|
 | **Method** | POST |
 | **Path** | `/api/beneficiary-households` |
-| **Body** | `residential_area_id` (nullable, exists), `household_code` (nullable — để trống tự sinh `{SLUG_ORG}-HGD-{seq}`), `head_name` (required, max 255), `head_id_number`, `address` (required, max 255), `phone`, `note`, `beneficiary_ids[]` (nullable, exists `beneficiaries`), `dependent_ids[]` (nullable, exists `beneficiary_dependents`). |
+| **Body** | `residential_area_id` (nullable, exists), `household_code` (nullable — để trống tự sinh `{SLUG_ORG}-HGD-{seq}`), `head_name` (required, max 255), `head_id_number`, `address` (required, max 255), `latitude` (nullable, -90 đến 90), `longitude` (nullable, -180 đến 180), `phone`, `note`, `beneficiary_ids[]` (nullable, exists `beneficiaries`), `dependent_ids[]` (nullable, exists `beneficiary_dependents`). |
 | **Side-effect** | Nếu có `beneficiary_ids`/`dependent_ids`: gán `household_id` cho các bản ghi đó ngay trong cùng transaction — `member_count` tự cập nhật qua Observer. |
 | **Response** | 201, `HouseholdResource`. |
 
@@ -59,7 +59,7 @@ Quản lý hộ gia đình có người có công. **Không có** endpoint `bulk
 |---|---|
 | **Method** | PUT |
 | **Path** | `/api/beneficiary-households/{id}` |
-| **Body** | `residential_area_id`, `household_code`, `head_name`, `head_id_number`, `address`, `phone`, `note` (tất cả optional). Không nhận `beneficiary_ids`/`dependent_ids` ở đây — gán/tháo thành viên làm qua `PUT /api/beneficiaries/{id}` hoặc `PUT /api/beneficiary-dependents/{id}` (đổi `household_id`). |
+| **Body** | `residential_area_id`, `household_code`, `head_name`, `head_id_number`, `address`, `latitude`, `longitude`, `phone`, `note` (tất cả optional). Không nhận `beneficiary_ids`/`dependent_ids` ở đây — gán/tháo thành viên làm qua `PUT /api/beneficiaries/{id}` hoặc `PUT /api/beneficiary-dependents/{id}` (đổi `household_id`). |
 | **Response** | `HouseholdResource`. |
 
 ---
@@ -91,7 +91,7 @@ Quản lý hộ gia đình có người có công. **Không có** endpoint `bulk
 |---|---|
 | **Method** | GET |
 | **Path** | `/api/beneficiary-households/export` |
-| **Cột xuất** | STT, Mã hộ, Chủ hộ, CCCD chủ hộ, Tổ dân phố, Địa chỉ, SĐT, Số thành viên, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID. |
+| **Cột xuất** | STT, Mã hộ, Chủ hộ, CCCD chủ hộ, Tổ dân phố, Địa chỉ, Vĩ độ, Kinh độ, SĐT, Số thành viên, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID. |
 
 ---
 
@@ -117,6 +117,8 @@ Quản lý hộ gia đình có người có công. **Không có** endpoint `bulk
   "head_name": "Nguyễn Văn A",
   "head_id_number": "049123456789",
   "address": "12 Trần Phú, Hải Châu",
+  "latitude": null,
+  "longitude": null,
   "phone": "0905123456",
   "member_count": 2,
   "note": null,
