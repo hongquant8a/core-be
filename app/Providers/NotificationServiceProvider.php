@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Modules\Beneficiary\Models\VisitSchedule;
+use App\Modules\Beneficiary\Observers\VisitScheduleObserver;
 use App\Modules\Core\Services\SettingService;
 use App\Modules\Meeting\Models\Meeting;
 use App\Modules\Meeting\Observers\MeetingObserver;
@@ -40,6 +42,7 @@ use App\Services\Notification\ContentBuilders\SchedulePublishedContentBuilder;
 use App\Services\Notification\ContentBuilders\ScheduleUpdatedContentBuilder;
 use App\Services\Notification\ContentBuilders\ScheduleCancelledContentBuilder;
 use App\Services\Notification\ContentBuilders\ScheduleReminderContentBuilder;
+use App\Services\Notification\ContentBuilders\BeneficiaryVisitReminderContentBuilder;
 use App\Services\Notification\Events\SchedulePublished;
 use App\Services\Notification\Events\ScheduleUpdated;
 use App\Services\Notification\Events\ScheduleCancelled;
@@ -107,6 +110,11 @@ class NotificationServiceProvider extends ServiceProvider
         $registry->register('schedule_reminder_on',     new ScheduleReminderContentBuilder('on'));
         $registry->register('schedule_reminder_after',  new ScheduleReminderContentBuilder('after'));
 
+        // Register Beneficiary Content Builders
+        $registry->register('beneficiary_visit_reminder_before', new BeneficiaryVisitReminderContentBuilder('before'));
+        $registry->register('beneficiary_visit_reminder_on',     new BeneficiaryVisitReminderContentBuilder('on'));
+        $registry->register('beneficiary_visit_reminder_after',  new BeneficiaryVisitReminderContentBuilder('after'));
+
         // Register event listeners
         Event::listen(DocumentIssued::class, SendDocumentIssuedNotifications::class);
         Event::listen(TaskAssigned::class, SendTaskAssignedNotifications::class);
@@ -122,5 +130,6 @@ class NotificationServiceProvider extends ServiceProvider
         // Register model observer for auto reminder scheduling
         TaskAssignmentItem::observe(TaskAssignmentItemObserver::class);
         Meeting::observe(MeetingObserver::class);
+        VisitSchedule::observe(VisitScheduleObserver::class);
     }
 }

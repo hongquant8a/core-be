@@ -11,6 +11,7 @@ enum NotificationModuleEnum: string
     case TaskAssignment = 'task_assignment';
     case Meeting = 'meeting';
     case Scheduling = 'scheduling';
+    case Beneficiary = 'beneficiary';
 
     public function label(): string
     {
@@ -18,6 +19,7 @@ enum NotificationModuleEnum: string
             self::TaskAssignment => 'Giao việc',
             self::Meeting => 'Cuộc họp',
             self::Scheduling => 'Lịch công tác',
+            self::Beneficiary => 'Người có công',
         };
     }
 
