@@ -1,7 +1,7 @@
 # DATABASE DESIGN — Module Beneficiary (Người có công)
 
 > Ngày tạo: 11:05:00 16/07/2026
-> Cập nhật lần cuối: 15:30:00 16/07/2026 — thêm `birth_year`/`latitude`/`longitude` vào `beneficiaries`, `latitude`/`longitude` vào `beneficiary_households`; nới `beneficiary_households.address` và `beneficiary_classifications.decision_no/decision_date/issued_by` thành nullable để không chặn nhập liệu khi chưa có đủ thông tin
+> Cập nhật lần cuối: 11:05:00 19/07/2026 — bổ sung Controller/Service/Request/Resource/Route CRUD đầy đủ cho `beneficiary_residential_areas` (trước đó chỉ có Model, chưa có API)
 
 Quản lý người có công theo hộ gia đình & thân nhân (TP Đà Nẵng). Module đa tổ chức — bảng nghiệp vụ có `organization_id` scope theo tenant hiện tại (`organization_id = NULL` chỉ dùng cho catalog áp dụng toàn TP). Mọi model có `organization_id` **extends `TenantModel`**, không `extends Model`.
 
@@ -55,6 +55,8 @@ organizations (phường/xã)
 | created_at / updated_at | timestamp | Yes | null | |
 
 **Index**: `(organization_id)`.
+
+**API**: đầy đủ bộ `stats, index, show, store, update, destroy, bulkDestroy, export, import` — không có `bulkUpdateStatus`/`changeStatus` vì không có cột `status` (giống `beneficiary_households`). Route prefix `beneficiary-residential-areas`, xem `app/Modules/Beneficiary/Routes/residential_area.php`.
 
 ---
 

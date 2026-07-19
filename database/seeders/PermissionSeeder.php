@@ -206,6 +206,10 @@ class PermissionSeeder extends Seeder
                 'stats', 'index', 'show', 'store', 'update', 'destroy',
                 'bulkDestroy', 'export', 'import',
             ],
+            'beneficiary-residential-areas' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'export', 'import',
+            ],
             'beneficiary-dependents' => [
                 'stats', 'index', 'show', 'store', 'update', 'destroy',
                 'bulkDestroy', 'export', 'import', 'storeRelation', 'destroyRelation',
@@ -323,6 +327,7 @@ class PermissionSeeder extends Seeder
         'scheduling-settings' => 'Cấu hình lịch công tác',
         'beneficiaries' => 'Người có công',
         'beneficiary-households' => 'Hộ gia đình',
+        'beneficiary-residential-areas' => 'Tổ dân phố',
         'beneficiary-dependents' => 'Thân nhân',
         'beneficiary-subsidy-policies' => 'Chính sách trợ cấp',
         'beneficiary-subsidy-grants' => 'Trợ cấp',

@@ -1,7 +1,7 @@
 # Module: Beneficiary (Người có công theo Hộ gia đình & Thân nhân)
 
 > Ngày tạo: 11:05:00 16/07/2026
-> Cập nhật lần cuối: 12:00:00 16/07/2026 — code đã triển khai xong, mục 9 cập nhật đúng endpoint thật
+> Cập nhật lần cuối: 11:05:00 19/07/2026 — bổ sung đầy đủ CRUD API cho danh mục `beneficiary-residential-areas` (mục 9), trước đó chỉ có Model chưa có Controller/Route
 
 ---
 
@@ -301,6 +301,7 @@ erDiagram
 | `beneficiaries.bulkDestroy` / `.bulkUpdateStatus` / `.changeStatus` | Thao tác hàng loạt/đổi trạng thái |
 | `beneficiaries.export` / `.import` / `.stats` | Xuất/nhập/thống kê |
 | `beneficiary-households.*` | CRUD hộ gia đình (bộ action tương tự) |
+| `beneficiary-residential-areas.*` | CRUD danh mục tổ dân phố (bộ action tương tự, không có status) |
 | `beneficiary-dependents.*` | CRUD thân nhân |
 | `beneficiary-subsidy-grants.index` / `.store` / `.changeStatus` | Cấp/dừng trợ cấp — **không cần** `bulkDestroy`/`import` nếu grant chỉ tạo qua luồng nghiệp vụ (6.5), không phải free-form CRUD (chốt cùng nghiệp vụ) |
 | `beneficiary-visit-schedules.index` / `.changeStatus` | Xem & cập nhật lịch viếng thăm |
@@ -314,7 +315,7 @@ erDiagram
 Đã triển khai (xem `app/Modules/Beneficiary/Routes/*.php`, kế hoạch chi tiết ở `docs/answer/module-nguoi-co-cong-phan-tich-giai-phap_105303_16072026.md` mục 5). Tóm tắt:
 
 - `beneficiaries` — đầy đủ bộ chuẩn CLAUDE.md §3 (`stats,index,show,store,update,destroy,bulkDestroy,bulkUpdateStatus,changeStatus,export,import`) + nested `GET /{id}/status-histories`.
-- `beneficiary-households`, `beneficiary-dependents`, `beneficiary-subsidy-policies` — **không có** `bulkUpdateStatus`/`changeStatus` vì không có cột `status` (khác giả định ban đầu ở mục này) — xem lý do cập nhật ở `docs/answer/...` mục 5.
+- `beneficiary-households`, `beneficiary-residential-areas`, `beneficiary-dependents`, `beneficiary-subsidy-policies` — **không có** `bulkUpdateStatus`/`changeStatus` vì không có cột `status` (khác giả định ban đầu ở mục này) — xem lý do cập nhật ở `docs/answer/...` mục 5.
 - `beneficiary-dependents` có thêm `POST /{id}/relations`, `DELETE /{id}/relations/{relation}`.
 - `beneficiary-subsidy-policies` có thêm `POST /{id}/renew`.
 - `beneficiary-subsidy-grants` chỉ `index, store, changeStatus`; `beneficiary-visit-schedules` chỉ `index, show, changeStatus` — không CRUD tự do (lý do: bản ghi phát sinh từ hành động nghiệp vụ, không phải danh mục).

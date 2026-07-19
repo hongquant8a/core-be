@@ -230,6 +230,9 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
     Route::prefix('beneficiary-households')->middleware('ensure.route.org')->group(function () {
         require base_path('app/Modules/Beneficiary/Routes/household.php');
     });
+    Route::prefix('beneficiary-residential-areas')->middleware('ensure.route.org')->group(function () {
+        require base_path('app/Modules/Beneficiary/Routes/residential_area.php');
+    });
     Route::prefix('beneficiary-dependents')->middleware('ensure.route.org')->group(function () {
         require base_path('app/Modules/Beneficiary/Routes/dependent.php');
     });

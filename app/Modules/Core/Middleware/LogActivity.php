@@ -277,6 +277,7 @@ class LogActivity
             'scheduling-filter-presets' => 'bộ lọc cá nhân',
             'beneficiaries' => 'người có công',
             'beneficiary-households' => 'hộ gia đình',
+            'beneficiary-residential-areas' => 'tổ dân phố',
             'beneficiary-dependents' => 'thân nhân',
             'beneficiary-subsidy-policies' => 'chính sách trợ cấp',
             'beneficiary-subsidy-grants' => 'trợ cấp',
