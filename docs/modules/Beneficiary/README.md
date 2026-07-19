@@ -1,7 +1,7 @@
 # Module: Beneficiary (Người có công theo Hộ gia đình & Thân nhân)
 
 > Ngày tạo: 11:05:00 16/07/2026
-> Cập nhật lần cuối: 11:05:00 19/07/2026 — bổ sung đầy đủ CRUD API cho danh mục `beneficiary-residential-areas` (mục 9), trước đó chỉ có Model chưa có Controller/Route
+> Cập nhật lần cuối: 11:30:00 19/07/2026 — thêm lối tắt nhập liệu nhanh `household`/`dependents` khi tạo hồ sơ (mục 6.2), vá lỗ hổng `classifications` không sync được ở `update()`
 
 ---
 
@@ -140,6 +140,28 @@ erDiagram
 5. Sau khi active, đề xuất gán hộ gia đình (nếu chưa có) và đề xuất thân nhân liên quan
    (tra theo địa chỉ/họ tên trùng, nếu đã tồn tại trong dữ liệu).
 ```
+
+**Lối tắt nhập liệu nhanh cho hồ sơ hoàn toàn mới** (áp dụng nguyên tắc Aggregate — "đi liền
+một khối thì lưu một khối"): `POST /beneficiaries` chấp nhận thêm 2 field tùy chọn, chỉ dùng ở
+bước **tạo mới**, không có ở `update()`:
+
+- `household` (object, loại trừ với `household_id`) — tạo hộ gia đình mới trong CÙNG transaction,
+  tái dùng nguyên `HouseholdService::store()` (không tách bản sao logic sinh `household_code`).
+- `dependents` (array) — mỗi phần tử = trường thân nhân (`StoreDependentRequest`) + thêm
+  `relationship_type`/`eligible_from` để tự tạo luôn `beneficiary_dependent_relations`, tái dùng
+  `DependentService::store()` + `DependentService::addRelation()` (giữ đúng quy tắc tính
+  `status` active/expired theo tuổi ở Luồng 3 bước 3, không hard-code).
+
+Sau khi tạo, hộ/thân nhân vẫn là resource độc lập — sửa tiếp qua `beneficiary-households`/
+`beneficiary-dependents` như bình thường. Đây chỉ là rút gọn cho ĐÚNG lúc dữ liệu "đi liền một
+khối" (tiếp nhận hồ sơ mới toanh); không lặp lại lối tắt này khi sửa hồ sơ đã tồn tại vì lúc đó
+hộ/thân nhân đã có vòng đời riêng.
+
+`PUT /beneficiaries/{id}` giờ đồng bộ được `classifications` (trước đây chỉ tạo được lúc `store`,
+không sửa/xóa được sau khi tạo — đã vá): có `id` = cập nhật, không có `id` = tạo mới, dòng vắng
+mặt trong payload **giữ nguyên**, xóa phải qua `classifications_deleted` tường minh (không suy ra
+từ việc thiếu trong payload). Bất biến "chỉ 1 `is_primary=true`/hồ sơ" được `BeneficiaryService`
+enforce trên TOÀN BỘ classification của beneficiary, kể cả dòng không nằm trong payload gửi lên.
 
 ### 6.3 Khai báo & Liên kết Thân nhân
 
@@ -314,7 +336,7 @@ erDiagram
 
 Đã triển khai (xem `app/Modules/Beneficiary/Routes/*.php`, kế hoạch chi tiết ở `docs/answer/module-nguoi-co-cong-phan-tich-giai-phap_105303_16072026.md` mục 5). Tóm tắt:
 
-- `beneficiaries` — đầy đủ bộ chuẩn CLAUDE.md §3 (`stats,index,show,store,update,destroy,bulkDestroy,bulkUpdateStatus,changeStatus,export,import`) + nested `GET /{id}/status-histories`.
+- `beneficiaries` — đầy đủ bộ chuẩn CLAUDE.md §3 (`stats,index,show,store,update,destroy,bulkDestroy,bulkUpdateStatus,changeStatus,export,import`) + nested `GET /{id}/status-histories`. `POST /beneficiaries` nhận thêm `household`/`dependents` tùy chọn (lối tắt tạo kèm hộ + thân nhân cho hồ sơ mới, xem mục 6.2); `PUT /beneficiaries/{id}` sync được `classifications`/`classifications_deleted`.
 - `beneficiary-households`, `beneficiary-residential-areas`, `beneficiary-dependents`, `beneficiary-subsidy-policies` — **không có** `bulkUpdateStatus`/`changeStatus` vì không có cột `status` (khác giả định ban đầu ở mục này) — xem lý do cập nhật ở `docs/answer/...` mục 5.
 - `beneficiary-dependents` có thêm `POST /{id}/relations`, `DELETE /{id}/relations/{relation}`.
 - `beneficiary-subsidy-policies` có thêm `POST /{id}/renew`.

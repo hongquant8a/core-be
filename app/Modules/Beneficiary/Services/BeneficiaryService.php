@@ -8,6 +8,7 @@ use App\Modules\Beneficiary\Imports\BeneficiaryImport;
 use App\Modules\Beneficiary\Models\Beneficiary;
 use App\Modules\Beneficiary\Models\StatusHistory;
 use App\Modules\Core\Support\ExportFilename;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -15,6 +16,11 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 class BeneficiaryService
 {
     private const WITH = ['household', 'classifications', 'creator.media', 'editor.media'];
+
+    public function __construct(
+        private HouseholdService $householdService,
+        private DependentService $dependentService,
+    ) {}
 
     public function stats(array $filters): array
     {
@@ -41,13 +47,26 @@ class BeneficiaryService
         return $beneficiary->load(self::WITH)->loadCount(['dependents', 'activeSubsidyGrants']);
     }
 
+    /**
+     * `household`/`dependents` là lối tắt nhập liệu nhanh cho hồ sơ HOÀN TOÀN MỚI (gộp coarse
+     * theo đúng lúc dữ liệu "đi liền một khối" — cán bộ tiếp nhận 1 lần: người có công + hộ +
+     * thân nhân đi kèm). Hộ/thân nhân sau khi tạo vẫn là resource độc lập, quản lý tiếp qua
+     * `beneficiary-households`/`beneficiary-dependents` như bình thường — không lặp lại lối tắt
+     * này ở update(), vì lúc đó hộ/thân nhân đã có vòng đời riêng, sửa qua đúng resource của nó.
+     */
     public function store(array $validated): Beneficiary
     {
         return DB::transaction(function () use ($validated) {
             $classifications = $validated['classifications'] ?? [];
-            unset($validated['classifications']);
+            $householdData = $validated['household'] ?? null;
+            $dependents = $validated['dependents'] ?? [];
+            unset($validated['classifications'], $validated['household'], $validated['dependents']);
 
             $validated['status'] ??= BeneficiaryStatusEnum::Pending->value;
+
+            if ($householdData && empty($validated['household_id'])) {
+                $validated['household_id'] = $this->householdService->store($householdData)->id;
+            }
 
             $beneficiary = Beneficiary::create($validated);
 
@@ -55,15 +74,61 @@ class BeneficiaryService
                 $beneficiary->classifications()->create($classification);
             }
 
+            foreach ($dependents as $dependentRow) {
+                $dependent = $this->dependentService->store([
+                    ...Arr::except($dependentRow, ['relationship_type', 'eligible_from']),
+                    'household_id' => $dependentRow['household_id'] ?? $beneficiary->household_id,
+                ]);
+
+                // addRelation() tự tính status active/expired theo tuổi + eligibility_status
+                // (đúng quy tắc Luồng 3 bước 3) — không hard-code status ở đây.
+                $this->dependentService->addRelation($dependent, [
+                    'beneficiary_id' => $beneficiary->id,
+                    'relationship_type' => $dependentRow['relationship_type'],
+                    'eligible_from' => $dependentRow['eligible_from'],
+                    'note' => $dependentRow['note'] ?? null,
+                ]);
+            }
+
             return $beneficiary->fresh(self::WITH);
         });
     }
 
+    /**
+     * Sync `classifications` theo quy ước COARSE: có `id` = cập nhật, không có `id` = tạo mới,
+     * dòng vắng mặt trong payload GIỮ NGUYÊN (không tự xóa) — xóa phải qua `classifications_deleted`
+     * tường minh. Xóa TRƯỚC upsert để nhất quán với quy ước chung, dù bảng này không có ràng buộc
+     * unique nào bị ảnh hưởng bởi thứ tự.
+     */
     public function update(Beneficiary $beneficiary, array $validated): Beneficiary
     {
-        $beneficiary->update($validated);
+        return DB::transaction(function () use ($beneficiary, $validated) {
+            $classifications = $validated['classifications'] ?? [];
+            $deletedIds = $validated['classifications_deleted'] ?? [];
+            unset($validated['classifications'], $validated['classifications_deleted']);
 
-        return $beneficiary->load(self::WITH);
+            $beneficiary->update($validated);
+
+            if ($deletedIds) {
+                $beneficiary->classifications()->whereIn('id', $deletedIds)->delete();
+            }
+
+            foreach ($classifications as $row) {
+                $attrs = Arr::except($row, ['id']);
+
+                $classification = isset($row['id'])
+                    ? tap($beneficiary->classifications()->whereKey($row['id'])->firstOrFail())->update($attrs)
+                    : $beneficiary->classifications()->create($attrs);
+
+                // Bất biến "chỉ 1 is_primary=true/beneficiary" (validate ở Request chỉ soát được
+                // trong mảng gửi lên) — enforce lại ở đây với CẢ các dòng cũ không nằm trong payload.
+                if ($attrs['is_primary'] ?? false) {
+                    $beneficiary->classifications()->whereKeyNot($classification->id)->update(['is_primary' => false]);
+                }
+            }
+
+            return $beneficiary->load(self::WITH);
+        });
     }
 
     public function destroy(Beneficiary $beneficiary): void
