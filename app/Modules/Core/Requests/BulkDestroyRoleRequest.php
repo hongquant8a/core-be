@@ -19,6 +19,16 @@ class BulkDestroyRoleRequest extends FormRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'ids.required' => 'Danh sách ID không được để trống.',
+            'ids.array' => 'Danh sách ID phải là mảng.',
+            'ids.min' => 'Phải chọn ít nhất 1 vai trò.',
+            'ids.*.exists' => 'Vai trò không tồn tại.',
+        ];
+    }
+
     public function bodyParameters(): array
     {
         return [];

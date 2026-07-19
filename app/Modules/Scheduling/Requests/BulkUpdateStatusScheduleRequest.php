@@ -21,6 +21,32 @@ class BulkUpdateStatusScheduleRequest extends FormRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'ids.required' => 'Danh sách ID không được để trống.',
+            'ids.array' => 'Danh sách ID phải là một mảng.',
+            'ids.*.integer' => 'ID phải là số nguyên.',
+            'ids.*.exists' => 'ID không tồn tại trong hệ thống.',
+            'status.required' => 'Trạng thái không được để trống.',
+            'status.in' => 'Trạng thái không hợp lệ.',
+        ];
+    }
+
+    public function bodyParameters(): array
+    {
+        return [];
+    }
+
+    public function attributes(): array
+    {
+        return [
+            'ids' => 'Danh sách ID',
+            'ids.*' => 'ID',
+            'status' => 'Trạng thái',
+        ];
+    }
+
     protected function prepareForValidation(): void
     {
         $status = $this->input('status');

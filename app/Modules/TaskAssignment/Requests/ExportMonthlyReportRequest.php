@@ -17,4 +17,11 @@ class ExportMonthlyReportRequest extends BaseRequest
             'month' => 'Tháng',
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'month.date_format' => 'Tháng phải đúng định dạng YYYY-MM.',
+        ];
+    }
 }

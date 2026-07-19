@@ -13,6 +13,19 @@ class DocumentStatsByTimeRequest extends BaseRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'from_date.required' => 'Từ ngày không được để trống.',
+            'from_date.date' => 'Từ ngày không đúng định dạng ngày tháng.',
+            'to_date.required' => 'Đến ngày không được để trống.',
+            'to_date.date' => 'Đến ngày không đúng định dạng ngày tháng.',
+            'to_date.after_or_equal' => 'Đến ngày phải sau hoặc bằng từ ngày.',
+            'task_assignment_type_id.integer' => 'Loại giao việc phải là số nguyên.',
+            'task_assignment_type_id.exists' => 'Loại giao việc không tồn tại.',
+        ];
+    }
+
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {

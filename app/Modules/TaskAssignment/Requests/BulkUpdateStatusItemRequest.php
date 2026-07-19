@@ -15,6 +15,19 @@ class BulkUpdateStatusItemRequest extends BaseRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'ids.required' => 'Danh sách ID không được để trống.',
+            'ids.array' => 'Danh sách ID phải là một mảng.',
+            'ids.min' => 'Danh sách ID phải có ít nhất 1 phần tử.',
+            'ids.*.integer' => 'Mỗi ID phải là số nguyên.',
+            'ids.*.exists' => 'Công việc không tồn tại.',
+            'processing_status.required' => 'Trạng thái xử lý không được để trống.',
+            'processing_status.in' => 'Trạng thái xử lý không hợp lệ.',
+        ];
+    }
+
     public function bodyParameters(): array
     {
         return [

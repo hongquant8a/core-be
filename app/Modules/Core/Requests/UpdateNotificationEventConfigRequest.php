@@ -18,6 +18,19 @@ class UpdateNotificationEventConfigRequest extends FormRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'enabled.required' => 'Enabled không được để trống.',
+            'enabled.boolean' => 'Enabled phải là true hoặc false.',
+        ];
+    }
+
+    public function bodyParameters(): array
+    {
+        return [];
+    }
+
     public function attributes(): array
     {
         return [

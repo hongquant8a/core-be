@@ -15,6 +15,19 @@ class StoreLookupRequest extends BaseRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'Tên không được để trống.',
+            'name.string' => 'Tên phải là chuỗi ký tự.',
+            'name.max' => 'Tên không được vượt quá 255 ký tự.',
+            'description.string' => 'Mô tả phải là chuỗi ký tự.',
+            'description.max' => 'Mô tả không được vượt quá 65535 ký tự.',
+            'status.required' => 'Trạng thái không được để trống.',
+            'status.in' => 'Trạng thái không hợp lệ.',
+        ];
+    }
+
     public function bodyParameters(): array
     {
         return [

@@ -19,6 +19,14 @@ class ChangeStatusOrganizationRequest extends FormRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'status.required' => 'Trạng thái không được để trống.',
+            'status.in' => 'Trạng thái không hợp lệ.',
+        ];
+    }
+
     public function bodyParameters(): array
     {
         return [];

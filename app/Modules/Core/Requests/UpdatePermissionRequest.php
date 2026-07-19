@@ -22,6 +22,21 @@ class UpdatePermissionRequest extends FormRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'name.string' => 'Tên phải là chuỗi ký tự.',
+            'name.max' => 'Tên không được vượt quá 255 ký tự.',
+            'guard_name.string' => 'Guard phải là chuỗi ký tự.',
+            'guard_name.max' => 'Guard không được vượt quá 255 ký tự.',
+            'description.string' => 'Mô tả phải là chuỗi ký tự.',
+            'description.max' => 'Mô tả không được vượt quá 500 ký tự.',
+            'sort_order.integer' => 'Thứ tự sắp xếp phải là số nguyên.',
+            'sort_order.min' => 'Thứ tự sắp xếp không được nhỏ hơn 0.',
+            'parent_id.exists' => 'Đơn vị cha không tồn tại.',
+        ];
+    }
+
     public function bodyParameters(): array
     {
         return [];

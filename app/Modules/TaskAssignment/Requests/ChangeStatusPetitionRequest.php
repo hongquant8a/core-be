@@ -13,6 +13,14 @@ class ChangeStatusPetitionRequest extends BaseRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'processing_status.required' => 'Trạng thái xử lý không được để trống.',
+            'processing_status.in' => 'Trạng thái xử lý không hợp lệ.',
+        ];
+    }
+
     public function bodyParameters(): array
     {
         return [

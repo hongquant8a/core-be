@@ -15,6 +15,18 @@ class BulkUpdateStatusDepartmentRequest extends BaseRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'ids.required' => 'Danh sách ID không được để trống.',
+            'ids.array' => 'Danh sách ID phải là một mảng.',
+            'ids.min' => 'Danh sách ID phải có ít nhất 1 phần tử.',
+            'ids.*.integer' => 'Mỗi ID phải là số nguyên.',
+            'status.required' => 'Trạng thái không được để trống.',
+            'status.in' => 'Trạng thái không hợp lệ.',
+        ];
+    }
+
     public function bodyParameters(): array
     {
         return [

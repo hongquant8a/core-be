@@ -17,6 +17,22 @@ class StoreDepartmentRequest extends BaseRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'Tên không được để trống.',
+            'name.string' => 'Tên phải là chuỗi ký tự.',
+            'name.max' => 'Tên không được vượt quá 255 ký tự.',
+            'description.string' => 'Mô tả phải là chuỗi ký tự.',
+            'description.max' => 'Mô tả không được vượt quá 65535 ký tự.',
+            'status.required' => 'Trạng thái không được để trống.',
+            'status.in' => 'Trạng thái không hợp lệ.',
+            'sort_order.integer' => 'Thứ tự sắp xếp phải là số nguyên.',
+            'sort_order.min' => 'Thứ tự sắp xếp không được nhỏ hơn 0.',
+            'is_petition_overview.boolean' => 'Tổng hợp đơn thư phải là giá trị đúng/sai.',
+        ];
+    }
+
     public function bodyParameters(): array
     {
         return [

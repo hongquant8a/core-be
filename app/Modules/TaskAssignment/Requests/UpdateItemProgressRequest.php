@@ -35,4 +35,14 @@ class UpdateItemProgressRequest extends BaseRequest
             'completion_percent' => 'Phần trăm hoàn thành',
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'processing_status.in' => 'Trạng thái xử lý không hợp lệ.',
+            'completion_percent.integer' => 'Phần trăm hoàn thành phải là số nguyên.',
+            'completion_percent.min' => 'Phần trăm hoàn thành không được nhỏ hơn 0.',
+            'completion_percent.max' => 'Phần trăm hoàn thành không được vượt quá 100.',
+        ];
+    }
 }

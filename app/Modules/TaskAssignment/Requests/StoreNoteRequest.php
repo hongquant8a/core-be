@@ -17,4 +17,13 @@ class StoreNoteRequest extends BaseRequest
             'content' => 'Nội dung',
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'content.required' => 'Nội dung không được để trống.',
+            'content.string' => 'Nội dung phải là chuỗi ký tự.',
+            'content.max' => 'Nội dung không được vượt quá 200 ký tự.',
+        ];
+    }
 }

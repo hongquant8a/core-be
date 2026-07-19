@@ -34,4 +34,48 @@ class UpdateSchedulingEmployeeRequest extends FormRequest
             'sort_order'      => ['nullable', 'integer', 'min:0'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'user_id.integer' => 'Người dùng phải là số nguyên.',
+            'user_id.exists' => 'Người dùng không tồn tại trong hệ thống.',
+            'user_id.unique' => 'Người dùng này đã được thêm làm nhân viên lịch trực.',
+            'name.string' => 'Tên phải là chuỗi ký tự.',
+            'name.max' => 'Tên không được vượt quá 255 ký tự.',
+            'position_name.string' => 'Chức danh phải là chuỗi ký tự.',
+            'position_name.max' => 'Chức danh không được vượt quá 255 ký tự.',
+            'department.string' => 'Phòng ban phải là chuỗi ký tự.',
+            'department.max' => 'Phòng ban không được vượt quá 255 ký tự.',
+            'phone.string' => 'Số điện thoại phải là chuỗi ký tự.',
+            'phone.max' => 'Số điện thoại không được vượt quá 30 ký tự.',
+            'email.email' => 'Email không đúng định dạng.',
+            'email.max' => 'Email không được vượt quá 255 ký tự.',
+            'priority_weight.integer' => 'Trọng số ưu tiên phải là số nguyên.',
+            'priority_weight.min' => 'Trọng số ưu tiên không được nhỏ hơn 0.',
+            'status.in' => 'Trạng thái không hợp lệ.',
+            'sort_order.integer' => 'Thứ tự sắp xếp phải là số nguyên.',
+            'sort_order.min' => 'Thứ tự sắp xếp không được nhỏ hơn 0.',
+        ];
+    }
+
+    public function bodyParameters(): array
+    {
+        return [];
+    }
+
+    public function attributes(): array
+    {
+        return [
+            'user_id' => 'Người dùng',
+            'name' => 'Tên',
+            'position_name' => 'Chức danh',
+            'department' => 'Phòng ban',
+            'phone' => 'Số điện thoại',
+            'email' => 'Email',
+            'priority_weight' => 'Trọng số ưu tiên',
+            'status' => 'Trạng thái',
+            'sort_order' => 'Thứ tự sắp xếp',
+        ];
+    }
 }

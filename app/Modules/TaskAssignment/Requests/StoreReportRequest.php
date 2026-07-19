@@ -19,6 +19,28 @@ class StoreReportRequest extends BaseRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'task_assignment_item_id.required' => 'Công việc không được để trống.',
+            'task_assignment_item_id.integer' => 'Công việc phải là số nguyên.',
+            'task_assignment_item_id.exists' => 'Công việc không tồn tại.',
+            'assignee_user_id.integer' => 'Người thực hiện phải là số nguyên.',
+            'assignee_user_id.exists' => 'Người thực hiện không tồn tại.',
+            'completion_percent.integer' => 'Tiến độ hoàn thành phải là số nguyên.',
+            'completion_percent.min' => 'Tiến độ hoàn thành không được nhỏ hơn 0.',
+            'completion_percent.max' => 'Tiến độ hoàn thành không được vượt quá 100.',
+            'completed_at.date' => 'Thời gian hoàn thành không đúng định dạng ngày tháng.',
+            'report_document_number.string' => 'Số văn bản báo cáo phải là chuỗi ký tự.',
+            'report_document_number.max' => 'Số văn bản báo cáo không được vượt quá 255 ký tự.',
+            'report_document_excerpt.string' => 'Trích yếu báo cáo phải là chuỗi ký tự.',
+            'report_document_excerpt.max' => 'Trích yếu báo cáo không được vượt quá 65535 ký tự.',
+            'report_document_content.string' => 'Nội dung báo cáo phải là chuỗi ký tự.',
+            'attachments.array' => 'Tệp đính kèm phải là một mảng.',
+            'attachments.max' => 'Tệp đính kèm không được vượt quá 10 tệp.',
+        ];
+    }
+
     public function bodyParameters(): array
     {
         return [

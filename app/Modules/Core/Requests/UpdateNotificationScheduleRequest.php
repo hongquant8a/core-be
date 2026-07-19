@@ -23,6 +23,25 @@ class UpdateNotificationScheduleRequest extends FormRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'moment.in' => 'Moment không hợp lệ.',
+            'offset_minutes.integer' => 'Nhắc trước (phút) phải là số nguyên.',
+            'offset_minutes.min' => 'Nhắc trước (phút) không được nhỏ hơn 0.',
+            'channels.array' => 'Kênh thông báo phải là mảng.',
+            'channels.*.in' => 'Kênh thông báo không hợp lệ.',
+            'label.string' => 'Nhãn phải là chuỗi ký tự.',
+            'label.max' => 'Nhãn không được vượt quá 255 ký tự.',
+            'sort_order.integer' => 'Thứ tự sắp xếp phải là số nguyên.',
+        ];
+    }
+
+    public function bodyParameters(): array
+    {
+        return [];
+    }
+
     public function attributes(): array
     {
         return [

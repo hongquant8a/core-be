@@ -103,4 +103,91 @@ class UpdateScheduleRequest extends FormRequest
         }
         return $validated;
     }
+
+    public function messages(): array
+    {
+        return [
+            'module_type.string' => 'Loại chương trình phải là chuỗi ký tự.',
+            'content.string' => 'Nội dung phải là chuỗi ký tự.',
+            'location.string' => 'Địa điểm phải là chuỗi ký tự.',
+            'location.max' => 'Địa điểm không được vượt quá 500 ký tự.',
+            'session.string' => 'Buổi phải là chuỗi ký tự.',
+            'date_time.string' => 'Thời gian phải là chuỗi ký tự.',
+            'host_id.integer' => 'Người chủ trì phải là số nguyên.',
+            'host_id.exists' => 'Người chủ trì không tồn tại trong hệ thống.',
+            'host_text.string' => 'Người chủ trì (ghi chú) phải là chuỗi ký tự.',
+            'host_text.max' => 'Người chủ trì (ghi chú) không được vượt quá 255 ký tự.',
+            'driver_id.integer' => 'Lái xe phải là số nguyên.',
+            'driver_id.exists' => 'Lái xe không tồn tại trong hệ thống.',
+            'driver_text.string' => 'Lái xe (ghi chú) phải là chuỗi ký tự.',
+            'driver_text.max' => 'Lái xe (ghi chú) không được vượt quá 255 ký tự.',
+            'preparation_unit.string' => 'Đơn vị chuẩn bị phải là chuỗi ký tự.',
+            'preparation_unit.max' => 'Đơn vị chuẩn bị không được vượt quá 500 ký tự.',
+            'departments_text.string' => 'Đơn vị tham gia phải là chuỗi ký tự.',
+            'participants.array' => 'Danh sách người tham gia phải là một mảng.',
+            'participants.*.user_id.integer' => 'Người tham gia phải là số nguyên.',
+            'participants.*.user_id.exists' => 'Người tham gia không tồn tại trong hệ thống.',
+            'participants.*.group_id.integer' => 'Nhóm tham gia phải là số nguyên.',
+            'participants.*.group_id.exists' => 'Nhóm tham gia không tồn tại trong hệ thống.',
+            'participants.*.display_name.string' => 'Tên hiển thị phải là chuỗi ký tự.',
+            'participants.*.display_name.max' => 'Tên hiển thị không được vượt quá 255 ký tự.',
+            'reminders.array' => 'Danh sách nhắc nhở phải là một mảng.',
+            'reminders.*.type.string' => 'Loại nhắc nhở phải là chuỗi ký tự.',
+            'reminders.*.type.in' => 'Loại nhắc nhở không hợp lệ.',
+            'remove_media_ids.array' => 'Danh sách ID tệp cần xóa phải là một mảng.',
+            'remove_media_ids.*.integer' => 'ID tệp cần xóa phải là số nguyên.',
+            'is_important.boolean' => 'Trường quan trọng phải là true hoặc false.',
+            'participants_text.string' => 'Người tham gia (ghi chú) phải là chuỗi ký tự.',
+            'participant_count.string' => 'Số lượng người tham gia phải là chuỗi ký tự.',
+            'participant_count.max' => 'Số lượng người tham gia không được vượt quá 50 ký tự.',
+            'sort_order.integer' => 'Thứ tự sắp xếp phải là số nguyên.',
+            'sort_order.min' => 'Thứ tự sắp xếp không được nhỏ hơn 0.',
+            'nature.string' => 'Tính chất phải là chuỗi ký tự.',
+            'attachments.array' => 'Danh sách tệp đính kèm phải là một mảng.',
+            'attachments.*.id.integer' => 'ID tệp đính kèm phải là số nguyên.',
+            'attachments.*.name.string' => 'Tên tệp đính kèm phải là chuỗi ký tự.',
+            'attachments.*.name.max' => 'Tên tệp đính kèm không được vượt quá 255 ký tự.',
+            'attachment_names.array' => 'Danh sách tên tệp đính kèm phải là một mảng.',
+        ];
+    }
+
+    public function bodyParameters(): array
+    {
+        return [];
+    }
+
+    public function attributes(): array
+    {
+        return [
+            'module_type' => 'Loại chương trình',
+            'content' => 'Nội dung',
+            'location' => 'Địa điểm',
+            'session' => 'Buổi',
+            'date_time' => 'Thời gian',
+            'status' => 'Trạng thái',
+            'host_id' => 'Người chủ trì',
+            'host_text' => 'Người chủ trì (ghi chú)',
+            'driver_id' => 'Lái xe',
+            'driver_text' => 'Lái xe (ghi chú)',
+            'preparation_unit' => 'Đơn vị chuẩn bị',
+            'departments_text' => 'Đơn vị tham gia',
+            'participants' => 'Danh sách người tham gia',
+            'participants.*.user_id' => 'Người tham gia',
+            'participants.*.group_id' => 'Nhóm tham gia',
+            'participants.*.display_name' => 'Tên hiển thị',
+            'reminders' => 'Danh sách nhắc nhở',
+            'reminders.*.type' => 'Loại nhắc nhở',
+            'remove_media_ids' => 'Danh sách ID tệp cần xóa',
+            'remove_media_ids.*' => 'ID tệp cần xóa',
+            'is_important' => 'Quan trọng',
+            'participants_text' => 'Người tham gia (ghi chú)',
+            'participant_count' => 'Số lượng người tham gia',
+            'sort_order' => 'Thứ tự sắp xếp',
+            'nature' => 'Tính chất',
+            'attachments' => 'Danh sách tệp đính kèm',
+            'attachments.*.id' => 'ID tệp đính kèm',
+            'attachments.*.name' => 'Tên tệp đính kèm',
+            'attachment_names' => 'Danh sách tên tệp đính kèm',
+        ];
+    }
 }

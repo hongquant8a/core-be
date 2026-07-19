@@ -18,6 +18,16 @@ class ImportOrganizationRequest extends FormRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'file.required' => 'Vui lòng chọn file để nhập.',
+            'file.file' => 'File nhập không hợp lệ.',
+            'file.mimes' => 'File phải có định dạng: xlsx, xls, csv.',
+            'file.max' => 'File không được vượt quá dung lượng cho phép.',
+        ];
+    }
+
     public function bodyParameters(): array
     {
         return [];

@@ -19,6 +19,16 @@ class BulkDestroyOrganizationRequest extends FormRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'ids.required' => 'Danh sách ID không được để trống.',
+            'ids.array' => 'Danh sách ID phải là mảng.',
+            'ids.min' => 'Phải chọn ít nhất 1 tổ chức.',
+            'ids.*.exists' => 'Tổ chức không tồn tại.',
+        ];
+    }
+
     public function bodyParameters(): array
     {
         return [];

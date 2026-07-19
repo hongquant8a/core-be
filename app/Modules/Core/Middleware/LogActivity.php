@@ -215,17 +215,10 @@ class LogActivity
 
         $params = $request->route()?->parameters() ?? [];
         $id = $params['user']
-            ?? $params['post']
             ?? $params['organization']
             ?? $params['category']
             ?? $params['role']
             ?? $params['logActivity']
-            ?? $params['document']
-            ?? $params['documentType']
-            ?? $params['issuingAgency']
-            ?? $params['issuingLevel']
-            ?? $params['documentSigner']
-            ?? $params['documentField']
             ?? $params['taskAssignmentDepartment']
             ?? $params['taskAssignmentType']
             ?? $params['taskAssignmentItemType']
@@ -247,20 +240,25 @@ class LogActivity
         $resource = str_replace('_', '-', $resource);
         $labels = [
             'users' => 'người dùng',
-            'posts' => 'bài viết',
-            'post-categories' => 'danh mục bài viết',
             'permissions' => 'quyền',
             'roles' => 'vai trò',
             'organizations' => 'tổ chức',
             'auth' => 'xác thực',
             'log-activities' => 'nhật ký truy cập',
-            'documents' => 'văn bản',
-            'document-types' => 'loại văn bản',
-            'issuing-agencies' => 'cơ quan ban hành',
-            'issuing-levels' => 'cấp ban hành',
-            'document-signers' => 'người ký',
-            'document-fields' => 'lĩnh vực',
             'settings' => 'cấu hình hệ thống',
+            'meetings' => 'cuộc họp',
+            'meeting-types' => 'loại cuộc họp',
+            'meeting-locations' => 'địa điểm họp',
+            'meeting-document-types' => 'loại tài liệu họp',
+            'meeting-attendee-groups' => 'nhóm đại biểu',
+            'meeting-attendees' => 'đại biểu',
+            'meeting-agendas' => 'chương trình họp',
+            'meeting-documents' => 'tài liệu họp',
+            'meeting-participants' => 'người tham dự',
+            'meeting-vote-topics' => 'chủ đề biểu quyết',
+            'meeting-minutes-templates' => 'mẫu biên bản họp',
+            'meeting-invitation-templates' => 'mẫu giấy mời họp',
+            'meeting-settings' => 'cấu hình cuộc họp',
             'task-assignment-departments' => 'Phòng ban giao việc',
             'task-assignment-employees' => 'Nhân viên giao việc',
             'task-assignment-types' => 'Loại văn bản giao việc',

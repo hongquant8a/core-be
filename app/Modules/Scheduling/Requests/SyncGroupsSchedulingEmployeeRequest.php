@@ -18,4 +18,27 @@ class SyncGroupsSchedulingEmployeeRequest extends FormRequest
             'group_ids.*' => ['integer', 'exists:scheduling_employee_groups,id'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'group_ids.required' => 'Danh sách nhóm không được để trống.',
+            'group_ids.array' => 'Danh sách nhóm phải là một mảng.',
+            'group_ids.*.integer' => 'ID nhóm phải là số nguyên.',
+            'group_ids.*.exists' => 'ID nhóm không tồn tại trong hệ thống.',
+        ];
+    }
+
+    public function bodyParameters(): array
+    {
+        return [];
+    }
+
+    public function attributes(): array
+    {
+        return [
+            'group_ids' => 'Danh sách nhóm',
+            'group_ids.*' => 'ID nhóm',
+        ];
+    }
 }

@@ -18,4 +18,27 @@ class BulkDestroySchedulingEmployeeGroupRequest extends FormRequest
             'ids.*' => ['integer', 'exists:scheduling_employee_groups,id'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'ids.required' => 'Danh sách ID không được để trống.',
+            'ids.array' => 'Danh sách ID phải là một mảng.',
+            'ids.*.integer' => 'ID phải là số nguyên.',
+            'ids.*.exists' => 'ID không tồn tại trong hệ thống.',
+        ];
+    }
+
+    public function bodyParameters(): array
+    {
+        return [];
+    }
+
+    public function attributes(): array
+    {
+        return [
+            'ids' => 'Danh sách ID',
+            'ids.*' => 'ID',
+        ];
+    }
 }

@@ -18,6 +18,10 @@ class SendGuestAccountRequestEmail implements ShouldQueue
 
     public string $queue = 'notifications';
 
+    public int $tries = 3;
+
+    public array $backoff = [10, 30, 60];
+
     public function __construct(public string $contactEmail, public array $data) {}
 
     public function handle(MailChannel $mail): void
