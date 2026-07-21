@@ -7,7 +7,7 @@ class ImportLookupRequest extends BaseRequest
     public function rules(): array
     {
         return [
-            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
+            'file' => 'required|file|mimes:xlsx,xls,csv',
         ];
     }
 
@@ -34,7 +34,6 @@ class ImportLookupRequest extends BaseRequest
             'file.required' => 'Tệp tin không được để trống.',
             'file.file' => 'Tệp tin không hợp lệ.',
             'file.mimes' => 'Tệp tin phải có định dạng xlsx, xls hoặc csv.',
-            'file.max' => 'Tệp tin không được vượt quá 10MB.',
         ];
     }
 }

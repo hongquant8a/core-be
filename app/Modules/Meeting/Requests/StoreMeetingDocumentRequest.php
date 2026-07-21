@@ -20,7 +20,7 @@ class StoreMeetingDocumentRequest extends FormRequest
             'title' => 'required|string|max:255',
             'document_number' => 'nullable|string|max:255',
             'summary' => 'nullable|string',
-            'file' => 'nullable|file|max:10240',
+            'file' => 'nullable|file',
             'is_public' => 'required|boolean',
             'sort_order' => 'nullable|integer|min:0',
         ];

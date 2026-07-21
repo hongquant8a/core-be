@@ -16,7 +16,7 @@ class UpdateMeetingInvitationTemplateRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:500',
-            'file' => 'nullable|file|mimes:docx|max:10240',
+            'file' => 'nullable|file|mimes:docx',
             'is_default' => 'nullable|boolean',
             'status' => 'nullable|in:active,inactive',
         ];

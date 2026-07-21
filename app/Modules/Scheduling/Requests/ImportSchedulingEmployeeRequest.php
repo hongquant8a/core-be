@@ -14,7 +14,7 @@ class ImportSchedulingEmployeeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'file' => ['required', 'file', 'mimes:xlsx,xls,csv', 'max:10240'],
+            'file' => ['required', 'file', 'mimes:xlsx,xls,csv'],
         ];
     }
 
@@ -24,7 +24,6 @@ class ImportSchedulingEmployeeRequest extends FormRequest
             'file.required' => 'Tệp không được để trống.',
             'file.file' => 'Tệp tải lên không hợp lệ.',
             'file.mimes' => 'Tệp phải có định dạng xlsx, xls hoặc csv.',
-            'file.max' => 'Tệp không được vượt quá 10MB.',
         ];
     }
 

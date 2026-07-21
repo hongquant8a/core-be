@@ -30,7 +30,7 @@ class StoreMeetingDiscussionRegistrationAttachmentRequest extends FormRequest
     {
         return [
             'meeting_discussion_registration_id' => 'required|integer|exists:meeting_discussion_registrations,id',
-            'file' => 'required|file|max:10240',
+            'file' => 'required|file',
             'file_name' => 'nullable|string|max:255',
             'sort_order' => 'nullable|integer|min:0',
         ];

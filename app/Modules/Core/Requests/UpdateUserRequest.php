@@ -33,7 +33,7 @@ class UpdateUserRequest extends FormRequest
             'user_name' => 'sometimes|nullable|string|max:100|unique:users,user_name,'.$userId.'|regex:/^[a-zA-Z0-9._-]*$/',
             'password' => 'sometimes|string|min:6|confirmed',
             'status' => ['sometimes', 'in:'.implode(',', UserStatusEnum::values())],
-            'avatar' => 'nullable|image|mimes:jpg,jpeg,png,svg,webp|max:5120',
+            'avatar' => 'nullable|image|mimes:jpg,jpeg,png,svg,webp',
             'assignments' => 'sometimes|array',
             'assignments.*.role_id' => 'required|integer|distinct|exists:roles,id',
             'assignments.*.organization_ids' => [

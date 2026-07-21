@@ -14,7 +14,7 @@ class ImportMeetingFileRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
+            'file' => 'required|file|mimes:xlsx,xls,csv',
         ];
     }
 
@@ -24,7 +24,6 @@ class ImportMeetingFileRequest extends FormRequest
             'file.required' => 'Tệp là trường bắt buộc.',
             'file.file' => 'Tệp phải là file hợp lệ.',
             'file.mimes' => 'Tệp phải đúng định dạng cho phép (xlsx, xls, csv).',
-            'file.max' => 'Tệp không được vượt quá :max KB.',
         ];
     }
 

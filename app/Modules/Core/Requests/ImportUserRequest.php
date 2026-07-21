@@ -14,7 +14,7 @@ class ImportUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
+            'file' => 'required|file|mimes:xlsx,xls,csv',
         ];
     }
 
@@ -24,7 +24,6 @@ class ImportUserRequest extends FormRequest
             'file.required' => 'Vui lòng chọn file để nhập.',
             'file.file' => 'File nhập không hợp lệ.',
             'file.mimes' => 'File phải có định dạng: xlsx, xls, csv.',
-            'file.max' => 'File không được vượt quá dung lượng cho phép.',
         ];
     }
 
