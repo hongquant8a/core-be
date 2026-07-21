@@ -110,6 +110,33 @@ enum MeetingStatusEnum: string
 // Dùng trong FormRequest: 'status' => ['required', MeetingStatusEnum::rule()]
 ```
 
+**Enum Lookup Endpoint** — nếu module có ≥1 Enum dùng trong FormRequest mà FE cần dựng dropdown, thêm 1 endpoint gộp toàn bộ Enum của module để FE không phải hardcode `value`/`label`:
+```php
+// app/Modules/{Module}/Controllers/EnumController.php — không cần Service, logic thuần map cases
+public function index()
+{
+    return $this->success([
+        'xxx_status' => $this->mapEnum(XxxStatusEnum::cases()),
+        // 1 key snake_case (bỏ hậu tố Enum) cho MỖI Enum của module
+    ]);
+}
+
+private function mapEnum(array $cases): array
+{
+    return array_map(fn ($case) => ['value' => $case->value, 'label' => $case->label()], $cases);
+}
+```
+```php
+// app/Modules/{Module}/Routes/enum.php — 1 action duy nhất
+Route::get('/', [EnumController::class, 'index']);
+```
+Đăng ký `Route::prefix('{module}-enums')->group(...)` trong `routes/api.php`, vẫn trong nhóm `auth:sanctum` nhưng:
+- **Không** `ensure.route.org` — dữ liệu Enum không tenant-scoped (vẫn cần header `X-Organization-Id` vì middleware `set.permissions.team` bắt buộc cho toàn nhóm auth).
+- **Không** `permission:` — dữ liệu tra cứu dùng chung cho nhiều form/permission khác nhau trong module, không phải resource CRUD của 1 quyền cụ thể (giống "general views" của `app/Modules/Scheduling/Routes/schedule.php`).
+
+Response: `{ "success": true, "data": { "xxx_status": [{"value": "active", "label": "Đang hưởng"}, ...], "yyy_type": [...] } }`.
+Tham khảo: `app/Modules/Beneficiary/Controllers/EnumController.php`.
+
 **Tên bảng** — bảng danh mục và pivot phải có tiền tố module:
 - Đúng: `meeting_rooms`, `meeting_agendas`, `task_assignment_priorities`, `meeting_meeting_room`
 - Sai: `rooms`, `priorities` (xung đột giữa module)
@@ -301,6 +328,7 @@ Thêm endpoint mới thay vì đổi format endpoint cũ (giữ backward compati
 - [ ] Resource thuộc tenant scope đúng `organization_id`, không cho cross-tenant.
 - [ ] Response format và HTTP status code đúng chuẩn (`RespondsWithJson`).
 - [ ] Có action `import` thì có kèm `import-template` (dùng `ImportTemplateExport`, permission dùng chung `.import`).
+- [ ] Module có ≥1 Enum dùng cho FE dropdown → có `{module}-enums` endpoint (`EnumController`, xem mục 2), không gắn permission riêng.
 
 **Event-Driven:**
 - [ ] Service không gọi trực tiếp Notification/Mail/Broadcast — chỉ `event()`.
