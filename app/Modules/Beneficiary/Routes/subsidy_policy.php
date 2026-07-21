@@ -9,6 +9,8 @@ Route::get('/export', [SubsidyPolicyController::class, 'export'])
     ->middleware('permission:beneficiary-subsidy-policies.export,web');
 Route::post('/import', [SubsidyPolicyController::class, 'import'])
     ->middleware('permission:beneficiary-subsidy-policies.import,web');
+Route::get('/import-template', [SubsidyPolicyController::class, 'importTemplate'])
+    ->middleware('permission:beneficiary-subsidy-policies.import,web');
 Route::delete('/bulk-delete', [SubsidyPolicyController::class, 'bulkDestroy'])
     ->middleware('permission:beneficiary-subsidy-policies.bulkDestroy,web');
 

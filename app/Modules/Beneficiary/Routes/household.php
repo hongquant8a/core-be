@@ -13,6 +13,8 @@ Route::get('/export', [HouseholdController::class, 'export'])
     ->middleware('permission:beneficiary-households.export,web');
 Route::post('/import', [HouseholdController::class, 'import'])
     ->middleware('permission:beneficiary-households.import,web');
+Route::get('/import-template', [HouseholdController::class, 'importTemplate'])
+    ->middleware('permission:beneficiary-households.import,web');
 Route::delete('/bulk-delete', [HouseholdController::class, 'bulkDestroy'])
     ->middleware('permission:beneficiary-households.bulkDestroy,web');
 

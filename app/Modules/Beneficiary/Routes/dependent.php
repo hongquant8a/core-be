@@ -9,6 +9,8 @@ Route::get('/export', [DependentController::class, 'export'])
     ->middleware('permission:beneficiary-dependents.export,web');
 Route::post('/import', [DependentController::class, 'import'])
     ->middleware('permission:beneficiary-dependents.import,web');
+Route::get('/import-template', [DependentController::class, 'importTemplate'])
+    ->middleware('permission:beneficiary-dependents.import,web');
 Route::delete('/bulk-delete', [DependentController::class, 'bulkDestroy'])
     ->middleware('permission:beneficiary-dependents.bulkDestroy,web');
 

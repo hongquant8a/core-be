@@ -13,6 +13,8 @@ Route::get('/export', [ResidentialAreaController::class, 'export'])
     ->middleware('permission:beneficiary-residential-areas.export,web');
 Route::post('/import', [ResidentialAreaController::class, 'import'])
     ->middleware('permission:beneficiary-residential-areas.import,web');
+Route::get('/import-template', [ResidentialAreaController::class, 'importTemplate'])
+    ->middleware('permission:beneficiary-residential-areas.import,web');
 Route::delete('/bulk-delete', [ResidentialAreaController::class, 'bulkDestroy'])
     ->middleware('permission:beneficiary-residential-areas.bulkDestroy,web');
 

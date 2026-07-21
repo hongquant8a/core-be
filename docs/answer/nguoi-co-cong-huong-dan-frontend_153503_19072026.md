@@ -1,7 +1,7 @@
 # Hướng dẫn Frontend — Module Người có công (Beneficiary)
 
 > Ngày tạo: 15:35:03 19/07/2026
-> Cập nhật lần cuối: 10:00:00 21/07/2026
+> Cập nhật lần cuối: 15:00:00 21/07/2026 — bổ sung endpoint `GET .../import-template` cho cả 5 resource có import (mục 1.1, 1.2, 2, 3, 4), viết lại mục 9.3
 
 Tài liệu tổng hợp toàn bộ luồng hoạt động, endpoint, field request/response của module Người có công (TP Đà Nẵng) để FE triển khai màn hình. Đây là tài liệu **workflow tổng hợp** — chi tiết từng field/response mẫu của mỗi resource xem thêm `docs/api/beneficiary*.md` (lưu ý: các file đó có thể chưa cập nhật 2 thay đổi mới nhất nêu ở mục 3.2 và 3.4, tài liệu này là bản đúng nhất tại thời điểm viết).
 
@@ -88,6 +88,7 @@ CRUD đầy đủ, KHÔNG có `status` (không có `bulk-status`/`{id}/status`).
 | Xóa hàng loạt | `DELETE /bulk-delete` body `{"ids":[...]}` | `.bulkDestroy` |
 | Xuất Excel | `GET /export` | `.export` |
 | Nhập Excel | `POST /import` | `.import` |
+| Tải file mẫu import | `GET /import-template` | `.import` (dùng chung, không có permission riêng) |
 
 **Body tạo/sửa:**
 
@@ -115,6 +116,7 @@ CRUD đầy đủ + `renew`, KHÔNG có `status` (hiệu lực xác định bở
 | Xóa hàng loạt | `DELETE /bulk-delete` | `.bulkDestroy` |
 | **Ban hành mức mới thay thế** | `POST /{id}/renew` | `.renew` |
 | Xuất/Nhập Excel | `GET /export`, `POST /import` | `.export` / `.import` |
+| Tải file mẫu import | `GET /import-template` | `.import` (dùng chung) |
 
 **Body tạo/sửa/renew:**
 
@@ -182,6 +184,7 @@ CRUD đầy đủ, KHÔNG có `status`.
 | Xóa | `DELETE /{id}` | `.destroy` |
 | Xóa hàng loạt | `DELETE /bulk-delete` | `.bulkDestroy` |
 | Xuất/Nhập Excel | `GET /export`, `POST /import` | `.export` / `.import` |
+| Tải file mẫu import | `GET /import-template` | `.import` (dùng chung) |
 
 **Body tạo/sửa:**
 
@@ -222,6 +225,7 @@ Chủ thể trung tâm của module — nhiều action nhất trong toàn bộ h
 | **Đổi trạng thái đơn** | `PATCH /{id}/status` | `.changeStatus` |
 | Lịch sử đổi trạng thái | `GET /{id}/status-histories` | `.show` |
 | Xuất/Nhập Excel | `GET /export`, `POST /import` | `.export` / `.import` |
+| Tải file mẫu import | `GET /import-template` | `.import` (dùng chung) |
 
 `search` lọc theo `full_name` HOẶC `id_number`. Filter thêm: `status`, `household_id`. `sort_by`: `id, full_name, date_of_birth, status, created_at, updated_at`.
 
@@ -378,6 +382,7 @@ Lưu ý: mọi ngày tháng field nghiệp vụ format `d/m/Y` (VD `20/05/1950`)
 | Xóa quan hệ | `DELETE /{id}/relations/{relation}` | `.destroyRelation` |
 | Lịch sử đổi trạng thái | `GET /{id}/status-histories` | `.show` |
 | Xuất/Nhập Excel | `GET /export`, `POST /import` | `.export` / `.import` |
+| Tải file mẫu import | `GET /import-template` | `.import` (dùng chung) |
 
 Không có `status` vòng đời như Beneficiary (chỉ có `eligibility_status` sửa qua `update()` và trạng thái quan hệ pivot qua relations — mục 5).
 
@@ -544,15 +549,15 @@ Với `beneficiary-subsidy-grants`/`beneficiary-visit-schedules` (không có sta
 
 ### 9.3. Import Excel — cột theo từng resource
 
-| Resource | Cột bắt buộc | Cột không bắt buộc |
+| Resource | Cột bắt buộc (tên header tiếng Việt) | Cột không bắt buộc (tên header tiếng Việt) |
 |---|---|---|
-| `beneficiaries` | `full_name`, `gender` | `date_of_birth`, `id_number`, `status` (không có `classifications` — import không tạo được phân loại kèm theo, phải bổ sung tay sau khi import) |
-| `beneficiary-households` | `head_name`, `address` | `household_code`, `head_id_number`, `phone` |
-| `beneficiary-residential-areas` | `name` | `code` |
-| `beneficiary-dependents` | `full_name`, `gender` | `date_of_birth`, `id_number` |
-| `beneficiary-subsidy-policies` | `amount`, `legal_basis`, `effective_from` | `beneficiary_type`, `unit` |
+| `beneficiaries` | `full_name` "Họ tên", `gender` "Giới tính" | `date_of_birth` "Ngày sinh", `id_number` "CCCD/CMND", `status` "Trạng thái" (không có `classifications` — import không tạo được phân loại kèm theo, phải bổ sung tay sau khi import) |
+| `beneficiary-households` | `head_name` "Chủ hộ", `address` "Địa chỉ" | `household_code` "Mã hộ", `head_id_number` "CCCD chủ hộ", `phone` "SĐT" |
+| `beneficiary-residential-areas` | `name` "Tên tổ dân phố" | `code` "Mã" |
+| `beneficiary-dependents` | `full_name` "Họ tên", `gender` "Giới tính" | `date_of_birth` "Ngày sinh", `id_number` "CCCD/CMND" |
+| `beneficiary-subsidy-policies` | `amount` "Mức trợ cấp", `legal_basis` "Căn cứ pháp lý", `effective_from` "Ngày hiệu lực" | `beneficiary_type` "Loại đối tượng"; `unit` — ⚠️ cũng không có nhãn tiếng Việt, đặt header đúng chữ `unit` (tiếng Anh) |
 
-Cột file **phải khớp header cột Excel export tương ứng** (tải file export mẫu rồi điền lại là cách an toàn nhất, thay vì tự tạo file từ đầu).
+**Không cần tự tạo file theo bảng trên** — mỗi resource đều có sẵn `GET .../import-template` trả về file Excel mẫu (header tiếng Việt dòng 1, 1 dòng ví dụ in nghiêng xám ở dòng 2 để xóa trước khi nhập data thật). Lưu ý: file mẫu tải về **chỉ có sẵn header của các cột bắt buộc** (VD file mẫu `beneficiaries` chỉ có 2 cột "Họ tên"/"Giới tính") — muốn nhập kèm cột không bắt buộc (`date_of_birth`, `id_number`...), cán bộ tự thêm cột vào file mẫu với đúng tên tiếng Việt tương ứng trong bảng dưới (BE nhận diện header theo tên tiếng Việt, không theo thứ tự cột).
 
 ---
 

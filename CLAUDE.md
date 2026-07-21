@@ -172,6 +172,24 @@ Luôn dùng Resource để trả dữ liệu. Định dạng thời gian trong R
 **Import:**
 - FormRequest validate: `required|file|mimes:xlsx,xls,csv|max:10240`.
 - Cột file khớp chuẩn Export; trường bắt buộc = required trong StoreRequest, trường không bắt buộc có default.
+- Import class khai báo `TEMPLATE_LABELS` (map `field_key => 'Nhãn tiếng Việt'`) và `TEMPLATE_EXAMPLES` (map `field_key => 'giá trị ví dụ'`, có thể để trống nếu không cần).
+
+**Bắt buộc: mọi resource có `import` phải có kèm endpoint tải file mẫu** — không để cán bộ tự đoán cột file:
+```php
+// Route — đặt ngay sau route import
+Route::get('/import-template', [XxxController::class, 'importTemplate'])
+    ->middleware('permission:xxx.import,web'); // dùng chung permission .import, không tạo permission riêng
+
+// Controller
+public function importTemplate()
+{
+    return \Maatwebsite\Excel\Facades\Excel::download(
+        new \App\Modules\Core\Exports\ImportTemplateExport(XxxImport::TEMPLATE_LABELS, XxxImport::TEMPLATE_EXAMPLES),
+        'import-xxx-template.xlsx'
+    );
+}
+```
+Không tự implement lại việc sinh file Excel mẫu — luôn tái dùng `App\Modules\Core\Exports\ImportTemplateExport` (đã style sẵn: row 1 header, row 2 ví dụ in nghiêng xám để cán bộ biết xóa trước khi nhập).
 
 > PHPDoc Scribe cho export/import xem mục 7.
 
@@ -282,6 +300,7 @@ Thêm endpoint mới thay vì đổi format endpoint cũ (giữ backward compati
 - [ ] Upload media đi qua `Core\Services\MediaService`.
 - [ ] Resource thuộc tenant scope đúng `organization_id`, không cho cross-tenant.
 - [ ] Response format và HTTP status code đúng chuẩn (`RespondsWithJson`).
+- [ ] Có action `import` thì có kèm `import-template` (dùng `ImportTemplateExport`, permission dùng chung `.import`).
 
 **Event-Driven:**
 - [ ] Service không gọi trực tiếp Notification/Mail/Broadcast — chỉ `event()`.

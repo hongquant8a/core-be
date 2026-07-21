@@ -158,4 +158,17 @@ class ResidentialAreaController extends Controller
 
         return $this->success(null, 'Import tổ dân phố thành công.');
     }
+
+    /**
+     * Tải mẫu import tổ dân phố
+     *
+     * @response 200 scenario="File Excel mẫu"
+     */
+    public function importTemplate()
+    {
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Beneficiary\Imports\ResidentialAreaImport::TEMPLATE_LABELS, \App\Modules\Beneficiary\Imports\ResidentialAreaImport::TEMPLATE_EXAMPLES),
+            'import-residential-areas-template.xlsx'
+        );
+    }
 }

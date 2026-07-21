@@ -178,4 +178,17 @@ class SubsidyPolicyController extends Controller
 
         return $this->success(null, 'Import chính sách trợ cấp thành công.');
     }
+
+    /**
+     * Tải mẫu import chính sách trợ cấp
+     *
+     * @response 200 scenario="File Excel mẫu"
+     */
+    public function importTemplate()
+    {
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Beneficiary\Imports\SubsidyPolicyImport::TEMPLATE_LABELS, \App\Modules\Beneficiary\Imports\SubsidyPolicyImport::TEMPLATE_EXAMPLES),
+            'import-subsidy-policies-template.xlsx'
+        );
+    }
 }

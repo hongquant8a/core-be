@@ -161,4 +161,17 @@ class HouseholdController extends Controller
 
         return $this->success(null, 'Import hộ gia đình thành công.');
     }
+
+    /**
+     * Tải mẫu import hộ gia đình
+     *
+     * @response 200 scenario="File Excel mẫu"
+     */
+    public function importTemplate()
+    {
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Beneficiary\Imports\HouseholdImport::TEMPLATE_LABELS, \App\Modules\Beneficiary\Imports\HouseholdImport::TEMPLATE_EXAMPLES),
+            'import-households-template.xlsx'
+        );
+    }
 }

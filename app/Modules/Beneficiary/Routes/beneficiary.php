@@ -9,6 +9,8 @@ Route::get('/export', [BeneficiaryController::class, 'export'])
     ->middleware('permission:beneficiaries.export,web');
 Route::post('/import', [BeneficiaryController::class, 'import'])
     ->middleware('permission:beneficiaries.import,web');
+Route::get('/import-template', [BeneficiaryController::class, 'importTemplate'])
+    ->middleware('permission:beneficiaries.import,web');
 Route::delete('/bulk-delete', [BeneficiaryController::class, 'bulkDestroy'])
     ->middleware('permission:beneficiaries.bulkDestroy,web');
 Route::patch('/bulk-status', [BeneficiaryController::class, 'bulkUpdateStatus'])

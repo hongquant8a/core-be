@@ -229,4 +229,17 @@ class BeneficiaryController extends Controller
 
         return $this->success(null, 'Import người có công thành công.');
     }
+
+    /**
+     * Tải mẫu import người có công
+     *
+     * @response 200 scenario="File Excel mẫu"
+     */
+    public function importTemplate()
+    {
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Beneficiary\Imports\BeneficiaryImport::TEMPLATE_LABELS, \App\Modules\Beneficiary\Imports\BeneficiaryImport::TEMPLATE_EXAMPLES),
+            'import-beneficiaries-template.xlsx'
+        );
+    }
 }

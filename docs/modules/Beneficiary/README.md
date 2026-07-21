@@ -1,7 +1,7 @@
 # Module: Beneficiary (Người có công theo Hộ gia đình & Thân nhân)
 
 > Ngày tạo: 11:05:00 16/07/2026
-> Cập nhật lần cuối: 11:30:00 19/07/2026 — thêm lối tắt nhập liệu nhanh `household`/`dependents` khi tạo hồ sơ (mục 6.2), vá lỗ hổng `classifications` không sync được ở `update()`
+> Cập nhật lần cuối: 15:00:00 21/07/2026 — bổ sung `GET .../import-template` cho cả 5 resource có import (mục 9)
 
 ---
 
@@ -341,6 +341,7 @@ enforce trên TOÀN BỘ classification của beneficiary, kể cả dòng khôn
 - `beneficiary-dependents` có thêm `POST /{id}/relations`, `DELETE /{id}/relations/{relation}`.
 - `beneficiary-subsidy-policies` có thêm `POST /{id}/renew`.
 - `beneficiary-subsidy-grants` chỉ `index, store, changeStatus`; `beneficiary-visit-schedules` chỉ `index, show, changeStatus` — không CRUD tự do (lý do: bản ghi phát sinh từ hành động nghiệp vụ, không phải danh mục).
+- Cả 5 resource có `import` (`beneficiaries`, `beneficiary-households`, `beneficiary-residential-areas`, `beneficiary-dependents`, `beneficiary-subsidy-policies`) đều có thêm `GET .../import-template` (dùng chung permission `.import`, theo quy ước CLAUDE.md §6 — trước 21/07/2026 bị thiếu, đã bổ sung đủ theo đúng pattern `ImportTemplateExport` dùng ở Core/Meeting/TaskAssignment).
 
 ---
 
