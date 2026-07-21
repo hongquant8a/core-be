@@ -245,6 +245,10 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
     Route::prefix('beneficiary-visit-schedules')->middleware('ensure.route.org')->group(function () {
         require base_path('app/Modules/Beneficiary/Routes/visit_schedule.php');
     });
+    // Danh mục enum tĩnh (loại đối tượng, trạng thái...) — dùng chung, không tenant-scoped.
+    Route::prefix('beneficiary-enums')->group(function () {
+        require base_path('app/Modules/Beneficiary/Routes/enum.php');
+    });
 
     // Notification config scoped cho module Beneficiary
     Route::prefix('beneficiary/notification-config')->group(function () {

@@ -1,7 +1,7 @@
 # Hướng dẫn Frontend — Module Người có công (Beneficiary)
 
 > Ngày tạo: 15:35:03 19/07/2026
-> Cập nhật lần cuối: 15:35:03 19/07/2026
+> Cập nhật lần cuối: 10:00:00 21/07/2026
 
 Tài liệu tổng hợp toàn bộ luồng hoạt động, endpoint, field request/response của module Người có công (TP Đà Nẵng) để FE triển khai màn hình. Đây là tài liệu **workflow tổng hợp** — chi tiết từng field/response mẫu của mỗi resource xem thêm `docs/api/beneficiary*.md` (lưu ý: các file đó có thể chưa cập nhật 2 thay đổi mới nhất nêu ở mục 3.2 và 3.4, tài liệu này là bản đúng nhất tại thời điểm viết).
 
@@ -134,9 +134,37 @@ CRUD đầy đủ + `renew`, KHÔNG có `status` (hiệu lực xác định bở
 
 ⚠️ **Quan trọng — phạm vi tenant khác các resource khác:** `beneficiary_subsidy_policies` có thể có `organization_id = null` (catalog dùng chung toàn TP). Route này **không** dùng middleware `ensure.route.org` bắt buộc — danh sách trả về gồm cả bản ghi của org hiện tại LẪN bản ghi dùng chung. Khi hiển thị dropdown chọn chính sách, không cần lọc thêm gì, BE đã gộp sẵn.
 
-### 1.3. "Loại đối tượng" — KHÔNG phải danh mục, là danh sách cố định
+### 1.3. "Loại đối tượng" và các enum tĩnh khác — KHÔNG phải danh mục CRUD, nhưng ĐÃ có endpoint tra cứu
 
-12 giá trị theo Pháp lệnh 02/2020/UBTVQH14 — **không có API tạo/sửa/xóa**, FE hardcode dropdown từ bảng enum ở mục 11.1 (hoặc gọi 1 lần rồi cache — không có endpoint list riêng, dùng luôn `value`/`label` tĩnh).
+12 giá trị "Loại đối tượng" theo Pháp lệnh 02/2020/UBTVQH14 (và 9 enum tĩnh khác của module) **không có API tạo/sửa/xóa** — vẫn là PHP Enum hardcode trong code BE. Nhưng từ 21/07/2026, FE **không cần tự hardcode** giá trị/label nữa: gọi 1 lần
+
+```
+GET /api/beneficiary-enums
+```
+
+(cần header `X-Organization-Id` như mọi endpoint khác trong nhóm `auth:sanctum`, nhưng dữ liệu trả về **không** phụ thuộc tổ chức — có thể gọi 1 lần rồi cache cả session, không cần gọi lại mỗi khi đổi tổ chức) trả về toàn bộ 10 enum của module cùng lúc:
+
+```jsonc
+{
+  "success": true,
+  "data": {
+    "beneficiary_type": [{ "value": "martyr", "label": "Liệt sĩ" }, /* ... 12 giá trị, mục 11.1 */],
+    "beneficiary_status": [/* ... mục 11.2 */],
+    "gender": [/* ... mục 11.3 */],
+    "dependent_eligibility": [/* ... mục 11.4 */],
+    "dependent_relationship": [/* ... mục 11.5 */],
+    "dependent_relation_status": [/* ... mục 11.6 */],
+    "subsidy_status": [/* ... mục 11.7 */],
+    "document_type": [/* ... mục 11.8 */],
+    "visit_occasion": [/* ... mục 11.9 */],
+    "schedule_status": [/* ... mục 11.10 */]
+  }
+}
+```
+
+Route: `App\Modules\Beneficiary\Controllers\EnumController::index()` (`app/Modules/Beneficiary/Routes/enum.php`). Không gắn permission riêng (chỉ cần đăng nhập) vì đây là dữ liệu tra cứu dùng chung cho nhiều form/permission khác nhau trong module, không phải resource CRUD của 1 quyền cụ thể — giống cách `Scheduling` xử lý "general views".
+
+Bảng tĩnh ở mục 11 bên dưới vẫn giữ nguyên để tham khảo nhanh, nhưng **nguồn đúng (source of truth) là response API**, không phải bảng markdown — nếu sau này BE thêm/sửa case enum mà quên cập nhật tài liệu này, response API vẫn phản ánh đúng.
 
 ---
 
@@ -625,7 +653,7 @@ Cột file **phải khớp header cột Excel export tương ứng** (tải file
 
 `pending` = Chờ thực hiện · `done` = Đã thực hiện · `skipped` = Bỏ qua
 
-Tất cả enum trên đều có field `xxx_label` đi kèm sẵn trong response — **FE ưu tiên dùng `label` từ response để hiển thị**, bảng trên chỉ dùng khi cần hardcode dropdown lúc chưa có data (VD form tạo mới).
+Tất cả enum trên đều có field `xxx_label` đi kèm sẵn trong response resource — khi hiển thị dữ liệu đã có (index/show), FE ưu tiên dùng `label` từ response đó. Khi cần dropdown lúc chưa có data (VD form tạo mới), gọi `GET /api/beneficiary-enums` (mục 1.3) thay vì hardcode — bảng trên chỉ còn dùng để tham khảo nhanh giá trị nào ứng với label nào.
 
 ---
 
