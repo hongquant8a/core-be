@@ -46,7 +46,7 @@ class UpdateMeetingRequest extends FormRequest
             'reminders.*.offset_minutes' => 'nullable|integer|min:0',
             'reminders.*.channels' => 'nullable|array',
             'reminders.*.channels.*' => 'string',
-            'projector_image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:10240',
+            'projector_image' => 'nullable|file|mimes:jpg,jpeg,png,webp',
             'remove_projector_image' => 'nullable|boolean',
             'title' => 'sometimes|string|max:255',
             'is_public' => 'sometimes|boolean',

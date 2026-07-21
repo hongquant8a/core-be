@@ -27,9 +27,9 @@ class UpdateMeetingSettingRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'projector_image' => 'sometimes|nullable|image|mimes:jpg,jpeg,png,webp|max:10240',
-            'chairperson_signature' => 'sometimes|nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
-            'qr_icon' => 'sometimes|nullable|image|mimes:jpg,jpeg,png,webp,svg|max:2048',
+            'projector_image' => 'sometimes|nullable|image|mimes:jpg,jpeg,png,webp',
+            'chairperson_signature' => 'sometimes|nullable|image|mimes:jpg,jpeg,png,webp',
+            'qr_icon' => 'sometimes|nullable|image|mimes:jpg,jpeg,png,webp,svg',
             'remove_projector_image' => 'sometimes|boolean',
             'remove_chairperson_signature' => 'sometimes|boolean',
             'remove_qr_icon' => 'sometimes|boolean',

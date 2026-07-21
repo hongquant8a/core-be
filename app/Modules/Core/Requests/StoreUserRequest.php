@@ -29,7 +29,7 @@ class StoreUserRequest extends FormRequest
             'user_name' => 'nullable|string|max:100|unique:users,user_name|regex:/^[a-zA-Z0-9._-]*$/',
             'password' => 'required|string|min:6|confirmed',
             'status' => ['nullable', 'in:'.implode(',', UserStatusEnum::values())],
-            'avatar' => 'nullable|image|mimes:jpg,jpeg,png,svg,webp|max:5120',
+            'avatar' => 'nullable|image|mimes:jpg,jpeg,png,svg,webp',
             'assignments' => 'nullable|array',
             'assignments.*.role_id' => 'required|integer|distinct|exists:roles,id',
             'assignments.*.organization_ids' => [

@@ -38,7 +38,7 @@ class StoreMeetingDiscussionRegistrationRequest extends FormRequest
             'type' => ['required', MeetingDiscussionTypeEnum::rule()],
             'content' => 'required|string',
             'is_public' => 'nullable|boolean',
-            'attachment' => 'nullable|file|max:10240',
+            'attachment' => 'nullable|file',
             'status' => ['nullable', MeetingDiscussionStatusEnum::rule()],
             'sort_order' => 'nullable|integer|min:0',
             'meeting_participant_id' => 'nullable|integer|exists:meeting_participants,id',

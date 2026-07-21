@@ -16,7 +16,7 @@ class UpdateMeetingMinutesTemplateRequest extends FormRequest
         return [
             'name' => 'sometimes|string|max:255',
             'description' => 'sometimes|nullable|string|max:500',
-            'file' => 'sometimes|file|mimes:docx|max:10240',
+            'file' => 'sometimes|file|mimes:docx',
             'is_default' => 'sometimes|boolean',
             'status' => 'sometimes|in:active,inactive',
         ];

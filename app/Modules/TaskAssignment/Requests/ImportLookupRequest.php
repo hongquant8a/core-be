@@ -7,7 +7,7 @@ class ImportLookupRequest extends BaseRequest
     public function rules(): array
     {
         return [
-            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
+            'file' => 'required|file|mimes:xlsx,xls,csv',
         ];
     }
 

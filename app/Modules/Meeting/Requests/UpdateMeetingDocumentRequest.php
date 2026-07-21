@@ -19,7 +19,7 @@ class UpdateMeetingDocumentRequest extends FormRequest
             'title' => 'sometimes|string|max:255',
             'document_number' => 'nullable|string|max:255',
             'summary' => 'nullable|string',
-            'file' => 'nullable|file|max:10240',
+            'file' => 'nullable|file',
             'remove_file' => 'nullable|boolean',
             'is_public' => 'sometimes|boolean',
             'sort_order' => 'nullable|integer|min:0',

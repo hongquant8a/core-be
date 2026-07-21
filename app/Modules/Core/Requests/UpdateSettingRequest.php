@@ -36,7 +36,7 @@ class UpdateSettingRequest extends FormRequest
 
             // Nếu là file upload → validate image
             if ($value instanceof \Illuminate\Http\UploadedFile) {
-                return ['nullable', 'image', 'mimes:jpg,jpeg,png,svg,webp,ico', 'max:5120'];
+                return ['nullable', 'image', 'mimes:jpg,jpeg,png,svg,webp,ico'];
             }
 
             // Nếu là string (URL cũ hoặc rỗng) → accept string

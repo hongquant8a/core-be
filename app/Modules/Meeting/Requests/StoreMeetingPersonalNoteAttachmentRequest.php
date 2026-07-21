@@ -31,7 +31,7 @@ class StoreMeetingPersonalNoteAttachmentRequest extends FormRequest
     {
         return [
             'meeting_personal_note_id' => 'required|integer|exists:meeting_personal_notes,id',
-            'file' => 'required|file|max:10240',
+            'file' => 'required|file',
             'sort_order' => 'nullable|integer|min:0',
         ];
     }
