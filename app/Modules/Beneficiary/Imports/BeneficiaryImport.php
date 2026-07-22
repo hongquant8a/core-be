@@ -67,25 +67,43 @@ class BeneficiaryImport implements ToModel, WithHeadingRow, WithValidation, Skip
 
     public function model(array $row)
     {
-        return new Beneficiary([
+        $idNumber = $row['id_number'] ?? null;
+
+        $attrs = [
             'full_name' => $row['full_name'] ?? null,
             'date_of_birth' => $row['date_of_birth'] ?? null,
             'birth_year' => $row['birth_year'] ?? null,
             'gender' => $row['gender'] ?? null,
-            'id_number' => $row['id_number'] ?? null,
+            'id_number' => $idNumber,
             'injury_rate' => $row['injury_rate'] ?? null,
             'recognition_decision_no' => $row['recognition_decision_no'] ?? null,
             'recognition_date' => $row['recognition_date'] ?? null,
             'household_id' => $this->resolveHouseholdId($row['household_code'] ?? null),
-            'status' => $row['status'] ?? BeneficiaryStatusEnum::Pending->value,
+            'status' => $row['status'] ?? null,
             'address' => $row['address'] ?? null,
             'latitude' => $row['latitude'] ?? null,
             'longitude' => $row['longitude'] ?? null,
             'phone' => $row['phone'] ?? null,
             'note' => $row['note'] ?? null,
-            'created_by' => auth()->id(),
-            'updated_by' => auth()->id(),
-        ]);
+        ];
+
+        // Có CCCD và đã tồn tại (trong tổ chức hiện tại) → CẬP NHẬT, chỉ ghi đè trường có dữ liệu
+        // (ô trống không xóa dữ liệu cũ). Dòng không có CCCD luôn thêm mới.
+        if (! empty($idNumber)) {
+            $existing = Beneficiary::where('id_number', $idNumber)->first();
+            if ($existing) {
+                $existing->fill(array_filter($attrs, fn ($value) => $value !== null));
+                $existing->updated_by = auth()->id();
+
+                return $existing;
+            }
+        }
+
+        $attrs['status'] = $attrs['status'] ?? BeneficiaryStatusEnum::Pending->value;
+        $attrs['created_by'] = auth()->id();
+        $attrs['updated_by'] = auth()->id();
+
+        return new Beneficiary($attrs);
     }
 
     public function prepareForValidation($data, $index)

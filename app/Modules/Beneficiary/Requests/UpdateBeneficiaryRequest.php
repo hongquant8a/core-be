@@ -5,6 +5,7 @@ namespace App\Modules\Beneficiary\Requests;
 use App\Modules\Beneficiary\Enums\BeneficiaryTypeEnum;
 use App\Modules\Beneficiary\Enums\GenderEnum;
 use App\Modules\Beneficiary\Models\BeneficiaryClassification;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class UpdateBeneficiaryRequest extends BaseRequest
@@ -17,7 +18,13 @@ class UpdateBeneficiaryRequest extends BaseRequest
             'date_of_birth' => 'nullable|date',
             'birth_year' => 'nullable|string|max:20',
             'gender' => ['sometimes', GenderEnum::rule()],
-            'id_number' => 'nullable|string|max:255',
+            'id_number' => [
+                'nullable', 'string', 'max:255',
+                // Trùng CCCD trong cùng tổ chức là không hợp lệ, bỏ qua chính hồ sơ đang sửa.
+                Rule::unique('beneficiaries', 'id_number')
+                    ->where('organization_id', getPermissionsTeamId())
+                    ->ignore($this->route('beneficiary')),
+            ],
             'injury_rate' => 'nullable|numeric|min:0|max:100',
             'recognition_decision_no' => 'nullable|string|max:255',
             'recognition_date' => 'nullable|date',
@@ -102,6 +109,7 @@ class UpdateBeneficiaryRequest extends BaseRequest
             'full_name.string' => 'Họ tên phải là một chuỗi ký tự.',
             'full_name.max' => 'Họ tên không được vượt quá 255 ký tự.',
             'gender.in' => 'Giới tính không hợp lệ.',
+            'id_number.unique' => 'CCCD/CMND này đã tồn tại trong danh sách người có công.',
             'household_id.exists' => 'Hộ gia đình không tồn tại.',
             'injury_rate.numeric' => 'Tỷ lệ thương tật phải là số.',
             'injury_rate.max' => 'Tỷ lệ thương tật không được vượt quá 100.',

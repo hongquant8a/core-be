@@ -52,6 +52,40 @@ class BeneficiaryCrudTest extends TestCase
         $this->assertDatabaseHas('beneficiary_classifications', ['decision_no' => 'QD-1', 'is_primary' => true]);
     }
 
+    public function test_store_rejects_duplicate_id_number_in_same_org(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        Beneficiary::create([
+            'organization_id' => $this->orgA->id, 'full_name' => 'Người A',
+            'gender' => 'male', 'id_number' => '049123456789', 'status' => 'active',
+        ]);
+
+        $res = $this->postJson('/api/beneficiaries', [
+            'full_name' => 'Người B', 'gender' => 'male', 'id_number' => '049123456789',
+        ], ['X-Organization-Id' => $this->orgA->id]);
+
+        $res->assertStatus(422);
+        $res->assertJsonValidationErrors(['id_number']);
+    }
+
+    public function test_store_allows_same_id_number_in_different_org(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        Beneficiary::create([
+            'organization_id' => $this->orgB->id, 'full_name' => 'Người Org B',
+            'gender' => 'male', 'id_number' => '049999999999', 'status' => 'active',
+        ]);
+
+        // Cùng CCCD nhưng tổ chức khác → hợp lệ (unique theo organization_id).
+        $res = $this->postJson('/api/beneficiaries', [
+            'full_name' => 'Người Org A', 'gender' => 'male', 'id_number' => '049999999999',
+        ], ['X-Organization-Id' => $this->orgA->id]);
+
+        $res->assertCreated();
+    }
+
     public function test_store_allows_classification_without_decision_details(): void
     {
         Sanctum::actingAs($this->admin);

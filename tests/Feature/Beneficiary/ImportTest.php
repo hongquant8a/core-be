@@ -193,6 +193,33 @@ class ImportTest extends TestCase
         $this->assertNull($b->longitude);
     }
 
+    public function test_import_updates_existing_beneficiary_by_cccd_without_duplicating_or_wiping(): void
+    {
+        $existing = Beneficiary::create([
+            'organization_id' => $this->orgA->id,
+            'full_name' => 'Tên Cũ',
+            'gender' => 'male',
+            'id_number' => '049000000001',
+            'phone' => '0900000000',
+            'status' => 'active',
+        ]);
+
+        // Cùng CCCD, đổi họ tên, ô SĐT để trống → cập nhật họ tên, KHÔNG xóa SĐT cũ, KHÔNG tạo bản ghi mới.
+        $file = $this->makeXlsx(
+            ['Họ tên *', 'Giới tính *', 'CCCD/CMND', 'SĐT'],
+            [['Tên Mới', 'male', '049000000001', '']],
+        );
+
+        $failures = app(\App\Modules\Beneficiary\Services\BeneficiaryService::class)->import($file);
+
+        $this->assertCount(0, $failures);
+        $this->assertSame(1, Beneficiary::where('id_number', '049000000001')->count());
+
+        $fresh = $existing->fresh();
+        $this->assertSame('Tên Mới', $fresh->full_name);   // trường có dữ liệu → cập nhật
+        $this->assertSame('0900000000', $fresh->phone);    // ô trống → giữ nguyên dữ liệu cũ
+    }
+
     public function test_import_all_valid_returns_no_failures(): void
     {
         $file = $this->makeXlsx(
