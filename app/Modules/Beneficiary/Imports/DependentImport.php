@@ -55,19 +55,37 @@ class DependentImport implements ToModel, WithHeadingRow, WithValidation, SkipsO
 
     public function model(array $row)
     {
-        return new Dependent([
+        $idNumber = $row['id_number'] ?? null;
+
+        $attrs = [
             'full_name' => $row['full_name'] ?? null,
             'date_of_birth' => $row['date_of_birth'] ?? null,
             'gender' => $row['gender'] ?? null,
-            'id_number' => $row['id_number'] ?? null,
+            'id_number' => $idNumber,
             'household_id' => $this->resolveHouseholdId($row['household_code'] ?? null),
-            'is_alive' => $this->normalizeBoolean($row['is_alive'] ?? null) ?? true,
+            'is_alive' => $this->normalizeBoolean($row['is_alive'] ?? null),
             'death_date' => $row['death_date'] ?? null,
             'eligibility_status' => $row['eligibility_status'] ?? null,
             'note' => $row['note'] ?? null,
-            'created_by' => auth()->id(),
-            'updated_by' => auth()->id(),
-        ]);
+        ];
+
+        // Có CCCD và đã tồn tại (cùng tổ chức) → CẬP NHẬT, chỉ ghi đè trường có dữ liệu
+        // (ô trống không xóa dữ liệu cũ). Không có CCCD → luôn thêm mới.
+        if (! empty($idNumber)) {
+            $existing = Dependent::where('id_number', $idNumber)->first();
+            if ($existing) {
+                $existing->fill(array_filter($attrs, fn ($value) => $value !== null));
+                $existing->updated_by = auth()->id();
+
+                return $existing;
+            }
+        }
+
+        $attrs['is_alive'] = $attrs['is_alive'] ?? true;
+        $attrs['created_by'] = auth()->id();
+        $attrs['updated_by'] = auth()->id();
+
+        return new Dependent($attrs);
     }
 
     public function prepareForValidation($data, $index)

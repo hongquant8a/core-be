@@ -82,6 +82,9 @@ class HouseholdImport implements ToModel, WithHeadingRow, WithValidation, SkipsO
             }
         }
 
+        // Bỏ trường null để cột NOT NULL có default (vd member_count) dùng default DB,
+        // và để household_code trống được Household::creating tự sinh.
+        $attrs = array_filter($attrs, fn ($value) => $value !== null);
         $attrs['created_by'] = auth()->id();
         $attrs['updated_by'] = auth()->id();
 

@@ -72,6 +72,22 @@ class HouseholdCrudTest extends TestCase
         $res->assertJsonValidationErrors(['head_id_number']);
     }
 
+    public function test_store_rejects_duplicate_household_code_in_same_org(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        Household::create([
+            'organization_id' => $this->orgA->id, 'household_code' => 'HGD-FIXED-1', 'head_name' => 'Chủ 1',
+        ]);
+
+        $res = $this->postJson('/api/beneficiary-households', [
+            'head_name' => 'Chủ 2', 'household_code' => 'HGD-FIXED-1',
+        ], ['X-Organization-Id' => $this->orgA->id]);
+
+        $res->assertStatus(422);
+        $res->assertJsonValidationErrors(['household_code']);
+    }
+
     public function test_household_observer_updates_member_count_when_beneficiary_assigned(): void
     {
         Sanctum::actingAs($this->admin);

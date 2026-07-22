@@ -38,6 +38,23 @@ class DependentRelationTest extends TestCase
         ]);
     }
 
+    public function test_store_rejects_duplicate_id_number_in_same_org(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        Dependent::create([
+            'organization_id' => $this->orgA->id, 'full_name' => 'Thân nhân 1',
+            'gender' => 'female', 'id_number' => '049333333333',
+        ]);
+
+        $res = $this->postJson('/api/beneficiary-dependents', [
+            'full_name' => 'Thân nhân 2', 'gender' => 'female', 'id_number' => '049333333333',
+        ], ['X-Organization-Id' => $this->orgA->id]);
+
+        $res->assertStatus(422);
+        $res->assertJsonValidationErrors(['id_number']);
+    }
+
     public function test_relation_active_for_minor_child(): void
     {
         Sanctum::actingAs($this->admin);

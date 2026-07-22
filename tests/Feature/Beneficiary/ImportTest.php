@@ -136,6 +136,42 @@ class ImportTest extends TestCase
         $this->assertSame('active', $b->status);
     }
 
+    public function test_dependent_import_updates_existing_by_cccd_without_duplicating(): void
+    {
+        $existing = Dependent::create([
+            'organization_id' => $this->orgA->id,
+            'full_name' => 'Thân Nhân Cũ',
+            'gender' => 'female',
+            'id_number' => '049444444444',
+        ]);
+
+        $file = $this->makeXlsx(
+            ['Họ tên *', 'Giới tính *', 'CCCD/CMND'],
+            [['Thân Nhân Mới', 'female', '049444444444']],
+        );
+
+        $failures = app(\App\Modules\Beneficiary\Services\DependentService::class)->import($file);
+
+        $this->assertCount(0, $failures);
+        $this->assertSame(1, Dependent::where('id_number', '049444444444')->count());
+        $this->assertSame('Thân Nhân Mới', $existing->fresh()->full_name);
+    }
+
+    public function test_household_import_generates_code_when_blank(): void
+    {
+        // File không có cột Mã hộ → mã hộ phải được tự sinh (cột DB NOT NULL), không lỗi.
+        $file = $this->makeXlsx(
+            ['Chủ hộ *', 'Địa chỉ'],
+            [['Chủ Hộ Không Mã', '1 Lê Lợi']],
+        );
+
+        $failures = app(\App\Modules\Beneficiary\Services\HouseholdService::class)->import($file);
+
+        $this->assertCount(0, $failures);
+        $h = Household::where('head_name', 'Chủ Hộ Không Mã')->firstOrFail();
+        $this->assertNotEmpty($h->household_code);
+    }
+
     public function test_household_import_updates_existing_by_head_cccd_without_duplicating_or_wiping(): void
     {
         $existing = Household::create([

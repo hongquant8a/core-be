@@ -10,7 +10,11 @@ class StoreHouseholdRequest extends BaseRequest
     {
         return [
             'residential_area_id' => 'nullable|integer|exists:beneficiary_residential_areas,id',
-            'household_code' => 'nullable|string|max:255',
+            'household_code' => [
+                'nullable', 'string', 'max:255',
+                // Mã hộ duy nhất trong cùng tổ chức (để trống sẽ tự sinh, xem Household::generateCode).
+                Rule::unique('beneficiary_households', 'household_code')->where('organization_id', getPermissionsTeamId()),
+            ],
             'head_name' => 'required|string|max:255',
             'head_id_number' => [
                 'nullable', 'string', 'max:255',
@@ -38,6 +42,7 @@ class StoreHouseholdRequest extends BaseRequest
             'head_name.required' => 'Tên chủ hộ không được để trống.',
             'head_name.string' => 'Tên chủ hộ phải là một chuỗi ký tự.',
             'head_name.max' => 'Tên chủ hộ không được vượt quá 255 ký tự.',
+            'household_code.unique' => 'Mã hộ này đã tồn tại.',
             'head_id_number.unique' => 'CCCD chủ hộ này đã tồn tại ở một hộ gia đình khác.',
             'latitude.between' => 'Vĩ độ phải trong khoảng -90 đến 90.',
             'longitude.between' => 'Kinh độ phải trong khoảng -180 đến 180.',

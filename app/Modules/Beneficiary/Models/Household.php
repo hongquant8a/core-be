@@ -32,8 +32,24 @@ class Household extends TenantModel
 
     protected static function booted()
     {
-        static::creating(fn (self $model) => $model->created_by = $model->updated_by = auth()->id());
+        static::creating(function (self $model) {
+            $model->created_by = $model->updated_by = auth()->id();
+            // Tự sinh mã hộ khi để trống — áp dụng mọi đường tạo (store, import, tinker).
+            if (empty($model->household_code)) {
+                $model->household_code = static::generateCode();
+            }
+        });
         static::updating(fn (self $model) => $model->updated_by = auth()->id());
+    }
+
+    /** Sinh mã hộ duy nhất theo tổ chức hiện tại: {SLUG}-HGD-00001. */
+    public static function generateCode(): string
+    {
+        $orgId = getPermissionsTeamId();
+        $orgSlug = strtoupper(\App\Modules\Core\Models\Organization::find($orgId)?->slug ?? 'HGD');
+        $seq = static::withoutGlobalScope('organization')->where('organization_id', $orgId)->count() + 1;
+
+        return "{$orgSlug}-HGD-".str_pad((string) $seq, 5, '0', STR_PAD_LEFT);
     }
 
     public function creator()

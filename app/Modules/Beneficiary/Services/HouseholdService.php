@@ -43,10 +43,7 @@ class HouseholdService
             $dependentIds = $validated['dependent_ids'] ?? [];
             unset($validated['beneficiary_ids'], $validated['dependent_ids']);
 
-            if (empty($validated['household_code'])) {
-                $validated['household_code'] = $this->generateHouseholdCode();
-            }
-
+            // Mã hộ để trống sẽ tự sinh trong Household::creating (áp dụng cả import/tinker).
             $household = Household::create($validated);
 
             if (! empty($beneficiaryIds)) {
@@ -88,14 +85,5 @@ class HouseholdService
         Excel::import($import, $file);
 
         return $import->failures();
-    }
-
-    private function generateHouseholdCode(): string
-    {
-        $orgId = getPermissionsTeamId();
-        $orgSlug = strtoupper(\App\Modules\Core\Models\Organization::find($orgId)?->slug ?? 'HGD');
-        $seq = Household::withoutGlobalScope('organization')->where('organization_id', $orgId)->count() + 1;
-
-        return "{$orgSlug}-HGD-".str_pad((string) $seq, 5, '0', STR_PAD_LEFT);
     }
 }
