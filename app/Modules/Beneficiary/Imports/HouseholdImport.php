@@ -4,6 +4,7 @@ namespace App\Modules\Beneficiary\Imports;
 
 use App\Modules\Beneficiary\Models\Household;
 use App\Modules\Beneficiary\Models\ResidentialArea;
+use App\Modules\Core\Traits\NormalizesImportValues;
 use App\Modules\Core\Traits\TranslatesExcelHeadings;
 use Maatwebsite\Excel\Concerns\Importable;
 use Maatwebsite\Excel\Concerns\SkipsFailures;
@@ -14,7 +15,7 @@ use Maatwebsite\Excel\Concerns\WithValidation;
 
 class HouseholdImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFailure
 {
-    use Importable, SkipsFailures, TranslatesExcelHeadings;
+    use Importable, NormalizesImportValues, SkipsFailures, TranslatesExcelHeadings;
 
     /**
      * Bộ cột đầy đủ import nhận diện được (khớp Export + StoreHouseholdRequest).
@@ -73,6 +74,7 @@ class HouseholdImport implements ToModel, WithHeadingRow, WithValidation, SkipsO
     public function prepareForValidation($data, $index)
     {
         $data = $this->translateHeadings($data);
+        $data = $this->nullifyBlanks($data);
 
         $data['head_name'] = isset($data['head_name']) ? (string) $data['head_name'] : null;
         $data['household_code'] = isset($data['household_code']) ? (string) $data['household_code'] : null;

@@ -73,6 +73,7 @@ class DependentImport implements ToModel, WithHeadingRow, WithValidation, SkipsO
     public function prepareForValidation($data, $index)
     {
         $data = $this->translateHeadings($data);
+        $data = $this->nullifyBlanks($data);
 
         $data['full_name'] = isset($data['full_name']) ? (string) $data['full_name'] : null;
         $data['id_number'] = isset($data['id_number']) ? (string) $data['id_number'] : null;

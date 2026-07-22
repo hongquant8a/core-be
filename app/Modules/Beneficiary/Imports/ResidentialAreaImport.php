@@ -3,6 +3,7 @@
 namespace App\Modules\Beneficiary\Imports;
 
 use App\Modules\Beneficiary\Models\ResidentialArea;
+use App\Modules\Core\Traits\NormalizesImportValues;
 use App\Modules\Core\Traits\TranslatesExcelHeadings;
 use Maatwebsite\Excel\Concerns\Importable;
 use Maatwebsite\Excel\Concerns\SkipsFailures;
@@ -13,7 +14,7 @@ use Maatwebsite\Excel\Concerns\WithValidation;
 
 class ResidentialAreaImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFailure
 {
-    use Importable, SkipsFailures, TranslatesExcelHeadings;
+    use Importable, NormalizesImportValues, SkipsFailures, TranslatesExcelHeadings;
 
     public const FIELD_LABELS = [
         'name' => 'Tên tổ dân phố',
@@ -44,6 +45,7 @@ class ResidentialAreaImport implements ToModel, WithHeadingRow, WithValidation, 
     public function prepareForValidation($data, $index)
     {
         $data = $this->translateHeadings($data);
+        $data = $this->nullifyBlanks($data);
 
         $data['name'] = isset($data['name']) ? (string) $data['name'] : null;
 

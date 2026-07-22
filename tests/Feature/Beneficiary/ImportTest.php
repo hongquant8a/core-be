@@ -176,6 +176,23 @@ class ImportTest extends TestCase
         $this->assertStringContainsString('Giới tính', implode(' ', $failure->errors()));
     }
 
+    public function test_import_blank_optional_numeric_becomes_null_not_empty_string(): void
+    {
+        // Ô Tỷ lệ thương tật / Vĩ độ / Kinh độ để trống → phải là null, không đẩy '' xuống cột decimal (gây lỗi SQL).
+        $file = $this->makeXlsx(
+            ['Họ tên *', 'Giới tính *', 'Tỷ lệ thương tật', 'Vĩ độ', 'Kinh độ'],
+            [['Hồ Phú Bốn', 'male', '', '', '']],
+        );
+
+        $failures = app(\App\Modules\Beneficiary\Services\BeneficiaryService::class)->import($file);
+
+        $this->assertCount(0, $failures);
+        $b = Beneficiary::where('full_name', 'Hồ Phú Bốn')->firstOrFail();
+        $this->assertNull($b->injury_rate);
+        $this->assertNull($b->latitude);
+        $this->assertNull($b->longitude);
+    }
+
     public function test_import_all_valid_returns_no_failures(): void
     {
         $file = $this->makeXlsx(

@@ -91,6 +91,7 @@ class BeneficiaryImport implements ToModel, WithHeadingRow, WithValidation, Skip
     public function prepareForValidation($data, $index)
     {
         $data = $this->translateHeadings($data);
+        $data = $this->nullifyBlanks($data);
 
         $data['full_name'] = isset($data['full_name']) ? (string) $data['full_name'] : null;
         $data['birth_year'] = isset($data['birth_year']) ? (string) $data['birth_year'] : null;

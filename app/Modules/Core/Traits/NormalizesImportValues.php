@@ -57,6 +57,23 @@ trait NormalizesImportValues
         return $value;
     }
 
+    /**
+     * Đổi mọi ô chuỗi rỗng / chỉ có khoảng trắng thành null.
+     *
+     * Ô Excel trống trả về '' (không phải null) → cột số/decimal/date nhận '' sẽ lỗi SQL
+     * (vd "Incorrect decimal value: '' for column injury_rate"). Gọi ngay sau translateHeadings.
+     */
+    protected function nullifyBlanks(array $data): array
+    {
+        foreach ($data as $key => $value) {
+            if (is_string($value) && trim($value) === '') {
+                $data[$key] = null;
+            }
+        }
+
+        return $data;
+    }
+
     /** Chuẩn hóa boolean: chấp nhận 1/0, true/false, có/không, nhãn Còn sống/Đã mất. Không rõ → null. */
     protected function normalizeBoolean($value): ?bool
     {

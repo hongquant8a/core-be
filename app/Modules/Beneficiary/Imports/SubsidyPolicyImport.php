@@ -64,6 +64,7 @@ class SubsidyPolicyImport implements ToModel, WithHeadingRow, WithValidation, Sk
     public function prepareForValidation($data, $index)
     {
         $data = $this->translateHeadings($data);
+        $data = $this->nullifyBlanks($data);
 
         $data['beneficiary_type'] = $this->normalizeEnum($data['beneficiary_type'] ?? null, BeneficiaryTypeEnum::cases());
         $data['relationship_type'] = $this->normalizeEnum($data['relationship_type'] ?? null, DependentRelationshipEnum::cases());
