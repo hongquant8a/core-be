@@ -187,7 +187,7 @@ class SubsidyPolicyController extends Controller
     public function importTemplate()
     {
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Beneficiary\Imports\SubsidyPolicyImport::TEMPLATE_LABELS, \App\Modules\Beneficiary\Imports\SubsidyPolicyImport::TEMPLATE_EXAMPLES, \App\Modules\Beneficiary\Imports\SubsidyPolicyImport::REQUIRED_KEYS),
+            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Beneficiary\Imports\SubsidyPolicyImport::TEMPLATE_LABELS, \App\Modules\Beneficiary\Imports\SubsidyPolicyImport::TEMPLATE_EXAMPLES, \App\Modules\Beneficiary\Imports\SubsidyPolicyImport::REQUIRED_KEYS, \App\Modules\Beneficiary\Imports\SubsidyPolicyImport::templateNotes()),
             'import-subsidy-policies-template.xlsx'
         );
     }

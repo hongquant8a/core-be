@@ -149,6 +149,15 @@ class BeneficiaryImport implements ToModel, WithHeadingRow, WithValidation, Skip
         return self::FIELD_LABELS;
     }
 
+    /** Ghi chú giá trị hợp lệ cho cột enum → gắn comment trong file mẫu. */
+    public static function templateNotes(): array
+    {
+        return [
+            'gender' => self::enumHint(GenderEnum::cases()),
+            'status' => self::enumHint(BeneficiaryStatusEnum::cases()),
+        ];
+    }
+
     /** Tra mã hộ về household_id trong phạm vi tổ chức hiện tại; không khớp thì để trống (không chặn dòng). */
     private function resolveHouseholdId(?string $householdCode): ?int
     {

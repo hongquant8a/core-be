@@ -80,4 +80,17 @@ trait NormalizesImportValues
 
         return null;
     }
+
+    /**
+     * Dựng chuỗi ghi chú liệt kê đầy đủ giá trị hợp lệ của enum để gắn vào ô header file mẫu.
+     * Vd: "Giá trị hợp lệ: male (Nam), female (Nữ), other (Khác)".
+     *
+     * @param  array<int, \BackedEnum>  $cases
+     */
+    protected static function enumHint(array $cases): string
+    {
+        $parts = array_map(fn ($case) => $case->value.' ('.$case->label().')', $cases);
+
+        return 'Giá trị hợp lệ: '.implode(', ', $parts);
+    }
 }

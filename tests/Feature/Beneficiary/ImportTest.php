@@ -15,8 +15,10 @@ use App\Modules\Beneficiary\Models\SubsidyPolicy;
 use App\Modules\Core\Models\Organization;
 use App\Modules\Core\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Modules\Core\Exports\ImportTemplateExport;
 use Illuminate\Http\UploadedFile;
 use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Tests\TestCase;
@@ -147,5 +149,34 @@ class ImportTest extends TestCase
         $this->assertSame('HGD-NEW', $h->household_code);
         $this->assertSame('12 Trần Phú', $h->address);
         $this->assertSame(4, $h->member_count);
+    }
+
+    public function test_template_has_required_marker_and_enum_notes(): void
+    {
+        // Sinh file mẫu Dependent (có cột enum gender/eligibility + boolean is_alive).
+        $binary = Excel::raw(
+            new ImportTemplateExport(
+                DependentImport::TEMPLATE_LABELS,
+                DependentImport::TEMPLATE_EXAMPLES,
+                DependentImport::REQUIRED_KEYS,
+                DependentImport::templateNotes(),
+            ),
+            \Maatwebsite\Excel\Excel::XLSX,
+        );
+        $path = tempnam(sys_get_temp_dir(), 'tpl_').'.xlsx';
+        file_put_contents($path, $binary);
+
+        $sheet = IOFactory::load($path)->getActiveSheet();
+
+        // Header cột bắt buộc có dấu *; cột không bắt buộc để trần.
+        $this->assertSame('Họ tên *', $sheet->getCell('A1')->getValue());
+        $this->assertSame('Giới tính *', $sheet->getCell('C1')->getValue());
+        $this->assertSame('Ngày sinh', $sheet->getCell('B1')->getValue());
+
+        // Comment cột Giới tính (C) liệt kê đầy đủ giá trị enum.
+        $genderNote = (string) $sheet->getComment('C1')->getText();
+        $this->assertStringContainsString('male (Nam)', $genderNote);
+        $this->assertStringContainsString('female (Nữ)', $genderNote);
+        $this->assertStringContainsString('other (Khác)', $genderNote);
     }
 }

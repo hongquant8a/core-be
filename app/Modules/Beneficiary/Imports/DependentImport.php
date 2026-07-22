@@ -124,6 +124,16 @@ class DependentImport implements ToModel, WithHeadingRow, WithValidation, SkipsO
         return self::FIELD_LABELS;
     }
 
+    /** Ghi chú giá trị hợp lệ cho cột enum/boolean → gắn comment trong file mẫu. */
+    public static function templateNotes(): array
+    {
+        return [
+            'gender' => self::enumHint(GenderEnum::cases()),
+            'is_alive' => 'Giá trị hợp lệ: Còn sống / Đã mất (hoặc 1 = còn sống, 0 = đã mất).',
+            'eligibility_status' => self::enumHint(DependentEligibilityEnum::cases()),
+        ];
+    }
+
     /** Tra mã hộ về household_id trong phạm vi tổ chức hiện tại; không khớp thì để trống (không chặn dòng). */
     private function resolveHouseholdId(?string $householdCode): ?int
     {
