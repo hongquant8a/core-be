@@ -210,13 +210,16 @@ class DependentController extends Controller
      *
      * @bodyParam file file required File Excel (xlsx, xls, csv). Cột theo chuẩn export.
      *
-     * @response 200 {"success": true, "message": "Import thân nhân thành công."}
+     * Dòng lỗi validation được bỏ qua (các dòng hợp lệ vẫn import), trả về `failed_count` và
+     * `errors` (số dòng, cột, thông báo, giá trị) để cán bộ sửa và nhập lại.
+     *
+     * @response 200 {"success": true, "message": "Import thân nhân hoàn tất — đã bỏ qua 1 dòng lỗi, vui lòng kiểm tra và nhập lại các dòng này.", "data": {"failed_count": 1, "errors": [{"row": 4, "column": "Giới tính", "errors": ["Giới tính không được để trống."], "values": {"Họ tên": "Lê Thị C"}}]}}
      */
     public function import(ImportBeneficiaryFileRequest $request)
     {
-        $this->dependentService->import($request->file('file'));
+        $failures = $this->dependentService->import($request->file('file'));
 
-        return $this->success(null, 'Import thân nhân thành công.');
+        return $this->importResult($failures, 'thân nhân');
     }
 
     /**

@@ -151,6 +151,44 @@ class ImportTest extends TestCase
         $this->assertSame(4, $h->member_count);
     }
 
+    public function test_import_skips_invalid_row_and_returns_failures(): void
+    {
+        // 1 dòng hợp lệ + 1 dòng thiếu Giới tính (cột bắt buộc) → dòng lỗi bị bỏ qua, dòng còn lại vẫn import.
+        $file = $this->makeXlsx(
+            ['Họ tên *', 'Giới tính *'],
+            [
+                ['Người Hợp Lệ', 'Nam'],
+                ['Người Thiếu Giới Tính', ''],
+            ],
+        );
+
+        $failures = app(\App\Modules\Beneficiary\Services\BeneficiaryService::class)->import($file);
+
+        // Dòng hợp lệ được tạo; dòng lỗi thì không.
+        $this->assertNotNull(Beneficiary::where('full_name', 'Người Hợp Lệ')->first());
+        $this->assertNull(Beneficiary::where('full_name', 'Người Thiếu Giới Tính')->first());
+
+        // Trả về đúng 1 lỗi kèm số dòng Excel (3 = header 1 + hợp lệ 2 + lỗi 3), cột và thông báo.
+        $this->assertCount(1, $failures);
+        $failure = $failures->first();
+        $this->assertSame(3, $failure->row());
+        $this->assertNotEmpty($failure->attribute());
+        $this->assertStringContainsString('Giới tính', implode(' ', $failure->errors()));
+    }
+
+    public function test_import_all_valid_returns_no_failures(): void
+    {
+        $file = $this->makeXlsx(
+            ['Tên tổ dân phố *', 'Mã'],
+            [['Tổ 1', 'TDP-001'], ['Tổ 2', 'TDP-002']],
+        );
+
+        $failures = app(\App\Modules\Beneficiary\Services\ResidentialAreaService::class)->import($file);
+
+        $this->assertCount(0, $failures);
+        $this->assertSame(2, ResidentialArea::whereIn('name', ['Tổ 1', 'Tổ 2'])->count());
+    }
+
     /** @return \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet */
     private function renderTemplate(ImportTemplateExport $export)
     {

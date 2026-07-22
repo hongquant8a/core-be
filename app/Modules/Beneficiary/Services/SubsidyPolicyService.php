@@ -102,8 +102,11 @@ class SubsidyPolicyService
         return Excel::download(new SubsidyPolicyExport($filters), ExportFilename::make('chinh-sach-tro-cap'));
     }
 
-    public function import($file): void
+    public function import($file): \Illuminate\Support\Collection
     {
-        Excel::import(new SubsidyPolicyImport, $file);
+        $import = new SubsidyPolicyImport;
+        Excel::import($import, $file);
+
+        return $import->failures();
     }
 }

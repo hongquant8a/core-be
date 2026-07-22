@@ -82,9 +82,12 @@ class HouseholdService
         return Excel::download(new HouseholdExport($filters), ExportFilename::make('ho-gia-dinh'));
     }
 
-    public function import($file): void
+    public function import($file): \Illuminate\Support\Collection
     {
-        Excel::import(new HouseholdImport, $file);
+        $import = new HouseholdImport;
+        Excel::import($import, $file);
+
+        return $import->failures();
     }
 
     private function generateHouseholdCode(): string

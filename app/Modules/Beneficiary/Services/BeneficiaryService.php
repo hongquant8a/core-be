@@ -201,8 +201,11 @@ class BeneficiaryService
         return Excel::download(new BeneficiaryExport($filters), ExportFilename::make('nguoi-co-cong'));
     }
 
-    public function import($file): void
+    public function import($file): \Illuminate\Support\Collection
     {
-        Excel::import(new BeneficiaryImport, $file);
+        $import = new BeneficiaryImport;
+        Excel::import($import, $file);
+
+        return $import->failures();
     }
 }

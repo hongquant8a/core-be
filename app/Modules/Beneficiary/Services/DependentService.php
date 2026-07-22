@@ -128,8 +128,11 @@ class DependentService
         return Excel::download(new DependentExport($filters), ExportFilename::make('than-nhan'));
     }
 
-    public function import($file): void
+    public function import($file): \Illuminate\Support\Collection
     {
-        Excel::import(new DependentImport, $file);
+        $import = new DependentImport;
+        Excel::import($import, $file);
+
+        return $import->failures();
     }
 }

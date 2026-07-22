@@ -64,8 +64,11 @@ class ResidentialAreaService
         return Excel::download(new ResidentialAreaExport($filters), ExportFilename::make('to-dan-pho'));
     }
 
-    public function import($file): void
+    public function import($file): \Illuminate\Support\Collection
     {
-        Excel::import(new ResidentialAreaImport, $file);
+        $import = new ResidentialAreaImport;
+        Excel::import($import, $file);
+
+        return $import->failures();
     }
 }
