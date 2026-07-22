@@ -2,6 +2,8 @@
 
 namespace App\Modules\Beneficiary\Requests;
 
+use Illuminate\Validation\Rule;
+
 class StoreHouseholdRequest extends BaseRequest
 {
     public function rules(): array
@@ -10,7 +12,11 @@ class StoreHouseholdRequest extends BaseRequest
             'residential_area_id' => 'nullable|integer|exists:beneficiary_residential_areas,id',
             'household_code' => 'nullable|string|max:255',
             'head_name' => 'required|string|max:255',
-            'head_id_number' => 'nullable|string|max:255',
+            'head_id_number' => [
+                'nullable', 'string', 'max:255',
+                // CCCD chủ hộ duy nhất trong cùng tổ chức (một người chỉ là chủ 1 hộ).
+                Rule::unique('beneficiary_households', 'head_id_number')->where('organization_id', getPermissionsTeamId()),
+            ],
             // Chỉ tên chủ hộ là bắt buộc — cho phép tạo hồ sơ sơ bộ trước, bổ sung địa chỉ
             // sau khi cán bộ xác minh thực địa (không chặn nhập liệu khi chưa có đủ thông tin).
             'address' => 'nullable|string|max:255',
@@ -32,6 +38,7 @@ class StoreHouseholdRequest extends BaseRequest
             'head_name.required' => 'Tên chủ hộ không được để trống.',
             'head_name.string' => 'Tên chủ hộ phải là một chuỗi ký tự.',
             'head_name.max' => 'Tên chủ hộ không được vượt quá 255 ký tự.',
+            'head_id_number.unique' => 'CCCD chủ hộ này đã tồn tại ở một hộ gia đình khác.',
             'latitude.between' => 'Vĩ độ phải trong khoảng -90 đến 90.',
             'longitude.between' => 'Kinh độ phải trong khoảng -180 đến 180.',
             'beneficiary_ids.array' => 'Danh sách người có công phải là một mảng.',

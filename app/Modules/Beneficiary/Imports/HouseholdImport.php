@@ -55,10 +55,12 @@ class HouseholdImport implements ToModel, WithHeadingRow, WithValidation, SkipsO
 
     public function model(array $row)
     {
-        return new Household([
+        $headIdNumber = $row['head_id_number'] ?? null;
+
+        $attrs = [
             'household_code' => $row['household_code'] ?? null,
             'head_name' => $row['head_name'] ?? null,
-            'head_id_number' => $row['head_id_number'] ?? null,
+            'head_id_number' => $headIdNumber,
             'residential_area_id' => $this->resolveResidentialAreaId($row['residential_area'] ?? null),
             'address' => $row['address'] ?? null,
             'latitude' => $row['latitude'] ?? null,
@@ -66,9 +68,24 @@ class HouseholdImport implements ToModel, WithHeadingRow, WithValidation, SkipsO
             'phone' => $row['phone'] ?? null,
             'member_count' => $row['member_count'] ?? null,
             'note' => $row['note'] ?? null,
-            'created_by' => auth()->id(),
-            'updated_by' => auth()->id(),
-        ]);
+        ];
+
+        // Có CCCD chủ hộ và đã tồn tại (cùng tổ chức) → CẬP NHẬT, chỉ ghi đè trường có dữ liệu
+        // (ô trống không xóa dữ liệu cũ). Không có CCCD chủ hộ → luôn thêm mới.
+        if (! empty($headIdNumber)) {
+            $existing = Household::where('head_id_number', $headIdNumber)->first();
+            if ($existing) {
+                $existing->fill(array_filter($attrs, fn ($value) => $value !== null));
+                $existing->updated_by = auth()->id();
+
+                return $existing;
+            }
+        }
+
+        $attrs['created_by'] = auth()->id();
+        $attrs['updated_by'] = auth()->id();
+
+        return new Household($attrs);
     }
 
     public function prepareForValidation($data, $index)

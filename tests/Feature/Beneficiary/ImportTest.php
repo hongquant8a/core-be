@@ -136,6 +136,32 @@ class ImportTest extends TestCase
         $this->assertSame('active', $b->status);
     }
 
+    public function test_household_import_updates_existing_by_head_cccd_without_duplicating_or_wiping(): void
+    {
+        $existing = Household::create([
+            'organization_id' => $this->orgA->id,
+            'household_code' => 'HGD-UP-1',
+            'head_name' => 'Chủ Cũ',
+            'head_id_number' => '049222222222',
+            'phone' => '0911111111',
+        ]);
+
+        // Cùng CCCD chủ hộ, đổi tên chủ hộ, ô SĐT trống → cập nhật tên, giữ SĐT cũ, không tạo hộ mới.
+        $file = $this->makeXlsx(
+            ['Chủ hộ *', 'Mã hộ', 'CCCD chủ hộ', 'SĐT'],
+            [['Chủ Mới', 'HGD-UP-1', '049222222222', '']],
+        );
+
+        $failures = app(\App\Modules\Beneficiary\Services\HouseholdService::class)->import($file);
+
+        $this->assertCount(0, $failures);
+        $this->assertSame(1, Household::where('head_id_number', '049222222222')->count());
+
+        $fresh = $existing->fresh();
+        $this->assertSame('Chủ Mới', $fresh->head_name);
+        $this->assertSame('0911111111', $fresh->phone);
+    }
+
     public function test_household_import_still_maps_fields_after_refactor(): void
     {
         $file = $this->makeXlsx(

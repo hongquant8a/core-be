@@ -2,6 +2,8 @@
 
 namespace App\Modules\Beneficiary\Requests;
 
+use Illuminate\Validation\Rule;
+
 class UpdateHouseholdRequest extends BaseRequest
 {
     public function rules(): array
@@ -10,7 +12,13 @@ class UpdateHouseholdRequest extends BaseRequest
             'residential_area_id' => 'nullable|integer|exists:beneficiary_residential_areas,id',
             'household_code' => 'sometimes|string|max:255',
             'head_name' => 'sometimes|string|max:255',
-            'head_id_number' => 'nullable|string|max:255',
+            'head_id_number' => [
+                'nullable', 'string', 'max:255',
+                // CCCD chủ hộ duy nhất trong cùng tổ chức, bỏ qua chính hộ đang sửa.
+                Rule::unique('beneficiary_households', 'head_id_number')
+                    ->where('organization_id', getPermissionsTeamId())
+                    ->ignore($this->route('household')),
+            ],
             'address' => 'sometimes|string|max:255',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
@@ -25,6 +33,7 @@ class UpdateHouseholdRequest extends BaseRequest
             'residential_area_id.exists' => 'Tổ dân phố không tồn tại.',
             'head_name.string' => 'Tên chủ hộ phải là một chuỗi ký tự.',
             'head_name.max' => 'Tên chủ hộ không được vượt quá 255 ký tự.',
+            'head_id_number.unique' => 'CCCD chủ hộ này đã tồn tại ở một hộ gia đình khác.',
             'address.string' => 'Địa chỉ phải là một chuỗi ký tự.',
             'latitude.between' => 'Vĩ độ phải trong khoảng -90 đến 90.',
             'longitude.between' => 'Kinh độ phải trong khoảng -180 đến 180.',
