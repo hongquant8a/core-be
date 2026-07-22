@@ -149,7 +149,7 @@ class HouseholdController extends Controller
     /**
      * Import hộ gia đình
      *
-     * Cột bắt buộc: head_name, address. Cột không bắt buộc: household_code, head_id_number, phone.
+     * Cột bắt buộc: head_name. Cột không bắt buộc: household_code, head_id_number, residential_area (tra theo tên/mã tổ dân phố), address, latitude, longitude, phone, member_count, note.
      *
      * @bodyParam file file required File Excel (xlsx, xls, csv). Cột theo chuẩn export.
      *
@@ -170,7 +170,7 @@ class HouseholdController extends Controller
     public function importTemplate()
     {
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Beneficiary\Imports\HouseholdImport::TEMPLATE_LABELS, \App\Modules\Beneficiary\Imports\HouseholdImport::TEMPLATE_EXAMPLES),
+            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Beneficiary\Imports\HouseholdImport::TEMPLATE_LABELS, \App\Modules\Beneficiary\Imports\HouseholdImport::TEMPLATE_EXAMPLES, \App\Modules\Beneficiary\Imports\HouseholdImport::REQUIRED_KEYS),
             'import-households-template.xlsx'
         );
     }

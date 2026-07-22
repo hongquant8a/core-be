@@ -198,8 +198,16 @@ Luôn dùng Resource để trả dữ liệu. Định dạng thời gian trong R
 
 **Import:**
 - FormRequest validate: `required|file|mimes:xlsx,xls,csv|max:10240`.
-- Cột file khớp chuẩn Export; trường bắt buộc = required trong StoreRequest, trường không bắt buộc có default.
-- Import class khai báo `TEMPLATE_LABELS` (map `field_key => 'Nhãn tiếng Việt'`) và `TEMPLATE_EXAMPLES` (map `field_key => 'giá trị ví dụ'`, có thể để trống nếu không cần).
+- **Đầy đủ trường:** import phải nhận **mọi trường** như Export/StoreRequest — **chỉ bỏ qua trường dạng mảng lồng nhau** (vd `classifications`, `dependents`) vì không phù hợp file phẳng. Không tự cắt bớt cột "cho gọn"; thiếu cột nào cán bộ mất đường nhập cột đó.
+  - Rule validate mỗi cột mirror StoreRequest (required cho cột bắt buộc, `nullable` + default cho cột không bắt buộc).
+  - Enum (giới tính/trạng thái…): chấp nhận cả value gốc lẫn nhãn tiếng Việt (chuẩn hóa trong `prepareForValidation`) để round-trip Export→Import.
+  - Trường quan hệ hiển thị dạng tên/mã trong Export (vd "Mã hộ", "Tổ dân phố"): tra ngược về `*_id` trong `model()`, không khớp thì để trống, không chặn dòng.
+- Import class khai báo:
+  - `FIELD_LABELS` (map `field_key => 'Nhãn tiếng Việt'`) — **đủ mọi cột**; header file dịch ngược về key qua trait `TranslatesExcelHeadings`.
+  - `TEMPLATE_LABELS = self::FIELD_LABELS` (file mẫu hiện đủ cột).
+  - `TEMPLATE_EXAMPLES` (map `field_key => 'giá trị ví dụ'`, để trống nếu không cần).
+  - `REQUIRED_KEYS` (mảng `field_key` bắt buộc) — **phải khớp** các field `required` trong `rules()`.
+- **Đánh dấu cột bắt buộc:** file mẫu gắn **dấu `*`** ở cuối header cột bắt buộc; cột không bắt buộc để **trần** (không thêm gì). `ImportTemplateExport` tự gắn `*` từ `REQUIRED_KEYS`; trait `TranslatesExcelHeadings` tự **bỏ dấu `*`** khi upload nên file mẫu vẫn import lại được.
 
 **Bắt buộc: mọi resource có `import` phải có kèm endpoint tải file mẫu** — không để cán bộ tự đoán cột file:
 ```php
@@ -207,16 +215,20 @@ Luôn dùng Resource để trả dữ liệu. Định dạng thời gian trong R
 Route::get('/import-template', [XxxController::class, 'importTemplate'])
     ->middleware('permission:xxx.import,web'); // dùng chung permission .import, không tạo permission riêng
 
-// Controller
+// Controller — truyền REQUIRED_KEYS để file mẫu gắn dấu * vào cột bắt buộc
 public function importTemplate()
 {
     return \Maatwebsite\Excel\Facades\Excel::download(
-        new \App\Modules\Core\Exports\ImportTemplateExport(XxxImport::TEMPLATE_LABELS, XxxImport::TEMPLATE_EXAMPLES),
+        new \App\Modules\Core\Exports\ImportTemplateExport(
+            XxxImport::TEMPLATE_LABELS,
+            XxxImport::TEMPLATE_EXAMPLES,
+            XxxImport::REQUIRED_KEYS,
+        ),
         'import-xxx-template.xlsx'
     );
 }
 ```
-Không tự implement lại việc sinh file Excel mẫu — luôn tái dùng `App\Modules\Core\Exports\ImportTemplateExport` (đã style sẵn: row 1 header, row 2 ví dụ in nghiêng xám để cán bộ biết xóa trước khi nhập).
+Không tự implement lại việc sinh file Excel mẫu — luôn tái dùng `App\Modules\Core\Exports\ImportTemplateExport` (đã style sẵn: row 1 header — cột bắt buộc có dấu `*`, row 2 ví dụ in nghiêng xám để cán bộ biết xóa trước khi nhập).
 
 > PHPDoc Scribe cho export/import xem mục 7.
 
@@ -328,6 +340,7 @@ Thêm endpoint mới thay vì đổi format endpoint cũ (giữ backward compati
 - [ ] Resource thuộc tenant scope đúng `organization_id`, không cho cross-tenant.
 - [ ] Response format và HTTP status code đúng chuẩn (`RespondsWithJson`).
 - [ ] Có action `import` thì có kèm `import-template` (dùng `ImportTemplateExport`, permission dùng chung `.import`).
+- [ ] Import nhận đủ trường như Export/StoreRequest (chỉ bỏ mảng lồng nhau); `REQUIRED_KEYS` khớp field `required` trong `rules()`; file mẫu gắn dấu `*` cột bắt buộc, cột không bắt buộc để trần.
 - [ ] Module có ≥1 Enum dùng cho FE dropdown → có `{module}-enums` endpoint (`EnumController`, xem mục 2), không gắn permission riêng.
 
 **Event-Driven:**

@@ -217,7 +217,7 @@ class BeneficiaryController extends Controller
     /**
      * Import người có công
      *
-     * Cột bắt buộc: full_name, gender. Cột không bắt buộc: date_of_birth, id_number, status (mặc định "pending").
+     * Cột bắt buộc: full_name, gender. Cột không bắt buộc: date_of_birth, birth_year, id_number, injury_rate, recognition_decision_no, recognition_date, household_code (tra theo mã hộ), status (mặc định "pending"), address, latitude, longitude, phone, note. Giới tính/trạng thái nhận cả value gốc (male/pending) lẫn nhãn tiếng Việt.
      *
      * @bodyParam file file required File Excel (xlsx, xls, csv). Cột theo chuẩn export.
      *
@@ -238,7 +238,7 @@ class BeneficiaryController extends Controller
     public function importTemplate()
     {
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Beneficiary\Imports\BeneficiaryImport::TEMPLATE_LABELS, \App\Modules\Beneficiary\Imports\BeneficiaryImport::TEMPLATE_EXAMPLES),
+            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Beneficiary\Imports\BeneficiaryImport::TEMPLATE_LABELS, \App\Modules\Beneficiary\Imports\BeneficiaryImport::TEMPLATE_EXAMPLES, \App\Modules\Beneficiary\Imports\BeneficiaryImport::REQUIRED_KEYS),
             'import-beneficiaries-template.xlsx'
         );
     }

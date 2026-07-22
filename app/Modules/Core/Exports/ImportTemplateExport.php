@@ -10,25 +10,43 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
  * Sinh file Excel template cho import.
  *
  * Layout:
- *   - Row 1: header nhãn tiếng Việt (từ $fieldLabels).
+ *   - Row 1: header nhãn tiếng Việt (từ $fieldLabels); cột bắt buộc gắn dấu " *" ở cuối.
  *   - Row 2: ví dụ mẫu (từ $exampleRow, italic xám — user xóa trước khi nhập data thật).
  *
- * Nhận map [field_key => 'Nhãn tiếng Việt']. Header trong file là nhãn tiếng Việt;
- * Import class tương ứng dịch ngược về field_key trong prepareForValidation
- * (xem trait TranslatesExcelHeadings).
+ * Nhận map [field_key => 'Nhãn tiếng Việt']. Header trong file là nhãn tiếng Việt (cột bắt buộc
+ * có dấu *); Import class tương ứng bỏ dấu * rồi dịch ngược về field_key trong
+ * prepareForValidation (xem trait TranslatesExcelHeadings).
  */
 class ImportTemplateExport extends AbstractExcelExport implements FromArray
 {
     /**
-     * @param  array<string, string>  $fieldLabels  [field_key => 'Nhãn tiếng Việt']
-     * @param  array<string, string>  $exampleRow   [field_key => 'giá trị ví dụ']. Optional;
-     *                                              empty → không có row 2 (giống behavior cũ).
+     * @param  array<string, string>  $fieldLabels   [field_key => 'Nhãn tiếng Việt']
+     * @param  array<string, string>  $exampleRow    [field_key => 'giá trị ví dụ']. Optional;
+     *                                               empty → không có row 2 (giống behavior cũ).
+     * @param  array<int, string>     $requiredKeys  Danh sách field_key bắt buộc → header gắn dấu " *".
      */
-    public function __construct(private array $fieldLabels, private array $exampleRow = []) {}
+    public function __construct(
+        private array $fieldLabels,
+        private array $exampleRow = [],
+        private array $requiredKeys = [],
+    ) {}
 
     public function headings(): array
     {
-        return array_values($this->fieldLabels);
+        // Không khai báo requiredKeys → giữ header trần (backward-compat cho các module chưa gắn dấu).
+        if (empty($this->requiredKeys)) {
+            return array_values($this->fieldLabels);
+        }
+
+        $required = array_flip($this->requiredKeys);
+
+        // Cột bắt buộc gắn dấu " *" ở cuối; cột không bắt buộc để trần.
+        $headings = [];
+        foreach ($this->fieldLabels as $key => $label) {
+            $headings[] = isset($required[$key]) ? $label.' *' : $label;
+        }
+
+        return $headings;
     }
 
     public function array(): array
