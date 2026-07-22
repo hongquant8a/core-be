@@ -107,12 +107,21 @@ class SubsidyPolicyImport implements ToModel, WithHeadingRow, WithValidation, Sk
         return self::FIELD_LABELS;
     }
 
-    /** Ghi chú giá trị hợp lệ cho cột enum → gắn comment trong file mẫu. */
+    /** Ghi chú giá trị hợp lệ cho cột enum → hiện trong file mẫu (dropdown prompt / comment). */
     public static function templateNotes(): array
     {
         return [
             'beneficiary_type' => self::enumHint(BeneficiaryTypeEnum::cases()),
             'relationship_type' => self::enumHint(DependentRelationshipEnum::cases()),
+        ];
+    }
+
+    /** Giá trị thô cho dropdown chọn nhanh trên file mẫu. */
+    public static function templateOptions(): array
+    {
+        return [
+            'beneficiary_type' => BeneficiaryTypeEnum::values(),
+            'relationship_type' => DependentRelationshipEnum::values(),
         ];
     }
 }

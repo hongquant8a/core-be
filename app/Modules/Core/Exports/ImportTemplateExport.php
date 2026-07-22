@@ -5,6 +5,7 @@ namespace App\Modules\Core\Exports;
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Cell\DataValidation;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
 /**
@@ -26,14 +27,17 @@ class ImportTemplateExport extends AbstractExcelExport implements FromArray
      * @param  array<string, string>  $exampleRow    [field_key => 'giá trị ví dụ']. Optional;
      *                                               empty → không có row 2 (giống behavior cũ).
      * @param  array<int, string>     $requiredKeys  Danh sách field_key bắt buộc → header gắn dấu " *".
-     * @param  array<string, string>  $columnNotes   [field_key => 'ghi chú giá trị hợp lệ'] → gắn comment
-     *                                               vào ô header (vd enum: liệt kê male/female/...).
+     * @param  array<string, string>  $columnNotes   [field_key => 'ghi chú giá trị hợp lệ'] → hiện cho
+     *                                               cột enum (dropdown prompt nếu ngắn, comment nếu dài).
+     * @param  array<string, array>   $columnOptions [field_key => [giá trị thô]] → tạo dropdown chọn nhanh
+     *                                               trên ô data (nếu tổng độ dài ≤ 255 — giới hạn Excel).
      */
     public function __construct(
         private array $fieldLabels,
         private array $exampleRow = [],
         private array $requiredKeys = [],
         private array $columnNotes = [],
+        private array $columnOptions = [],
     ) {}
 
     public function headings(): array
@@ -77,22 +81,51 @@ class ImportTemplateExport extends AbstractExcelExport implements FromArray
     protected function customEvents(AfterSheet $event): void
     {
         $sheet = $event->sheet->getDelegate();
+        $keys = array_keys($this->fieldLabels);
+        $handledByDropdown = [];
 
-        // Comment cho cột có ghi chú: đặt theo vị trí cột trong $fieldLabels.
-        if (! empty($this->columnNotes)) {
-            $keys = array_keys($this->fieldLabels);
-            foreach ($this->columnNotes as $field => $note) {
-                $idx = array_search($field, $keys, true);
-                if ($idx === false) {
-                    continue;
-                }
-
-                $col = Coordinate::stringFromColumnIndex($idx + 1);
-                $comment = $sheet->getComment($col.'1');
-                $comment->getText()->createText($note);
-                $comment->setWidth('340pt');
-                $comment->setHeight('180pt');
+        // 1. Dropdown chọn nhanh (data validation LIST) + prompt hiện khi bấm ô — cho enum ngắn.
+        foreach ($this->columnOptions as $field => $values) {
+            $idx = array_search($field, $keys, true);
+            if ($idx === false || empty($values)) {
+                continue;
             }
+
+            $csv = implode(',', $values);
+            if (mb_strlen($csv) > 255) {
+                continue; // Vượt giới hạn list nội tuyến của Excel → để comment (mục 2) lo.
+            }
+
+            $col = Coordinate::stringFromColumnIndex($idx + 1);
+            $dv = new DataValidation;
+            $dv->setType(DataValidation::TYPE_LIST);
+            $dv->setAllowBlank(true);
+            $dv->setShowDropDown(true);
+            $dv->setShowErrorMessage(false); // không chặn — import vẫn nhận cả nhãn tiếng Việt.
+            $dv->setShowInputMessage(true);
+            $dv->setPromptTitle('Giá trị hợp lệ');
+            $dv->setPrompt(mb_substr((string) ($this->columnNotes[$field] ?? $csv), 0, 255));
+            $dv->setFormula1('"'.$csv.'"');
+            $sheet->setDataValidation($col.'2:'.$col.'1001', $dv);
+
+            $handledByDropdown[$field] = true;
+        }
+
+        // 2. Comment ở ô header cho MỌI cột enum (liệt kê đầy đủ giá trị).
+        //    - Cột có dropdown: comment để hover (bổ trợ, vì prompt đã hiện sẵn khi bấm ô).
+        //    - Cột enum dài không dựng được dropdown: comment hiện sẵn (visible).
+        foreach ($this->columnNotes as $field => $note) {
+            $idx = array_search($field, $keys, true);
+            if ($idx === false) {
+                continue;
+            }
+
+            $col = Coordinate::stringFromColumnIndex($idx + 1);
+            $comment = $sheet->getComment($col.'1');
+            $comment->getText()->createText($note);
+            $comment->setWidth('360pt');
+            $comment->setHeight('200pt');
+            $comment->setVisible(! isset($handledByDropdown[$field]));
         }
 
         if (empty($this->exampleRow)) {

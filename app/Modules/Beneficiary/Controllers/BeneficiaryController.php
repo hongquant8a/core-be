@@ -238,7 +238,7 @@ class BeneficiaryController extends Controller
     public function importTemplate()
     {
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Beneficiary\Imports\BeneficiaryImport::TEMPLATE_LABELS, \App\Modules\Beneficiary\Imports\BeneficiaryImport::TEMPLATE_EXAMPLES, \App\Modules\Beneficiary\Imports\BeneficiaryImport::REQUIRED_KEYS, \App\Modules\Beneficiary\Imports\BeneficiaryImport::templateNotes()),
+            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Beneficiary\Imports\BeneficiaryImport::TEMPLATE_LABELS, \App\Modules\Beneficiary\Imports\BeneficiaryImport::TEMPLATE_EXAMPLES, \App\Modules\Beneficiary\Imports\BeneficiaryImport::REQUIRED_KEYS, \App\Modules\Beneficiary\Imports\BeneficiaryImport::templateNotes(), \App\Modules\Beneficiary\Imports\BeneficiaryImport::templateOptions()),
             'import-beneficiaries-template.xlsx'
         );
     }

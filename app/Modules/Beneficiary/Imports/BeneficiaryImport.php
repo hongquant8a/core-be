@@ -149,12 +149,21 @@ class BeneficiaryImport implements ToModel, WithHeadingRow, WithValidation, Skip
         return self::FIELD_LABELS;
     }
 
-    /** Ghi chú giá trị hợp lệ cho cột enum → gắn comment trong file mẫu. */
+    /** Ghi chú giá trị hợp lệ cho cột enum → hiện trong file mẫu (dropdown prompt / comment). */
     public static function templateNotes(): array
     {
         return [
             'gender' => self::enumHint(GenderEnum::cases()),
             'status' => self::enumHint(BeneficiaryStatusEnum::cases()),
+        ];
+    }
+
+    /** Giá trị thô cho dropdown chọn nhanh trên file mẫu. */
+    public static function templateOptions(): array
+    {
+        return [
+            'gender' => GenderEnum::values(),
+            'status' => BeneficiaryStatusEnum::values(),
         ];
     }
 

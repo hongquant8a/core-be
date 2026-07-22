@@ -208,8 +208,12 @@ Luôn dùng Resource để trả dữ liệu. Định dạng thời gian trong R
   - `TEMPLATE_EXAMPLES` (map `field_key => 'giá trị ví dụ'`, để trống nếu không cần).
   - `REQUIRED_KEYS` (mảng `field_key` bắt buộc) — **phải khớp** các field `required` trong `rules()`.
   - `templateNotes()` (static, trả `[field_key => 'ghi chú']`) — **bắt buộc cho MỌI cột enum/boolean/giá trị giới hạn**: liệt kê **đầy đủ** giá trị hợp lệ để cán bộ có cơ sở điền (vd giới tính: `male (Nam), female (Nữ), other (Khác)`). Dùng helper `NormalizesImportValues::enumHint(XxxEnum::cases())` để sinh chuỗi từ enum (không hardcode, tránh lệch khi enum đổi); boolean/giá trị đặc biệt ghi literal.
+  - `templateOptions()` (static, trả `[field_key => [giá trị thô]]`) — giá trị thô của enum để dựng **dropdown** chọn nhanh (vd `GenderEnum::values()`).
 - **Đánh dấu cột bắt buộc:** file mẫu gắn **dấu `*`** ở cuối header cột bắt buộc; cột không bắt buộc để **trần** (không thêm gì). `ImportTemplateExport` tự gắn `*` từ `REQUIRED_KEYS`; trait `TranslatesExcelHeadings` tự **bỏ dấu `*`** khi upload nên file mẫu vẫn import lại được.
-- **Ghi chú giá trị hợp lệ:** `ImportTemplateExport` nhận `columnNotes` (tham số thứ 4 = `XxxImport::templateNotes()`) và gắn **comment Excel** vào ô header cột enum → cán bộ hover thấy danh sách giá trị. Chuẩn hóa value trong `prepareForValidation` vẫn nhận cả nhãn tiếng Việt, nhưng comment giúp biết trước phải điền gì.
+- **Gợi ý giá trị enum (hiển thị rõ, không ẩn):** `ImportTemplateExport` nhận `columnNotes` (tham số 4 = `templateNotes()`) và `columnOptions` (tham số 5 = `templateOptions()`):
+  - Cột enum có CSV giá trị ≤ 255 ký tự → tạo **dropdown** (data validation LIST) trên ô data + **prompt** hiện khi bấm ô (liệt kê `value (Nhãn)`). `showErrorMessage=false` để không chặn — import vẫn nhận cả nhãn tiếng Việt.
+  - **Mọi** cột enum còn được gắn thêm **comment ở ô header** (liệt kê đầy đủ giá trị): cột có dropdown để comment hover (bổ trợ, prompt đã hiện sẵn); cột enum dài (> 255, không dựng được dropdown) để comment **visible** (hiện sẵn).
+  - Cán bộ mở file phải THẤY ngay giá trị hợp lệ (dropdown + prompt + comment), không chỉ dựa comment ẩn.
 
 **Bắt buộc: mọi resource có `import` phải có kèm endpoint tải file mẫu** — không để cán bộ tự đoán cột file:
 ```php
@@ -225,13 +229,14 @@ public function importTemplate()
             XxxImport::TEMPLATE_LABELS,
             XxxImport::TEMPLATE_EXAMPLES,
             XxxImport::REQUIRED_KEYS,
-            XxxImport::templateNotes(), // bỏ nếu module không có cột enum
+            XxxImport::templateNotes(),   // bỏ 2 dòng này nếu module không có cột enum
+            XxxImport::templateOptions(),
         ),
         'import-xxx-template.xlsx'
     );
 }
 ```
-Không tự implement lại việc sinh file Excel mẫu — luôn tái dùng `App\Modules\Core\Exports\ImportTemplateExport` (đã style sẵn: row 1 header — cột bắt buộc có dấu `*` + comment giá trị enum, row 2 ví dụ in nghiêng xám để cán bộ biết xóa trước khi nhập).
+Không tự implement lại việc sinh file Excel mẫu — luôn tái dùng `App\Modules\Core\Exports\ImportTemplateExport` (đã style sẵn: row 1 header — cột bắt buộc có dấu `*` + dropdown/comment giá trị enum, row 2 ví dụ in nghiêng xám để cán bộ biết xóa trước khi nhập).
 
 > PHPDoc Scribe cho export/import xem mục 7.
 
@@ -344,7 +349,7 @@ Thêm endpoint mới thay vì đổi format endpoint cũ (giữ backward compati
 - [ ] Response format và HTTP status code đúng chuẩn (`RespondsWithJson`).
 - [ ] Có action `import` thì có kèm `import-template` (dùng `ImportTemplateExport`, permission dùng chung `.import`).
 - [ ] Import nhận đủ trường như Export/StoreRequest (chỉ bỏ mảng lồng nhau); `REQUIRED_KEYS` khớp field `required` trong `rules()`; file mẫu gắn dấu `*` cột bắt buộc, cột không bắt buộc để trần.
-- [ ] Mọi cột enum/boolean có `templateNotes()` liệt kê đầy đủ giá trị hợp lệ (dùng `enumHint()`), truyền vào `ImportTemplateExport` để gắn comment header.
+- [ ] Mọi cột enum/boolean có `templateNotes()` (đủ giá trị, dùng `enumHint()`) + `templateOptions()` (giá trị thô), truyền vào `ImportTemplateExport` → file mẫu hiện dropdown/prompt (hoặc comment visible nếu enum dài), KHÔNG dùng comment ẩn.
 - [ ] Module có ≥1 Enum dùng cho FE dropdown → có `{module}-enums` endpoint (`EnumController`, xem mục 2), không gắn permission riêng.
 
 **Event-Driven:**

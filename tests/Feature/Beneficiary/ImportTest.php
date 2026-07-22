@@ -151,32 +151,75 @@ class ImportTest extends TestCase
         $this->assertSame(4, $h->member_count);
     }
 
-    public function test_template_has_required_marker_and_enum_notes(): void
+    /** @return \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet */
+    private function renderTemplate(ImportTemplateExport $export)
     {
-        // Sinh file mẫu Dependent (có cột enum gender/eligibility + boolean is_alive).
-        $binary = Excel::raw(
-            new ImportTemplateExport(
-                DependentImport::TEMPLATE_LABELS,
-                DependentImport::TEMPLATE_EXAMPLES,
-                DependentImport::REQUIRED_KEYS,
-                DependentImport::templateNotes(),
-            ),
-            \Maatwebsite\Excel\Excel::XLSX,
-        );
+        $binary = Excel::raw($export, \Maatwebsite\Excel\Excel::XLSX);
         $path = tempnam(sys_get_temp_dir(), 'tpl_').'.xlsx';
         file_put_contents($path, $binary);
 
-        $sheet = IOFactory::load($path)->getActiveSheet();
+        return IOFactory::load($path)->getActiveSheet();
+    }
+
+    public function test_dependent_template_has_required_marker_and_enum_dropdown(): void
+    {
+        $sheet = $this->renderTemplate(new ImportTemplateExport(
+            DependentImport::TEMPLATE_LABELS,
+            DependentImport::TEMPLATE_EXAMPLES,
+            DependentImport::REQUIRED_KEYS,
+            DependentImport::templateNotes(),
+            DependentImport::templateOptions(),
+        ));
 
         // Header cột bắt buộc có dấu *; cột không bắt buộc để trần.
         $this->assertSame('Họ tên *', $sheet->getCell('A1')->getValue());
         $this->assertSame('Giới tính *', $sheet->getCell('C1')->getValue());
         $this->assertSame('Ngày sinh', $sheet->getCell('B1')->getValue());
 
-        // Comment cột Giới tính (C) liệt kê đầy đủ giá trị enum.
+        // Cột Giới tính (C) có dropdown chọn nhanh + prompt liệt kê giá trị (male (Nam), ...).
+        // Reader chuẩn hóa key range "C2:C1001" → "C2" khi đọc lại (file thật vẫn áp cả dải).
+        $dv = $this->dataValidationAt($sheet, 'C');
+        $this->assertNotNull($dv, 'Cột Giới tính phải có dropdown.');
+        $this->assertStringContainsString('male', $dv->getFormula1());
+        $this->assertStringContainsString('female', $dv->getFormula1());
+        $this->assertStringContainsString('male (Nam)', $dv->getPrompt());
+
+        // Cột dropdown vẫn có comment ở header (bổ trợ) liệt kê đầy đủ giá trị.
         $genderNote = (string) $sheet->getComment('C1')->getText();
         $this->assertStringContainsString('male (Nam)', $genderNote);
-        $this->assertStringContainsString('female (Nữ)', $genderNote);
         $this->assertStringContainsString('other (Khác)', $genderNote);
+    }
+
+    public function test_subsidy_policy_template_has_enum_dropdowns(): void
+    {
+        $sheet = $this->renderTemplate(new ImportTemplateExport(
+            SubsidyPolicyImport::TEMPLATE_LABELS,
+            SubsidyPolicyImport::TEMPLATE_EXAMPLES,
+            SubsidyPolicyImport::REQUIRED_KEYS,
+            SubsidyPolicyImport::templateNotes(),
+            SubsidyPolicyImport::templateOptions(),
+        ));
+
+        // Loại đối tượng (cột A) — 12 giá trị, CSV ≤ 255 nên vẫn dựng được dropdown.
+        $typeDv = $this->dataValidationAt($sheet, 'A');
+        $this->assertNotNull($typeDv, 'Cột Loại đối tượng phải có dropdown.');
+        $this->assertStringContainsString('war_invalid', $typeDv->getFormula1());
+
+        // Quan hệ (cột B) — có dropdown.
+        $relDv = $this->dataValidationAt($sheet, 'B');
+        $this->assertNotNull($relDv, 'Cột Quan hệ phải có dropdown.');
+        $this->assertStringContainsString('spouse', $relDv->getFormula1());
+    }
+
+    /** Lấy DataValidation áp cho cột $col (dò cả key range lẫn key ô góc trên sau khi reader chuẩn hóa). */
+    private function dataValidationAt($sheet, string $col)
+    {
+        foreach ($sheet->getDataValidationCollection() as $range => $dv) {
+            if (str_starts_with($range, $col.'2')) {
+                return $dv;
+            }
+        }
+
+        return null;
     }
 }
