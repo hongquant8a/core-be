@@ -206,7 +206,7 @@ class DependentController extends Controller
     /**
      * Import thân nhân
      *
-     * Cột bắt buộc: full_name, gender. Cột không bắt buộc: date_of_birth, id_number.
+     * Cột bắt buộc: full_name, gender. Cột không bắt buộc: date_of_birth, id_number, household_code (tra theo mã hộ), is_alive (Còn sống/Đã mất, mặc định Còn sống), death_date (bắt buộc nếu đã mất), eligibility_status, note.
      *
      * @bodyParam file file required File Excel (xlsx, xls, csv). Cột theo chuẩn export.
      *
@@ -227,7 +227,7 @@ class DependentController extends Controller
     public function importTemplate()
     {
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Beneficiary\Imports\DependentImport::TEMPLATE_LABELS, \App\Modules\Beneficiary\Imports\DependentImport::TEMPLATE_EXAMPLES),
+            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Beneficiary\Imports\DependentImport::TEMPLATE_LABELS, \App\Modules\Beneficiary\Imports\DependentImport::TEMPLATE_EXAMPLES, \App\Modules\Beneficiary\Imports\DependentImport::REQUIRED_KEYS),
             'import-dependents-template.xlsx'
         );
     }

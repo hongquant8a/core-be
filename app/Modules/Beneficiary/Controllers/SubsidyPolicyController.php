@@ -166,7 +166,7 @@ class SubsidyPolicyController extends Controller
     /**
      * Import chính sách trợ cấp
      *
-     * Cột bắt buộc: amount, legal_basis, effective_from. Cột không bắt buộc: beneficiary_type, unit.
+     * Cột bắt buộc: amount, legal_basis, effective_from. Cột không bắt buộc: beneficiary_type, relationship_type, unit (mặc định VND/tháng), effective_to. Loại đối tượng/quan hệ nhận cả value gốc lẫn nhãn tiếng Việt.
      *
      * @bodyParam file file required File Excel (xlsx, xls, csv). Cột theo chuẩn export.
      *
@@ -187,7 +187,7 @@ class SubsidyPolicyController extends Controller
     public function importTemplate()
     {
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Beneficiary\Imports\SubsidyPolicyImport::TEMPLATE_LABELS, \App\Modules\Beneficiary\Imports\SubsidyPolicyImport::TEMPLATE_EXAMPLES),
+            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Beneficiary\Imports\SubsidyPolicyImport::TEMPLATE_LABELS, \App\Modules\Beneficiary\Imports\SubsidyPolicyImport::TEMPLATE_EXAMPLES, \App\Modules\Beneficiary\Imports\SubsidyPolicyImport::REQUIRED_KEYS),
             'import-subsidy-policies-template.xlsx'
         );
     }

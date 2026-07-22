@@ -6,19 +6,18 @@ use App\Modules\Beneficiary\Enums\BeneficiaryStatusEnum;
 use App\Modules\Beneficiary\Enums\GenderEnum;
 use App\Modules\Beneficiary\Models\Beneficiary;
 use App\Modules\Beneficiary\Models\Household;
+use App\Modules\Core\Traits\NormalizesImportValues;
 use App\Modules\Core\Traits\TranslatesExcelHeadings;
-use Illuminate\Support\Carbon;
 use Maatwebsite\Excel\Concerns\Importable;
 use Maatwebsite\Excel\Concerns\SkipsFailures;
 use Maatwebsite\Excel\Concerns\SkipsOnFailure;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
-use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
 class BeneficiaryImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnFailure
 {
-    use Importable, SkipsFailures, TranslatesExcelHeadings;
+    use Importable, NormalizesImportValues, SkipsFailures, TranslatesExcelHeadings;
 
     /**
      * Bộ cột đầy đủ import nhận diện được (khớp Export + StoreBeneficiaryRequest).
@@ -160,51 +159,5 @@ class BeneficiaryImport implements ToModel, WithHeadingRow, WithValidation, Skip
         }
 
         return Household::where('household_code', $householdCode)->value('id');
-    }
-
-    /**
-     * Nhận value gốc hoặc nhãn tiếng Việt của enum, trả về value hợp lệ (hoặc nguyên gốc để rule bắt lỗi).
-     *
-     * @param  array<int, \BackedEnum>  $cases
-     */
-    private function normalizeEnum($value, array $cases): ?string
-    {
-        if ($value === null || $value === '') {
-            return null;
-        }
-
-        $value = trim((string) $value);
-
-        foreach ($cases as $case) {
-            if (strcasecmp($value, $case->value) === 0 || strcasecmp($value, $case->label()) === 0) {
-                return $case->value;
-            }
-        }
-
-        return $value;
-    }
-
-    /** Chuẩn hóa ngày từ Excel serial / d/m/Y / Y-m-d về chuỗi Y-m-d. */
-    private function normalizeDate($value): ?string
-    {
-        if ($value === null || $value === '') {
-            return null;
-        }
-
-        if (is_numeric($value)) {
-            return Carbon::instance(ExcelDate::excelToDateTimeObject((float) $value))->format('Y-m-d');
-        }
-
-        $value = trim((string) $value);
-
-        foreach (['d/m/Y', 'Y-m-d', 'd-m-Y'] as $format) {
-            $parsed = \DateTime::createFromFormat($format, $value);
-            if ($parsed !== false && $parsed->format($format) === $value) {
-                return $parsed->format('Y-m-d');
-            }
-        }
-
-        // Không parse được → trả nguyên gốc để rule `date` báo lỗi rõ ràng.
-        return $value;
     }
 }

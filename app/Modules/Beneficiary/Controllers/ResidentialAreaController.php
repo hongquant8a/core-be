@@ -167,7 +167,7 @@ class ResidentialAreaController extends Controller
     public function importTemplate()
     {
         return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Beneficiary\Imports\ResidentialAreaImport::TEMPLATE_LABELS, \App\Modules\Beneficiary\Imports\ResidentialAreaImport::TEMPLATE_EXAMPLES),
+            new \App\Modules\Core\Exports\ImportTemplateExport(\App\Modules\Beneficiary\Imports\ResidentialAreaImport::TEMPLATE_LABELS, \App\Modules\Beneficiary\Imports\ResidentialAreaImport::TEMPLATE_EXAMPLES, \App\Modules\Beneficiary\Imports\ResidentialAreaImport::REQUIRED_KEYS),
             'import-residential-areas-template.xlsx'
         );
     }

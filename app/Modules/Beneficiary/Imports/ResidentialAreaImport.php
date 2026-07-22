@@ -20,12 +20,15 @@ class ResidentialAreaImport implements ToModel, WithHeadingRow, WithValidation, 
         'code' => 'Mã',
     ];
 
-    public const TEMPLATE_LABELS = [
-        'name' => 'Tên tổ dân phố',
-    ];
+    // File mẫu tải về hiển thị toàn bộ cột để cán bộ biết trường nào nhập được.
+    public const TEMPLATE_LABELS = self::FIELD_LABELS;
+
+    // Cột bắt buộc — file mẫu gắn dấu " *" vào header này (khớp rules()).
+    public const REQUIRED_KEYS = ['name'];
 
     public const TEMPLATE_EXAMPLES = [
         'name' => 'Tổ 5 (xóa hàng này)',
+        'code' => 'TDP-005',
     ];
 
     public function model(array $row)
