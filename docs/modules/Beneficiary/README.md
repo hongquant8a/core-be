@@ -1,7 +1,7 @@
 # Module: Beneficiary (Người có công theo Hộ gia đình & Thân nhân)
 
 > Ngày tạo: 11:05:00 16/07/2026
-> Cập nhật lần cuối: 14:26:28 25/07/2026 — **đơn giản hóa**: chỉ lưu thông tin cơ bản + giấy tờ đính kèm. Bỏ trợ cấp, audit trạng thái, lịch viếng thăm, hạ tầng nhắc lịch.
+> Cập nhật lần cuối: 14:26:28 25/07/2026 — **đơn giản hóa**: chỉ lưu thông tin cơ bản + giấy tờ đính kèm. Bỏ trợ cấp, audit trạng thái, lịch viếng thăm, hạ tầng nhắc lịch. Bổ sung `StatisticsService` (dashboard) và hoàn thiện cột export (round-trip đủ với import).
 
 ---
 
@@ -95,6 +95,7 @@ Cập nhật `PERMISSIONS` trong `database/seeders/PermissionSeeder.php` (đã b
 - `beneficiary-dependents` có thêm `POST /{id}/relations`, `DELETE /{id}/relations/{relation}`.
 - `beneficiary-documents` — `index, show, store, update, destroy, bulk-delete` (không export/import).
 - `beneficiary-enums` — tra cứu enum.
+- `beneficiary-statistics` (dashboard, read-only, permission `beneficiary-statistics.view`): `overview` (gộp tất cả), `by-type`, `by-status`, `by-residential-area`, `households-by-area`, `by-gender`, `by-age-group`, `by-relationship`, `new-by-month` (param `year`). Mỗi breakdown trả mảng `{key,label,total}` để FE dựng bar/pie/line; `overview` trả kèm `summary` (KPI cards). Xem `StatisticsService`.
 
 > **Đã bỏ**: `beneficiary-subsidy-policies`, `beneficiary-subsidy-grants`, `beneficiary-visit-schedules`, `beneficiary/notification-config`, nested `GET /beneficiaries/{id}/status-histories`, `GET /beneficiary-dependents/{id}/status-histories`.
 

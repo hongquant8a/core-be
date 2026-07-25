@@ -278,6 +278,7 @@ class LogActivity
             'beneficiary-residential-areas' => 'tổ dân phố',
             'beneficiary-dependents' => 'thân nhân',
             'beneficiary-documents' => 'giấy tờ hồ sơ',
+            'beneficiary-statistics' => 'thống kê người có công',
         ];
 
         return $labels[$resource] ?? str_replace('-', ' ', $resource);

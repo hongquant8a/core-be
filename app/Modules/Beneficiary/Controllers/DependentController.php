@@ -169,8 +169,8 @@ class DependentController extends Controller
     /**
      * Xuất Excel thân nhân
      *
-     * Xuất ra các trường: id, full_name, date_of_birth, gender, id_number, phone, residential_area,
-     * latitude, longitude, created_by, updated_by, created_at, updated_at.
+     * Xuất ra các trường: id, full_name, date_of_birth, gender, id_number, head_id_number, residential_area,
+     * phone, latitude, longitude, note, created_by, updated_by, created_at, updated_at.
      */
     public function export(FilterRequest $request)
     {

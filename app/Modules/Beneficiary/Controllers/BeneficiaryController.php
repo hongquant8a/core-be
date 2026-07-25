@@ -219,8 +219,8 @@ class BeneficiaryController extends Controller
     /**
      * Xuất Excel người có công
      *
-     * Xuất ra các trường: id, full_name, date_of_birth, birth_year, gender, id_number, status,
-     * created_by, updated_by, created_at, updated_at.
+     * Xuất ra các trường: id, full_name, date_of_birth, birth_year, gender, id_number, head_id_number,
+     * status, address, latitude, longitude, phone, note, created_by, updated_by, created_at, updated_at.
      *
      * @queryParam search string Tìm theo họ tên hoặc CCCD.
      * @queryParam status string Lọc theo trạng thái.

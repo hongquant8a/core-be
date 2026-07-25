@@ -217,6 +217,9 @@ class PermissionSeeder extends Seeder
             'beneficiary-documents' => [
                 'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
             ],
+            'beneficiary-statistics' => [
+                'view',
+            ],
         ],
     ];
 
@@ -323,6 +326,7 @@ class PermissionSeeder extends Seeder
         'beneficiary-residential-areas' => 'Tổ dân phố',
         'beneficiary-dependents' => 'Thân nhân',
         'beneficiary-documents' => 'Giấy tờ hồ sơ',
+        'beneficiary-statistics' => 'Thống kê người có công',
     ];
 
     /** Nhãn action (để description). */

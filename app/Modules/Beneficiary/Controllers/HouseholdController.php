@@ -137,7 +137,7 @@ class HouseholdController extends Controller
      * Xuất Excel hộ gia đình
      *
      * Xuất ra các trường: id, head_name, head_id_number, residential_area, address,
-     * latitude, longitude, phone, member_count, created_by, updated_by, created_at, updated_at.
+     * latitude, longitude, phone, member_count, note, created_by, updated_by, created_at, updated_at.
      *
      * @queryParam search string Tìm theo tên chủ hộ hoặc CCCD chủ hộ.
      */

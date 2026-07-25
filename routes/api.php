@@ -239,6 +239,10 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
     Route::prefix('beneficiary-documents')->middleware('ensure.route.org')->group(function () {
         require base_path('app/Modules/Beneficiary/Routes/beneficiary_document.php');
     });
+    // Dashboard thống kê người có công (tenant-scoped).
+    Route::prefix('beneficiary-statistics')->middleware('ensure.route.org')->group(function () {
+        require base_path('app/Modules/Beneficiary/Routes/statistics.php');
+    });
     // Danh mục enum tĩnh (loại đối tượng, trạng thái...) — dùng chung, không tenant-scoped.
     Route::prefix('beneficiary-enums')->group(function () {
         require base_path('app/Modules/Beneficiary/Routes/enum.php');

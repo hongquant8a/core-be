@@ -29,6 +29,7 @@ class DependentExport extends AbstractExcelExport implements FromCollection
                 'phone' => $d->phone,
                 'latitude' => $d->latitude,
                 'longitude' => $d->longitude,
+                'note' => $d->note,
                 'created_by' => $d->creator?->name ?? 'N/A',
                 'updated_by' => $d->editor?->name ?? 'N/A',
                 'created_at' => $d->created_at?->format('H:i:s d/m/Y'),
@@ -39,6 +40,6 @@ class DependentExport extends AbstractExcelExport implements FromCollection
 
     public function headings(): array
     {
-        return ['STT', 'Họ tên', 'Ngày sinh', 'Giới tính', 'CCCD/CMND', 'CCCD chủ hộ', 'Tổ dân phố', 'SĐT', 'Vĩ độ', 'Kinh độ', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
+        return ['STT', 'Họ tên', 'Ngày sinh', 'Giới tính', 'CCCD/CMND', 'CCCD chủ hộ', 'Tổ dân phố', 'SĐT', 'Vĩ độ', 'Kinh độ', 'Ghi chú', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
     }
 }
