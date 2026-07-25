@@ -2,10 +2,10 @@
 
 namespace App\Modules\Beneficiary\Imports;
 
-use App\Modules\Beneficiary\Enums\DependentEligibilityEnum;
 use App\Modules\Beneficiary\Enums\GenderEnum;
 use App\Modules\Beneficiary\Models\Dependent;
 use App\Modules\Beneficiary\Models\Household;
+use App\Modules\Beneficiary\Models\ResidentialArea;
 use App\Modules\Core\Traits\NormalizesImportValues;
 use App\Modules\Core\Traits\TranslatesExcelHeadings;
 use Maatwebsite\Excel\Concerns\Importable;
@@ -28,10 +28,11 @@ class DependentImport implements ToModel, WithHeadingRow, WithValidation, SkipsO
         'date_of_birth' => 'Ngày sinh',
         'gender' => 'Giới tính',
         'id_number' => 'CCCD/CMND',
-        'household_code' => 'Mã hộ',
-        'is_alive' => 'Tình trạng sống',
-        'death_date' => 'Ngày mất',
-        'eligibility_status' => 'Tình trạng điều kiện hưởng',
+        'head_id_number' => 'CCCD chủ hộ',
+        'residential_area' => 'Tổ dân phố',
+        'phone' => 'SĐT',
+        'latitude' => 'Vĩ độ',
+        'longitude' => 'Kinh độ',
         'note' => 'Ghi chú',
     ];
 
@@ -46,10 +47,11 @@ class DependentImport implements ToModel, WithHeadingRow, WithValidation, SkipsO
         'date_of_birth' => '01/03/2010',
         'gender' => 'female',
         'id_number' => '049123456789',
-        'household_code' => 'HGD-00001',
-        'is_alive' => 'Còn sống',
-        'death_date' => '',
-        'eligibility_status' => 'studying',
+        'head_id_number' => '049000111222',
+        'residential_area' => 'Tổ 5',
+        'phone' => '0905123456',
+        'latitude' => '16.0678',
+        'longitude' => '108.2208',
         'note' => '',
     ];
 
@@ -62,10 +64,11 @@ class DependentImport implements ToModel, WithHeadingRow, WithValidation, SkipsO
             'date_of_birth' => $row['date_of_birth'] ?? null,
             'gender' => $row['gender'] ?? null,
             'id_number' => $idNumber,
-            'household_id' => $this->resolveHouseholdId($row['household_code'] ?? null),
-            'is_alive' => $this->normalizeBoolean($row['is_alive'] ?? null),
-            'death_date' => $row['death_date'] ?? null,
-            'eligibility_status' => $row['eligibility_status'] ?? null,
+            'household_id' => $this->resolveHouseholdId($row['head_id_number'] ?? null),
+            'residential_area_id' => $this->resolveResidentialAreaId($row['residential_area'] ?? null),
+            'phone' => $row['phone'] ?? null,
+            'latitude' => $row['latitude'] ?? null,
+            'longitude' => $row['longitude'] ?? null,
             'note' => $row['note'] ?? null,
         ];
 
@@ -81,7 +84,6 @@ class DependentImport implements ToModel, WithHeadingRow, WithValidation, SkipsO
             }
         }
 
-        $attrs['is_alive'] = $attrs['is_alive'] ?? true;
         $attrs['created_by'] = auth()->id();
         $attrs['updated_by'] = auth()->id();
 
@@ -97,15 +99,8 @@ class DependentImport implements ToModel, WithHeadingRow, WithValidation, SkipsO
         $data['id_number'] = isset($data['id_number']) ? (string) $data['id_number'] : null;
 
         $data['gender'] = $this->normalizeEnum($data['gender'] ?? null, GenderEnum::cases());
-        $data['eligibility_status'] = $this->normalizeEnum($data['eligibility_status'] ?? null, DependentEligibilityEnum::cases());
 
         $data['date_of_birth'] = $this->normalizeDate($data['date_of_birth'] ?? null);
-        $data['death_date'] = $this->normalizeDate($data['death_date'] ?? null);
-
-        // Chỉ chuẩn hóa is_alive khi có cột (để required_if death_date hoạt động đúng).
-        if (array_key_exists('is_alive', $data)) {
-            $data['is_alive'] = $this->normalizeBoolean($data['is_alive']);
-        }
 
         return $data;
     }
@@ -117,10 +112,11 @@ class DependentImport implements ToModel, WithHeadingRow, WithValidation, SkipsO
             'date_of_birth' => 'nullable|date',
             'gender' => ['required', GenderEnum::rule()],
             'id_number' => 'nullable|string|max:255',
-            'household_code' => 'nullable|string|max:255',
-            'is_alive' => 'nullable|boolean',
-            'death_date' => 'nullable|date|required_if:is_alive,false',
-            'eligibility_status' => ['nullable', DependentEligibilityEnum::rule()],
+            'head_id_number' => 'nullable|string|max:255',
+            'residential_area' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:255',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
             'note' => 'nullable|string',
         ];
     }
@@ -132,9 +128,8 @@ class DependentImport implements ToModel, WithHeadingRow, WithValidation, SkipsO
             'gender.required' => 'Giới tính không được để trống.',
             'gender.in' => 'Giới tính không hợp lệ.',
             'date_of_birth.date' => 'Ngày sinh không hợp lệ.',
-            'death_date.date' => 'Ngày mất không hợp lệ.',
-            'death_date.required_if' => 'Ngày mất không được để trống khi tình trạng là đã mất.',
-            'eligibility_status.in' => 'Tình trạng điều kiện hưởng không hợp lệ.',
+            'latitude.between' => 'Vĩ độ phải trong khoảng -90 đến 90.',
+            'longitude.between' => 'Kinh độ phải trong khoảng -180 đến 180.',
         ];
     }
 
@@ -143,13 +138,11 @@ class DependentImport implements ToModel, WithHeadingRow, WithValidation, SkipsO
         return self::FIELD_LABELS;
     }
 
-    /** Ghi chú giá trị hợp lệ cho cột enum/boolean → hiện trong file mẫu (dropdown prompt / comment). */
+    /** Ghi chú giá trị hợp lệ cho cột enum → hiện trong file mẫu (dropdown prompt / comment). */
     public static function templateNotes(): array
     {
         return [
             'gender' => self::enumHint(GenderEnum::cases()),
-            'is_alive' => 'Giá trị hợp lệ: Còn sống / Đã mất (hoặc 1 = còn sống, 0 = đã mất).',
-            'eligibility_status' => self::enumHint(DependentEligibilityEnum::cases()),
         ];
     }
 
@@ -158,20 +151,30 @@ class DependentImport implements ToModel, WithHeadingRow, WithValidation, SkipsO
     {
         return [
             'gender' => GenderEnum::values(),
-            'is_alive' => ['Còn sống', 'Đã mất'],
-            'eligibility_status' => DependentEligibilityEnum::values(),
         ];
     }
 
-    /** Tra mã hộ về household_id trong phạm vi tổ chức hiện tại; không khớp thì để trống (không chặn dòng). */
-    private function resolveHouseholdId(?string $householdCode): ?int
+    /** Tra CCCD chủ hộ về household_id trong tổ chức hiện tại; không khớp thì để trống (không chặn dòng). */
+    private function resolveHouseholdId(?string $headIdNumber): ?int
     {
-        $householdCode = $householdCode !== null ? trim((string) $householdCode) : '';
+        $headIdNumber = $headIdNumber !== null ? trim((string) $headIdNumber) : '';
 
-        if ($householdCode === '') {
+        if ($headIdNumber === '') {
             return null;
         }
 
-        return Household::where('household_code', $householdCode)->value('id');
+        return Household::where('head_id_number', $headIdNumber)->value('id');
+    }
+
+    /** Tra tên tổ dân phố về residential_area_id; không khớp thì để trống (không chặn dòng). */
+    private function resolveResidentialAreaId(?string $name): ?int
+    {
+        $name = $name !== null ? trim((string) $name) : '';
+
+        if ($name === '') {
+            return null;
+        }
+
+        return ResidentialArea::where('name', $name)->value('id');
     }
 }

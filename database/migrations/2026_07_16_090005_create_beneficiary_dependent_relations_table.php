@@ -14,15 +14,11 @@ return new class extends Migration
             $table->foreignId('dependent_id')->constrained('beneficiary_dependents')->cascadeOnDelete();
 
             $table->string('relationship_type', 50);
-            $table->date('eligible_from');
-            $table->date('eligible_until')->nullable();
-            $table->string('status', 20)->default('active');
             $table->text('note')->nullable();
 
             $table->timestamps();
 
             $table->unique(['beneficiary_id', 'dependent_id'], 'beneficiary_dependent_relations_pair_unique');
-            $table->index(['dependent_id', 'status']);
         });
     }
 

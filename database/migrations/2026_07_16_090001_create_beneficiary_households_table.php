@@ -14,7 +14,6 @@ return new class extends Migration
             $table->foreignId('residential_area_id')->nullable()
                 ->constrained('beneficiary_residential_areas')->nullOnDelete();
 
-            $table->string('household_code');
             $table->string('head_name');
             $table->string('head_id_number')->nullable();
             $table->string('address');
@@ -30,7 +29,6 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['organization_id', 'residential_area_id'], 'beneficiary_households_org_area_idx');
-            $table->unique(['organization_id', 'household_code'], 'beneficiary_households_org_code_unique');
         });
     }
 

@@ -13,14 +13,16 @@ return new class extends Migration
             $table->foreignId('organization_id')->nullable()->constrained('organizations')->nullOnDelete();
             $table->foreignId('household_id')->nullable()
                 ->constrained('beneficiary_households')->nullOnDelete();
+            $table->foreignId('residential_area_id')->nullable()
+                ->constrained('beneficiary_residential_areas')->nullOnDelete();
 
             $table->string('full_name');
             $table->date('date_of_birth')->nullable();
             $table->string('gender', 20);
             $table->string('id_number')->nullable();
-            $table->boolean('is_alive')->default(true);
-            $table->date('death_date')->nullable();
-            $table->string('eligibility_status', 50)->default('normal');
+            $table->string('phone')->nullable();
+            $table->decimal('latitude', 10, 7)->nullable();
+            $table->decimal('longitude', 10, 7)->nullable();
             $table->text('note')->nullable();
 
             $table->unsignedBigInteger('created_by')->nullable();

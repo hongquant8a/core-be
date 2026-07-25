@@ -4,15 +4,17 @@ namespace App\Modules\Beneficiary\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Beneficiary\Models\Beneficiary;
+use App\Modules\Beneficiary\Models\BeneficiaryClassification;
 use App\Modules\Beneficiary\Requests\BulkDestroyBeneficiaryRequest;
 use App\Modules\Beneficiary\Requests\BulkUpdateStatusBeneficiaryRequest;
 use App\Modules\Beneficiary\Requests\ChangeStatusBeneficiaryRequest;
 use App\Modules\Beneficiary\Requests\ImportBeneficiaryFileRequest;
 use App\Modules\Beneficiary\Requests\StoreBeneficiaryRequest;
 use App\Modules\Beneficiary\Requests\UpdateBeneficiaryRequest;
+use App\Modules\Beneficiary\Requests\UploadClassificationFilesRequest;
+use App\Modules\Beneficiary\Resources\BeneficiaryClassificationResource;
 use App\Modules\Beneficiary\Resources\BeneficiaryCollection;
 use App\Modules\Beneficiary\Resources\BeneficiaryResource;
-use App\Modules\Beneficiary\Resources\StatusHistoryCollection;
 use App\Modules\Beneficiary\Services\BeneficiaryService;
 use App\Modules\Core\Requests\FilterRequest;
 
@@ -21,7 +23,7 @@ use App\Modules\Core\Requests\FilterRequest;
  * @header X-Organization-Id ID tổ chức cần làm việc (bắt buộc). Example: 1
  *
  * Quản lý hồ sơ người có công: thống kê, danh sách, chi tiết, tạo, cập nhật, xóa, thao tác hàng loạt,
- * đổi trạng thái, xuất/nhập, lịch sử thay đổi trạng thái.
+ * đổi trạng thái, xuất/nhập.
  */
 class BeneficiaryController extends Controller
 {
@@ -156,13 +158,9 @@ class BeneficiaryController extends Controller
     /**
      * Đổi trạng thái người có công
      *
-     * Ghi lịch sử vào beneficiary_status_histories. Nếu chuyển deceased/moved_out, tự động
-     * dừng các khoản trợ cấp đang active gắn trực tiếp với người có công này.
-     *
      * @urlParam beneficiary integer required ID người có công. Example: 1
      *
      * @bodyParam status string required Trạng thái mới. Example: active
-     * @bodyParam reason string Lý do đổi trạng thái.
      * @bodyParam death_date date Ngày mất (bắt buộc nếu status = deceased).
      *
      * @apiResource App\Modules\Beneficiary\Resources\BeneficiaryResource
@@ -174,7 +172,6 @@ class BeneficiaryController extends Controller
         $item = $this->beneficiaryService->changeStatus(
             $beneficiary,
             $request->status,
-            $request->input('reason'),
             $request->input('death_date'),
         );
 
@@ -182,28 +179,47 @@ class BeneficiaryController extends Controller
     }
 
     /**
-     * Lịch sử thay đổi trạng thái
+     * Đính kèm file quyết định công nhận cho một phân loại
      *
      * @urlParam beneficiary integer required ID người có công. Example: 1
-     * @queryParam from_date date Lọc từ ngày (Y-m-d).
-     * @queryParam to_date date Lọc đến ngày (Y-m-d).
-     * @queryParam limit integer Số bản ghi mỗi trang. Example: 10
+     * @urlParam classification integer required ID phân loại đối tượng. Example: 1
+     * @bodyParam files file[] required Danh sách tập tin quyết định (nhiều file, mỗi file ≤ 10MB).
      *
-     * @apiResourceCollection App\Modules\Beneficiary\Resources\StatusHistoryCollection
-     * @apiResourceModel App\Modules\Beneficiary\Models\StatusHistory paginate=10
-     * @apiResourceAdditional success=true
+     * @apiResource App\Modules\Beneficiary\Resources\BeneficiaryClassificationResource status=201
+     * @apiResourceModel App\Modules\Beneficiary\Models\BeneficiaryClassification
+     * @apiResourceAdditional success=true message="Đính kèm file quyết định thành công!"
      */
-    public function statusHistories(FilterRequest $request, Beneficiary $beneficiary)
+    public function uploadClassificationFiles(UploadClassificationFilesRequest $request, Beneficiary $beneficiary, BeneficiaryClassification $classification)
     {
-        $items = $this->beneficiaryService->statusHistories($beneficiary, $request->all(), (int) ($request->limit ?? 10));
+        abort_unless($classification->beneficiary_id === $beneficiary->id, 404);
 
-        return $this->successCollection(new StatusHistoryCollection($items));
+        $item = $this->beneficiaryService->uploadClassificationFiles($classification, $request->file('files', []));
+
+        return $this->successResource(new BeneficiaryClassificationResource($item), 'Đính kèm file quyết định thành công!', 201);
+    }
+
+    /**
+     * Xóa một file quyết định của phân loại
+     *
+     * @urlParam beneficiary integer required ID người có công. Example: 1
+     * @urlParam classification integer required ID phân loại đối tượng. Example: 1
+     * @urlParam media integer required ID file (media). Example: 1
+     *
+     * @response 200 {"success": true, "message": "Xóa file quyết định thành công!"}
+     */
+    public function deleteClassificationFile(Beneficiary $beneficiary, BeneficiaryClassification $classification, int $media)
+    {
+        abort_unless($classification->beneficiary_id === $beneficiary->id, 404);
+
+        $this->beneficiaryService->deleteClassificationFile($classification, $media);
+
+        return $this->success(null, 'Xóa file quyết định thành công!');
     }
 
     /**
      * Xuất Excel người có công
      *
-     * Xuất ra các trường: id, full_name, date_of_birth, gender, id_number, household_code, status,
+     * Xuất ra các trường: id, full_name, date_of_birth, birth_year, gender, id_number, status,
      * created_by, updated_by, created_at, updated_at.
      *
      * @queryParam search string Tìm theo họ tên hoặc CCCD.
@@ -217,7 +233,7 @@ class BeneficiaryController extends Controller
     /**
      * Import người có công
      *
-     * Cột bắt buộc: full_name, gender. Cột không bắt buộc: date_of_birth, birth_year, id_number, injury_rate, recognition_decision_no, recognition_date, household_code (tra theo mã hộ), status (mặc định "pending"), address, latitude, longitude, phone, note. Giới tính/trạng thái nhận cả value gốc (male/pending) lẫn nhãn tiếng Việt.
+     * Cột bắt buộc: full_name, gender. Cột không bắt buộc: date_of_birth, birth_year, id_number, status (mặc định "pending"), address, latitude, longitude, phone, note. Giới tính/trạng thái nhận cả value gốc (male/pending) lẫn nhãn tiếng Việt.
      *
      * @bodyParam file file required File Excel (xlsx, xls, csv). Cột theo chuẩn export.
      *

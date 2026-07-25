@@ -30,6 +30,3 @@ Route::post('/{dependent}/relations', [DependentController::class, 'storeRelatio
 Route::delete('/{dependent}/relations/{relation}', [DependentController::class, 'destroyRelation'])
     ->whereNumber('relation')
     ->middleware('permission:beneficiary-dependents.destroyRelation,web');
-
-Route::get('/{dependent}/status-histories', [DependentController::class, 'statusHistories'])
-    ->middleware('permission:beneficiary-dependents.show,web');

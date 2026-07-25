@@ -18,6 +18,12 @@ class BeneficiaryClassificationResource extends JsonResource
             'decision_date' => $this->decision_date?->format('d/m/Y'),
             'issued_by' => $this->issued_by,
             'is_primary' => (bool) $this->is_primary,
+            'decision_files' => $this->whenLoaded('media', fn () => $this->getMedia('decision_documents')->map(fn ($media) => [
+                'id' => $media->id,
+                'name' => $media->file_name,
+                'url' => $media->getFullUrl(),
+                'size' => $media->size,
+            ])),
         ];
     }
 }

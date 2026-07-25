@@ -3,9 +3,7 @@
 namespace App\Providers;
 
 use App\Modules\Beneficiary\Models\Beneficiary;
-use App\Modules\Beneficiary\Models\BeneficiaryDependentRelation;
 use App\Modules\Beneficiary\Models\Dependent;
-use App\Modules\Beneficiary\Observers\BeneficiaryDependentRelationObserver;
 use App\Modules\Beneficiary\Observers\HouseholdObserver;
 use App\Modules\Core\Models\User;
 use App\Modules\Core\Observers\UserObserver;
@@ -90,12 +88,12 @@ class AppServiceProvider extends ServiceProvider
             'task_assignment_petition'      => \App\Modules\TaskAssignment\Models\TaskAssignmentPetition::class,
             'task_assignment_document'      => \App\Modules\TaskAssignment\Models\TaskAssignmentDocument::class,
 
-            // Beneficiary — dùng cho morph subject (subsidy_grants, status_histories, visit_schedules)
-            // và morph remindable (reminders) của VisitSchedule.
+            // Beneficiary — alias morph cho media (giấy tờ đính kèm) trên các model.
             'beneficiary'                   => \App\Modules\Beneficiary\Models\Beneficiary::class,
             'beneficiary_dependent'         => \App\Modules\Beneficiary\Models\Dependent::class,
             'beneficiary_household'         => \App\Modules\Beneficiary\Models\Household::class,
-            'beneficiary_visit_schedule'    => \App\Modules\Beneficiary\Models\VisitSchedule::class,
+            'beneficiary_classification'    => \App\Modules\Beneficiary\Models\BeneficiaryClassification::class,
+            'beneficiary_document'          => \App\Modules\Beneficiary\Models\BeneficiaryDocument::class,
         ]);
 
         // Auto-create UserProfile mỗi khi tạo User.
@@ -108,9 +106,6 @@ class AppServiceProvider extends ServiceProvider
         // vì household_id có thể bị đổi từ 1 trong 2 model.
         Beneficiary::observe(HouseholdObserver::class);
         Dependent::observe(HouseholdObserver::class);
-
-        // Beneficiary: 2 đường ghi vào status pivot (Service + Job hàng ngày) — xem docblock Observer.
-        BeneficiaryDependentRelation::observe(BeneficiaryDependentRelationObserver::class);
 
         // Register policies cho in-meeting control + public/participant view actions.
         // Spatie permission vẫn giữ cho admin catalog/CRUD setup; Policy gate cho mọi action gắn meeting cụ thể.

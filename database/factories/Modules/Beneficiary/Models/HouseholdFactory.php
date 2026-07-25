@@ -15,7 +15,6 @@ class HouseholdFactory extends Factory
     public function definition(): array
     {
         return [
-            'household_code' => 'HGD-'.$this->faker->unique()->numerify('#####'),
             'head_name' => $this->faker->name(),
             'head_id_number' => $this->faker->numerify('#############'),
             'address' => $this->faker->address(),

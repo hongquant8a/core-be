@@ -6,7 +6,8 @@ use App\Modules\Beneficiary\Enums\BeneficiaryStatusEnum;
 use App\Modules\Beneficiary\Exports\BeneficiaryExport;
 use App\Modules\Beneficiary\Imports\BeneficiaryImport;
 use App\Modules\Beneficiary\Models\Beneficiary;
-use App\Modules\Beneficiary\Models\StatusHistory;
+use App\Modules\Beneficiary\Models\BeneficiaryClassification;
+use App\Modules\Core\Services\MediaService;
 use App\Modules\Core\Support\ExportFilename;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -15,11 +16,12 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class BeneficiaryService
 {
-    private const WITH = ['household', 'classifications', 'creator.media', 'editor.media'];
+    private const WITH = ['household', 'classifications.media', 'documents.media', 'creator.media', 'editor.media'];
 
     public function __construct(
         private HouseholdService $householdService,
         private DependentService $dependentService,
+        private MediaService $mediaService,
     ) {}
 
     public function stats(array $filters): array
@@ -37,14 +39,14 @@ class BeneficiaryService
     public function index(array $filters, int $limit)
     {
         return Beneficiary::with(['household', 'creator.media', 'editor.media'])
-            ->withCount(['dependents', 'activeSubsidyGrants'])
+            ->withCount(['dependents', 'documents'])
             ->filter($filters)
             ->paginate($limit);
     }
 
     public function show(Beneficiary $beneficiary): Beneficiary
     {
-        return $beneficiary->load(self::WITH)->loadCount(['dependents', 'activeSubsidyGrants']);
+        return $beneficiary->load(self::WITH)->loadCount(['dependents', 'documents']);
     }
 
     /**
@@ -70,22 +72,19 @@ class BeneficiaryService
 
             $beneficiary = Beneficiary::create($validated);
 
-            foreach ($classifications as $classification) {
-                $beneficiary->classifications()->create($classification);
+            foreach ($classifications as $row) {
+                $beneficiary->classifications()->create($row);
             }
 
             foreach ($dependents as $dependentRow) {
                 $dependent = $this->dependentService->store([
-                    ...Arr::except($dependentRow, ['relationship_type', 'eligible_from']),
+                    ...Arr::except($dependentRow, ['relationship_type']),
                     'household_id' => $dependentRow['household_id'] ?? $beneficiary->household_id,
                 ]);
 
-                // addRelation() tự tính status active/expired theo tuổi + eligibility_status
-                // (đúng quy tắc Luồng 3 bước 3) — không hard-code status ở đây.
                 $this->dependentService->addRelation($dependent, [
                     'beneficiary_id' => $beneficiary->id,
                     'relationship_type' => $dependentRow['relationship_type'],
-                    'eligible_from' => $dependentRow['eligible_from'],
                     'note' => $dependentRow['note'] ?? null,
                 ]);
             }
@@ -146,54 +145,31 @@ class BeneficiaryService
         Beneficiary::whereIn('id', $ids)->update(['status' => $status]);
     }
 
-    /**
-     * Beneficiary chỉ có 1 đường ghi status (qua Service này) — ghi thẳng beneficiary_status_histories
-     * ở đây, KHÔNG cần Event/Listener riêng (khác DependentEligibilityExpired ở Observer, vì đó có
-     * 2 đường ghi). Khi cần gửi Zalo cho hành động này, tách event() ra — logic ghi lịch sử giữ nguyên.
-     */
-    public function changeStatus(Beneficiary $beneficiary, string $status, ?string $reason = null, ?string $deathDate = null): Beneficiary
+    /** Đổi trạng thái hồ sơ (không ghi audit — đã bỏ bảng lịch sử trạng thái). */
+    public function changeStatus(Beneficiary $beneficiary, string $status, ?string $deathDate = null): Beneficiary
     {
-        return DB::transaction(function () use ($beneficiary, $status, $reason, $deathDate) {
-            $oldStatus = $beneficiary->status;
+        $update = ['status' => $status];
+        if ($status === BeneficiaryStatusEnum::Deceased->value && $deathDate) {
+            $update['death_date'] = $deathDate;
+        }
 
-            $update = ['status' => $status];
-            if ($status === BeneficiaryStatusEnum::Deceased->value && $deathDate) {
-                $update['death_date'] = $deathDate;
-            }
+        $beneficiary->update($update);
 
-            $beneficiary->update($update);
-
-            StatusHistory::create([
-                'organization_id' => $beneficiary->organization_id,
-                'subject_type' => Beneficiary::class,
-                'subject_id' => $beneficiary->id,
-                'old_status' => $oldStatus,
-                'new_status' => $status,
-                'reason' => $reason,
-                'changed_by' => auth()->id(),
-                'changed_at' => now(),
-            ]);
-
-            if ($status === BeneficiaryStatusEnum::Deceased->value || $status === BeneficiaryStatusEnum::MovedOut->value) {
-                $beneficiary->activeSubsidyGrants()->update([
-                    'status' => 'terminated',
-                    'termination_reason' => $status === BeneficiaryStatusEnum::Deceased->value
-                        ? 'Người có công đã mất'
-                        : 'Người có công đã chuyển đi',
-                    'granted_to' => now(),
-                ]);
-            }
-
-            return $beneficiary->load(self::WITH);
-        });
+        return $beneficiary->load(self::WITH);
     }
 
-    public function statusHistories(Beneficiary $beneficiary, array $filters, int $limit)
+    /** Đính kèm file quyết định công nhận cho 1 phân loại (collection decision_documents). */
+    public function uploadClassificationFiles(BeneficiaryClassification $classification, array $files): BeneficiaryClassification
     {
-        return $beneficiary->statusHistories()
-            ->with('changer')
-            ->filter($filters)
-            ->paginate($limit);
+        $this->mediaService->uploadMany($classification, $files, 'decision_documents', ['disk' => 'public']);
+
+        return $classification->load('media');
+    }
+
+    /** Xóa 1 file quyết định của phân loại. */
+    public function deleteClassificationFile(BeneficiaryClassification $classification, int $mediaId): void
+    {
+        $this->mediaService->removeByIds($classification, [$mediaId], 'decision_documents');
     }
 
     public function export(array $filters): BinaryFileResponse

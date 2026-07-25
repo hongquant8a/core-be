@@ -15,7 +15,7 @@ class ResidentialAreaResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'code' => $this->code,
+            'note' => $this->note,
             'household_count' => $this->whenCounted('households'),
             'created_by' => $this->whenLoaded('creator', fn () => $this->formatUserSummary($this->creator), null),
             'updated_by' => $this->whenLoaded('editor', fn () => $this->formatUserSummary($this->editor), null),

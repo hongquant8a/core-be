@@ -277,9 +277,7 @@ class LogActivity
             'beneficiary-households' => 'hộ gia đình',
             'beneficiary-residential-areas' => 'tổ dân phố',
             'beneficiary-dependents' => 'thân nhân',
-            'beneficiary-subsidy-policies' => 'chính sách trợ cấp',
-            'beneficiary-subsidy-grants' => 'trợ cấp',
-            'beneficiary-visit-schedules' => 'lịch viếng thăm',
+            'beneficiary-documents' => 'giấy tờ hồ sơ',
         ];
 
         return $labels[$resource] ?? str_replace('-', ' ', $resource);

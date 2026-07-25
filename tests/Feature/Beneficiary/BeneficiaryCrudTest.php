@@ -137,7 +137,7 @@ class BeneficiaryCrudTest extends TestCase
         $this->assertNotContains($bB->id, $ids);
     }
 
-    public function test_change_status_writes_status_history_and_stops_active_grants(): void
+    public function test_change_status_updates_status_and_death_date(): void
     {
         Sanctum::actingAs($this->admin);
 
@@ -145,37 +145,19 @@ class BeneficiaryCrudTest extends TestCase
             'organization_id' => $this->orgA->id, 'full_name' => 'Người mất', 'gender' => 'male', 'status' => 'active',
         ]);
 
-        $policy = \App\Modules\Beneficiary\Models\SubsidyPolicy::create([
-            'amount' => 1000000, 'legal_basis' => 'Test', 'effective_from' => now()->subYear(),
-        ]);
-
-        \App\Modules\Beneficiary\Models\SubsidyGrant::create([
-            'organization_id' => $this->orgA->id,
-            'subject_type' => $beneficiary->getMorphClass(),
-            'subject_id' => $beneficiary->id,
-            'beneficiary_subsidy_policy_id' => $policy->id,
-            'amount' => 1000000,
-            'granted_from' => now()->subMonths(3),
-            'status' => 'active',
-        ]);
+        $deathDate = now()->format('Y-m-d');
 
         $res = $this->patchJson("/api/beneficiaries/{$beneficiary->id}/status", [
             'status' => 'deceased',
-            'reason' => 'Qua đời',
-            'death_date' => now()->format('Y-m-d'),
+            'death_date' => $deathDate,
         ], ['X-Organization-Id' => $this->orgA->id]);
 
         $res->assertOk();
 
-        $this->assertDatabaseHas('beneficiary_status_histories', [
-            'subject_id' => $beneficiary->id,
-            'old_status' => 'active',
-            'new_status' => 'deceased',
-        ]);
-
-        $this->assertDatabaseHas('beneficiary_subsidy_grants', [
-            'subject_id' => $beneficiary->id,
-            'status' => 'terminated',
+        $this->assertDatabaseHas('beneficiaries', [
+            'id' => $beneficiary->id,
+            'status' => 'deceased',
+            'death_date' => $deathDate,
         ]);
     }
 

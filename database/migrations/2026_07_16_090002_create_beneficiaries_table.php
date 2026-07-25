@@ -18,9 +18,6 @@ return new class extends Migration
             $table->date('date_of_birth')->nullable();
             $table->string('gender', 20);
             $table->string('id_number')->nullable();
-            $table->decimal('injury_rate', 5, 2)->nullable();
-            $table->string('recognition_decision_no')->nullable();
-            $table->date('recognition_date')->nullable();
             $table->string('status', 20)->default('pending');
             $table->date('death_date')->nullable();
             $table->string('address')->nullable();

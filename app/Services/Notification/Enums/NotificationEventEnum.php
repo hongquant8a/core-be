@@ -24,9 +24,6 @@ enum NotificationEventEnum: string
     case ScheduleReminderBefore = 'schedule_reminder_before';
     case ScheduleReminderOn     = 'schedule_reminder_on';
     case ScheduleReminderAfter  = 'schedule_reminder_after';
-    case BeneficiaryVisitReminderBefore = 'beneficiary_visit_reminder_before';
-    case BeneficiaryVisitReminderOn     = 'beneficiary_visit_reminder_on';
-    case BeneficiaryVisitReminderAfter  = 'beneficiary_visit_reminder_after';
 
     public static function values(): array
     {
@@ -64,9 +61,6 @@ enum NotificationEventEnum: string
             self::ScheduleReminderBefore,
             self::ScheduleReminderOn,
             self::ScheduleReminderAfter => NotificationModuleEnum::Scheduling,
-            self::BeneficiaryVisitReminderBefore,
-            self::BeneficiaryVisitReminderOn,
-            self::BeneficiaryVisitReminderAfter => NotificationModuleEnum::Beneficiary,
         };
     }
 
@@ -93,9 +87,6 @@ enum NotificationEventEnum: string
             self::ScheduleReminderBefore => 'Nhắc trước giờ lịch',
             self::ScheduleReminderOn     => 'Nhắc đến giờ lịch',
             self::ScheduleReminderAfter  => 'Nhắc sau giờ lịch',
-            self::BeneficiaryVisitReminderBefore => 'Nhắc trước lịch viếng thăm',
-            self::BeneficiaryVisitReminderOn     => 'Nhắc đến ngày viếng thăm',
-            self::BeneficiaryVisitReminderAfter  => 'Nhắc sau ngày viếng thăm',
         };
     }
 }

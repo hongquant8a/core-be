@@ -2,7 +2,7 @@
 
 namespace App\Modules\Beneficiary\Requests;
 
-class BulkDestroySubsidyPolicyRequest extends BaseRequest
+class BulkDestroyBeneficiaryDocumentRequest extends BaseRequest
 {
     public function rules(): array
     {
@@ -17,14 +17,14 @@ class BulkDestroySubsidyPolicyRequest extends BaseRequest
         return [
             'ids.required' => 'Danh sách ID không được để trống.',
             'ids.array' => 'Danh sách ID phải là một mảng.',
-            'ids.min' => 'Phải chọn ít nhất 1 chính sách trợ cấp.',
+            'ids.min' => 'Phải chọn ít nhất 1 giấy tờ.',
         ];
     }
 
     public function bodyParameters(): array
     {
         return [
-            'ids' => ['description' => 'Danh sách ID chính sách trợ cấp cần xóa.', 'example' => [1, 2]],
+            'ids' => ['description' => 'Danh sách ID giấy tờ cần xóa.', 'example' => [1, 2, 3]],
         ];
     }
 

@@ -43,7 +43,6 @@ class HouseholdService
             $dependentIds = $validated['dependent_ids'] ?? [];
             unset($validated['beneficiary_ids'], $validated['dependent_ids']);
 
-            // Mã hộ để trống sẽ tự sinh trong Household::creating (áp dụng cả import/tinker).
             $household = Household::create($validated);
 
             if (! empty($beneficiaryIds)) {

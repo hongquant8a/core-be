@@ -3,7 +3,6 @@
 namespace Database\Factories\Modules\Beneficiary\Models;
 
 use App\Modules\Beneficiary\Enums\DependentRelationshipEnum;
-use App\Modules\Beneficiary\Enums\DependentRelationStatusEnum;
 use App\Modules\Beneficiary\Models\Beneficiary;
 use App\Modules\Beneficiary\Models\BeneficiaryDependentRelation;
 use App\Modules\Beneficiary\Models\Dependent;
@@ -22,8 +21,6 @@ class BeneficiaryDependentRelationFactory extends Factory
             'beneficiary_id' => Beneficiary::factory(),
             'dependent_id' => Dependent::factory(),
             'relationship_type' => $this->faker->randomElement(DependentRelationshipEnum::values()),
-            'eligible_from' => now()->subYear(),
-            'status' => DependentRelationStatusEnum::Active->value,
         ];
     }
 }

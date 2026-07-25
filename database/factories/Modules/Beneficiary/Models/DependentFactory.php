@@ -2,7 +2,6 @@
 
 namespace Database\Factories\Modules\Beneficiary\Models;
 
-use App\Modules\Beneficiary\Enums\DependentEligibilityEnum;
 use App\Modules\Beneficiary\Enums\GenderEnum;
 use App\Modules\Beneficiary\Models\Dependent;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -21,8 +20,7 @@ class DependentFactory extends Factory
             'date_of_birth' => $this->faker->dateTimeBetween('-80 years', '-1 years'),
             'gender' => $this->faker->randomElement(GenderEnum::values()),
             'id_number' => $this->faker->unique()->numerify('#############'),
-            'is_alive' => true,
-            'eligibility_status' => DependentEligibilityEnum::Normal->value,
+            'phone' => $this->faker->phoneNumber(),
             'created_by' => null,
             'updated_by' => null,
         ];

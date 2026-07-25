@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('organization_id')->nullable()->constrained('organizations')->nullOnDelete();
             $table->string('name');
-            $table->string('code')->nullable();
+            $table->text('note')->nullable();
 
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();

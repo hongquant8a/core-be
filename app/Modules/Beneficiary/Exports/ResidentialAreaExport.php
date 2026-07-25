@@ -21,7 +21,7 @@ class ResidentialAreaExport extends AbstractExcelExport implements FromCollectio
             ->map(fn ($area, $i) => [
                 'stt' => $i + 1,
                 'name' => $area->name,
-                'code' => $area->code,
+                'note' => $area->note,
                 'household_count' => $area->households_count,
                 'created_by' => $area->creator?->name ?? 'N/A',
                 'updated_by' => $area->editor?->name ?? 'N/A',
@@ -33,6 +33,6 @@ class ResidentialAreaExport extends AbstractExcelExport implements FromCollectio
 
     public function headings(): array
     {
-        return ['STT', 'Tên tổ dân phố', 'Mã', 'Số hộ', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
+        return ['STT', 'Tên tổ dân phố', 'Ghi chú', 'Số hộ', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
     }
 }

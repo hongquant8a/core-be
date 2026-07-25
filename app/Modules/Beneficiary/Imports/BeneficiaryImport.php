@@ -29,10 +29,7 @@ class BeneficiaryImport implements ToModel, WithHeadingRow, WithValidation, Skip
         'birth_year' => 'Năm sinh',
         'gender' => 'Giới tính',
         'id_number' => 'CCCD/CMND',
-        'injury_rate' => 'Tỷ lệ thương tật',
-        'recognition_decision_no' => 'Số QĐ công nhận',
-        'recognition_date' => 'Ngày QĐ công nhận',
-        'household_code' => 'Mã hộ',
+        'head_id_number' => 'CCCD chủ hộ',
         'status' => 'Trạng thái',
         'address' => 'Địa chỉ',
         'latitude' => 'Vĩ độ',
@@ -53,10 +50,7 @@ class BeneficiaryImport implements ToModel, WithHeadingRow, WithValidation, Skip
         'birth_year' => '1950',
         'gender' => 'male',
         'id_number' => '049123456789',
-        'injury_rate' => '61',
-        'recognition_decision_no' => 'QD-123/2020',
-        'recognition_date' => '15/07/2020',
-        'household_code' => 'HGD-00001',
+        'head_id_number' => '049000111222',
         'status' => 'pending',
         'address' => '12 Trần Phú, Hải Châu',
         'latitude' => '16.0678',
@@ -75,10 +69,7 @@ class BeneficiaryImport implements ToModel, WithHeadingRow, WithValidation, Skip
             'birth_year' => $row['birth_year'] ?? null,
             'gender' => $row['gender'] ?? null,
             'id_number' => $idNumber,
-            'injury_rate' => $row['injury_rate'] ?? null,
-            'recognition_decision_no' => $row['recognition_decision_no'] ?? null,
-            'recognition_date' => $row['recognition_date'] ?? null,
-            'household_id' => $this->resolveHouseholdId($row['household_code'] ?? null),
+            'household_id' => $this->resolveHouseholdId($row['head_id_number'] ?? null),
             'status' => $row['status'] ?? null,
             'address' => $row['address'] ?? null,
             'latitude' => $row['latitude'] ?? null,
@@ -121,7 +112,6 @@ class BeneficiaryImport implements ToModel, WithHeadingRow, WithValidation, Skip
 
         // Chuẩn hóa ngày (Excel serial / d/m/Y / Y-m-d) → Y-m-d để rule `date` và cast hoạt động.
         $data['date_of_birth'] = $this->normalizeDate($data['date_of_birth'] ?? null);
-        $data['recognition_date'] = $this->normalizeDate($data['recognition_date'] ?? null);
 
         return $data;
     }
@@ -134,10 +124,7 @@ class BeneficiaryImport implements ToModel, WithHeadingRow, WithValidation, Skip
             'birth_year' => 'nullable|string|max:20',
             'gender' => ['required', GenderEnum::rule()],
             'id_number' => 'nullable|string|max:255',
-            'injury_rate' => 'nullable|numeric|min:0|max:100',
-            'recognition_decision_no' => 'nullable|string|max:255',
-            'recognition_date' => 'nullable|date',
-            'household_code' => 'nullable|string|max:255',
+            'head_id_number' => 'nullable|string|max:255',
             'status' => ['nullable', BeneficiaryStatusEnum::rule()],
             'address' => 'nullable|string|max:255',
             'latitude' => 'nullable|numeric|between:-90,90',
@@ -154,9 +141,6 @@ class BeneficiaryImport implements ToModel, WithHeadingRow, WithValidation, Skip
             'gender.required' => 'Giới tính không được để trống.',
             'gender.in' => 'Giới tính không hợp lệ.',
             'date_of_birth.date' => 'Ngày sinh không hợp lệ.',
-            'recognition_date.date' => 'Ngày QĐ công nhận không hợp lệ.',
-            'injury_rate.numeric' => 'Tỷ lệ thương tật phải là số.',
-            'injury_rate.max' => 'Tỷ lệ thương tật không được vượt quá 100.',
             'status.in' => 'Trạng thái không hợp lệ.',
             'latitude.between' => 'Vĩ độ phải trong khoảng -90 đến 90.',
             'longitude.between' => 'Kinh độ phải trong khoảng -180 đến 180.',
@@ -186,15 +170,15 @@ class BeneficiaryImport implements ToModel, WithHeadingRow, WithValidation, Skip
         ];
     }
 
-    /** Tra mã hộ về household_id trong phạm vi tổ chức hiện tại; không khớp thì để trống (không chặn dòng). */
-    private function resolveHouseholdId(?string $householdCode): ?int
+    /** Tra CCCD chủ hộ về household_id trong tổ chức hiện tại; không khớp thì để trống (không chặn dòng). */
+    private function resolveHouseholdId(?string $headIdNumber): ?int
     {
-        $householdCode = $householdCode !== null ? trim((string) $householdCode) : '';
+        $headIdNumber = $headIdNumber !== null ? trim((string) $headIdNumber) : '';
 
-        if ($householdCode === '') {
+        if ($headIdNumber === '') {
             return null;
         }
 
-        return Household::where('household_code', $householdCode)->value('id');
+        return Household::where('head_id_number', $headIdNumber)->value('id');
     }
 }

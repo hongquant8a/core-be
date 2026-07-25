@@ -26,7 +26,7 @@ class HouseholdController extends Controller
     /**
      * Thống kê hộ gia đình
      *
-     * @queryParam search string Tìm theo tên chủ hộ hoặc mã hộ.
+     * @queryParam search string Tìm theo tên chủ hộ hoặc CCCD chủ hộ.
      * @queryParam residential_area_id integer Lọc theo tổ dân phố.
      *
      * @response 200 {"success": true, "data": {"total": 20, "total_members": 45}}
@@ -39,11 +39,11 @@ class HouseholdController extends Controller
     /**
      * Danh sách hộ gia đình
      *
-     * @queryParam search string Tìm theo tên chủ hộ hoặc mã hộ.
+     * @queryParam search string Tìm theo tên chủ hộ hoặc CCCD chủ hộ.
      * @queryParam residential_area_id integer Lọc theo tổ dân phố.
      * @queryParam from_date date Lọc từ ngày tạo (Y-m-d).
      * @queryParam to_date date Lọc đến ngày tạo (Y-m-d).
-     * @queryParam sort_by string Sắp xếp theo: id, head_name, household_code, member_count, created_at. Example: created_at
+     * @queryParam sort_by string Sắp xếp theo: id, head_name, member_count, created_at. Example: created_at
      * @queryParam sort_order string Thứ tự: asc, desc. Example: desc
      * @queryParam limit integer Số bản ghi mỗi trang. Example: 10
      *
@@ -136,10 +136,10 @@ class HouseholdController extends Controller
     /**
      * Xuất Excel hộ gia đình
      *
-     * Xuất ra các trường: id, household_code, head_name, head_id_number, residential_area, address,
-     * phone, member_count, created_by, updated_by, created_at, updated_at.
+     * Xuất ra các trường: id, head_name, head_id_number, residential_area, address,
+     * latitude, longitude, phone, member_count, created_by, updated_by, created_at, updated_at.
      *
-     * @queryParam search string Tìm theo tên chủ hộ hoặc mã hộ.
+     * @queryParam search string Tìm theo tên chủ hộ hoặc CCCD chủ hộ.
      */
     public function export(FilterRequest $request)
     {
@@ -149,7 +149,7 @@ class HouseholdController extends Controller
     /**
      * Import hộ gia đình
      *
-     * Cột bắt buộc: head_name. Cột không bắt buộc: household_code, head_id_number, residential_area (tra theo tên/mã tổ dân phố), address, latitude, longitude, phone, member_count, note.
+     * Cột bắt buộc: head_name. Cột không bắt buộc: head_id_number, residential_area (tra theo tên tổ dân phố), address, latitude, longitude, phone, member_count, note.
      *
      * @bodyParam file file required File Excel (xlsx, xls, csv). Cột theo chuẩn export.
      *

@@ -214,15 +214,8 @@ class PermissionSeeder extends Seeder
                 'stats', 'index', 'show', 'store', 'update', 'destroy',
                 'bulkDestroy', 'export', 'import', 'storeRelation', 'destroyRelation',
             ],
-            'beneficiary-subsidy-policies' => [
-                'stats', 'index', 'show', 'store', 'update', 'destroy',
-                'bulkDestroy', 'export', 'import', 'renew',
-            ],
-            'beneficiary-subsidy-grants' => [
-                'index', 'store', 'changeStatus',
-            ],
-            'beneficiary-visit-schedules' => [
-                'index', 'show', 'changeStatus',
+            'beneficiary-documents' => [
+                'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
             ],
         ],
     ];
@@ -329,9 +322,7 @@ class PermissionSeeder extends Seeder
         'beneficiary-households' => 'Hộ gia đình',
         'beneficiary-residential-areas' => 'Tổ dân phố',
         'beneficiary-dependents' => 'Thân nhân',
-        'beneficiary-subsidy-policies' => 'Chính sách trợ cấp',
-        'beneficiary-subsidy-grants' => 'Trợ cấp',
-        'beneficiary-visit-schedules' => 'Lịch viếng thăm',
+        'beneficiary-documents' => 'Giấy tờ hồ sơ',
     ];
 
     /** Nhãn action (để description). */

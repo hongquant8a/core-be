@@ -13,7 +13,7 @@ class DependentExport extends AbstractExcelExport implements FromCollection
 
     public function collection()
     {
-        return Dependent::with(['household', 'creator', 'editor'])
+        return Dependent::with(['household', 'residentialArea', 'creator', 'editor'])
             ->filter($this->filters)
             ->orderByDesc('id')
             ->get()
@@ -24,8 +24,11 @@ class DependentExport extends AbstractExcelExport implements FromCollection
                 'date_of_birth' => $d->date_of_birth?->format('d/m/Y'),
                 'gender' => GenderEnum::tryFrom((string) $d->gender)?->label() ?? $d->gender,
                 'id_number' => $d->id_number,
-                'household_code' => $d->household?->household_code,
-                'is_alive' => $d->is_alive ? 'Còn sống' : 'Đã mất',
+                'head_id_number' => $d->household?->head_id_number,
+                'residential_area' => $d->residentialArea?->name,
+                'phone' => $d->phone,
+                'latitude' => $d->latitude,
+                'longitude' => $d->longitude,
                 'created_by' => $d->creator?->name ?? 'N/A',
                 'updated_by' => $d->editor?->name ?? 'N/A',
                 'created_at' => $d->created_at?->format('H:i:s d/m/Y'),
@@ -36,6 +39,6 @@ class DependentExport extends AbstractExcelExport implements FromCollection
 
     public function headings(): array
     {
-        return ['STT', 'Họ tên', 'Ngày sinh', 'Giới tính', 'CCCD/CMND', 'Mã hộ', 'Tình trạng sống', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
+        return ['STT', 'Họ tên', 'Ngày sinh', 'Giới tính', 'CCCD/CMND', 'CCCD chủ hộ', 'Tổ dân phố', 'SĐT', 'Vĩ độ', 'Kinh độ', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
     }
 }

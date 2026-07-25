@@ -8,18 +8,12 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('beneficiary_visit_schedules', function (Blueprint $table) {
+        Schema::create('beneficiary_documents', function (Blueprint $table) {
             $table->id();
             $table->foreignId('organization_id')->nullable()->constrained('organizations')->nullOnDelete();
+            $table->foreignId('beneficiary_id')->constrained('beneficiaries')->cascadeOnDelete();
 
-            // Polymorphic subject: Beneficiary | BeneficiaryDependent | BeneficiaryHousehold
-            $table->string('subject_type');
-            $table->unsignedBigInteger('subject_id');
-
-            $table->string('occasion', 50);
-            $table->date('scheduled_date');
-            $table->string('status', 20)->default('pending');
-            $table->foreignId('assigned_to')->constrained('users');
+            $table->string('name'); // Tên giấy tờ, vd "Giấy chứng nhận thương binh"
             $table->text('note')->nullable();
 
             $table->unsignedBigInteger('created_by')->nullable();
@@ -29,13 +23,12 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->index(['organization_id', 'assigned_to', 'status'], 'beneficiary_visit_schedules_org_assignee_status_idx');
-            $table->index(['subject_type', 'subject_id'], 'beneficiary_visit_schedules_subject_idx');
+            $table->index(['organization_id', 'beneficiary_id']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('beneficiary_visit_schedules');
+        Schema::dropIfExists('beneficiary_documents');
     }
 };
