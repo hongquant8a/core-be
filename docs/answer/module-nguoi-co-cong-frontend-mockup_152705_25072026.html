@@ -1,0 +1,641 @@
+<style>
+  :root {
+    --ground: #f7f5f0;
+    --panel: #ffffff;
+    --panel-2: #f1ede4;
+    --ink: #1c232b;
+    --ink-2: #545d68;
+    --hair: #e2ddd1;
+    --hair-2: #d3ccbc;
+    --accent: #b4232a;      /* đỏ cờ — dùng tiết chế */
+    --accent-soft: #f6e2e2;
+    --slate: #2f4a6b;
+    --skel: #e7e2d6;
+    --skel-2: #efeadf;
+    /* semantic HTTP + status */
+    --get: #2563a8; --post: #2f8f5b; --put: #b4791f; --patch: #6b4bb0; --del: #b4232a;
+    --ok: #2f8f5b; --warn: #b4791f; --muted: #7a8390; --info: #2f6bb0; --danger: #b4232a;
+    --shadow: 0 1px 2px rgba(28,35,43,.05), 0 8px 24px rgba(28,35,43,.06);
+    --radius: 12px;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #14171b; --panel: #1b1f25; --panel-2: #21262d; --ink: #e8eaed; --ink-2: #a3abb5;
+      --hair: #2a3038; --hair-2: #353c45; --accent: #e8595f; --accent-soft: #37211f;
+      --slate: #7fa0c8; --skel: #262c33; --skel-2: #2d343c;
+      --get:#5ea0e0; --post:#5cc389; --put:#e0b45c; --patch:#a98fe0; --del:#e8595f;
+      --ok:#5cc389; --warn:#e0b45c; --muted:#8b96a2; --info:#6ba3e0; --danger:#e8595f;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #14171b; --panel: #1b1f25; --panel-2: #21262d; --ink: #e8eaed; --ink-2: #a3abb5;
+    --hair: #2a3038; --hair-2: #353c45; --accent: #e8595f; --accent-soft: #37211f;
+    --slate: #7fa0c8; --skel: #262c33; --skel-2: #2d343c;
+    --get:#5ea0e0; --post:#5cc389; --put:#e0b45c; --patch:#a98fe0; --del:#e8595f;
+    --ok:#5cc389; --warn:#e0b45c; --muted:#8b96a2; --info:#6ba3e0; --danger:#e8595f;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  }
+  :root[data-theme="light"] {
+    --ground: #f7f5f0; --panel: #ffffff; --panel-2: #f1ede4; --ink: #1c232b; --ink-2: #545d68;
+    --hair: #e2ddd1; --hair-2: #d3ccbc; --accent: #b4232a; --accent-soft: #f6e2e2;
+    --slate: #2f4a6b; --skel: #e7e2d6; --skel-2: #efeadf;
+    --get:#2563a8; --post:#2f8f5b; --put:#b4791f; --patch:#6b4bb0; --del:#b4232a;
+    --ok:#2f8f5b; --warn:#b4791f; --muted:#7a8390; --info:#2f6bb0; --danger:#b4232a;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: var(--sans); font-size: 15px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+  h1,h2,h3,h4 { text-wrap: balance; margin: 0; font-weight: 680; letter-spacing: -.01em; }
+  a { color: var(--accent); }
+  code, .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .eyebrow { font-size: 11.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+  .muted { color: var(--ink-2); }
+
+  /* ---------- Header ---------- */
+  header.hero {
+    border-bottom: 1px solid var(--hair);
+    background:
+      radial-gradient(120% 100% at 85% -20%, var(--accent-soft) 0%, transparent 55%),
+      var(--panel);
+  }
+  .hero-in { padding: 54px 0 40px; }
+  .flagstripe { display:flex; gap:5px; margin-bottom: 22px; }
+  .flagstripe span { height: 4px; width: 34px; border-radius: 2px; background: var(--accent); opacity: .9; }
+  .flagstripe span:nth-child(2){ opacity:.55 } .flagstripe span:nth-child(3){ opacity:.28 }
+  h1 { font-size: clamp(30px, 4.6vw, 46px); line-height: 1.08; }
+  .hero p.lead { max-width: 64ch; margin: 16px 0 0; font-size: 17px; color: var(--ink-2); }
+  .hero-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+  .tag {
+    display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600;
+    padding: 6px 11px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--hair);
+    color: var(--ink-2);
+  }
+  .tag b { color: var(--ink); font-weight: 680; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+
+  /* ---------- Section scaffolding ---------- */
+  section { padding: 46px 0; border-bottom: 1px solid var(--hair); }
+  .sec-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 26px; flex-wrap: wrap; }
+  .sec-head h2 { font-size: 24px; }
+  .sec-head .num { font-family: var(--mono); font-size: 13px; color: var(--accent); font-weight: 700; padding-top: 3px; }
+  .sec-head .sub { color: var(--ink-2); font-size: 14.5px; margin-left: auto; }
+
+  /* ---------- Convention cards ---------- */
+  .grid { display: grid; gap: 16px; }
+  .cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .cols-2 { grid-template-columns: 1.05fr .95fr; }
+  .card {
+    background: var(--panel); border: 1px solid var(--hair); border-radius: var(--radius);
+    padding: 18px 18px; box-shadow: var(--shadow);
+  }
+  .card h4 { font-size: 14.5px; display:flex; align-items:center; gap:8px; }
+  .card h4 .k { font-family: var(--mono); font-size: 11px; color: var(--accent); }
+  .card p { margin: 8px 0 0; font-size: 13.5px; color: var(--ink-2); }
+  .kbd { font-family: var(--mono); font-size: 12px; background: var(--panel-2); border: 1px solid var(--hair-2);
+    padding: 1px 6px; border-radius: 6px; color: var(--ink); white-space: nowrap; }
+
+  /* ---------- Screen block ---------- */
+  .screen { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; margin-top: 8px; }
+  .screen.rev { grid-template-columns: 1fr 1fr; }
+  .screen-info h3 { font-size: 19px; display:flex; align-items:center; gap:10px; }
+  .screen-info .route { font-family: var(--mono); font-size: 12px; color: var(--ink-2); margin-top: 6px; }
+  .screen-info > p { color: var(--ink-2); font-size: 14px; margin: 12px 0 16px; }
+  .badge-screen { font-size: 11px; font-weight: 700; letter-spacing: .04em; color: #fff; background: var(--slate);
+    padding: 3px 8px; border-radius: 6px; }
+
+  /* ---------- Wireframe mockup ---------- */
+  .wire {
+    background: var(--panel); border: 1px solid var(--hair-2); border-radius: 12px; overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .wire-bar { display: flex; align-items: center; gap: 6px; padding: 9px 12px; background: var(--panel-2);
+    border-bottom: 1px solid var(--hair); }
+  .wire-bar i { width: 9px; height: 9px; border-radius: 50%; background: var(--hair-2); }
+  .wire-bar .url { margin-left: 8px; font-family: var(--mono); font-size: 11px; color: var(--ink-2);
+    background: var(--ground); border: 1px solid var(--hair); border-radius: 6px; padding: 3px 9px; flex: 1;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .wire-body { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+  .wtitle { display:flex; align-items:center; justify-content:space-between; }
+  .wtitle .t { font-weight: 680; font-size: 14px; }
+  .btn { font-size: 12px; font-weight: 650; padding: 6px 12px; border-radius: 8px; border: 1px solid transparent; }
+  .btn.pri { background: var(--accent); color: #fff; }
+  .btn.gho { background: transparent; border-color: var(--hair-2); color: var(--ink-2); }
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
+  .inp { height: 30px; border: 1px solid var(--hair-2); border-radius: 8px; background: var(--ground);
+    display:flex; align-items:center; padding: 0 10px; font-size: 12px; color: var(--ink-2); }
+  .inp.grow { flex: 1; }
+
+  /* skeleton table */
+  .tbl { border: 1px solid var(--hair); border-radius: 10px; overflow: hidden; }
+  .tr { display: grid; grid-template-columns: 1.6fr 1fr .8fr .7fr; gap: 10px; padding: 10px 12px; align-items: center;
+    border-bottom: 1px solid var(--hair); }
+  .tr:last-child { border-bottom: 0; }
+  .tr.head { background: var(--panel-2); }
+  .sk { height: 9px; border-radius: 4px; background: var(--skel); }
+  .sk.w70 { width: 70%; } .sk.w50 { width: 50%; } .sk.w90{width:90%} .sk.sm { height: 7px; }
+  .th { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); font-weight: 700; }
+  .pill { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; display:inline-block; }
+  .pill.ok { color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, transparent); }
+  .pill.warn { color: var(--warn); background: color-mix(in srgb, var(--warn) 15%, transparent); }
+  .pill.muted { color: var(--muted); background: color-mix(in srgb, var(--muted) 16%, transparent); }
+  .pill.danger { color: var(--danger); background: color-mix(in srgb, var(--danger) 14%, transparent); }
+  .pill.info { color: var(--info); background: color-mix(in srgb, var(--info) 14%, transparent); }
+
+  /* KPI + charts mockup */
+  .kpis { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; }
+  .kpi { background: var(--ground); border: 1px solid var(--hair); border-radius: 10px; padding: 10px 12px; }
+  .kpi .n { font-size: 22px; font-weight: 720; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .kpi .l { font-size: 10.5px; color: var(--ink-2); text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }
+  .kpi.accent .n { color: var(--accent); }
+  .charts { display: grid; grid-template-columns: 1.2fr 1fr; gap: 10px; }
+  .chart { background: var(--ground); border: 1px solid var(--hair); border-radius: 10px; padding: 12px; }
+  .chart .ct { font-size: 11px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 12px; }
+  .bars { display: flex; align-items: flex-end; gap: 8px; height: 96px; }
+  .bars .b { flex: 1; background: linear-gradient(var(--accent), color-mix(in srgb, var(--accent) 55%, var(--panel))); border-radius: 4px 4px 0 0; opacity: .9; }
+  .line { height: 96px; position: relative; }
+  .line svg { width: 100%; height: 100%; display: block; }
+  .donut { display:flex; align-items:center; gap: 14px; }
+  .ring { width: 82px; height: 82px; border-radius: 50%;
+    background: conic-gradient(var(--accent) 0 38%, var(--slate) 38% 62%, var(--warn) 62% 82%, var(--muted) 82% 100%);
+    -webkit-mask: radial-gradient(circle 25px at 50% 50%, transparent 98%, #000 100%);
+            mask: radial-gradient(circle 25px at 50% 50%, transparent 98%, #000 100%); }
+  .legend { font-size: 11px; color: var(--ink-2); display: grid; gap: 5px; }
+  .legend i { display:inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+
+  /* form skeleton */
+  .form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+  .fld { display: grid; gap: 5px; }
+  .fld .lbl { font-size: 10.5px; color: var(--ink-2); text-transform: uppercase; letter-spacing: .05em; font-weight: 700; }
+  .fld .lbl .req { color: var(--accent); }
+  .fld .box { height: 30px; border: 1px solid var(--hair-2); border-radius: 8px; background: var(--ground); }
+  .fld.full { grid-column: 1 / -1; }
+  .subcard { border: 1px dashed var(--hair-2); border-radius: 10px; padding: 10px; background: var(--panel-2); }
+  .subcard .sc-h { display:flex; justify-content:space-between; align-items:center; font-size: 12px; font-weight: 700; margin-bottom: 8px; }
+  .chip { font-size: 10.5px; padding: 2px 8px; border-radius: 6px; background: var(--ground); border: 1px solid var(--hair-2); color: var(--ink-2); }
+  .filebox { display:flex; align-items:center; gap: 8px; border: 1px dashed var(--hair-2); border-radius: 8px; padding: 8px 10px; font-size: 12px; color: var(--ink-2); }
+  .filebox .ic { width: 22px; height: 22px; border-radius: 6px; background: var(--accent-soft); display:grid; place-items:center; color: var(--accent); font-weight: 800; }
+
+  /* ---------- API panel ---------- */
+  .api { background: var(--panel); border: 1px solid var(--hair); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+  .api-h { padding: 11px 14px; border-bottom: 1px solid var(--hair); font-size: 11px; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); display:flex; align-items:center; gap: 8px; }
+  .api-h .sq { width: 8px; height: 8px; border-radius: 2px; background: var(--accent); }
+  .ep { display: flex; gap: 10px; align-items: baseline; padding: 10px 14px; border-bottom: 1px solid var(--hair); }
+  .ep:last-child { border-bottom: 0; }
+  .m { font-family: var(--mono); font-size: 10.5px; font-weight: 700; color: #fff; padding: 2px 7px; border-radius: 5px;
+    min-width: 52px; text-align: center; flex-shrink: 0; }
+  .m.get { background: var(--get); } .m.post { background: var(--post); } .m.put { background: var(--put); }
+  .m.patch { background: var(--patch); } .m.del { background: var(--del); }
+  .ep .path { font-family: var(--mono); font-size: 12px; color: var(--ink); word-break: break-all; }
+  .ep .path small { color: var(--ink-2); display: block; font-family: var(--sans); font-size: 11.5px; margin-top: 2px; }
+
+  /* code block */
+  pre { margin: 14px 0 0; background: var(--panel); border: 1px solid var(--hair); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; font-family: var(--mono); font-size: 12.5px; line-height: 1.65; color: var(--ink); }
+  pre .c { color: var(--ink-2); } pre .s { color: var(--post); } pre .k { color: var(--patch); } pre .a { color: var(--accent); }
+
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 10px 10px 0;
+    padding: 12px 16px; font-size: 13.5px; }
+  .callout b { color: var(--ink); }
+
+  /* screen map table */
+  table.map { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  table.map th, table.map td { text-align: left; padding: 11px 12px; border-bottom: 1px solid var(--hair); vertical-align: top; }
+  table.map th { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); }
+  table.map td.mono { font-family: var(--mono); font-size: 12px; color: var(--slate); }
+  table.map tr:hover td { background: var(--panel-2); }
+  .scroll-x { overflow-x: auto; }
+
+  footer { padding: 34px 0 60px; color: var(--ink-2); font-size: 13px; }
+  footer .flagstripe { margin-bottom: 14px; }
+
+  @media (max-width: 860px) {
+    .cols-3, .kpis { grid-template-columns: 1fr 1fr; }
+    .cols-2, .screen, .screen.rev, .charts { grid-template-columns: 1fr; }
+    .form { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .screen-info h3, .card { transition: none; }
+  }
+</style>
+
+<header class="hero">
+  <div class="wrap hero-in">
+    <div class="flagstripe" aria-hidden="true"><span></span><span></span><span></span></div>
+    <div class="eyebrow">Hướng dẫn triển khai Frontend · Đà Nẵng</div>
+    <h1>Quản lý Người có công</h1>
+    <p class="lead">Bản đồ màn hình và cách gọi API để dựng module — hồ sơ cơ bản, phân loại &amp; giấy tờ đính kèm, và dashboard thống kê. Mỗi màn hình đi kèm mockup bố cục và các endpoint tương ứng.</p>
+    <div class="hero-meta">
+      <span class="tag"><span class="dot"></span> Base <b>/api</b></span>
+      <span class="tag">Auth <b>Sanctum Bearer</b></span>
+      <span class="tag">Header bắt buộc <b>X-Organization-Id</b></span>
+      <span class="tag">Response <b>{ success, message, data }</b></span>
+      <span class="tag">8 màn hình · 7 nhóm resource</span>
+    </div>
+  </div>
+</header>
+
+<!-- 0. Conventions -->
+<section id="conventions">
+  <div class="wrap">
+    <div class="sec-head"><span class="num">00</span><h2>Quy ước chung</h2><span class="sub">Áp cho mọi request trong module</span></div>
+    <div class="grid cols-3">
+      <div class="card">
+        <h4><span class="k">01</span> Xác thực &amp; Tenant</h4>
+        <p>Mọi request gắn <span class="kbd">Authorization: Bearer &lt;token&gt;</span> và <span class="kbd">X-Organization-Id: &lt;id&gt;</span>. Thiếu header tổ chức → <b>422</b>. Không gửi <code>organization_id</code> trong body — server tự scope.</p>
+      </div>
+      <div class="card">
+        <h4><span class="k">02</span> Response &amp; phân trang</h4>
+        <p>Luôn đọc <code>data</code> (không phải root). Danh sách trả mảng <code>data</code> + <code>meta</code>/<code>links</code>. Filter chung: <span class="kbd">search</span> <span class="kbd">from_date</span> <span class="kbd">to_date</span> <span class="kbd">sort_by</span> <span class="kbd">sort_order</span> <span class="kbd">limit</span> <span class="kbd">page</span>.</p>
+      </div>
+      <div class="card">
+        <h4><span class="k">03</span> Enum cho dropdown</h4>
+        <p>Gọi <span class="kbd">GET /beneficiary-enums</span> một lần, cache lại. Trả <code>beneficiary_type</code>, <code>beneficiary_status</code>, <code>gender</code>, <code>dependent_relationship</code> — mỗi phần tử <code>{ value, label }</code>. Không hardcode.</p>
+      </div>
+      <div class="card">
+        <h4><span class="k">04</span> Upload file</h4>
+        <p>Giấy tờ &amp; ảnh quyết định gửi bằng <b>multipart/form-data</b>, trường <span class="kbd">files[]</span> — không nhét trong JSON. Mỗi file ≤ 10MB.</p>
+      </div>
+      <div class="card">
+        <h4><span class="k">05</span> Ngày giờ</h4>
+        <p>Gửi ngày dạng <span class="kbd">Y-m-d</span>. Server trả sẵn định dạng hiển thị: ngày <code>dd/MM/yyyy</code>, giờ <code>HH:mm:ss dd/MM/yyyy</code>.</p>
+      </div>
+      <div class="card">
+        <h4><span class="k">06</span> Phân quyền UI</h4>
+        <p>Ẩn/hiện nút theo quyền <span class="kbd">{resource}.{action}</span> — vd <code>beneficiaries.store</code>, <code>beneficiary-documents.destroy</code>, <code>beneficiary-statistics.view</code>. Backend vẫn chặn 403.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Screen map -->
+<section id="map">
+  <div class="wrap">
+    <div class="sec-head"><span class="num">01</span><h2>Bản đồ màn hình</h2></div>
+    <div class="card scroll-x" style="padding:4px 4px;">
+      <table class="map">
+        <thead><tr><th>#</th><th>Màn hình</th><th>Route FE gợi ý</th><th>API chính</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><b>Dashboard thống kê</b></td><td class="mono">/nguoi-co-cong</td><td class="mono">beneficiary-statistics/overview</td></tr>
+          <tr><td>2</td><td>Danh sách Người có công</td><td class="mono">/ho-so</td><td class="mono">GET beneficiaries</td></tr>
+          <tr><td>3</td><td>Tạo / Sửa Người có công</td><td class="mono">/ho-so/{id}</td><td class="mono">POST · PUT beneficiaries</td></tr>
+          <tr><td>4</td><td>Chi tiết Người có công</td><td class="mono">/ho-so/{id}/xem</td><td class="mono">GET beneficiaries/{id}</td></tr>
+          <tr><td>5</td><td>Hộ gia đình</td><td class="mono">/ho-gia-dinh</td><td class="mono">beneficiary-households</td></tr>
+          <tr><td>6</td><td>Tổ dân phố / Thôn</td><td class="mono">/to-dan-pho</td><td class="mono">beneficiary-residential-areas</td></tr>
+          <tr><td>7</td><td>Thân nhân + Quan hệ</td><td class="mono">/than-nhan</td><td class="mono">beneficiary-dependents</td></tr>
+          <tr><td>8</td><td>Giấy tờ hồ sơ</td><td class="mono">/giay-to</td><td class="mono">beneficiary-documents</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 1. Dashboard -->
+<section id="dashboard">
+  <div class="wrap">
+    <div class="sec-head"><span class="num">02</span><h2>Màn hình · Dashboard thống kê</h2><span class="sub">1 request gộp toàn bộ số liệu</span></div>
+    <div class="screen">
+      <div class="screen-info">
+        <h3><span class="badge-screen">Screen 1</span> Tổng quan &amp; biểu đồ</h3>
+        <div class="route">/nguoi-co-cong</div>
+        <p>Load một lần bằng <code>overview</code>. Mỗi breakdown là mảng <code>{ key, label, total }</code> — map thẳng vào chart. KPI cards lấy từ <code>summary</code>. Có thể refresh từng chart bằng endpoint lẻ.</p>
+        <pre><span class="c">// mỗi mục biểu đồ đều cùng dạng — dựng chart tổng quát</span>
+data.by_type.map(x =&gt; ({ label: x.<span class="a">label</span>, value: x.<span class="a">total</span> }))
+data.new_by_month.data <span class="c">// trục X = label (Tháng 1..12), Y = total</span></pre>
+      </div>
+      <div class="wire" role="img" aria-label="Mockup dashboard thống kê">
+        <div class="wire-bar"><i></i><i></i><i></i><span class="url">app/nguoi-co-cong</span></div>
+        <div class="wire-body">
+          <div class="wtitle"><span class="t">Tổng quan Người có công</span><span class="inp" style="width:110px;">Năm 2026 ▾</span></div>
+          <div class="kpis">
+            <div class="kpi accent"><div class="n">114</div><div class="l">Tổng hồ sơ</div></div>
+            <div class="kpi"><div class="n">70</div><div class="l">Đang hưởng</div></div>
+            <div class="kpi"><div class="n">109</div><div class="l">Thân nhân</div></div>
+            <div class="kpi"><div class="n">110</div><div class="l">Hộ gia đình</div></div>
+          </div>
+          <div class="charts">
+            <div class="chart">
+              <div class="ct">Tiếp nhận mới theo tháng</div>
+              <div class="line">
+                <svg viewBox="0 0 300 96" preserveAspectRatio="none" aria-hidden="true">
+                  <polyline fill="none" stroke="var(--accent)" stroke-width="2.5"
+                    points="0,70 27,55 54,60 81,38 108,44 135,25 162,33 189,18 216,30 243,20 270,28 300,14"/>
+                  <polyline fill="var(--accent-soft)" stroke="none" opacity="0.8"
+                    points="0,70 27,55 54,60 81,38 108,44 135,25 162,33 189,18 216,30 243,20 270,28 300,14 300,96 0,96"/>
+                </svg>
+              </div>
+            </div>
+            <div class="chart">
+              <div class="ct">Theo trạng thái</div>
+              <div class="donut">
+                <div class="ring" aria-hidden="true"></div>
+                <div class="legend">
+                  <div><i style="background:var(--accent)"></i>Đang hưởng · 70</div>
+                  <div><i style="background:var(--slate)"></i>Đã mất · 20</div>
+                  <div><i style="background:var(--warn)"></i>Tạm dừng · 8</div>
+                  <div><i style="background:var(--muted)"></i>Khác · 16</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="chart">
+            <div class="ct">Theo loại đối tượng (12 nhóm) · Theo tổ dân phố · Theo nhóm tuổi</div>
+            <div class="bars" aria-hidden="true">
+              <span class="b" style="height:80%"></span><span class="b" style="height:55%"></span>
+              <span class="b" style="height:92%"></span><span class="b" style="height:40%"></span>
+              <span class="b" style="height:66%"></span><span class="b" style="height:30%"></span>
+              <span class="b" style="height:74%"></span><span class="b" style="height:48%"></span>
+              <span class="b" style="height:60%"></span><span class="b" style="height:36%"></span>
+              <span class="b" style="height:52%"></span><span class="b" style="height:26%"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="api" style="margin-top:22px;">
+      <div class="api-h"><span class="sq"></span> Endpoints · beneficiary-statistics <span style="margin-left:auto;color:var(--ink-2);font-weight:600;letter-spacing:0;text-transform:none;">permission: beneficiary-statistics.view</span></div>
+      <div class="ep"><span class="m get">GET</span><span class="path">/beneficiary-statistics/overview?year=2026<small>Gộp summary + by_type/by_status/by_residential_area/by_gender/by_age_group/by_relationship/new_by_month</small></span></div>
+      <div class="ep"><span class="m get">GET</span><span class="path">/beneficiary-statistics/{by-type · by-status · by-residential-area · households-by-area · by-gender · by-age-group · by-relationship}<small>Refresh 1 chart — trả mảng {key,label,total}</small></span></div>
+      <div class="ep"><span class="m get">GET</span><span class="path">/beneficiary-statistics/new-by-month?year=2026<small>{ year, data: [{key,label,total}×12] }</small></span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 2. Danh sách NCC -->
+<section id="list">
+  <div class="wrap">
+    <div class="sec-head"><span class="num">03</span><h2>Màn hình · Danh sách Người có công</h2></div>
+    <div class="screen rev">
+      <div class="wire" role="img" aria-label="Mockup danh sách người có công">
+        <div class="wire-bar"><i></i><i></i><i></i><span class="url">app/nguoi-co-cong/ho-so</span></div>
+        <div class="wire-body">
+          <div class="wtitle"><span class="t">Người có công</span><span class="btn pri">+ Tiếp nhận hồ sơ</span></div>
+          <div class="toolbar">
+            <span class="inp grow">🔎 Tìm họ tên / CCCD…</span>
+            <span class="inp">Trạng thái ▾</span><span class="inp">Hộ ▾</span>
+            <span class="btn gho">Nhập Excel</span><span class="btn gho">Xuất Excel</span>
+          </div>
+          <div class="tbl">
+            <div class="tr head"><span class="th">Họ tên</span><span class="th">CCCD</span><span class="th">Trạng thái</span><span class="th">Thân nhân</span></div>
+            <div class="tr"><span class="sk w70"></span><span class="sk w90 sm"></span><span class="pill ok">Đang hưởng</span><span class="sk w50 sm"></span></div>
+            <div class="tr"><span class="sk w50"></span><span class="sk w70 sm"></span><span class="pill muted">Đã mất</span><span class="sk w70 sm"></span></div>
+            <div class="tr"><span class="sk w90"></span><span class="sk w50 sm"></span><span class="pill warn">Tạm dừng</span><span class="sk w50 sm"></span></div>
+            <div class="tr"><span class="sk w70"></span><span class="sk w90 sm"></span><span class="pill info">Chờ công nhận</span><span class="sk w50 sm"></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-info">
+        <h3><span class="badge-screen">Screen 2</span> Danh sách &amp; thao tác</h3>
+        <p>Bảng phân trang + filter + card thống kê nhanh + thao tác hàng loạt + nhập/xuất Excel. <code>status_label</code>, <code>gender_label</code> đã có sẵn để hiển thị.</p>
+        <div class="api">
+          <div class="api-h"><span class="sq"></span> beneficiaries</div>
+          <div class="ep"><span class="m get">GET</span><span class="path">/beneficiaries<small>?search=&amp;status=&amp;household_id=&amp;sort_by=&amp;limit=&amp;page=</small></span></div>
+          <div class="ep"><span class="m get">GET</span><span class="path">/beneficiaries/stats<small>{ total, pending, active, deceased }</small></span></div>
+          <div class="ep"><span class="m del">DEL</span><span class="path">/beneficiaries/bulk-delete<small>body { ids: [] }</small></span></div>
+          <div class="ep"><span class="m patch">PATCH</span><span class="path">/beneficiaries/bulk-status<small>{ ids: [], status }</small></span></div>
+          <div class="ep"><span class="m patch">PATCH</span><span class="path">/beneficiaries/{id}/status<small>{ status, death_date? } — death_date bắt buộc khi deceased</small></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. Form NCC -->
+<section id="form">
+  <div class="wrap">
+    <div class="sec-head"><span class="num">04</span><h2>Màn hình · Tạo / Sửa Người có công</h2><span class="sub">Form + phân loại động + đính kèm quyết định</span></div>
+    <div class="screen">
+      <div class="screen-info">
+        <h3><span class="badge-screen">Screen 3</span> Biểu mẫu hồ sơ</h3>
+        <p>Chỉ <code>full_name</code> &amp; <code>gender</code> bắt buộc. <b>Phân loại</b> là mảng động — tối đa 1 dòng <code>is_primary</code>. Khi <b>Sửa</b>, dùng coarse-sync: có <code>id</code> = cập nhật, thiếu <code>id</code> = tạo mới, xóa qua <code>classifications_deleted</code>.</p>
+        <div class="callout"><b>File quyết định đi riêng.</b> Không nhét file vào JSON. Sau khi có <code>classification.id</code>, upload multipart tới endpoint files.</div>
+        <div class="api" style="margin-top:16px;">
+          <div class="api-h"><span class="sq"></span> beneficiaries · classifications files</div>
+          <div class="ep"><span class="m post">POST</span><span class="path">/beneficiaries<small>+ tùy chọn: household (tạo hộ mới, xor household_id) · dependents[] (tạo kèm thân nhân)</small></span></div>
+          <div class="ep"><span class="m put">PUT</span><span class="path">/beneficiaries/{id}<small>classifications[] + classifications_deleted[]</small></span></div>
+          <div class="ep"><span class="m post">POST</span><span class="path">/beneficiaries/{id}/classifications/{cid}/files<small>multipart files[] → decision_documents</small></span></div>
+          <div class="ep"><span class="m del">DEL</span><span class="path">/beneficiaries/{id}/classifications/{cid}/files/{media}</span></div>
+        </div>
+      </div>
+      <div class="wire" role="img" aria-label="Mockup form người có công">
+        <div class="wire-bar"><i></i><i></i><i></i><span class="url">app/nguoi-co-cong/ho-so/moi</span></div>
+        <div class="wire-body">
+          <div class="wtitle"><span class="t">Tiếp nhận hồ sơ mới</span><span class="btn pri">Lưu</span></div>
+          <div class="form">
+            <div class="fld"><span class="lbl">Họ tên <span class="req">*</span></span><span class="box"></span></div>
+            <div class="fld"><span class="lbl">Giới tính <span class="req">*</span></span><span class="box"></span></div>
+            <div class="fld"><span class="lbl">Ngày sinh</span><span class="box"></span></div>
+            <div class="fld"><span class="lbl">Năm sinh (nếu chỉ nhớ năm)</span><span class="box"></span></div>
+            <div class="fld"><span class="lbl">CCCD/CMND</span><span class="box"></span></div>
+            <div class="fld"><span class="lbl">Trạng thái</span><span class="box"></span></div>
+            <div class="fld full"><span class="lbl">Hộ gia đình <span class="chip">chọn có sẵn · hoặc tạo mới</span></span><span class="box"></span></div>
+          </div>
+          <div class="subcard">
+            <div class="sc-h"><span>Phân loại đối tượng</span><span class="chip">+ Thêm loại</span></div>
+            <div class="form" style="grid-template-columns:1.4fr .8fr auto;">
+              <span class="box" style="height:28px;"></span>
+              <span class="box" style="height:28px;"></span>
+              <span class="chip" style="align-self:center;">★ chính</span>
+            </div>
+            <div class="filebox" style="margin-top:8px;"><span class="ic">↥</span> Kéo thả file quyết định công nhận (nhiều tệp, ≤10MB)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <pre><span class="c">// POST /beneficiaries — body JSON (file quyết định upload riêng sau)</span>
+{
+  <span class="s">"full_name"</span>: "Trần Văn B", <span class="s">"gender"</span>: "male", <span class="s">"status"</span>: "pending",
+  <span class="s">"household_id"</span>: 3,
+  <span class="s">"classifications"</span>: [ { <span class="s">"type"</span>: "war_invalid", <span class="s">"is_primary"</span>: <span class="k">true</span> } ]
+}</pre>
+  </div>
+</section>
+
+<!-- 4. Thân nhân -->
+<section id="dependent">
+  <div class="wrap">
+    <div class="sec-head"><span class="num">05</span><h2>Màn hình · Thân nhân &amp; Quan hệ</h2></div>
+    <div class="screen rev">
+      <div class="wire" role="img" aria-label="Mockup thân nhân">
+        <div class="wire-bar"><i></i><i></i><i></i><span class="url">app/nguoi-co-cong/than-nhan</span></div>
+        <div class="wire-body">
+          <div class="wtitle"><span class="t">Thân nhân</span><span class="btn pri">+ Thêm thân nhân</span></div>
+          <div class="toolbar"><span class="inp grow">🔎 Tìm…</span><span class="inp">Hộ ▾</span><span class="inp">Tổ dân phố ▾</span></div>
+          <div class="tbl">
+            <div class="tr head"><span class="th">Họ tên</span><span class="th">Tổ dân phố</span><span class="th">Quan hệ</span><span class="th"></span></div>
+            <div class="tr"><span class="sk w70"></span><span class="sk w50 sm"></span><span class="pill info">Con</span><span class="chip">Liên kết NCC</span></div>
+            <div class="tr"><span class="sk w90"></span><span class="sk w70 sm"></span><span class="pill info">Vợ/Chồng</span><span class="chip">Liên kết NCC</span></div>
+            <div class="tr"><span class="sk w50"></span><span class="sk w50 sm"></span><span class="pill info">Mẹ</span><span class="chip">Liên kết NCC</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-info">
+        <h3><span class="badge-screen">Screen 7</span> Thân nhân N-N với NCC</h3>
+        <p>Thân nhân lưu thông tin cơ bản + tổ dân phố + tọa độ. Quan hệ với Người có công là N-N — pivot chỉ còn <code>relationship_type</code> + <code>note</code>.</p>
+        <div class="api">
+          <div class="api-h"><span class="sq"></span> beneficiary-dependents</div>
+          <div class="ep"><span class="m get">GET</span><span class="path">/beneficiary-dependents<small>?search=&amp;household_id=&amp;residential_area_id=</small></span></div>
+          <div class="ep"><span class="m post">POST</span><span class="path">/beneficiary-dependents<small>full_name*, gender*, residential_area_id, phone, lat/long…</small></span></div>
+          <div class="ep"><span class="m post">POST</span><span class="path">/beneficiary-dependents/{id}/relations<small>{ beneficiary_id, relationship_type, note? }</small></span></div>
+          <div class="ep"><span class="m del">DEL</span><span class="path">/beneficiary-dependents/{id}/relations/{relationId}</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. Giấy tờ -->
+<section id="documents">
+  <div class="wrap">
+    <div class="sec-head"><span class="num">06</span><h2>Màn hình · Giấy tờ hồ sơ</h2><span class="sub">1 tên giấy tờ + nhiều tập tin</span></div>
+    <div class="screen">
+      <div class="screen-info">
+        <h3><span class="badge-screen">Screen 8</span> Đính kèm hồ sơ</h3>
+        <p>Mỗi bản ghi = 1 <b>Tên giấy tờ</b> + nhiều tập tin. Tạo/sửa bằng <b>multipart</b>. Khi sửa: thêm <code>files[]</code>, xóa file cũ qua <code>files_deleted[]</code> (mảng media id).</p>
+        <div class="api">
+          <div class="api-h"><span class="sq"></span> beneficiary-documents <span style="margin-left:auto;color:var(--ink-2);font-weight:600;letter-spacing:0;text-transform:none;">không export/import</span></div>
+          <div class="ep"><span class="m get">GET</span><span class="path">/beneficiary-documents?beneficiary_id=</span></div>
+          <div class="ep"><span class="m post">POST</span><span class="path">/beneficiary-documents<small>multipart: beneficiary_id*, name*, files[]</small></span></div>
+          <div class="ep"><span class="m put">PUT</span><span class="path">/beneficiary-documents/{id}<small>multipart: name, files[], files_deleted[]</small></span></div>
+          <div class="ep"><span class="m del">DEL</span><span class="path">/beneficiary-documents/{id} · /bulk-delete</span></div>
+        </div>
+      </div>
+      <div class="wire" role="img" aria-label="Mockup giấy tờ">
+        <div class="wire-bar"><i></i><i></i><i></i><span class="url">app/nguoi-co-cong/ho-so/1?tab=giay-to</span></div>
+        <div class="wire-body">
+          <div class="wtitle"><span class="t">Giấy tờ hồ sơ</span><span class="btn pri">+ Thêm giấy tờ</span></div>
+          <div class="subcard">
+            <div class="sc-h"><span>Giấy chứng nhận thương binh</span><span class="chip">3 tệp</span></div>
+            <div class="filebox"><span class="ic">PDF</span> gcn-thuong-binh.pdf <span class="chip" style="margin-left:auto;">Xem</span></div>
+            <div class="filebox" style="margin-top:6px;"><span class="ic">IMG</span> mat-truoc.jpg <span class="chip" style="margin-left:auto;">Xem</span></div>
+          </div>
+          <div class="subcard">
+            <div class="sc-h"><span>Quyết định công nhận</span><span class="chip">1 tệp</span></div>
+            <div class="filebox"><span class="ic">↥</span> Kéo thả thêm tệp…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6. Import/Export -->
+<section id="import">
+  <div class="wrap">
+    <div class="sec-head"><span class="num">07</span><h2>Luồng · Nhập &amp; Xuất Excel</h2><span class="sub">Áp cho NCC · Hộ · Tổ dân phố · Thân nhân</span></div>
+    <div class="grid cols-2">
+      <div>
+        <div class="wire" role="img" aria-label="Mockup kết quả import với file lỗi">
+          <div class="wire-bar"><i></i><i></i><i></i><span class="url">Kết quả nhập Excel</span></div>
+          <div class="wire-body">
+            <div class="callout" style="border-color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent);">
+              Đã nhập <b>98</b> dòng · bỏ qua <b>2</b> dòng lỗi
+            </div>
+            <div class="tbl">
+              <div class="tr head" style="grid-template-columns:.6fr 1fr 1.4fr;"><span class="th">Hàng</span><span class="th">Cột</span><span class="th">Lỗi</span></div>
+              <div class="tr" style="grid-template-columns:.6fr 1fr 1.4fr;"><span class="mono" style="font-size:12px;">3</span><span class="pill danger">Giới tính</span><span class="sk w90 sm"></span></div>
+              <div class="tr" style="grid-template-columns:.6fr 1fr 1.4fr;"><span class="mono" style="font-size:12px;">7</span><span class="pill danger">Họ tên</span><span class="sk w70 sm"></span></div>
+            </div>
+            <span class="btn pri" style="align-self:flex-start;">⭳ Tải file lỗi (.xlsx)</span>
+          </div>
+        </div>
+      </div>
+      <div class="screen-info">
+        <h3><span class="badge-screen">Flow</span> Nhập liệu &amp; file lỗi</h3>
+        <p>Dòng hợp lệ vẫn được nhập; dòng lỗi bỏ qua. Response kèm <code>errors[]</code> (hiển thị inline) <b>và</b> <code>error_file</code> — file Excel base64 (cột <b>STT · Hàng số · Cột · Lỗi · Giá trị</b>) để tải về.</p>
+        <div class="api">
+          <div class="api-h"><span class="sq"></span> import / export (mỗi resource)</div>
+          <div class="ep"><span class="m get">GET</span><span class="path">/{resource}/import-template<small>blob .xlsx — có dropdown + dấu * cột bắt buộc</small></span></div>
+          <div class="ep"><span class="m post">POST</span><span class="path">/{resource}/import<small>multipart file → { failed_count, errors[], error_file }</small></span></div>
+          <div class="ep"><span class="m get">GET</span><span class="path">/{resource}/export<small>blob .xlsx — kèm cột quan hệ (Thân nhân; Loại đối tượng…)</small></span></div>
+        </div>
+        <pre><span class="c">// tải file lỗi từ base64</span>
+const f = res.data.data.<span class="a">error_file</span>;
+if (f) {
+  const b = Uint8Array.from(atob(f.base64), c =&gt; c.charCodeAt(0));
+  const url = URL.createObjectURL(new Blob([b], { type: f.mime }));
+  Object.assign(document.createElement('a'), { href: url, download: f.name }).click();
+}</pre>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:20px;">Import chỉ gọi <b>1 lần</b>/file (dòng hợp lệ đã nhập). Liên kết danh mục bằng <b>tên</b>: cột <span class="kbd">CCCD chủ hộ</span> (tra hộ) và <span class="kbd">Tổ dân phố</span> (tra theo tên). Ràng buộc tối thiểu — chỉ vài cột chính bắt buộc.</div>
+  </div>
+</section>
+
+<!-- Hộ + Tổ dân phố compact -->
+<section id="catalog">
+  <div class="wrap">
+    <div class="sec-head"><span class="num">08</span><h2>Màn hình · Hộ gia đình &amp; Tổ dân phố</h2><span class="sub">CRUD danh mục chuẩn</span></div>
+    <div class="grid cols-2">
+      <div class="api">
+        <div class="api-h"><span class="sq"></span> beneficiary-households <span style="margin-left:auto;color:var(--ink-2);font-weight:600;letter-spacing:0;text-transform:none;">bỏ household_code</span></div>
+        <div class="ep"><span class="m get">GET</span><span class="path">/beneficiary-households?search=&amp;residential_area_id=</span></div>
+        <div class="ep"><span class="m get">GET</span><span class="path">/beneficiary-households/stats<small>{ total, total_members }</small></span></div>
+        <div class="ep"><span class="m post">POST</span><span class="path">/beneficiary-households<small>head_name* · head_id_number · residential_area_id · beneficiary_ids[] · dependent_ids[]</small></span></div>
+        <div class="ep"><span class="m put">PUT</span><span class="path">/beneficiary-households/{id}</span></div>
+        <div class="ep"><span class="m del">DEL</span><span class="path">/beneficiary-households/{id} · /bulk-delete</span></div>
+      </div>
+      <div class="api">
+        <div class="api-h"><span class="sq"></span> beneficiary-residential-areas</div>
+        <div class="ep"><span class="m get">GET</span><span class="path">/beneficiary-residential-areas<small>item { id, name, note, household_count }</small></span></div>
+        <div class="ep"><span class="m get">GET</span><span class="path">/beneficiary-residential-areas/stats<small>{ total, total_households }</small></span></div>
+        <div class="ep"><span class="m post">POST</span><span class="path">/beneficiary-residential-areas<small>name* · note</small></span></div>
+        <div class="ep"><span class="m put">PUT</span><span class="path">/beneficiary-residential-areas/{id}</span></div>
+        <div class="ep"><span class="m del">DEL</span><span class="path">/beneficiary-residential-areas/{id} · /bulk-delete</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Field ref + checklist -->
+<section id="ref">
+  <div class="wrap">
+    <div class="sec-head"><span class="num">09</span><h2>Trường bắt buộc &amp; Checklist</h2></div>
+    <div class="grid cols-2" style="align-items:start;">
+      <div class="card scroll-x" style="padding:4px 4px;">
+        <table class="map">
+          <thead><tr><th>Resource</th><th>Bắt buộc</th></tr></thead>
+          <tbody>
+            <tr><td>Tổ dân phố</td><td class="mono">name</td></tr>
+            <tr><td>Hộ gia đình</td><td class="mono">head_name</td></tr>
+            <tr><td>Người có công</td><td class="mono">full_name, gender</td></tr>
+            <tr><td>Phân loại</td><td class="mono">type</td></tr>
+            <tr><td>Thân nhân</td><td class="mono">full_name, gender</td></tr>
+            <tr><td>Quan hệ</td><td class="mono">beneficiary_id, relationship_type</td></tr>
+            <tr><td>Giấy tờ</td><td class="mono">beneficiary_id, name</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h4>Checklist tích hợp</h4>
+        <p style="color:var(--ink);line-height:1.9;">
+          ☐ Interceptor gắn <code>Authorization</code> + <code>X-Organization-Id</code><br>
+          ☐ Cache <code>beneficiary-enums</code>, render mọi dropdown từ đó<br>
+          ☐ Danh sách: filter + <code>stats</code> + bulk + import/export<br>
+          ☐ Form NCC: phân loại động (1 primary), <code>household</code> xor <code>household_id</code><br>
+          ☐ Upload multipart <code>files[]</code>; xóa qua endpoint / <code>files_deleted[]</code><br>
+          ☐ Import: template → upload → lỗi inline + tải <code>error_file</code> (base64)<br>
+          ☐ Export/template: <code>responseType: blob</code><br>
+          ☐ Dashboard: overview → KPI + charts từ <code>{key,label,total}</code><br>
+          ☐ Ẩn/hiện nút theo permission
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="flagstripe" aria-hidden="true"><span></span><span></span><span></span></div>
+    Tài liệu hướng dẫn Frontend — Module Người có công · TP Đà Nẵng. Tham chiếu API đầy đủ tại trang Scribe <code>/docs</code>.
+    Nguồn: <code>docs/answer/module-nguoi-co-cong-huong-dan-frontend</code> · <code>docs/database/Beneficiary.md</code>.
+  </div>
+</footer>

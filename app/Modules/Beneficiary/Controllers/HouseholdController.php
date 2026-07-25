@@ -154,7 +154,7 @@ class HouseholdController extends Controller
      * @bodyParam file file required File Excel (xlsx, xls, csv). Cột theo chuẩn export.
      *
      * Dòng lỗi validation được bỏ qua (các dòng hợp lệ vẫn import), trả về `failed_count` và
-     * `errors` (số dòng, cột, thông báo, giá trị) để cán bộ sửa và nhập lại.
+     * `errors` (số dòng, cột, thông báo, giá trị) cùng `error_file` (Excel tổng hợp lỗi dạng base64: STT, Hàng số, Cột, Lỗi, Giá trị) để cán bộ tải về, sửa và nhập lại.
      *
      * @response 200 {"success": true, "message": "Import hộ gia đình hoàn tất — đã bỏ qua 1 dòng lỗi, vui lòng kiểm tra và nhập lại các dòng này.", "data": {"failed_count": 1, "errors": [{"row": 2, "column": "Chủ hộ", "errors": ["Tên chủ hộ không được để trống."], "values": {"Địa chỉ": "12 Trần Phú"}}]}}
      */
@@ -162,7 +162,7 @@ class HouseholdController extends Controller
     {
         $failures = $this->householdService->import($request->file('file'));
 
-        return $this->importResult($failures, 'hộ gia đình');
+        return $this->importResult($failures, 'hộ gia đình', \App\Modules\Beneficiary\Imports\HouseholdImport::FIELD_LABELS);
     }
 
     /**

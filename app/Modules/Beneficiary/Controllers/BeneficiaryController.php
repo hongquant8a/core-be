@@ -238,7 +238,7 @@ class BeneficiaryController extends Controller
      * @bodyParam file file required File Excel (xlsx, xls, csv). Cột theo chuẩn export.
      *
      * Dòng lỗi validation được bỏ qua (các dòng hợp lệ vẫn import), trả về `failed_count` và
-     * `errors` (số dòng, cột, thông báo, giá trị) để cán bộ sửa và nhập lại.
+     * `errors` (số dòng, cột, thông báo, giá trị) cùng `error_file` (Excel tổng hợp lỗi dạng base64: STT, Hàng số, Cột, Lỗi, Giá trị) để cán bộ tải về, sửa và nhập lại.
      *
      * @response 200 {"success": true, "message": "Import người có công hoàn tất — đã bỏ qua 1 dòng lỗi, vui lòng kiểm tra và nhập lại các dòng này.", "data": {"failed_count": 1, "errors": [{"row": 3, "column": "Giới tính", "errors": ["Giới tính không được để trống."], "values": {"Họ tên": "Trần Văn B"}}]}}
      */
@@ -246,7 +246,7 @@ class BeneficiaryController extends Controller
     {
         $failures = $this->beneficiaryService->import($request->file('file'));
 
-        return $this->importResult($failures, 'người có công');
+        return $this->importResult($failures, 'người có công', \App\Modules\Beneficiary\Imports\BeneficiaryImport::FIELD_LABELS);
     }
 
     /**

@@ -207,6 +207,7 @@ Luôn dùng Resource để trả dữ liệu. Định dạng thời gian trong R
   - **Liên kết danh mục quan hệ 1-1 bằng TÊN:** cho phép nhập **tên** (hoặc mã) của danh mục liên quan (vd tổ dân phố, hộ), `model()` tra ngược về `*_id`; không khớp thì để trống, **không chặn dòng**. Không bắt cán bộ nhập `*_id` thô.
   - Rule validate mỗi cột mirror StoreRequest (required cho cột bắt buộc tối thiểu, `nullable` + default cho cột còn lại).
   - Enum (giới tính/trạng thái…): chấp nhận cả value gốc lẫn nhãn tiếng Việt (chuẩn hóa trong `prepareForValidation`) để round-trip Export→Import.
+- **Tổng hợp lỗi ra Excel (bắt buộc):** import nhiều dòng phải **trả về file Excel tổng hợp lỗi** để cán bộ tải về đối chiếu — không bắt đọc JSON thủ công. Đã chuẩn hóa sẵn ở base `Controller::importResult()`: khi có lỗi, response `success` kèm `data.error_file = { name, mime, base64 }` (null khi 0 lỗi) — 1 file `.xlsx` cột **STT | Hàng số | Cột | Lỗi | Giá trị**, mỗi lỗi 1 dòng. Controller import chỉ cần gọi `$this->importResult($failures, '<thực thể>', XxxImport::FIELD_LABELS)` (truyền `FIELD_LABELS` để cột "Cột" hiện nhãn tiếng Việt thay vì key). File sinh từ `App\Modules\Core\Exports\ImportErrorsExport` — **không tự implement lại**. Dùng base64 trong cùng response (không tách endpoint) để import chỉ chạy 1 lần, tránh import trùng dòng hợp lệ.
 - Import class khai báo:
   - `FIELD_LABELS` (map `field_key => 'Nhãn tiếng Việt'`) — **đủ mọi cột**; header file dịch ngược về key qua trait `TranslatesExcelHeadings`.
   - `TEMPLATE_LABELS = self::FIELD_LABELS` (file mẫu hiện đủ cột).
