@@ -55,61 +55,47 @@ class DependentRelationTest extends TestCase
         $res->assertJsonValidationErrors(['id_number']);
     }
 
-    public function test_relation_active_for_minor_child(): void
+    public function test_store_creates_dependent_with_residential_area(): void
     {
         Sanctum::actingAs($this->admin);
 
-        $dependent = Dependent::create([
-            'organization_id' => $this->orgA->id, 'full_name' => 'Con nhỏ', 'gender' => 'male',
-            'date_of_birth' => now()->subYears(10), 'is_alive' => true,
+        $area = \App\Modules\Beneficiary\Models\ResidentialArea::create([
+            'organization_id' => $this->orgA->id, 'name' => 'Tổ 1',
         ]);
 
-        $res = $this->postJson("/api/beneficiary-dependents/{$dependent->id}/relations", [
-            'beneficiary_id' => $this->beneficiary1->id,
-            'relationship_type' => 'child',
-            'eligible_from' => now()->format('Y-m-d'),
+        $res = $this->postJson('/api/beneficiary-dependents', [
+            'full_name' => 'Thân nhân', 'gender' => 'female',
+            'residential_area_id' => $area->id, 'phone' => '0905000111',
+            'latitude' => 16.0678, 'longitude' => 108.2208,
         ], ['X-Organization-Id' => $this->orgA->id]);
 
         $res->assertCreated();
-        $res->assertJsonPath('data.status', 'active');
+        $this->assertDatabaseHas('beneficiary_dependents', [
+            'full_name' => 'Thân nhân', 'residential_area_id' => $area->id, 'phone' => '0905000111',
+        ]);
     }
 
-    public function test_relation_expired_for_adult_child_without_eligibility_status(): void
+    public function test_store_relation_creates_relationship(): void
     {
         Sanctum::actingAs($this->admin);
 
         $dependent = Dependent::create([
-            'organization_id' => $this->orgA->id, 'full_name' => 'Con lớn', 'gender' => 'male',
-            'date_of_birth' => now()->subYears(25), 'is_alive' => true, 'eligibility_status' => 'normal',
+            'organization_id' => $this->orgA->id, 'full_name' => 'Con', 'gender' => 'male',
+            'date_of_birth' => now()->subYears(10),
         ]);
 
         $res = $this->postJson("/api/beneficiary-dependents/{$dependent->id}/relations", [
             'beneficiary_id' => $this->beneficiary1->id,
             'relationship_type' => 'child',
-            'eligible_from' => now()->format('Y-m-d'),
         ], ['X-Organization-Id' => $this->orgA->id]);
 
         $res->assertCreated();
-        $res->assertJsonPath('data.status', 'expired');
-    }
-
-    public function test_relation_active_for_adult_child_still_studying(): void
-    {
-        Sanctum::actingAs($this->admin);
-
-        $dependent = Dependent::create([
-            'organization_id' => $this->orgA->id, 'full_name' => 'Con đang học', 'gender' => 'female',
-            'date_of_birth' => now()->subYears(20), 'is_alive' => true, 'eligibility_status' => 'studying',
-        ]);
-
-        $res = $this->postJson("/api/beneficiary-dependents/{$dependent->id}/relations", [
+        $res->assertJsonPath('data.relationship_type', 'child');
+        $this->assertDatabaseHas('beneficiary_dependent_relations', [
+            'dependent_id' => $dependent->id,
             'beneficiary_id' => $this->beneficiary1->id,
             'relationship_type' => 'child',
-            'eligible_from' => now()->format('Y-m-d'),
-        ], ['X-Organization-Id' => $this->orgA->id]);
-
-        $res->assertCreated();
-        $res->assertJsonPath('data.status', 'active');
+        ]);
     }
 
     public function test_dependent_can_relate_to_multiple_beneficiaries(): void
@@ -118,43 +104,17 @@ class DependentRelationTest extends TestCase
 
         $dependent = Dependent::create([
             'organization_id' => $this->orgA->id, 'full_name' => 'Mẹ 2 liệt sĩ', 'gender' => 'female',
-            'date_of_birth' => now()->subYears(70), 'is_alive' => true,
+            'date_of_birth' => now()->subYears(70),
         ]);
 
         $this->postJson("/api/beneficiary-dependents/{$dependent->id}/relations", [
-            'beneficiary_id' => $this->beneficiary1->id, 'relationship_type' => 'mother', 'eligible_from' => now()->format('Y-m-d'),
+            'beneficiary_id' => $this->beneficiary1->id, 'relationship_type' => 'mother',
         ], ['X-Organization-Id' => $this->orgA->id])->assertCreated();
 
         $this->postJson("/api/beneficiary-dependents/{$dependent->id}/relations", [
-            'beneficiary_id' => $this->beneficiary2->id, 'relationship_type' => 'mother', 'eligible_from' => now()->format('Y-m-d'),
+            'beneficiary_id' => $this->beneficiary2->id, 'relationship_type' => 'mother',
         ], ['X-Organization-Id' => $this->orgA->id])->assertCreated();
 
         $this->assertEquals(2, $dependent->dependentRelations()->count());
-    }
-
-    public function test_update_is_alive_false_expires_all_active_relations(): void
-    {
-        Sanctum::actingAs($this->admin);
-
-        $dependent = Dependent::create([
-            'organization_id' => $this->orgA->id, 'full_name' => 'Thân nhân', 'gender' => 'female',
-            'date_of_birth' => now()->subYears(50), 'is_alive' => true,
-        ]);
-
-        $dependent->dependentRelations()->create([
-            'beneficiary_id' => $this->beneficiary1->id, 'relationship_type' => 'spouse',
-            'eligible_from' => now()->subYear(), 'status' => 'active',
-        ]);
-
-        $res = $this->putJson("/api/beneficiary-dependents/{$dependent->id}", [
-            'is_alive' => false,
-            'death_date' => now()->format('Y-m-d'),
-        ], ['X-Organization-Id' => $this->orgA->id]);
-
-        $res->assertOk();
-        $this->assertDatabaseHas('beneficiary_dependent_relations', [
-            'dependent_id' => $dependent->id,
-            'status' => 'expired',
-        ]);
     }
 }

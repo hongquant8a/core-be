@@ -13,7 +13,7 @@ class ResidentialAreaExport extends AbstractExcelExport implements FromCollectio
     public function collection()
     {
         return ResidentialArea::withCount('households')
-            ->with(['creator', 'editor'])
+            ->with(['households', 'creator', 'editor'])
             ->filter($this->filters)
             ->orderByDesc('id')
             ->get()
@@ -21,8 +21,10 @@ class ResidentialAreaExport extends AbstractExcelExport implements FromCollectio
             ->map(fn ($area, $i) => [
                 'stt' => $i + 1,
                 'name' => $area->name,
-                'code' => $area->code,
+                'note' => $area->note,
                 'household_count' => $area->households_count,
+                // Quan hệ 1-N — danh sách chủ hộ ngăn cách bởi "; " (chỉ tham chiếu).
+                'households' => $area->households->pluck('head_name')->implode('; '),
                 'created_by' => $area->creator?->name ?? 'N/A',
                 'updated_by' => $area->editor?->name ?? 'N/A',
                 'created_at' => $area->created_at?->format('H:i:s d/m/Y'),
@@ -33,6 +35,6 @@ class ResidentialAreaExport extends AbstractExcelExport implements FromCollectio
 
     public function headings(): array
     {
-        return ['STT', 'Tên tổ dân phố', 'Mã', 'Số hộ', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
+        return ['STT', 'Tên tổ dân phố', 'Ghi chú', 'Số hộ', 'Danh sách hộ (chủ hộ)', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
     }
 }

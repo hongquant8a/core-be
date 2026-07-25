@@ -18,7 +18,7 @@ class ResidentialArea extends TenantModel
 
     protected $table = 'beneficiary_residential_areas';
 
-    protected $fillable = ['name', 'code', 'organization_id', 'created_by', 'updated_by'];
+    protected $fillable = ['name', 'note', 'organization_id', 'created_by', 'updated_by'];
 
     protected static function booted()
     {

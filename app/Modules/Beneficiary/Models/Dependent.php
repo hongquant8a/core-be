@@ -19,14 +19,14 @@ class Dependent extends TenantModel
     protected $table = 'beneficiary_dependents';
 
     protected $fillable = [
-        'household_id', 'full_name', 'date_of_birth', 'gender', 'id_number', 'is_alive',
-        'death_date', 'eligibility_status', 'note', 'organization_id', 'created_by', 'updated_by',
+        'household_id', 'residential_area_id', 'full_name', 'date_of_birth', 'gender', 'id_number',
+        'phone', 'latitude', 'longitude', 'note', 'organization_id', 'created_by', 'updated_by',
     ];
 
     protected $casts = [
         'date_of_birth' => 'date',
-        'death_date' => 'date',
-        'is_alive' => 'boolean',
+        'latitude' => 'decimal:7',
+        'longitude' => 'decimal:7',
     ];
 
     protected static function booted()
@@ -50,11 +50,16 @@ class Dependent extends TenantModel
         return $this->belongsTo(Household::class);
     }
 
+    public function residentialArea()
+    {
+        return $this->belongsTo(ResidentialArea::class);
+    }
+
     public function beneficiaries()
     {
         return $this->belongsToMany(Beneficiary::class, 'beneficiary_dependent_relations')
             ->using(BeneficiaryDependentRelation::class)
-            ->withPivot(['id', 'relationship_type', 'eligible_from', 'eligible_until', 'status', 'note'])
+            ->withPivot(['id', 'relationship_type', 'note'])
             ->withTimestamps();
     }
 
@@ -63,32 +68,13 @@ class Dependent extends TenantModel
         return $this->hasMany(BeneficiaryDependentRelation::class);
     }
 
-    public function subsidyGrants()
-    {
-        return $this->morphMany(SubsidyGrant::class, 'subject');
-    }
-
-    public function activeSubsidyGrants()
-    {
-        return $this->subsidyGrants()->where('status', 'active');
-    }
-
-    public function statusHistories()
-    {
-        return $this->morphMany(StatusHistory::class, 'subject');
-    }
-
-    public function visitSchedules()
-    {
-        return $this->morphMany(VisitSchedule::class, 'subject');
-    }
-
     public function scopeFilter($query, array $filters)
     {
         $query->when($filters['search'] ?? null, fn ($q, $search) => $q->where(fn ($q2) => $q2
                 ->where('full_name', 'like', '%'.$search.'%')
                 ->orWhere('id_number', 'like', '%'.$search.'%')))
             ->when($filters['household_id'] ?? null, fn ($q, $id) => $q->where('household_id', $id))
+            ->when($filters['residential_area_id'] ?? null, fn ($q, $id) => $q->where('residential_area_id', $id))
             ->when($filters['from_date'] ?? null, fn ($q, $date) => $q->whereDate('created_at', '>=', $date))
             ->when($filters['to_date'] ?? null, fn ($q, $date) => $q->whereDate('created_at', '<=', $date))
             ->when($filters['sort_by'] ?? 'created_at', function ($q, $sortBy) use ($filters) {

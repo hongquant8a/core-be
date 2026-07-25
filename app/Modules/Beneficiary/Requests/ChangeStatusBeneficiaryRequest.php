@@ -10,7 +10,6 @@ class ChangeStatusBeneficiaryRequest extends BaseRequest
     {
         return [
             'status' => ['required', BeneficiaryStatusEnum::rule()],
-            'reason' => 'nullable|string|max:255',
             'death_date' => ['nullable', 'date', 'required_if:status,'.BeneficiaryStatusEnum::Deceased->value],
         ];
     }
@@ -29,13 +28,12 @@ class ChangeStatusBeneficiaryRequest extends BaseRequest
     {
         return [
             'status' => ['description' => 'Trạng thái mới.', 'example' => 'active'],
-            'reason' => ['description' => 'Lý do đổi trạng thái.', 'example' => 'Đã đủ giấy tờ, xác nhận công nhận'],
             'death_date' => ['description' => 'Ngày mất (bắt buộc nếu status = deceased).', 'example' => null],
         ];
     }
 
     public function attributes(): array
     {
-        return ['status' => 'Trạng thái', 'reason' => 'Lý do', 'death_date' => 'Ngày mất'];
+        return ['status' => 'Trạng thái', 'death_date' => 'Ngày mất'];
     }
 }

@@ -19,16 +19,14 @@ class Beneficiary extends TenantModel
     protected $table = 'beneficiaries';
 
     protected $fillable = [
-        'household_id', 'full_name', 'date_of_birth', 'birth_year', 'gender', 'id_number', 'injury_rate',
-        'recognition_decision_no', 'recognition_date', 'status', 'death_date', 'address', 'latitude',
+        'household_id', 'full_name', 'date_of_birth', 'birth_year', 'gender', 'id_number',
+        'status', 'death_date', 'address', 'latitude',
         'longitude', 'phone', 'note', 'organization_id', 'created_by', 'updated_by',
     ];
 
     protected $casts = [
         'date_of_birth' => 'date',
-        'recognition_date' => 'date',
         'death_date' => 'date',
-        'injury_rate' => 'decimal:2',
         'latitude' => 'decimal:7',
         'longitude' => 'decimal:7',
     ];
@@ -68,7 +66,7 @@ class Beneficiary extends TenantModel
     {
         return $this->belongsToMany(Dependent::class, 'beneficiary_dependent_relations')
             ->using(BeneficiaryDependentRelation::class)
-            ->withPivot(['id', 'relationship_type', 'eligible_from', 'eligible_until', 'status', 'note'])
+            ->withPivot(['id', 'relationship_type', 'note'])
             ->withTimestamps();
     }
 
@@ -77,24 +75,9 @@ class Beneficiary extends TenantModel
         return $this->hasMany(BeneficiaryDependentRelation::class);
     }
 
-    public function subsidyGrants()
+    public function documents()
     {
-        return $this->morphMany(SubsidyGrant::class, 'subject');
-    }
-
-    public function activeSubsidyGrants()
-    {
-        return $this->subsidyGrants()->where('status', 'active');
-    }
-
-    public function statusHistories()
-    {
-        return $this->morphMany(StatusHistory::class, 'subject');
-    }
-
-    public function visitSchedules()
-    {
-        return $this->morphMany(VisitSchedule::class, 'subject');
+        return $this->hasMany(BeneficiaryDocument::class);
     }
 
     public function scopeFilter($query, array $filters)

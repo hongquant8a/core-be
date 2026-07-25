@@ -12,14 +12,13 @@ class HouseholdExport extends AbstractExcelExport implements FromCollection
 
     public function collection()
     {
-        return Household::with(['residentialArea', 'creator', 'editor'])
+        return Household::with(['residentialArea', 'beneficiaries', 'dependents', 'creator', 'editor'])
             ->filter($this->filters)
             ->orderByDesc('id')
             ->get()
             ->values()
             ->map(fn ($household, $i) => [
                 'stt' => $i + 1,
-                'household_code' => $household->household_code,
                 'head_name' => $household->head_name,
                 'head_id_number' => $household->head_id_number,
                 'residential_area' => $household->residentialArea?->name,
@@ -28,6 +27,10 @@ class HouseholdExport extends AbstractExcelExport implements FromCollection
                 'longitude' => $household->longitude,
                 'phone' => $household->phone,
                 'member_count' => $household->member_count,
+                'note' => $household->note,
+                // Quan hệ 1-N — liệt kê ngăn cách bởi "; " (chỉ tham chiếu).
+                'beneficiaries' => $household->beneficiaries->pluck('full_name')->implode('; '),
+                'dependents' => $household->dependents->pluck('full_name')->implode('; '),
                 'created_by' => $household->creator?->name ?? 'N/A',
                 'updated_by' => $household->editor?->name ?? 'N/A',
                 'created_at' => $household->created_at?->format('H:i:s d/m/Y'),
@@ -38,6 +41,6 @@ class HouseholdExport extends AbstractExcelExport implements FromCollection
 
     public function headings(): array
     {
-        return ['STT', 'Mã hộ', 'Chủ hộ', 'CCCD chủ hộ', 'Tổ dân phố', 'Địa chỉ', 'Vĩ độ', 'Kinh độ', 'SĐT', 'Số thành viên', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
+        return ['STT', 'Chủ hộ', 'CCCD chủ hộ', 'Tổ dân phố', 'Địa chỉ', 'Vĩ độ', 'Kinh độ', 'SĐT', 'Số thành viên', 'Ghi chú', 'Người có công', 'Thân nhân', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
     }
 }

@@ -18,7 +18,7 @@ class ResidentialAreaImport implements ToModel, WithHeadingRow, WithValidation, 
 
     public const FIELD_LABELS = [
         'name' => 'Tên tổ dân phố',
-        'code' => 'Mã',
+        'note' => 'Ghi chú',
     ];
 
     // File mẫu tải về hiển thị toàn bộ cột để cán bộ biết trường nào nhập được.
@@ -29,14 +29,14 @@ class ResidentialAreaImport implements ToModel, WithHeadingRow, WithValidation, 
 
     public const TEMPLATE_EXAMPLES = [
         'name' => 'Tổ 5 (xóa hàng này)',
-        'code' => 'TDP-005',
+        'note' => '',
     ];
 
     public function model(array $row)
     {
         return new ResidentialArea([
             'name' => $row['name'] ?? null,
-            'code' => $row['code'] ?? null,
+            'note' => $row['note'] ?? null,
             'created_by' => auth()->id(),
             'updated_by' => auth()->id(),
         ]);
@@ -56,6 +56,7 @@ class ResidentialAreaImport implements ToModel, WithHeadingRow, WithValidation, 
     {
         return [
             'name' => 'required|string|max:255',
+            'note' => 'nullable|string',
         ];
     }
 

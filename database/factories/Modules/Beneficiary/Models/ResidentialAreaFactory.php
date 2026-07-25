@@ -16,7 +16,7 @@ class ResidentialAreaFactory extends Factory
     {
         return [
             'name' => 'Tổ '.$this->faker->numberBetween(1, 30),
-            'code' => strtoupper($this->faker->bothify('TDP-###')),
+            'note' => null,
             'created_by' => null,
             'updated_by' => null,
         ];

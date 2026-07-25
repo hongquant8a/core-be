@@ -28,7 +28,7 @@ app/Modules/
 | **TaskAssignment** | [TaskAssignment.md](TaskAssignment.md) | task_assignment_items, task_assignment_types, task_assignment_departments, task_assignment_documents, task_assignment_petitions ... |
 | **Meeting** | [Meeting.md](Meeting.md) | meetings, meeting_agendas, meeting_documents, meeting_participants, meeting_vote_topics, meeting_discussion_registrations, meeting_attendees ... |
 | **Scheduling** | [Scheduling.md](Scheduling.md) | schedules, schedule_reminders, schedule_notifications, scheduling_employees, org_scheduling_settings ... |
-| **Beneficiary** | [Beneficiary.md](Beneficiary.md) | beneficiaries, beneficiary_households, beneficiary_dependents, beneficiary_dependent_relations, beneficiary_subsidy_policies, beneficiary_subsidy_grants, beneficiary_status_histories, beneficiary_visit_schedules, beneficiary_residential_areas ... |
+| **Beneficiary** | [Beneficiary.md](Beneficiary.md) | beneficiaries, beneficiary_households, beneficiary_dependents, beneficiary_dependent_relations, beneficiary_classifications, beneficiary_documents, beneficiary_residential_areas ... |
 
 ---
 

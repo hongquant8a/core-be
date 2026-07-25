@@ -37,9 +37,7 @@ class EnumControllerTest extends TestCase
         $res->assertOk();
         $res->assertJsonStructure([
             'data' => [
-                'beneficiary_type', 'beneficiary_status', 'gender',
-                'dependent_eligibility', 'dependent_relationship', 'dependent_relation_status',
-                'subsidy_status', 'document_type', 'visit_occasion', 'schedule_status',
+                'beneficiary_type', 'beneficiary_status', 'gender', 'dependent_relationship',
             ],
         ]);
         $res->assertJsonCount(12, 'data.beneficiary_type');

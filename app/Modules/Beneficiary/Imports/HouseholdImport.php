@@ -22,7 +22,6 @@ class HouseholdImport implements ToModel, WithHeadingRow, WithValidation, SkipsO
      * Header tiếng Việt trong file được dịch ngược về key kỹ thuật qua TranslatesExcelHeadings.
      */
     public const FIELD_LABELS = [
-        'household_code' => 'Mã hộ',
         'head_name' => 'Chủ hộ',
         'head_id_number' => 'CCCD chủ hộ',
         'residential_area' => 'Tổ dân phố',
@@ -41,7 +40,6 @@ class HouseholdImport implements ToModel, WithHeadingRow, WithValidation, SkipsO
     public const REQUIRED_KEYS = ['head_name'];
 
     public const TEMPLATE_EXAMPLES = [
-        'household_code' => 'HGD-00001',
         'head_name' => 'Nguyễn Văn A (xóa hàng này)',
         'head_id_number' => '049123456789',
         'residential_area' => 'Tổ 1',
@@ -58,7 +56,6 @@ class HouseholdImport implements ToModel, WithHeadingRow, WithValidation, SkipsO
         $headIdNumber = $row['head_id_number'] ?? null;
 
         $attrs = [
-            'household_code' => $row['household_code'] ?? null,
             'head_name' => $row['head_name'] ?? null,
             'head_id_number' => $headIdNumber,
             'residential_area_id' => $this->resolveResidentialAreaId($row['residential_area'] ?? null),
@@ -82,8 +79,7 @@ class HouseholdImport implements ToModel, WithHeadingRow, WithValidation, SkipsO
             }
         }
 
-        // Bỏ trường null để cột NOT NULL có default (vd member_count) dùng default DB,
-        // và để household_code trống được Household::creating tự sinh.
+        // Bỏ trường null để cột NOT NULL có default (vd member_count) dùng default DB.
         $attrs = array_filter($attrs, fn ($value) => $value !== null);
         $attrs['created_by'] = auth()->id();
         $attrs['updated_by'] = auth()->id();
@@ -97,7 +93,6 @@ class HouseholdImport implements ToModel, WithHeadingRow, WithValidation, SkipsO
         $data = $this->nullifyBlanks($data);
 
         $data['head_name'] = isset($data['head_name']) ? (string) $data['head_name'] : null;
-        $data['household_code'] = isset($data['household_code']) ? (string) $data['household_code'] : null;
         $data['head_id_number'] = isset($data['head_id_number']) ? (string) $data['head_id_number'] : null;
         $data['address'] = isset($data['address']) ? (string) $data['address'] : null;
 
@@ -108,7 +103,6 @@ class HouseholdImport implements ToModel, WithHeadingRow, WithValidation, SkipsO
     {
         // Chỉ tên chủ hộ bắt buộc — khớp StoreHouseholdRequest (địa chỉ bổ sung sau khi xác minh thực địa).
         return [
-            'household_code' => 'nullable|string|max:255',
             'head_name' => 'required|string|max:255',
             'head_id_number' => 'nullable|string|max:255',
             'address' => 'nullable|string|max:255',
@@ -136,7 +130,7 @@ class HouseholdImport implements ToModel, WithHeadingRow, WithValidation, SkipsO
         return self::FIELD_LABELS;
     }
 
-    /** Tra tổ dân phố theo tên/mã về residential_area_id trong tổ chức hiện tại; không khớp thì để trống. */
+    /** Tra tổ dân phố theo tên về residential_area_id trong tổ chức hiện tại; không khớp thì để trống. */
     private function resolveResidentialAreaId($value): ?int
     {
         $value = $value !== null ? trim((string) $value) : '';
@@ -145,8 +139,6 @@ class HouseholdImport implements ToModel, WithHeadingRow, WithValidation, SkipsO
             return null;
         }
 
-        return ResidentialArea::where('name', $value)
-            ->orWhere('code', $value)
-            ->value('id');
+        return ResidentialArea::where('name', $value)->value('id');
     }
 }

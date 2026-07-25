@@ -8,7 +8,7 @@ class StoreResidentialAreaRequest extends BaseRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'code' => 'nullable|string|max:255',
+            'note' => 'nullable|string',
         ];
     }
 
@@ -18,8 +18,7 @@ class StoreResidentialAreaRequest extends BaseRequest
             'name.required' => 'Tên tổ dân phố không được để trống.',
             'name.string' => 'Tên tổ dân phố phải là một chuỗi ký tự.',
             'name.max' => 'Tên tổ dân phố không được vượt quá 255 ký tự.',
-            'code.string' => 'Mã tổ dân phố phải là một chuỗi ký tự.',
-            'code.max' => 'Mã tổ dân phố không được vượt quá 255 ký tự.',
+            'note.string' => 'Ghi chú phải là một chuỗi ký tự.',
         ];
     }
 
@@ -27,7 +26,7 @@ class StoreResidentialAreaRequest extends BaseRequest
     {
         return [
             'name' => ['description' => 'Tên tổ dân phố.', 'example' => 'Tổ 5'],
-            'code' => ['description' => 'Mã tổ dân phố.', 'example' => 'TDP-005'],
+            'note' => ['description' => 'Ghi chú.', 'example' => null],
         ];
     }
 
@@ -35,7 +34,7 @@ class StoreResidentialAreaRequest extends BaseRequest
     {
         return [
             'name' => 'Tên tổ dân phố',
-            'code' => 'Mã tổ dân phố',
+            'note' => 'Ghi chú',
         ];
     }
 }

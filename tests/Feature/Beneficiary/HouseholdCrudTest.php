@@ -29,7 +29,7 @@ class HouseholdCrudTest extends TestCase
         $this->admin->assignRole('Super Admin');
     }
 
-    public function test_store_generates_household_code_when_empty(): void
+    public function test_store_creates_household(): void
     {
         Sanctum::actingAs($this->admin);
 
@@ -39,7 +39,8 @@ class HouseholdCrudTest extends TestCase
         ], ['X-Organization-Id' => $this->orgA->id]);
 
         $res->assertCreated();
-        $this->assertNotEmpty($res->json('data.household_code'));
+        $res->assertJsonPath('data.head_name', 'Nguyễn Văn A');
+        $this->assertDatabaseHas('beneficiary_households', ['head_name' => 'Nguyễn Văn A', 'organization_id' => $this->orgA->id]);
     }
 
     public function test_store_allows_household_without_address(): void
@@ -60,7 +61,7 @@ class HouseholdCrudTest extends TestCase
         Sanctum::actingAs($this->admin);
 
         Household::create([
-            'organization_id' => $this->orgA->id, 'household_code' => 'HGD-DUP-1',
+            'organization_id' => $this->orgA->id,
             'head_name' => 'Chủ 1', 'head_id_number' => '049111111111',
         ]);
 
@@ -72,29 +73,12 @@ class HouseholdCrudTest extends TestCase
         $res->assertJsonValidationErrors(['head_id_number']);
     }
 
-    public function test_store_rejects_duplicate_household_code_in_same_org(): void
-    {
-        Sanctum::actingAs($this->admin);
-
-        Household::create([
-            'organization_id' => $this->orgA->id, 'household_code' => 'HGD-FIXED-1', 'head_name' => 'Chủ 1',
-        ]);
-
-        $res = $this->postJson('/api/beneficiary-households', [
-            'head_name' => 'Chủ 2', 'household_code' => 'HGD-FIXED-1',
-        ], ['X-Organization-Id' => $this->orgA->id]);
-
-        $res->assertStatus(422);
-        $res->assertJsonValidationErrors(['household_code']);
-    }
-
     public function test_household_observer_updates_member_count_when_beneficiary_assigned(): void
     {
         Sanctum::actingAs($this->admin);
 
         $household = Household::create([
             'organization_id' => $this->orgA->id,
-            'household_code' => 'HGD-TEST-01',
             'head_name' => 'Chủ hộ',
             'address' => 'Địa chỉ test',
         ]);
@@ -117,10 +101,10 @@ class HouseholdCrudTest extends TestCase
         Sanctum::actingAs($this->admin);
 
         $householdA = Household::create([
-            'organization_id' => $this->orgA->id, 'household_code' => 'HGD-A', 'head_name' => 'A', 'address' => 'X',
+            'organization_id' => $this->orgA->id, 'head_name' => 'A', 'address' => 'X',
         ]);
         $householdB = Household::create([
-            'organization_id' => $this->orgA->id, 'household_code' => 'HGD-B', 'head_name' => 'B', 'address' => 'Y',
+            'organization_id' => $this->orgA->id, 'head_name' => 'B', 'address' => 'Y',
         ]);
 
         $beneficiary = Beneficiary::create([

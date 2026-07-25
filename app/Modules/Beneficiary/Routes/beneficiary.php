@@ -28,5 +28,11 @@ Route::delete('/{beneficiary}', [BeneficiaryController::class, 'destroy'])
     ->middleware('permission:beneficiaries.destroy,web');
 Route::patch('/{beneficiary}/status', [BeneficiaryController::class, 'changeStatus'])
     ->middleware('permission:beneficiaries.changeStatus,web');
-Route::get('/{beneficiary}/status-histories', [BeneficiaryController::class, 'statusHistories'])
-    ->middleware('permission:beneficiaries.show,web');
+
+// File quyết định công nhận đính kèm trên từng phân loại (dùng chung permission update).
+Route::post('/{beneficiary}/classifications/{classification}/files', [BeneficiaryController::class, 'uploadClassificationFiles'])
+    ->whereNumber('classification')
+    ->middleware('permission:beneficiaries.update,web');
+Route::delete('/{beneficiary}/classifications/{classification}/files/{media}', [BeneficiaryController::class, 'deleteClassificationFile'])
+    ->whereNumber(['classification', 'media'])
+    ->middleware('permission:beneficiaries.update,web');

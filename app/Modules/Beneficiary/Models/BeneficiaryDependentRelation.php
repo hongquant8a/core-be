@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
 /**
- * Pivot N-N Beneficiary <-> Dependent, có cột thuộc tính riêng (relationship_type, eligible_from/until, status).
+ * Pivot N-N Beneficiary <-> Dependent, chỉ giữ loại quan hệ (relationship_type) + ghi chú.
  * Có PK tự tăng riêng (không phải composite key) nên $incrementing = true theo đúng convention Laravel
  * cho custom pivot model có primary key riêng.
  */
@@ -24,12 +24,7 @@ class BeneficiaryDependentRelation extends Pivot
     protected $table = 'beneficiary_dependent_relations';
 
     protected $fillable = [
-        'beneficiary_id', 'dependent_id', 'relationship_type', 'eligible_from', 'eligible_until', 'status', 'note',
-    ];
-
-    protected $casts = [
-        'eligible_from' => 'date',
-        'eligible_until' => 'date',
+        'beneficiary_id', 'dependent_id', 'relationship_type', 'note',
     ];
 
     public function beneficiary()

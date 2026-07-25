@@ -6,12 +6,10 @@ use App\Modules\Beneficiary\Imports\BeneficiaryImport;
 use App\Modules\Beneficiary\Imports\DependentImport;
 use App\Modules\Beneficiary\Imports\HouseholdImport;
 use App\Modules\Beneficiary\Imports\ResidentialAreaImport;
-use App\Modules\Beneficiary\Imports\SubsidyPolicyImport;
 use App\Modules\Beneficiary\Models\Beneficiary;
 use App\Modules\Beneficiary\Models\Dependent;
 use App\Modules\Beneficiary\Models\Household;
 use App\Modules\Beneficiary\Models\ResidentialArea;
-use App\Modules\Beneficiary\Models\SubsidyPolicy;
 use App\Modules\Core\Models\Organization;
 use App\Modules\Core\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -62,14 +60,14 @@ class ImportTest extends TestCase
     {
         $household = Household::create([
             'organization_id' => $this->orgA->id,
-            'household_code' => 'HGD-IMP-1',
             'head_name' => 'Chủ hộ',
+            'head_id_number' => '049700000001',
         ]);
 
-        // Header có dấu * (cột bắt buộc) + nhãn tiếng Việt cho enum/boolean/ngày d/m/Y.
+        // Header có dấu * (cột bắt buộc) + nhãn tiếng Việt cho enum/ngày d/m/Y.
         $file = $this->makeXlsx(
-            ['Họ tên *', 'Giới tính *', 'Ngày sinh', 'Mã hộ', 'Tình trạng sống', 'Ngày mất', 'Tình trạng điều kiện hưởng', 'Ghi chú'],
-            [['Lê Thị C', 'Nữ', '01/03/2010', 'HGD-IMP-1', 'Đã mất', '10/05/2024', 'Đang đi học', 'ghi chú test']],
+            ['Họ tên *', 'Giới tính *', 'Ngày sinh', 'CCCD chủ hộ', 'SĐT', 'Ghi chú'],
+            [['Lê Thị C', 'Nữ', '01/03/2010', '049700000001', '0905000222', 'ghi chú test']],
         );
 
         Excel::import(new DependentImport, $file);
@@ -78,53 +76,34 @@ class ImportTest extends TestCase
         $this->assertSame('female', $d->gender);
         $this->assertSame('2010-03-01', $d->date_of_birth->format('Y-m-d'));
         $this->assertSame($household->id, $d->household_id);
-        $this->assertFalse($d->is_alive);
-        $this->assertSame('2024-05-10', $d->death_date->format('Y-m-d'));
-        $this->assertSame('studying', $d->eligibility_status);
+        $this->assertSame('0905000222', $d->phone);
         $this->assertSame('ghi chú test', $d->note);
     }
 
-    public function test_residential_area_import_includes_code_column(): void
+    public function test_residential_area_import_includes_note_column(): void
     {
         $file = $this->makeXlsx(
-            ['Tên tổ dân phố *', 'Mã'],
-            [['Tổ 9', 'TDP-009']],
+            ['Tên tổ dân phố *', 'Ghi chú'],
+            [['Tổ 9', 'Khu vực ven sông']],
         );
 
         Excel::import(new ResidentialAreaImport, $file);
 
         $ra = ResidentialArea::where('name', 'Tổ 9')->firstOrFail();
-        $this->assertSame('TDP-009', $ra->code);
-    }
-
-    public function test_subsidy_policy_import_full_fields_with_enum_label(): void
-    {
-        $file = $this->makeXlsx(
-            ['Loại đối tượng', 'Quan hệ', 'Mức trợ cấp *', 'Đơn vị', 'Căn cứ pháp lý *', 'Ngày hiệu lực *', 'Ngày hết hiệu lực'],
-            [['Thương binh, người hưởng chính sách như thương binh', '', '3500000', 'VND/tháng', 'Nghị định 75/2021/NĐ-CP', '01/07/2021', '31/12/2025']],
-        );
-
-        Excel::import(new SubsidyPolicyImport, $file);
-
-        $p = SubsidyPolicy::where('legal_basis', 'Nghị định 75/2021/NĐ-CP')->firstOrFail();
-        $this->assertSame('war_invalid', $p->beneficiary_type);
-        $this->assertSame('3500000.00', (string) $p->amount);
-        $this->assertSame('VND/tháng', $p->unit);
-        $this->assertSame('2021-07-01', $p->effective_from->format('Y-m-d'));
-        $this->assertSame('2025-12-31', $p->effective_to->format('Y-m-d'));
+        $this->assertSame('Khu vực ven sông', $ra->note);
     }
 
     public function test_beneficiary_import_still_maps_fields_after_refactor(): void
     {
         Household::create([
             'organization_id' => $this->orgA->id,
-            'household_code' => 'HGD-IMP-1',
             'head_name' => 'Chủ hộ',
+            'head_id_number' => '049700000002',
         ]);
 
         $file = $this->makeXlsx(
-            ['Họ tên *', 'Giới tính *', 'Ngày sinh', 'Mã hộ', 'Trạng thái'],
-            [['Trần Văn X', 'Nam', '20/05/1950', 'HGD-IMP-1', 'Đang hưởng']],
+            ['Họ tên *', 'Giới tính *', 'Ngày sinh', 'CCCD chủ hộ', 'Trạng thái'],
+            [['Trần Văn X', 'Nam', '20/05/1950', '049700000002', 'Đang hưởng']],
         );
 
         Excel::import(new BeneficiaryImport, $file);
@@ -157,26 +136,10 @@ class ImportTest extends TestCase
         $this->assertSame('Thân Nhân Mới', $existing->fresh()->full_name);
     }
 
-    public function test_household_import_generates_code_when_blank(): void
-    {
-        // File không có cột Mã hộ → mã hộ phải được tự sinh (cột DB NOT NULL), không lỗi.
-        $file = $this->makeXlsx(
-            ['Chủ hộ *', 'Địa chỉ'],
-            [['Chủ Hộ Không Mã', '1 Lê Lợi']],
-        );
-
-        $failures = app(\App\Modules\Beneficiary\Services\HouseholdService::class)->import($file);
-
-        $this->assertCount(0, $failures);
-        $h = Household::where('head_name', 'Chủ Hộ Không Mã')->firstOrFail();
-        $this->assertNotEmpty($h->household_code);
-    }
-
     public function test_household_import_updates_existing_by_head_cccd_without_duplicating_or_wiping(): void
     {
         $existing = Household::create([
             'organization_id' => $this->orgA->id,
-            'household_code' => 'HGD-UP-1',
             'head_name' => 'Chủ Cũ',
             'head_id_number' => '049222222222',
             'phone' => '0911111111',
@@ -184,8 +147,8 @@ class ImportTest extends TestCase
 
         // Cùng CCCD chủ hộ, đổi tên chủ hộ, ô SĐT trống → cập nhật tên, giữ SĐT cũ, không tạo hộ mới.
         $file = $this->makeXlsx(
-            ['Chủ hộ *', 'Mã hộ', 'CCCD chủ hộ', 'SĐT'],
-            [['Chủ Mới', 'HGD-UP-1', '049222222222', '']],
+            ['Chủ hộ *', 'CCCD chủ hộ', 'SĐT'],
+            [['Chủ Mới', '049222222222', '']],
         );
 
         $failures = app(\App\Modules\Beneficiary\Services\HouseholdService::class)->import($file);
@@ -201,14 +164,14 @@ class ImportTest extends TestCase
     public function test_household_import_still_maps_fields_after_refactor(): void
     {
         $file = $this->makeXlsx(
-            ['Chủ hộ *', 'Mã hộ', 'Địa chỉ', 'Số thành viên'],
-            [['Nguyễn Văn H', 'HGD-NEW', '12 Trần Phú', '4']],
+            ['Chủ hộ *', 'CCCD chủ hộ', 'Địa chỉ', 'Số thành viên'],
+            [['Nguyễn Văn H', '049700000003', '12 Trần Phú', '4']],
         );
 
         Excel::import(new HouseholdImport, $file);
 
         $h = Household::where('head_name', 'Nguyễn Văn H')->firstOrFail();
-        $this->assertSame('HGD-NEW', $h->household_code);
+        $this->assertSame('049700000003', $h->head_id_number);
         $this->assertSame('12 Trần Phú', $h->address);
         $this->assertSame(4, $h->member_count);
     }
@@ -240,17 +203,16 @@ class ImportTest extends TestCase
 
     public function test_import_blank_optional_numeric_becomes_null_not_empty_string(): void
     {
-        // Ô Tỷ lệ thương tật / Vĩ độ / Kinh độ để trống → phải là null, không đẩy '' xuống cột decimal (gây lỗi SQL).
+        // Ô Vĩ độ / Kinh độ để trống → phải là null, không đẩy '' xuống cột decimal (gây lỗi SQL).
         $file = $this->makeXlsx(
-            ['Họ tên *', 'Giới tính *', 'Tỷ lệ thương tật', 'Vĩ độ', 'Kinh độ'],
-            [['Hồ Phú Bốn', 'male', '', '', '']],
+            ['Họ tên *', 'Giới tính *', 'Vĩ độ', 'Kinh độ'],
+            [['Hồ Phú Bốn', 'male', '', '']],
         );
 
         $failures = app(\App\Modules\Beneficiary\Services\BeneficiaryService::class)->import($file);
 
         $this->assertCount(0, $failures);
         $b = Beneficiary::where('full_name', 'Hồ Phú Bốn')->firstOrFail();
-        $this->assertNull($b->injury_rate);
         $this->assertNull($b->latitude);
         $this->assertNull($b->longitude);
     }
@@ -285,8 +247,8 @@ class ImportTest extends TestCase
     public function test_import_all_valid_returns_no_failures(): void
     {
         $file = $this->makeXlsx(
-            ['Tên tổ dân phố *', 'Mã'],
-            [['Tổ 1', 'TDP-001'], ['Tổ 2', 'TDP-002']],
+            ['Tên tổ dân phố *', 'Ghi chú'],
+            [['Tổ 1', ''], ['Tổ 2', '']],
         );
 
         $failures = app(\App\Modules\Beneficiary\Services\ResidentialAreaService::class)->import($file);
@@ -332,27 +294,6 @@ class ImportTest extends TestCase
         $genderNote = (string) $sheet->getComment('C1')->getText();
         $this->assertStringContainsString('male (Nam)', $genderNote);
         $this->assertStringContainsString('other (Khác)', $genderNote);
-    }
-
-    public function test_subsidy_policy_template_has_enum_dropdowns(): void
-    {
-        $sheet = $this->renderTemplate(new ImportTemplateExport(
-            SubsidyPolicyImport::TEMPLATE_LABELS,
-            SubsidyPolicyImport::TEMPLATE_EXAMPLES,
-            SubsidyPolicyImport::REQUIRED_KEYS,
-            SubsidyPolicyImport::templateNotes(),
-            SubsidyPolicyImport::templateOptions(),
-        ));
-
-        // Loại đối tượng (cột A) — 12 giá trị, CSV ≤ 255 nên vẫn dựng được dropdown.
-        $typeDv = $this->dataValidationAt($sheet, 'A');
-        $this->assertNotNull($typeDv, 'Cột Loại đối tượng phải có dropdown.');
-        $this->assertStringContainsString('war_invalid', $typeDv->getFormula1());
-
-        // Quan hệ (cột B) — có dropdown.
-        $relDv = $this->dataValidationAt($sheet, 'B');
-        $this->assertNotNull($relDv, 'Cột Quan hệ phải có dropdown.');
-        $this->assertStringContainsString('spouse', $relDv->getFormula1());
     }
 
     /** Lấy DataValidation áp cho cột $col (dò cả key range lẫn key ô góc trên sau khi reader chuẩn hóa). */

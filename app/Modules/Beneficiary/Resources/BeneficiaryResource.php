@@ -19,7 +19,6 @@ class BeneficiaryResource extends JsonResource
             'household_id' => $this->household_id,
             'household' => $this->whenLoaded('household', fn () => $this->household ? [
                 'id' => $this->household->id,
-                'household_code' => $this->household->household_code,
                 'head_name' => $this->household->head_name,
             ] : null),
 
@@ -29,9 +28,6 @@ class BeneficiaryResource extends JsonResource
             'gender' => $this->gender,
             'gender_label' => GenderEnum::tryFrom((string) $this->gender)?->label() ?? $this->gender,
             'id_number' => $this->id_number,
-            'injury_rate' => $this->injury_rate,
-            'recognition_decision_no' => $this->recognition_decision_no,
-            'recognition_date' => $this->recognition_date?->format('d/m/Y'),
             'status' => $this->status,
             'status_label' => BeneficiaryStatusEnum::tryFrom((string) $this->status)?->label() ?? $this->status,
             'death_date' => $this->death_date?->format('d/m/Y'),
@@ -42,8 +38,9 @@ class BeneficiaryResource extends JsonResource
             'note' => $this->note,
 
             'classifications' => BeneficiaryClassificationResource::collection($this->whenLoaded('classifications')),
+            'documents' => BeneficiaryDocumentResource::collection($this->whenLoaded('documents')),
             'dependents_count' => $this->whenCounted('dependents'),
-            'active_subsidy_grants_count' => $this->whenCounted('activeSubsidyGrants'),
+            'documents_count' => $this->whenCounted('documents'),
 
             'created_by' => $this->whenLoaded('creator', fn () => $this->formatUserSummary($this->creator), null),
             'updated_by' => $this->whenLoaded('editor', fn () => $this->formatUserSummary($this->editor), null),

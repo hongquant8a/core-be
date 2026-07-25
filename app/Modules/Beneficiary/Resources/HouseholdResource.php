@@ -19,7 +19,6 @@ class HouseholdResource extends JsonResource
                 'id' => $this->residentialArea->id,
                 'name' => $this->residentialArea->name,
             ]),
-            'household_code' => $this->household_code,
             'head_name' => $this->head_name,
             'head_id_number' => $this->head_id_number,
             'address' => $this->address,

@@ -3,7 +3,7 @@
 namespace App\Modules\Beneficiary\Requests;
 
 /**
- * Request import file dùng chung cho mọi resource của module (Household, Beneficiary, Dependent, SubsidyPolicy)
+ * Request import file dùng chung cho mọi resource của module (Household, Beneficiary, Dependent, ResidentialArea)
  * — chỉ validate định dạng file, cột dữ liệu tự validate riêng trong từng Import class.
  */
 class ImportBeneficiaryFileRequest extends BaseRequest

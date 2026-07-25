@@ -10,11 +10,6 @@ class StoreHouseholdRequest extends BaseRequest
     {
         return [
             'residential_area_id' => 'nullable|integer|exists:beneficiary_residential_areas,id',
-            'household_code' => [
-                'nullable', 'string', 'max:255',
-                // Mã hộ duy nhất trong cùng tổ chức (để trống sẽ tự sinh, xem Household::generateCode).
-                Rule::unique('beneficiary_households', 'household_code')->where('organization_id', getPermissionsTeamId()),
-            ],
             'head_name' => 'required|string|max:255',
             'head_id_number' => [
                 'nullable', 'string', 'max:255',
@@ -42,7 +37,6 @@ class StoreHouseholdRequest extends BaseRequest
             'head_name.required' => 'Tên chủ hộ không được để trống.',
             'head_name.string' => 'Tên chủ hộ phải là một chuỗi ký tự.',
             'head_name.max' => 'Tên chủ hộ không được vượt quá 255 ký tự.',
-            'household_code.unique' => 'Mã hộ này đã tồn tại.',
             'head_id_number.unique' => 'CCCD chủ hộ này đã tồn tại ở một hộ gia đình khác.',
             'latitude.between' => 'Vĩ độ phải trong khoảng -90 đến 90.',
             'longitude.between' => 'Kinh độ phải trong khoảng -180 đến 180.',
@@ -57,7 +51,6 @@ class StoreHouseholdRequest extends BaseRequest
     {
         return [
             'residential_area_id' => ['description' => 'ID tổ dân phố.', 'example' => 1],
-            'household_code' => ['description' => 'Mã hộ (để trống sẽ tự sinh).', 'example' => 'HGD-00001'],
             'head_name' => ['description' => 'Tên chủ hộ.', 'example' => 'Nguyễn Văn A'],
             'head_id_number' => ['description' => 'CCCD chủ hộ.', 'example' => '049123456789'],
             'address' => ['description' => 'Địa chỉ (có thể để trống, bổ sung sau khi xác minh thực địa).', 'example' => '12 Trần Phú, Hải Châu'],
@@ -74,7 +67,6 @@ class StoreHouseholdRequest extends BaseRequest
     {
         return [
             'residential_area_id' => 'Tổ dân phố',
-            'household_code' => 'Mã hộ',
             'head_name' => 'Tên chủ hộ',
             'head_id_number' => 'CCCD chủ hộ',
             'address' => 'Địa chỉ',

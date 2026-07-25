@@ -25,9 +25,6 @@ class StoreBeneficiaryRequest extends BaseRequest
                 // Trùng CCCD trong cùng tổ chức là không hợp lệ (khớp unique index DB).
                 Rule::unique('beneficiaries', 'id_number')->where('organization_id', getPermissionsTeamId()),
             ],
-            'injury_rate' => 'nullable|numeric|min:0|max:100',
-            'recognition_decision_no' => 'nullable|string|max:255',
-            'recognition_date' => 'nullable|date',
             'status' => ['nullable', BeneficiaryStatusEnum::rule()],
             'address' => 'nullable|string|max:255',
             'latitude' => 'nullable|numeric|between:-90,90',
@@ -135,8 +132,8 @@ class StoreBeneficiaryRequest extends BaseRequest
     }
 
     /**
-     * Mỗi phần tử = thông tin thân nhân (theo StoreDependentRequest) + relationship_type/
-     * eligible_from để tự tạo luôn quan hệ hưởng chế độ với người có công đang tạo.
+     * Mỗi phần tử = thông tin thân nhân (theo StoreDependentRequest) + relationship_type
+     * để tự tạo luôn quan hệ với người có công đang tạo.
      */
     private function validateDependents(Validator $validator): void
     {
@@ -149,17 +146,13 @@ class StoreBeneficiaryRequest extends BaseRequest
         $dependentRequest = new StoreDependentRequest;
         $extraRules = [
             'relationship_type' => ['required', DependentRelationshipEnum::rule()],
-            'eligible_from' => 'required|date',
         ];
         $extraMessages = [
             'relationship_type.required' => 'Quan hệ với người có công không được để trống.',
             'relationship_type.in' => 'Quan hệ không hợp lệ.',
-            'eligible_from.required' => 'Ngày bắt đầu đủ điều kiện hưởng không được để trống.',
-            'eligible_from.date' => 'Ngày bắt đầu đủ điều kiện hưởng không hợp lệ.',
         ];
         $extraAttributes = [
             'relationship_type' => 'Quan hệ',
-            'eligible_from' => 'Ngày bắt đầu đủ điều kiện',
         ];
 
         foreach ($dependents as $index => $dependent) {
@@ -203,8 +196,6 @@ class StoreBeneficiaryRequest extends BaseRequest
             'gender.in' => 'Giới tính không hợp lệ.',
             'id_number.unique' => 'CCCD/CMND này đã tồn tại trong danh sách người có công.',
             'household_id.exists' => 'Hộ gia đình không tồn tại.',
-            'injury_rate.numeric' => 'Tỷ lệ thương tật phải là số.',
-            'injury_rate.max' => 'Tỷ lệ thương tật không được vượt quá 100.',
             'status.in' => 'Trạng thái không hợp lệ.',
             'latitude.between' => 'Vĩ độ phải trong khoảng -90 đến 90.',
             'longitude.between' => 'Kinh độ phải trong khoảng -180 đến 180.',
@@ -223,9 +214,6 @@ class StoreBeneficiaryRequest extends BaseRequest
             'birth_year' => ['description' => 'Năm sinh dạng text (dùng khi không rõ đầy đủ ngày/tháng sinh).', 'example' => '1950'],
             'gender' => ['description' => 'Giới tính.', 'example' => 'male'],
             'id_number' => ['description' => 'CCCD/CMND.', 'example' => '049123456789'],
-            'injury_rate' => ['description' => 'Tỷ lệ thương tật %.', 'example' => 61],
-            'recognition_decision_no' => ['description' => 'Số quyết định công nhận.', 'example' => 'QD-123/2020'],
-            'recognition_date' => ['description' => 'Ngày quyết định.', 'example' => '2020-07-15'],
             'status' => ['description' => 'Trạng thái.', 'example' => 'pending'],
             'address' => ['description' => 'Địa chỉ.', 'example' => null],
             'latitude' => ['description' => 'Vĩ độ (tra cứu bản đồ).', 'example' => 16.0678],
@@ -234,7 +222,7 @@ class StoreBeneficiaryRequest extends BaseRequest
             'note' => ['description' => 'Ghi chú.', 'example' => null],
             'classifications' => ['description' => 'Danh sách phân loại đối tượng. Mỗi phần tử chỉ bắt buộc `type` — `decision_no`/`decision_date`/`issued_by` có thể bổ sung sau khi có đủ giấy tờ.', 'example' => []],
             'household' => ['description' => 'Tạo hộ gia đình mới ngay khi tạo hồ sơ — chỉ dùng khi KHÔNG gửi `household_id`. Các trường giống StoreHouseholdRequest, bắt buộc `head_name`.', 'example' => null],
-            'dependents' => ['description' => 'Danh sách thân nhân tạo kèm — mỗi phần tử gồm các trường thân nhân (bắt buộc `full_name`, `gender`) cộng thêm `relationship_type`, `eligible_from` (bắt buộc) để tự tạo quan hệ hưởng chế độ.', 'example' => []],
+            'dependents' => ['description' => 'Danh sách thân nhân tạo kèm — mỗi phần tử gồm các trường thân nhân (bắt buộc `full_name`, `gender`) cộng thêm `relationship_type` (bắt buộc) để tự tạo quan hệ với người có công.', 'example' => []],
         ];
     }
 
@@ -247,9 +235,6 @@ class StoreBeneficiaryRequest extends BaseRequest
             'birth_year' => 'Năm sinh',
             'gender' => 'Giới tính',
             'id_number' => 'CCCD/CMND',
-            'injury_rate' => 'Tỷ lệ thương tật',
-            'recognition_decision_no' => 'Số quyết định công nhận',
-            'recognition_date' => 'Ngày quyết định',
             'status' => 'Trạng thái',
             'address' => 'Địa chỉ',
             'latitude' => 'Vĩ độ',

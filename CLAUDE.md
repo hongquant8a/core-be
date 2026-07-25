@@ -195,13 +195,18 @@ Luôn dùng Resource để trả dữ liệu. Định dạng thời gian trong R
 ## 6. Export & Import
 
 **Export:** Xuất đầy đủ các trường như index (Resource), bao gồm quan hệ, `created_by`, `updated_by`, `created_at`, `updated_at`, `status`.
+- **Xuất kèm các quan hệ xung quanh bảng chính:**
+  - Quan hệ **1-1 / N-1** (belongsTo, danh mục): xuất **tên** (hoặc mã định danh) của bản ghi liên quan — vd hộ ("CCCD chủ hộ"), tổ dân phố ("Tổ dân phố"). Không xuất `*_id` thô.
+  - Quan hệ **1-N / N-N** (hasMany, belongsToMany): **liệt kê** các bản ghi con thành 1 ô, **ngăn cách bởi `; ` (dấu chấm phẩy + space)** — vd cột "Thân nhân" = `Con 1; Con 2`, "Loại đối tượng" = `Thương binh; Bệnh binh`. Với quan hệ N-N có thuộc tính pivot, kèm nhãn trong ngoặc: `Tên (Quan hệ)`.
+  - Các cột liệt kê 1-N/N-N chỉ mang tính **tham chiếu để đọc** — **import bỏ qua** (không parse ngược); đặt tên header khác với cột nhập liệu để tránh nhầm.
 
 **Import:**
 - FormRequest validate: `required|file|mimes:xlsx,xls,csv|max:10240`.
 - **Đầy đủ trường:** import phải nhận **mọi trường** như Export/StoreRequest — **chỉ bỏ qua trường dạng mảng lồng nhau** (vd `classifications`, `dependents`) vì không phù hợp file phẳng. Không tự cắt bớt cột "cho gọn"; thiếu cột nào cán bộ mất đường nhập cột đó.
-  - Rule validate mỗi cột mirror StoreRequest (required cho cột bắt buộc, `nullable` + default cho cột không bắt buộc).
+  - **Ràng buộc tối thiểu:** chỉ bắt buộc **vài trường chính** thực sự cần (vd `tên`, hoặc `trạng thái`); mọi trường khác `nullable`. Không dồn nhiều rule bắt buộc khiến cán bộ khó nhập hàng loạt — dữ liệu thiếu bổ sung sau qua CRUD, đừng chặn cả dòng vì thiếu trường phụ.
+  - **Liên kết danh mục quan hệ 1-1 bằng TÊN:** cho phép nhập **tên** (hoặc mã) của danh mục liên quan (vd tổ dân phố, hộ), `model()` tra ngược về `*_id`; không khớp thì để trống, **không chặn dòng**. Không bắt cán bộ nhập `*_id` thô.
+  - Rule validate mỗi cột mirror StoreRequest (required cho cột bắt buộc tối thiểu, `nullable` + default cho cột còn lại).
   - Enum (giới tính/trạng thái…): chấp nhận cả value gốc lẫn nhãn tiếng Việt (chuẩn hóa trong `prepareForValidation`) để round-trip Export→Import.
-  - Trường quan hệ hiển thị dạng tên/mã trong Export (vd "Mã hộ", "Tổ dân phố"): tra ngược về `*_id` trong `model()`, không khớp thì để trống, không chặn dòng.
 - Import class khai báo:
   - `FIELD_LABELS` (map `field_key => 'Nhãn tiếng Việt'`) — **đủ mọi cột**; header file dịch ngược về key qua trait `TranslatesExcelHeadings`.
   - `TEMPLATE_LABELS = self::FIELD_LABELS` (file mẫu hiện đủ cột).
