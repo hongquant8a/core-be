@@ -91,7 +91,7 @@ Cập nhật `PERMISSIONS` trong `database/seeders/PermissionSeeder.php` (đã b
 ## 7. API Endpoints (tóm tắt)
 
 - `beneficiaries` — bộ chuẩn đầy đủ + `POST /{id}/classifications/{classification}/files`, `DELETE /{id}/classifications/{classification}/files/{media}`. `POST` nhận thêm `household`/`dependents` tùy chọn; `PUT` sync `classifications`/`classifications_deleted`.
-- `beneficiary-households`, `beneficiary-residential-areas`, `beneficiary-dependents` — CRUD + export/import + import-template (không changeStatus/bulkUpdateStatus).
+- `beneficiary-households`, `beneficiary-residential-areas`, `beneficiary-dependents` — CRUD + export/import + import-template (không changeStatus/bulkUpdateStatus). **Export liệt kê các quan hệ xung quanh**: 1-1 xuất theo tên (CCCD chủ hộ, Tổ dân phố), 1-N/N-N liệt kê ngăn cách `; ` (Thân nhân, Loại đối tượng, Giấy tờ, Người có công liên kết…) — cột liệt kê chỉ tham chiếu, import bỏ qua. Import liên kết danh mục 1-1 bằng **tên**, ràng buộc tối thiểu (chỉ tên/giới tính/chủ hộ bắt buộc).
 - `beneficiary-dependents` có thêm `POST /{id}/relations`, `DELETE /{id}/relations/{relation}`.
 - `beneficiary-documents` — `index, show, store, update, destroy, bulk-delete` (không export/import).
 - `beneficiary-enums` — tra cứu enum.

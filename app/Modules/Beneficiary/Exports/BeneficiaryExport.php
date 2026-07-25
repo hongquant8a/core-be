@@ -3,6 +3,7 @@
 namespace App\Modules\Beneficiary\Exports;
 
 use App\Modules\Beneficiary\Enums\BeneficiaryStatusEnum;
+use App\Modules\Beneficiary\Enums\BeneficiaryTypeEnum;
 use App\Modules\Beneficiary\Enums\GenderEnum;
 use App\Modules\Beneficiary\Models\Beneficiary;
 use App\Modules\Core\Exports\AbstractExcelExport;
@@ -14,7 +15,7 @@ class BeneficiaryExport extends AbstractExcelExport implements FromCollection
 
     public function collection()
     {
-        return Beneficiary::with(['household', 'creator', 'editor'])
+        return Beneficiary::with(['household', 'classifications', 'dependents', 'documents', 'creator', 'editor'])
             ->filter($this->filters)
             ->orderByDesc('id')
             ->get()
@@ -33,6 +34,12 @@ class BeneficiaryExport extends AbstractExcelExport implements FromCollection
                 'longitude' => $b->longitude,
                 'phone' => $b->phone,
                 'note' => $b->note,
+                // Quan hệ 1-N / N-N — liệt kê ngăn cách bởi "; " (chỉ tham chiếu, import bỏ qua).
+                'classifications' => $b->classifications
+                    ->map(fn ($c) => BeneficiaryTypeEnum::tryFrom((string) $c->type)?->label() ?? $c->type)
+                    ->implode('; '),
+                'dependents' => $b->dependents->pluck('full_name')->implode('; '),
+                'documents' => $b->documents->pluck('name')->implode('; '),
                 'created_by' => $b->creator?->name ?? 'N/A',
                 'updated_by' => $b->editor?->name ?? 'N/A',
                 'created_at' => $b->created_at?->format('H:i:s d/m/Y'),
@@ -43,6 +50,6 @@ class BeneficiaryExport extends AbstractExcelExport implements FromCollection
 
     public function headings(): array
     {
-        return ['STT', 'Họ tên', 'Ngày sinh', 'Năm sinh', 'Giới tính', 'CCCD/CMND', 'CCCD chủ hộ', 'Trạng thái', 'Địa chỉ', 'Vĩ độ', 'Kinh độ', 'SĐT', 'Ghi chú', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
+        return ['STT', 'Họ tên', 'Ngày sinh', 'Năm sinh', 'Giới tính', 'CCCD/CMND', 'CCCD chủ hộ', 'Trạng thái', 'Địa chỉ', 'Vĩ độ', 'Kinh độ', 'SĐT', 'Ghi chú', 'Loại đối tượng', 'Thân nhân', 'Giấy tờ', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
     }
 }

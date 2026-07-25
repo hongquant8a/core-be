@@ -2,6 +2,7 @@
 
 namespace App\Modules\Beneficiary\Exports;
 
+use App\Modules\Beneficiary\Enums\DependentRelationshipEnum;
 use App\Modules\Beneficiary\Enums\GenderEnum;
 use App\Modules\Beneficiary\Models\Dependent;
 use App\Modules\Core\Exports\AbstractExcelExport;
@@ -13,7 +14,7 @@ class DependentExport extends AbstractExcelExport implements FromCollection
 
     public function collection()
     {
-        return Dependent::with(['household', 'residentialArea', 'creator', 'editor'])
+        return Dependent::with(['household', 'residentialArea', 'beneficiaries', 'creator', 'editor'])
             ->filter($this->filters)
             ->orderByDesc('id')
             ->get()
@@ -30,6 +31,10 @@ class DependentExport extends AbstractExcelExport implements FromCollection
                 'latitude' => $d->latitude,
                 'longitude' => $d->longitude,
                 'note' => $d->note,
+                // Quan hệ N-N với người có công — "Tên (Quan hệ)" ngăn cách bởi "; " (chỉ tham chiếu).
+                'beneficiaries' => $d->beneficiaries
+                    ->map(fn ($b) => $b->full_name.' ('.(DependentRelationshipEnum::tryFrom((string) $b->pivot->relationship_type)?->label() ?? $b->pivot->relationship_type).')')
+                    ->implode('; '),
                 'created_by' => $d->creator?->name ?? 'N/A',
                 'updated_by' => $d->editor?->name ?? 'N/A',
                 'created_at' => $d->created_at?->format('H:i:s d/m/Y'),
@@ -40,6 +45,6 @@ class DependentExport extends AbstractExcelExport implements FromCollection
 
     public function headings(): array
     {
-        return ['STT', 'Họ tên', 'Ngày sinh', 'Giới tính', 'CCCD/CMND', 'CCCD chủ hộ', 'Tổ dân phố', 'SĐT', 'Vĩ độ', 'Kinh độ', 'Ghi chú', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
+        return ['STT', 'Họ tên', 'Ngày sinh', 'Giới tính', 'CCCD/CMND', 'CCCD chủ hộ', 'Tổ dân phố', 'SĐT', 'Vĩ độ', 'Kinh độ', 'Ghi chú', 'Người có công liên kết', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
     }
 }

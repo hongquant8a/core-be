@@ -39,4 +39,12 @@ Module Người có công được đơn giản hóa về **thông tin cơ bản
 - `BeneficiaryResource` bỏ `active_subsidy_grants_count`, thêm `documents`, `documents_count`.
 - Import: cột tra hộ đổi từ **Mã hộ** → **CCCD chủ hộ** (`head_id_number`); import thân nhân/hộ bỏ các cột đã xóa, thêm cột mới (SĐT, tọa độ, Tổ dân phố cho thân nhân; Ghi chú cho tổ dân phố).
 
+## Dashboard thống kê (endpoint mới)
+
+- `beneficiary-statistics/*` (permission `beneficiary-statistics.view`): `overview`, `by-type`, `by-status`, `by-residential-area`, `households-by-area`, `by-gender`, `by-age-group`, `by-relationship`, `new-by-month?year=`. Mỗi breakdown trả `{key,label,total}`; `overview` kèm `summary` (KPI).
+
+## Export bổ sung quan hệ
+
+File export (hộ, người có công, thân nhân, tổ dân phố) nay có thêm cột liệt kê quan hệ xung quanh, quan hệ 1-N/N-N ngăn cách bởi `; ` (VD "Thân nhân", "Loại đối tượng", "Giấy tờ", "Người có công liên kết", "Danh sách hộ"). Các cột này **chỉ để đọc** — khi import lại sẽ bị bỏ qua. Import vẫn liên kết danh mục 1-1 bằng tên (Tổ dân phố) / CCCD chủ hộ với ràng buộc tối thiểu.
+
 Tài liệu chi tiết: [docs/database/Beneficiary.md](../database/Beneficiary.md), [docs/modules/Beneficiary/README.md](../modules/Beneficiary/README.md).
