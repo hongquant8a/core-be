@@ -134,7 +134,7 @@ class ResidentialAreaController extends Controller
     /**
      * Xuất Excel tổ dân phố
      *
-     * Xuất ra các trường: id, name, code, household_count, created_by, updated_by, created_at, updated_at.
+     * Xuất ra các trường: id, name, note, household_count, danh sách hộ (chủ hộ), created_by, updated_by, created_at, updated_at.
      *
      * @queryParam search string Tìm theo tên tổ dân phố.
      */
@@ -146,12 +146,12 @@ class ResidentialAreaController extends Controller
     /**
      * Import tổ dân phố
      *
-     * Cột bắt buộc: name. Cột không bắt buộc: code.
+     * Cột bắt buộc: name. Cột không bắt buộc: note.
      *
      * @bodyParam file file required File Excel (xlsx, xls, csv). Cột theo chuẩn export.
      *
      * Dòng lỗi validation được bỏ qua (các dòng hợp lệ vẫn import), trả về `failed_count` và
-     * `errors` (số dòng, cột, thông báo, giá trị) để cán bộ sửa và nhập lại.
+     * `errors` (số dòng, cột, thông báo, giá trị) cùng `error_file` (Excel tổng hợp lỗi dạng base64: STT, Hàng số, Cột, Lỗi, Giá trị) để cán bộ tải về, sửa và nhập lại.
      *
      * @response 200 {"success": true, "message": "Import tổ dân phố hoàn tất — đã bỏ qua 1 dòng lỗi, vui lòng kiểm tra và nhập lại các dòng này.", "data": {"failed_count": 1, "errors": [{"row": 3, "column": "Tên tổ dân phố", "errors": ["Tên tổ dân phố không được để trống."], "values": {"Mã": "TDP-009"}}]}}
      */
@@ -159,7 +159,7 @@ class ResidentialAreaController extends Controller
     {
         $failures = $this->residentialAreaService->import($request->file('file'));
 
-        return $this->importResult($failures, 'tổ dân phố');
+        return $this->importResult($failures, 'tổ dân phố', \App\Modules\Beneficiary\Imports\ResidentialAreaImport::FIELD_LABELS);
     }
 
     /**

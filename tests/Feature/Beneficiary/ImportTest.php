@@ -15,6 +15,7 @@ use App\Modules\Core\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Modules\Core\Exports\ImportTemplateExport;
 use Illuminate\Http\UploadedFile;
+use Laravel\Sanctum\Sanctum;
 use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -199,6 +200,63 @@ class ImportTest extends TestCase
         $this->assertSame(3, $failure->row());
         $this->assertNotEmpty($failure->attribute());
         $this->assertStringContainsString('Giới tính', implode(' ', $failure->errors()));
+    }
+
+    public function test_import_returns_aggregated_error_excel_file(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        $file = $this->makeXlsx(
+            ['Họ tên *', 'Giới tính *'],
+            [
+                ['Người Hợp Lệ', 'Nam'],
+                ['Người Thiếu Giới Tính', ''],
+            ],
+        );
+
+        $res = $this->post('/api/beneficiaries/import', ['file' => $file], ['X-Organization-Id' => $this->orgA->id]);
+
+        $res->assertOk();
+        $res->assertJsonPath('data.failed_count', 1);
+
+        $errorFile = $res->json('data.error_file');
+        $this->assertNotNull($errorFile, 'Phải kèm error_file khi có lỗi.');
+        $this->assertSame('loi-import-nguoi-co-cong.xlsx', $errorFile['name']);
+
+        // base64 decode ra đúng file xlsx (zip container bắt đầu bằng "PK").
+        $binary = base64_decode($errorFile['base64']);
+        $this->assertStringStartsWith('PK', $binary);
+
+        // Nội dung: header đúng cột + có dòng lỗi với nhãn cột tiếng Việt + thông báo lỗi.
+        $path = tempnam(sys_get_temp_dir(), 'err_').'.xlsx';
+        file_put_contents($path, $binary);
+        $sheet = IOFactory::load($path)->getActiveSheet();
+
+        $this->assertSame('STT', $sheet->getCell('A1')->getValue());
+        $this->assertSame('Hàng số', $sheet->getCell('B1')->getValue());
+        $this->assertSame('Cột', $sheet->getCell('C1')->getValue());
+        $this->assertSame('Lỗi', $sheet->getCell('D1')->getValue());
+
+        // Dòng lỗi đầu tiên: hàng số 3 (header + 1 hợp lệ + 1 lỗi), cột "Giới tính".
+        $this->assertSame(3, (int) $sheet->getCell('B2')->getValue());
+        $this->assertSame('Giới tính', $sheet->getCell('C2')->getValue());
+        $this->assertStringContainsString('Giới tính', (string) $sheet->getCell('D2')->getValue());
+    }
+
+    public function test_import_no_error_file_when_all_valid(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        $file = $this->makeXlsx(
+            ['Tên tổ dân phố *', 'Ghi chú'],
+            [['Tổ 1', '']],
+        );
+
+        $res = $this->post('/api/beneficiary-residential-areas/import', ['file' => $file], ['X-Organization-Id' => $this->orgA->id]);
+
+        $res->assertOk();
+        $res->assertJsonPath('data.failed_count', 0);
+        $res->assertJsonPath('data.error_file', null);
     }
 
     public function test_import_blank_optional_numeric_becomes_null_not_empty_string(): void
