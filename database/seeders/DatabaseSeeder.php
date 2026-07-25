@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
         $this->call(TaskAssignmentDataSeeder::class);
         $this->call(MeetingDataSeeder::class);
         $this->call(BeneficiaryDataSeeder::class);
+        $this->call(BeneficiarySampleSeeder::class); // dữ liệu mẫu 100 bản ghi/danh sách
         $this->call(SettingSeeder::class);
         $this->call(NotificationEventConfigSeeder::class);
         $this->call(NotificationScheduleSeeder::class);
