@@ -4,6 +4,7 @@ namespace App\Modules\Beneficiary\Exports;
 
 use App\Modules\Beneficiary\Enums\BeneficiaryStatusEnum;
 use App\Modules\Beneficiary\Enums\BeneficiaryTypeEnum;
+use App\Modules\Beneficiary\Enums\DependentRelationshipEnum;
 use App\Modules\Beneficiary\Enums\GenderEnum;
 use App\Modules\Beneficiary\Models\Beneficiary;
 use App\Modules\Core\Exports\AbstractExcelExport;
@@ -15,7 +16,7 @@ class BeneficiaryExport extends AbstractExcelExport implements FromCollection
 
     public function collection()
     {
-        return Beneficiary::with(['household', 'classifications', 'dependents', 'documents', 'creator', 'editor'])
+        return Beneficiary::with(['household', 'residentialArea', 'classifications', 'dependents', 'documents', 'creator', 'editor'])
             ->filter($this->filters)
             ->orderByDesc('id')
             ->get()
@@ -28,7 +29,9 @@ class BeneficiaryExport extends AbstractExcelExport implements FromCollection
                 'gender' => GenderEnum::tryFrom((string) $b->gender)?->label() ?? $b->gender,
                 'id_number' => $b->id_number,
                 'head_id_number' => $b->household?->head_id_number,
+                'residential_area' => $b->residentialArea?->name,
                 'status' => BeneficiaryStatusEnum::tryFrom((string) $b->status)?->label() ?? $b->status,
+                'death_date' => $b->death_date?->format('d/m/Y'),
                 'address' => $b->address,
                 'latitude' => $b->latitude,
                 'longitude' => $b->longitude,
@@ -38,7 +41,10 @@ class BeneficiaryExport extends AbstractExcelExport implements FromCollection
                 'classifications' => $b->classifications
                     ->map(fn ($c) => BeneficiaryTypeEnum::tryFrom((string) $c->type)?->label() ?? $c->type)
                     ->implode('; '),
-                'dependents' => $b->dependents->pluck('full_name')->implode('; '),
+                // N-N có thuộc tính pivot → kèm nhãn quan hệ trong ngoặc (đối xứng với DependentExport).
+                'dependents' => $b->dependents
+                    ->map(fn ($d) => $d->full_name.' ('.(DependentRelationshipEnum::tryFrom((string) $d->pivot->relationship_type)?->label() ?? $d->pivot->relationship_type).')')
+                    ->implode('; '),
                 'documents' => $b->documents->pluck('name')->implode('; '),
                 'created_by' => $b->creator?->name ?? 'N/A',
                 'updated_by' => $b->editor?->name ?? 'N/A',
@@ -50,6 +56,6 @@ class BeneficiaryExport extends AbstractExcelExport implements FromCollection
 
     public function headings(): array
     {
-        return ['STT', 'Họ tên', 'Ngày sinh', 'Năm sinh', 'Giới tính', 'CCCD/CMND', 'CCCD chủ hộ', 'Trạng thái', 'Địa chỉ', 'Vĩ độ', 'Kinh độ', 'SĐT', 'Ghi chú', 'Loại đối tượng', 'Thân nhân', 'Giấy tờ', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
+        return ['STT', 'Họ tên', 'Ngày sinh', 'Năm sinh', 'Giới tính', 'CCCD/CMND', 'CCCD chủ hộ', 'Tổ dân phố', 'Trạng thái', 'Ngày mất', 'Địa chỉ', 'Vĩ độ', 'Kinh độ', 'SĐT', 'Ghi chú', 'Loại đối tượng', 'Thân nhân', 'Giấy tờ', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
     }
 }

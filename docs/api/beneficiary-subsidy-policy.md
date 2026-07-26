@@ -1,6 +1,15 @@
-# API Chính sách trợ cấp (Beneficiary Subsidy Policy)
+# API Chính sách trợ cấp (Beneficiary Subsidy Policy) — ⚠️ ĐÃ GỠ BỎ
 
-> Cập nhật lần cuối: 16/07/2026 — tạo mới cùng module Beneficiary.
+> Ngày tạo: 10:00:00 16/07/2026
+> Cập nhật lần cuối: 09:55:00 26/07/2026 — đánh dấu đã gỡ bỏ.
+
+> ## ⚠️ Chức năng này KHÔNG CÒN TỒN TẠI
+>
+> Toàn bộ engine trợ cấp đã bị gỡ khi đơn giản hóa module ngày 25/07/2026: bảng, model, controller,
+> route và permission đều đã xóa. **Mọi endpoint mô tả bên dưới trả 404.**
+>
+> Tài liệu giữ lại làm tham chiếu lịch sử. FE còn module nào gọi các endpoint này thì phải gỡ.
+> Xem [docs/answer/module-nguoi-co-cong-thiet-ke-don-gian-hoa_133739_25072026.md](../answer/module-nguoi-co-cong-thiet-ke-don-gian-hoa_133739_25072026.md).
 
 Danh mục mức trợ cấp theo quy định pháp luật. `organization_id = null` → áp dụng toàn TP/quốc gia (catalog chung); có giá trị → chỉ tổ chức đó dùng. **Không có** `bulk-status`/`{id}/status` — không có cột `status`, hiệu lực xác định bởi `effective_from`/`effective_to`.
 

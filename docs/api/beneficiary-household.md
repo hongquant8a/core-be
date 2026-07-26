@@ -1,8 +1,13 @@
 # API Hộ gia đình (Beneficiary Household)
 
-> Cập nhật lần cuối: 16/07/2026 — thêm `latitude`/`longitude` (tra cứu bản đồ).
+> Ngày tạo: 10:00:00 16/07/2026
+> Cập nhật lần cuối: 09:55:00 26/07/2026 — nêu rõ hộ không còn tạo lồng được trong payload người có công.
 
 Quản lý hộ gia đình có người có công. **Không có** endpoint `bulk-status`/`{id}/status` — bảng `beneficiary_households` không có cột `status` (không có vòng đời trạng thái theo thiết kế).
+
+> **Hộ phải tạo trước, không tạo lồng được.** Body `POST /api/beneficiaries` trước đây nhận khóa `household` để tạo hộ mới ngay khi lập hồ sơ — đã bỏ. Nay chỉ nhận `household_id`.
+>
+> Tổ dân phố của hộ (`residential_area_id`) **độc lập** với tổ dân phố của người có công: đổi tổ dân phố của hộ không làm đổi tổ dân phố của các hồ sơ thuộc hộ đó.
 
 **Header bắt buộc:** `Authorization: Bearer {token}` và `X-Organization-Id: {organization_id}`.
 

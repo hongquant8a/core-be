@@ -16,13 +16,9 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class BeneficiaryService
 {
-    private const WITH = ['household', 'classifications.media', 'documents.media', 'creator.media', 'editor.media'];
+    private const WITH = ['household', 'residentialArea', 'classifications.media', 'dependentRelations.dependent', 'documents.media', 'creator.media', 'editor.media'];
 
-    public function __construct(
-        private HouseholdService $householdService,
-        private DependentService $dependentService,
-        private MediaService $mediaService,
-    ) {}
+    public function __construct(private MediaService $mediaService) {}
 
     public function stats(array $filters): array
     {
@@ -38,7 +34,7 @@ class BeneficiaryService
 
     public function index(array $filters, int $limit)
     {
-        return Beneficiary::with(['household', 'creator.media', 'editor.media'])
+        return Beneficiary::with(['household', 'residentialArea', 'creator.media', 'editor.media'])
             ->withCount(['dependents', 'documents'])
             ->filter($filters)
             ->paginate($limit);
@@ -49,81 +45,51 @@ class BeneficiaryService
         return $beneficiary->load(self::WITH)->loadCount(['dependents', 'documents']);
     }
 
-    /**
-     * `household`/`dependents` là lối tắt nhập liệu nhanh cho hồ sơ HOÀN TOÀN MỚI (gộp coarse
-     * theo đúng lúc dữ liệu "đi liền một khối" — cán bộ tiếp nhận 1 lần: người có công + hộ +
-     * thân nhân đi kèm). Hộ/thân nhân sau khi tạo vẫn là resource độc lập, quản lý tiếp qua
-     * `beneficiary-households`/`beneficiary-dependents` như bình thường — không lặp lại lối tắt
-     * này ở update(), vì lúc đó hộ/thân nhân đã có vòng đời riêng, sửa qua đúng resource của nó.
-     */
     public function store(array $validated): Beneficiary
     {
         return DB::transaction(function () use ($validated) {
             $classifications = $validated['classifications'] ?? [];
-            $householdData = $validated['household'] ?? null;
             $dependents = $validated['dependents'] ?? [];
-            unset($validated['classifications'], $validated['household'], $validated['dependents']);
+            $documents = $validated['documents'] ?? [];
+            unset($validated['classifications'], $validated['dependents'], $validated['documents']);
 
             $validated['status'] ??= BeneficiaryStatusEnum::Pending->value;
 
-            if ($householdData && empty($validated['household_id'])) {
-                $validated['household_id'] = $this->householdService->store($householdData)->id;
-            }
-
             $beneficiary = Beneficiary::create($validated);
 
-            foreach ($classifications as $row) {
-                $beneficiary->classifications()->create($row);
-            }
+            $beneficiary->classifications()->createMany($classifications);
+            $beneficiary->dependentRelations()->createMany($dependents);
+            $beneficiary->documents()->createMany($documents);
 
-            foreach ($dependents as $dependentRow) {
-                $dependent = $this->dependentService->store([
-                    ...Arr::except($dependentRow, ['relationship_type']),
-                    'household_id' => $dependentRow['household_id'] ?? $beneficiary->household_id,
-                ]);
-
-                $this->dependentService->addRelation($dependent, [
-                    'beneficiary_id' => $beneficiary->id,
-                    'relationship_type' => $dependentRow['relationship_type'],
-                    'note' => $dependentRow['note'] ?? null,
-                ]);
-            }
-
-            return $beneficiary->fresh(self::WITH);
+            return $beneficiary->load(self::WITH);
         });
     }
 
     /**
-     * Sync `classifications` theo quy ước COARSE: có `id` = cập nhật, không có `id` = tạo mới,
-     * dòng vắng mặt trong payload GIỮ NGUYÊN (không tự xóa) — xóa phải qua `classifications_deleted`
-     * tường minh. Xóa TRƯỚC upsert để nhất quán với quy ước chung, dù bảng này không có ràng buộc
-     * unique nào bị ảnh hưởng bởi thứ tự.
+     * Mỗi mảng con là TRẠNG THÁI ĐẦY ĐỦ của quan hệ đó: gửi mảng nào thì THAY THẾ toàn bộ mảng
+     * đó (xóa hết rồi tạo lại), không gửi thì giữ nguyên. Nhờ vậy `PUT` idempotent và FE chỉ cần
+     * gửi đúng bảng đang hiển thị, không phải theo dõi dòng nào đã bị xóa.
+     *
+     * Xóa qua `get()->each->delete()` chứ không `delete()` thẳng trên query builder: chỉ khi
+     * model event chạy thì medialibrary mới dọn file vật lý của tài liệu / quyết định kèm theo.
      */
     public function update(Beneficiary $beneficiary, array $validated): Beneficiary
     {
         return DB::transaction(function () use ($beneficiary, $validated) {
-            $classifications = $validated['classifications'] ?? [];
-            $deletedIds = $validated['classifications_deleted'] ?? [];
-            unset($validated['classifications'], $validated['classifications_deleted']);
+            $sections = Arr::only($validated, ['classifications', 'dependents', 'documents']);
+            $validated = Arr::except($validated, ['classifications', 'dependents', 'documents']);
 
             $beneficiary->update($validated);
 
-            if ($deletedIds) {
-                $beneficiary->classifications()->whereIn('id', $deletedIds)->delete();
-            }
+            $relations = [
+                'classifications' => $beneficiary->classifications(),
+                'dependents' => $beneficiary->dependentRelations(),
+                'documents' => $beneficiary->documents(),
+            ];
 
-            foreach ($classifications as $row) {
-                $attrs = Arr::except($row, ['id']);
-
-                $classification = isset($row['id'])
-                    ? tap($beneficiary->classifications()->whereKey($row['id'])->firstOrFail())->update($attrs)
-                    : $beneficiary->classifications()->create($attrs);
-
-                // Bất biến "chỉ 1 is_primary=true/beneficiary" (validate ở Request chỉ soát được
-                // trong mảng gửi lên) — enforce lại ở đây với CẢ các dòng cũ không nằm trong payload.
-                if ($attrs['is_primary'] ?? false) {
-                    $beneficiary->classifications()->whereKeyNot($classification->id)->update(['is_primary' => false]);
-                }
+            foreach ($sections as $key => $rows) {
+                $relations[$key]->get()->each->delete();
+                $relations[$key]->createMany($rows ?? []);
             }
 
             return $beneficiary->load(self::WITH);

@@ -2,18 +2,26 @@
 
 namespace App\Modules\Beneficiary\Requests;
 
-use App\Modules\Beneficiary\Enums\BeneficiaryTypeEnum;
+use App\Modules\Beneficiary\Concerns\AuthorizesBeneficiarySections;
+use App\Modules\Beneficiary\Concerns\ValidatesBeneficiarySections;
 use App\Modules\Beneficiary\Enums\GenderEnum;
-use App\Modules\Beneficiary\Models\BeneficiaryClassification;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class UpdateBeneficiaryRequest extends BaseRequest
 {
+    use AuthorizesBeneficiarySections, ValidatesBeneficiarySections;
+
+    public function authorize(): bool
+    {
+        return $this->authorizeSections();
+    }
+
     public function rules(): array
     {
         return [
             'household_id' => 'nullable|integer|exists:beneficiary_households,id',
+            'residential_area_id' => 'nullable|integer|exists:beneficiary_residential_areas,id',
             'full_name' => 'sometimes|string|max:255',
             'date_of_birth' => 'nullable|date',
             'birth_year' => 'nullable|string|max:20',
@@ -32,72 +40,14 @@ class UpdateBeneficiaryRequest extends BaseRequest
             'note' => 'nullable|string',
 
             'classifications' => 'nullable|array',
-            'classifications_deleted' => 'nullable|array',
-            'classifications_deleted.*' => 'integer',
+            'dependents' => 'nullable|array',
+            'documents' => 'nullable|array',
         ];
     }
 
-    /**
-     * Đồng bộ classifications theo quy ước COARSE (xem docs "Quy chuẩn Aggregate & API"):
-     * có `id` = cập nhật dòng đó, không có `id` = tạo mới, dòng KHÔNG xuất hiện trong mảng
-     * `classifications` = giữ nguyên (không tự xóa) — muốn xóa phải đưa id vào
-     * `classifications_deleted` tường minh. `id` gửi lên phải thuộc đúng hồ sơ đang sửa.
-     *
-     * Validate thủ công (không dùng rule dot-notation `classifications.*.field`) — lý do giống
-     * StoreBeneficiaryRequest: Scribe không render đúng ví dụ curl cho mảng object lồng qua rule
-     * wildcard.
-     */
     public function withValidator(Validator $validator): void
     {
-        $validator->after(function (Validator $validator) {
-            $beneficiary = $this->route('beneficiary');
-            $classifications = $this->input('classifications', []);
-
-            if (! is_array($classifications)) {
-                return;
-            }
-
-            $primaryCount = 0;
-
-            foreach ($classifications as $index => $classification) {
-                if (! is_array($classification)) {
-                    $validator->errors()->add("classifications.{$index}", 'Phân loại không hợp lệ.');
-
-                    continue;
-                }
-
-                if (! empty($classification['id'])) {
-                    $belongsToBeneficiary = BeneficiaryClassification::where('id', $classification['id'])
-                        ->where('beneficiary_id', $beneficiary->id)
-                        ->exists();
-
-                    if (! $belongsToBeneficiary) {
-                        $validator->errors()->add("classifications.{$index}.id", 'Phân loại không thuộc hồ sơ này.');
-                    }
-                }
-
-                if (empty($classification['type']) || ! in_array($classification['type'], BeneficiaryTypeEnum::values(), true)) {
-                    $validator->errors()->add("classifications.{$index}.type", 'Loại đối tượng không được để trống hoặc không hợp lệ.');
-                }
-                if (! empty($classification['decision_no']) && (! is_string($classification['decision_no']) || strlen($classification['decision_no']) > 255)) {
-                    $validator->errors()->add("classifications.{$index}.decision_no", 'Số quyết định không hợp lệ.');
-                }
-                if (! empty($classification['decision_date']) && ! strtotime($classification['decision_date'])) {
-                    $validator->errors()->add("classifications.{$index}.decision_date", 'Ngày quyết định không hợp lệ.');
-                }
-                if (! empty($classification['issued_by']) && (! is_string($classification['issued_by']) || strlen($classification['issued_by']) > 255)) {
-                    $validator->errors()->add("classifications.{$index}.issued_by", 'Cơ quan ban hành không hợp lệ.');
-                }
-
-                if ((bool) ($classification['is_primary'] ?? false)) {
-                    $primaryCount++;
-                }
-            }
-
-            if ($primaryCount > 1) {
-                $validator->errors()->add('classifications', 'Chỉ được chọn tối đa 1 phân loại là loại chính (is_primary = true) trong danh sách gửi lên.');
-            }
-        });
+        $validator->after(fn (Validator $validator) => $this->validateSections($validator));
     }
 
     public function messages(): array
@@ -108,18 +58,25 @@ class UpdateBeneficiaryRequest extends BaseRequest
             'gender.in' => 'Giới tính không hợp lệ.',
             'id_number.unique' => 'CCCD/CMND này đã tồn tại trong danh sách người có công.',
             'household_id.exists' => 'Hộ gia đình không tồn tại.',
+            'residential_area_id.exists' => 'Tổ dân phố không tồn tại.',
             'latitude.between' => 'Vĩ độ phải trong khoảng -90 đến 90.',
             'longitude.between' => 'Kinh độ phải trong khoảng -180 đến 180.',
-            'classifications.array' => 'Danh sách phân loại phải là một mảng.',
-            'classifications_deleted.array' => 'Danh sách ID phân loại cần xóa phải là một mảng.',
-            'classifications_deleted.*.integer' => 'ID phân loại không hợp lệ.',
+            'classifications.array' => 'Danh sách loại đối tượng phải là một mảng.',
+            'dependents.array' => 'Danh sách thân nhân phải là một mảng.',
+            'documents.array' => 'Danh sách tài liệu phải là một mảng.',
         ];
     }
 
+    /**
+     * 3 mảng con là TRẠNG THÁI ĐẦY ĐỦ: gửi mảng nào thì thay thế toàn bộ danh sách đó (dòng cũ
+     * bị xóa hết rồi tạo lại theo mảng gửi lên), không gửi khóa thì giữ nguyên. Gửi mảng rỗng
+     * `[]` = xóa sạch danh sách đó.
+     */
     public function bodyParameters(): array
     {
         return [
             'household_id' => ['description' => 'ID hộ gia đình.', 'example' => 1],
+            'residential_area_id' => ['description' => 'ID tổ dân phố / thôn của người có công. Độc lập với tổ dân phố của hộ.', 'example' => 1],
             'full_name' => ['description' => 'Họ tên.', 'example' => 'Trần Văn B'],
             'date_of_birth' => ['description' => 'Ngày sinh (nếu biết đầy đủ ngày/tháng/năm).', 'example' => '1950-05-20'],
             'birth_year' => ['description' => 'Năm sinh dạng text (dùng khi không rõ đầy đủ ngày/tháng sinh).', 'example' => '1950'],
@@ -130,8 +87,9 @@ class UpdateBeneficiaryRequest extends BaseRequest
             'longitude' => ['description' => 'Kinh độ (tra cứu bản đồ).', 'example' => 108.2208],
             'phone' => ['description' => 'Số điện thoại.', 'example' => null],
             'note' => ['description' => 'Ghi chú.', 'example' => null],
-            'classifications' => ['description' => 'Đồng bộ danh sách phân loại: có `id` = cập nhật dòng đó, không có `id` = tạo mới. Dòng không xuất hiện trong mảng này KHÔNG bị xóa (giữ nguyên) — muốn xóa phải đưa id vào `classifications_deleted`.', 'example' => []],
-            'classifications_deleted' => ['description' => 'Danh sách ID phân loại cần xóa.', 'example' => []],
+            'classifications' => ['description' => 'THAY THẾ toàn bộ danh sách loại đối tượng. Mỗi phần tử: `type` (bắt buộc), `decision_no`, `decision_date`, `issued_by`, `is_primary`. Không gửi khóa = giữ nguyên.', 'example' => []],
+            'dependents' => ['description' => 'THAY THẾ toàn bộ liên kết thân nhân. Mỗi phần tử: `dependent_id` + `relationship_type` (bắt buộc), `note`. Không gửi khóa = giữ nguyên.', 'example' => []],
+            'documents' => ['description' => 'THAY THẾ toàn bộ danh sách tài liệu. Mỗi phần tử: `name` (bắt buộc), `note`. Tập tin đính kèm của dòng cũ bị xóa theo — upload lại qua `beneficiary-documents`. Không gửi khóa = giữ nguyên.', 'example' => []],
         ];
     }
 
@@ -139,6 +97,7 @@ class UpdateBeneficiaryRequest extends BaseRequest
     {
         return [
             'household_id' => 'Hộ gia đình',
+            'residential_area_id' => 'Tổ dân phố',
             'full_name' => 'Họ tên',
             'date_of_birth' => 'Ngày sinh',
             'birth_year' => 'Năm sinh',
@@ -149,8 +108,9 @@ class UpdateBeneficiaryRequest extends BaseRequest
             'longitude' => 'Kinh độ',
             'phone' => 'Số điện thoại',
             'note' => 'Ghi chú',
-            'classifications' => 'Danh sách phân loại',
-            'classifications_deleted' => 'Danh sách ID phân loại cần xóa',
+            'classifications' => 'Danh sách loại đối tượng',
+            'dependents' => 'Danh sách thân nhân',
+            'documents' => 'Danh sách tài liệu',
         ];
     }
 }

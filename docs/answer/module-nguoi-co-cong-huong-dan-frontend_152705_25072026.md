@@ -1,7 +1,19 @@
-# Hướng dẫn Frontend — Module Người có công (theo API)
+# Hướng dẫn Frontend — Module Người có công (theo API) — ⚠️ ĐÃ THAY THẾ
 
 > Ngày tạo: 15:27:05 25/07/2026
-> Cập nhật lần cuối: 15:27:05 25/07/2026
+> Cập nhật lần cuối: 09:55:00 26/07/2026 — **LỖI THỜI**, xem bản mới.
+
+> ## ⚠️ Tài liệu này đã lỗi thời — dùng bản mới
+>
+> **→ [nguoi-co-cong-huong-dan-frontend_095245_26072026.md](nguoi-co-cong-huong-dan-frontend_095245_26072026.md)**
+>
+> Từ 26/07/2026, API đã đổi những điểm sau so với nội dung bên dưới:
+> - Người có công có **`residential_area_id`** riêng (tổ dân phố không còn suy qua hộ), lọc được ở `index`/`export`.
+> - `store`/`update` **bỏ** nhánh tạo hộ lồng (`household`) — chỉ nhận `household_id`.
+> - `dependents[]` đổi từ "tạo mới thân nhân" sang **liên kết** thân nhân có sẵn (`dependent_id`).
+> - Thêm mảng `documents[]` trong payload; 3 mảng con theo cơ chế **thay thế toàn bộ**, không có `*_deleted`, không nhận `id`.
+> - Response `show`/`store`/`update` thêm `dependents[]`.
+> - Gửi `documents`/`dependents` cần **permission riêng** của hai resource đó, thiếu là 403.
 
 Tài liệu mô tả **danh sách màn hình** và **cách gọi API** để FE dựng module Người có công (bản đơn giản hóa: hồ sơ cơ bản + giấy tờ + dashboard). Bám theo tài liệu Scribe (`/docs`) và [docs/database/Beneficiary.md](../database/Beneficiary.md), [docs/modules/Beneficiary/README.md](../modules/Beneficiary/README.md).
 

@@ -6,6 +6,7 @@ use App\Modules\Beneficiary\Enums\BeneficiaryStatusEnum;
 use App\Modules\Beneficiary\Enums\GenderEnum;
 use App\Modules\Beneficiary\Models\Beneficiary;
 use App\Modules\Beneficiary\Models\Household;
+use App\Modules\Beneficiary\Models\ResidentialArea;
 use App\Modules\Core\Traits\NormalizesImportValues;
 use App\Modules\Core\Traits\TranslatesExcelHeadings;
 use Maatwebsite\Excel\Concerns\Importable;
@@ -30,7 +31,9 @@ class BeneficiaryImport implements ToModel, WithHeadingRow, WithValidation, Skip
         'gender' => 'Giới tính',
         'id_number' => 'CCCD/CMND',
         'head_id_number' => 'CCCD chủ hộ',
+        'residential_area' => 'Tổ dân phố',
         'status' => 'Trạng thái',
+        'death_date' => 'Ngày mất',
         'address' => 'Địa chỉ',
         'latitude' => 'Vĩ độ',
         'longitude' => 'Kinh độ',
@@ -51,7 +54,9 @@ class BeneficiaryImport implements ToModel, WithHeadingRow, WithValidation, Skip
         'gender' => 'male',
         'id_number' => '049123456789',
         'head_id_number' => '049000111222',
+        'residential_area' => 'Tổ 5',
         'status' => 'pending',
+        'death_date' => '',
         'address' => '12 Trần Phú, Hải Châu',
         'latitude' => '16.0678',
         'longitude' => '108.2208',
@@ -70,7 +75,9 @@ class BeneficiaryImport implements ToModel, WithHeadingRow, WithValidation, Skip
             'gender' => $row['gender'] ?? null,
             'id_number' => $idNumber,
             'household_id' => $this->resolveHouseholdId($row['head_id_number'] ?? null),
+            'residential_area_id' => $this->resolveResidentialAreaId($row['residential_area'] ?? null),
             'status' => $row['status'] ?? null,
+            'death_date' => $row['death_date'] ?? null,
             'address' => $row['address'] ?? null,
             'latitude' => $row['latitude'] ?? null,
             'longitude' => $row['longitude'] ?? null,
@@ -112,6 +119,7 @@ class BeneficiaryImport implements ToModel, WithHeadingRow, WithValidation, Skip
 
         // Chuẩn hóa ngày (Excel serial / d/m/Y / Y-m-d) → Y-m-d để rule `date` và cast hoạt động.
         $data['date_of_birth'] = $this->normalizeDate($data['date_of_birth'] ?? null);
+        $data['death_date'] = $this->normalizeDate($data['death_date'] ?? null);
 
         return $data;
     }
@@ -125,7 +133,9 @@ class BeneficiaryImport implements ToModel, WithHeadingRow, WithValidation, Skip
             'gender' => ['required', GenderEnum::rule()],
             'id_number' => 'nullable|string|max:255',
             'head_id_number' => 'nullable|string|max:255',
+            'residential_area' => 'nullable|string|max:255',
             'status' => ['nullable', BeneficiaryStatusEnum::rule()],
+            'death_date' => 'nullable|date',
             'address' => 'nullable|string|max:255',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
@@ -141,6 +151,7 @@ class BeneficiaryImport implements ToModel, WithHeadingRow, WithValidation, Skip
             'gender.required' => 'Giới tính không được để trống.',
             'gender.in' => 'Giới tính không hợp lệ.',
             'date_of_birth.date' => 'Ngày sinh không hợp lệ.',
+            'death_date.date' => 'Ngày mất không hợp lệ.',
             'status.in' => 'Trạng thái không hợp lệ.',
             'latitude.between' => 'Vĩ độ phải trong khoảng -90 đến 90.',
             'longitude.between' => 'Kinh độ phải trong khoảng -180 đến 180.',
@@ -180,5 +191,17 @@ class BeneficiaryImport implements ToModel, WithHeadingRow, WithValidation, Skip
         }
 
         return Household::where('head_id_number', $headIdNumber)->value('id');
+    }
+
+    /** Tra tên tổ dân phố về residential_area_id trong tổ chức hiện tại; không khớp thì để trống (không chặn dòng). */
+    private function resolveResidentialAreaId(?string $name): ?int
+    {
+        $name = $name !== null ? trim((string) $name) : '';
+
+        if ($name === '') {
+            return null;
+        }
+
+        return ResidentialArea::where('name', $name)->value('id');
     }
 }

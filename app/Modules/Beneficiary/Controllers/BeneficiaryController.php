@@ -48,6 +48,7 @@ class BeneficiaryController extends Controller
      * @queryParam search string Tìm theo họ tên hoặc CCCD.
      * @queryParam status string Lọc theo trạng thái.
      * @queryParam household_id integer Lọc theo hộ gia đình.
+     * @queryParam residential_area_id integer Lọc theo tổ dân phố / thôn.
      * @queryParam from_date date Lọc từ ngày tạo (Y-m-d).
      * @queryParam to_date date Lọc đến ngày tạo (Y-m-d).
      * @queryParam sort_by string Sắp xếp theo: id, full_name, date_of_birth, status, created_at. Example: created_at
@@ -82,6 +83,10 @@ class BeneficiaryController extends Controller
     /**
      * Tạo hồ sơ người có công
      *
+     * Hộ gia đình và tổ dân phố là **ID** (`household_id`, `residential_area_id`) — tạo trước qua
+     * resource của nó. Thân nhân là mảng **liên kết** thân nhân có sẵn (`dependent_id` +
+     * `relationship_type`), tài liệu và loại đối tượng là mảng thông tin đầy đủ.
+     *
      * @bodyParam full_name string required Họ tên. Example: Trần Văn B
      * @bodyParam gender string required Giới tính: male, female, other. Example: male
      *
@@ -98,6 +103,10 @@ class BeneficiaryController extends Controller
 
     /**
      * Cập nhật hồ sơ người có công
+     *
+     * `classifications` / `dependents` / `documents` là **trạng thái đầy đủ**: gửi mảng nào thì
+     * THAY THẾ toàn bộ danh sách đó (xóa hết rồi tạo lại), không gửi khóa thì giữ nguyên, gửi `[]`
+     * là xóa sạch. Không nhận `id` trong phần tử. Tập tin đính kèm của tài liệu cũ bị xóa theo.
      *
      * @urlParam beneficiary integer required ID người có công. Example: 1
      *
@@ -220,10 +229,13 @@ class BeneficiaryController extends Controller
      * Xuất Excel người có công
      *
      * Xuất ra các trường: id, full_name, date_of_birth, birth_year, gender, id_number, head_id_number,
-     * status, address, latitude, longitude, phone, note, created_by, updated_by, created_at, updated_at.
+     * residential_area, status, death_date, address, latitude, longitude, phone, note, created_by,
+     * updated_by, created_at, updated_at. Kèm 3 cột liệt kê chỉ để tham chiếu (import bỏ qua):
+     * "Loại đối tượng", "Thân nhân" (dạng `Tên (Quan hệ)`), "Giấy tờ" — ngăn cách bởi `; `.
      *
      * @queryParam search string Tìm theo họ tên hoặc CCCD.
      * @queryParam status string Lọc theo trạng thái.
+     * @queryParam residential_area_id integer Lọc theo tổ dân phố / thôn.
      */
     public function export(FilterRequest $request)
     {
@@ -233,7 +245,7 @@ class BeneficiaryController extends Controller
     /**
      * Import người có công
      *
-     * Cột bắt buộc: full_name, gender. Cột không bắt buộc: date_of_birth, birth_year, id_number, status (mặc định "pending"), address, latitude, longitude, phone, note. Giới tính/trạng thái nhận cả value gốc (male/pending) lẫn nhãn tiếng Việt.
+     * Cột bắt buộc: full_name, gender. Cột không bắt buộc: date_of_birth, birth_year, id_number, head_id_number (nhập CCCD chủ hộ), residential_area (nhập TÊN tổ dân phố, không khớp thì để trống), status (mặc định "pending"), death_date, address, latitude, longitude, phone, note. Giới tính/trạng thái nhận cả value gốc (male/pending) lẫn nhãn tiếng Việt.
      *
      * @bodyParam file file required File Excel (xlsx, xls, csv). Cột theo chuẩn export.
      *

@@ -105,6 +105,7 @@ class HouseholdImport implements ToModel, WithHeadingRow, WithValidation, SkipsO
         return [
             'head_name' => 'required|string|max:255',
             'head_id_number' => 'nullable|string|max:255',
+            'residential_area' => 'nullable|string|max:255',
             'address' => 'nullable|string|max:255',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',

@@ -55,8 +55,25 @@ class ExportRelationsTest extends TestCase
         $this->assertStringContainsString('Thương binh', $row['classifications']);
         $this->assertStringContainsString('nhiễm chất độc hóa học', $row['classifications']);
 
-        $this->assertSame('Con 1; Con 2', $row['dependents']);
+        // N-N có pivot → kèm nhãn quan hệ, đối xứng với DependentExport.
+        $this->assertSame('Con 1 (Con); Con 2 (Con)', $row['dependents']);
         $this->assertSame('Giấy A; Giấy B', $row['documents']);
+    }
+
+    /** Export phải phủ đủ trường của Resource — `death_date` từng bị bỏ sót. */
+    public function test_beneficiary_export_includes_death_date(): void
+    {
+        Beneficiary::create([
+            'organization_id' => $this->orgA->id, 'full_name' => 'Liệt sĩ X', 'gender' => 'male',
+            'status' => 'deceased', 'death_date' => '1972-04-30',
+        ]);
+
+        $export = new BeneficiaryExport();
+        $row = $export->collection()->firstWhere('full_name', 'Liệt sĩ X');
+
+        $this->assertSame('30/04/1972', $row['death_date']);
+        $this->assertContains('Ngày mất', $export->headings());
+        $this->assertCount(count($export->headings()), $row);
     }
 
     public function test_dependent_export_lists_linked_beneficiaries_with_relationship(): void

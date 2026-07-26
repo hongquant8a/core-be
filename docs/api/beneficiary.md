@@ -1,185 +1,269 @@
 # API Người có công (Beneficiary)
 
-> Cập nhật lần cuối: 16/07/2026 — thêm `birth_year` (năm sinh dạng text), `latitude`/`longitude` (tra cứu bản đồ).
+> Ngày tạo: 10:00:00 16/07/2026
+> Cập nhật lần cuối: 09:55:00 26/07/2026 — thêm `residential_area_id` (tổ dân phố là trường riêng của người có công); `store`/`update` nhận 3 mảng con `classifications`/`dependents`/`documents` theo cơ chế **thay thế toàn bộ**; bỏ nhánh tạo hộ lồng; response thêm `dependents`. Bản trước còn mô tả trợ cấp / lịch sử trạng thái — đã bỏ từ 25/07.
 
-Quản lý hồ sơ người có công: thống kê, danh sách, chi tiết, CRUD, xóa/cập nhật trạng thái hàng loạt, đổi trạng thái (kèm ghi lịch sử + tự dừng trợ cấp), xuất/nhập Excel, lịch sử thay đổi trạng thái. Không có endpoint công khai (dữ liệu cá nhân nhạy cảm).
+Quản lý hồ sơ người có công: thống kê, danh sách, chi tiết, CRUD, xóa/đổi trạng thái hàng loạt, đổi trạng thái, xuất/nhập Excel. Không có endpoint công khai (dữ liệu cá nhân nhạy cảm).
 
 **Header bắt buộc:** `Authorization: Bearer {token}` và `X-Organization-Id: {organization_id}`.
 
-**Phạm vi dữ liệu:** tất cả endpoint chỉ thao tác hồ sơ thuộc tổ chức hiện tại (`organization_id` theo `X-Organization-Id`), route dùng middleware `ensure.route.org` — thao tác theo ID thuộc org khác trả 404.
+**Phạm vi dữ liệu:** mọi endpoint chỉ thao tác hồ sơ thuộc tổ chức hiện tại, route dùng `ensure.route.org` — thao tác theo ID thuộc org khác trả 404.
 
 **Base path:** `/api/beneficiaries`
 
 ---
 
-## Thống kê
+## 1. Thống kê
 
 | | |
 |---|---|
 | **Method** | GET |
 | **Path** | `/api/beneficiaries/stats` |
-| **Query** | `search` (họ tên/CCCD), `status`, `from_date`, `to_date`. |
-| **Response** | `{ "total": 50, "pending": 5, "active": 40, "deceased": 5 }`. |
+| **Query** | `search`, `status`, `household_id`, `residential_area_id`, `from_date`, `to_date` |
+| **Response** | `{ "total": 50, "pending": 5, "active": 40, "deceased": 5 }` |
 
 ---
 
-## Danh sách người có công
+## 2. Danh sách
 
 | | |
 |---|---|
 | **Method** | GET |
 | **Path** | `/api/beneficiaries` |
-| **Query** | `search` (họ tên/CCCD), `status` (pending \| active \| deceased \| moved_out \| suspended), `household_id`, `from_date`, `to_date`, `sort_by` (id \| full_name \| date_of_birth \| status \| created_at), `sort_order`, `limit`. |
-| **Response** | Paginated collection (`BeneficiaryResource`), có `dependents_count`, `active_subsidy_grants_count`. |
+| **Query** | `search` (họ tên/CCCD), `status` (`pending`\|`active`\|`deceased`\|`moved_out`\|`suspended`), `household_id`, `residential_area_id`, `from_date`, `to_date`, `sort_by` (`id`\|`full_name`\|`date_of_birth`\|`status`\|`created_at`\|`updated_at`), `sort_order`, `limit` (`-1` = không phân trang) |
+
+Eager load: `household`, `residentialArea`, `creator`, `editor`. Đếm: `dependents_count`, `documents_count`.
+
+**Không** trả `classifications` / `dependents` / `documents` chi tiết — lấy ở endpoint chi tiết.
 
 ---
 
-## Chi tiết người có công
+## 3. Chi tiết
 
 | | |
 |---|---|
 | **Method** | GET |
 | **Path** | `/api/beneficiaries/{id}` |
-| **Response** | `BeneficiaryResource` — kèm `household`, `classifications[]`. |
+
+Trả đầy đủ: `household`, `residential_area`, `classifications[]` (kèm `decision_files`), `dependents[]` (kèm thông tin thân nhân lồng), `documents[]` (kèm `files`), `created_by`, `updated_by`.
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "household_id": 3,
+    "household": { "id": 3, "head_name": "Trần Văn A" },
+    "residential_area_id": 5,
+    "residential_area": { "id": 5, "name": "Tổ 5" },
+    "full_name": "Trần Văn B",
+    "date_of_birth": "20/05/1950",
+    "birth_year": null,
+    "gender": "male",
+    "gender_label": "Nam",
+    "id_number": "049123456789",
+    "status": "active",
+    "status_label": "Đang hưởng",
+    "death_date": null,
+    "address": "12 Trần Phú, Hải Châu",
+    "latitude": "16.0678000",
+    "longitude": "108.2208000",
+    "phone": "0905123456",
+    "note": null,
+
+    "classifications": [
+      {
+        "id": 7,
+        "type": "war_invalid",
+        "type_label": "Thương binh, người hưởng chính sách như thương binh",
+        "decision_no": "123/QĐ-UBND",
+        "decision_date": "20/05/2010",
+        "issued_by": "UBND TP Đà Nẵng",
+        "is_primary": true,
+        "decision_files": [
+          { "id": 11, "name": "qd.pdf", "url": "https://.../qd.pdf", "size": 20480 }
+        ]
+      }
+    ],
+    "dependents": [
+      {
+        "id": 4,
+        "beneficiary_id": 1,
+        "dependent_id": 12,
+        "dependent": {
+          "id": 12, "full_name": "Trần Thị C", "date_of_birth": "10/02/1980",
+          "id_number": "049...", "phone": "0905..."
+        },
+        "relationship_type": "child",
+        "relationship_type_label": "Con",
+        "note": "Con ruột"
+      }
+    ],
+    "documents": [
+      {
+        "id": 9,
+        "beneficiary_id": 1,
+        "name": "Giấy chứng nhận thương binh",
+        "note": "Bản sao công chứng",
+        "files": [
+          { "id": 21, "name": "gcn.pdf", "url": "https://.../gcn.pdf", "size": 51200 }
+        ]
+      }
+    ],
+
+    "dependents_count": 1,
+    "documents_count": 1,
+    "created_by": { "id": 2, "name": "Cán bộ A" },
+    "updated_by": { "id": 2, "name": "Cán bộ A" },
+    "created_at": "09:00:00 15/01/2026",
+    "updated_at": "09:00:00 15/01/2026"
+  }
+}
+```
 
 ---
 
-## Tạo hồ sơ người có công
+## 4. Tạo hồ sơ
 
 | | |
 |---|---|
 | **Method** | POST |
 | **Path** | `/api/beneficiaries` |
-| **Body** | `household_id` (nullable, exists), `full_name` (required, max 255), `date_of_birth` (nullable date — dùng khi biết đầy đủ ngày/tháng/năm), `birth_year` (nullable, text max 20 — dùng khi không rõ đầy đủ ngày/tháng sinh, VD "1950"), `gender` (required: male \| female \| other), `id_number` (nullable), `injury_rate` (nullable, 0-100), `recognition_decision_no`, `recognition_date`, `status` (nullable, mặc định `pending`), `address`, `latitude` (nullable, -90 đến 90), `longitude` (nullable, -180 đến 180), `phone`, `note`, `classifications[]` (mảng, mỗi phần tử: `type` — 1 trong 12 nhóm `BeneficiaryTypeEnum`, `decision_no`, `decision_date`, `issued_by`, `is_primary`). |
-| **Validate riêng** | Nếu có `classifications`, bắt buộc đúng **1** phần tử `is_primary = true` (lỗi field `classifications` nếu không đúng 1). |
-| **Response** | 201, `BeneficiaryResource`. |
+| **Status** | 201 |
+
+```json
+{
+  "full_name": "Trần Văn B",
+  "gender": "male",
+  "household_id": 3,
+  "residential_area_id": 5,
+  "date_of_birth": "1950-05-20",
+  "birth_year": null,
+  "id_number": "049123456789",
+  "status": "pending",
+  "address": "12 Trần Phú, Hải Châu",
+  "latitude": 16.0678,
+  "longitude": 108.2208,
+  "phone": "0905123456",
+  "note": null,
+
+  "classifications": [
+    { "type": "war_invalid", "decision_no": "123/QĐ", "decision_date": "2010-05-20",
+      "issued_by": "UBND TP Đà Nẵng", "is_primary": true }
+  ],
+  "dependents": [
+    { "dependent_id": 12, "relationship_type": "child", "note": "Con ruột" }
+  ],
+  "documents": [
+    { "name": "Giấy chứng nhận thương binh", "note": "Bản sao" }
+  ]
+}
+```
+
+**Bắt buộc:** `full_name`, `gender`. `status` mặc định `pending`.
+
+**Quan hệ là ID, không nhúng đối tượng:** `household_id`, `residential_area_id` phải tạo trước qua resource của nó (`/api/beneficiary-households`, `/api/beneficiary-residential-areas`). Thân nhân cũng vậy — tạo qua `/api/beneficiary-dependents` rồi liên kết bằng `dependent_id`.
+
+**Không nhận `id`** trong phần tử của 3 mảng con → 422.
+
+**`classifications`:** chỉ `type` bắt buộc; `decision_no`/`decision_date`/`issued_by` bổ sung sau khi có đủ giấy tờ. Tối đa 1 phần tử `is_primary = true` (không bắt buộc phải có).
 
 ---
 
-## Cập nhật hồ sơ người có công
+## 5. Cập nhật hồ sơ
 
 | | |
 |---|---|
 | **Method** | PUT |
 | **Path** | `/api/beneficiaries/{id}` |
-| **Body** | Giống tạo (không có `classifications` — sửa phân loại chưa hỗ trợ qua endpoint này). |
-| **Response** | `BeneficiaryResource`. |
 
----
+Các cột thuộc chính hồ sơ cập nhật như bình thường. **Ba mảng con theo cơ chế THAY THẾ TOÀN BỘ:**
 
-## Xóa hồ sơ người có công
-
-| | |
+| Gửi gì | Kết quả |
 |---|---|
-| **Method** | DELETE |
-| **Path** | `/api/beneficiaries/{id}` |
-| **Lưu ý** | Xóa dây chuyền `beneficiary_classifications` và các quan hệ pivot `beneficiary_dependent_relations`. **Không** xóa/cảnh báo các `subsidy_grants`/`status_histories`/`visit_schedules` liên quan (quan hệ polymorphic, không có FK ràng buộc) — các bản ghi này sẽ mồ côi. |
-| **Response** | `{ "success": true, "message": "Xóa hồ sơ người có công thành công!" }`. |
+| Không gửi khóa | Giữ nguyên danh sách hiện có |
+| Gửi mảng có phần tử | Xóa sạch danh sách cũ rồi tạo lại theo mảng gửi lên |
+| Gửi `[]` | Xóa sạch danh sách đó |
+
+Không có `*_deleted`. `PUT` idempotent: gửi lại đúng payload vẫn ra đúng một trạng thái.
+
+> ⚠️ **Gửi `documents` hoặc `classifications` sẽ XÓA file đính kèm** của các dòng cũ (giấy tờ scan, file quyết định), vì dòng mới có `id` mới. Màn hình không sửa hai danh sách này thì **đừng gửi hai khóa đó**.
 
 ---
 
-## Xóa hàng loạt
+## 6. Xóa / hàng loạt / đổi trạng thái
 
-| | |
+| Việc | Method | Path | Body |
+|---|---|---|---|
+| Xóa 1 hồ sơ | DELETE | `/api/beneficiaries/{id}` | — |
+| Xóa hàng loạt | DELETE | `/api/beneficiaries/bulk-delete` | `{ "ids": [1,2,3] }` |
+| Đổi trạng thái hàng loạt | PATCH | `/api/beneficiaries/bulk-status` | `{ "ids": [1,2], "status": "suspended" }` |
+| Đổi trạng thái 1 hồ sơ | PATCH | `/api/beneficiaries/{id}/status` | `{ "status": "deceased", "death_date": "2026-01-20" }` |
+
+`death_date` chỉ set được qua `PATCH /{id}/status` (khi `status = deceased`) hoặc qua import — **không** nằm trong body `store`/`update`.
+
+Đổi trạng thái **không ghi lịch sử** (bảng audit đã bỏ từ 25/07).
+
+---
+
+## 7. File quyết định của loại đối tượng
+
+| Việc | Method | Path |
+|---|---|---|
+| Đính file | POST | `/api/beneficiaries/{beneficiary}/classifications/{classification}/files` |
+| Xóa file | DELETE | `/api/beneficiaries/{beneficiary}/classifications/{classification}/files/{media}` |
+
+Body upload: `files[]` (multipart, ≥1 file, mỗi file ≤ 10MB). Dùng chung permission `beneficiaries.update`.
+
+Vì là multipart nên **không** gửi kèm được trong body JSON của `store`/`update` — phải lưu hồ sơ trước để lấy `classifications[].id`, rồi mới upload.
+
+---
+
+## 8. Xuất / Nhập Excel
+
+| Việc | Method | Path |
+|---|---|---|
+| Xuất | GET | `/api/beneficiaries/export` (nhận cùng bộ query như danh sách) |
+| Nhập | POST | `/api/beneficiaries/import` — `file` (xlsx/xls/csv, ≤10MB) |
+| Tải file mẫu | GET | `/api/beneficiaries/import-template` |
+
+**Cột export:** STT, Họ tên, Ngày sinh, Năm sinh, Giới tính, CCCD/CMND, CCCD chủ hộ, Tổ dân phố, Trạng thái, Ngày mất, Địa chỉ, Vĩ độ, Kinh độ, SĐT, Ghi chú, **Loại đối tượng**, **Thân nhân**, **Giấy tờ**, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID.
+
+Ba cột in đậm là **liệt kê tham chiếu** (ngăn cách `; `), import **bỏ qua**. Cột "Thân nhân" có dạng `Tên (Quan hệ)`.
+
+**Cột import bắt buộc:** Họ tên, Giới tính. Còn lại tùy chọn. Quan hệ nhập bằng **tên/mã**: "CCCD chủ hộ" → hộ, "Tổ dân phố" → tên tổ. Không khớp thì để trống, **không chặn dòng**.
+
+Giới tính và Trạng thái nhận cả value gốc (`male`, `pending`) lẫn nhãn tiếng Việt (`Nam`, `Chờ công nhận`) → export ra sửa rồi nhập lại được.
+
+**Kết quả import** trả `data.error_file = { name, mime, base64 }` — file Excel tổng hợp lỗi (STT | Hàng số | Cột | Lỗi | Giá trị), `null` khi không có lỗi. Dòng lỗi bị bỏ qua, dòng hợp lệ vẫn nhập.
+
+---
+
+## 9. Phân quyền
+
+| Endpoint | Permission |
 |---|---|
-| **Method** | DELETE |
-| **Path** | `/api/beneficiaries/bulk-delete` |
-| **Body** | `ids` (array, required, min 1). |
+| `stats`, `index`, `show`, `store`, `update`, `destroy`, `bulkDestroy`, `bulkUpdateStatus`, `changeStatus`, `export`, `import` | `beneficiaries.{action}` |
+| `import-template` | `beneficiaries.import` (dùng chung) |
+| File quyết định | `beneficiaries.update` |
 
----
+**Quyền phụ cho mảng lồng** — gửi `documents`/`dependents` trong `store`/`update` cần thêm:
 
-## Cập nhật trạng thái hàng loạt
-
-| | |
+| Payload | Quyền |
 |---|---|
-| **Method** | PATCH |
-| **Path** | `/api/beneficiaries/bulk-status` |
-| **Body** | `ids` (array), `status` (required). |
+| `documents` khác rỗng | `beneficiary-documents.store` |
+| `documents` khi hồ sơ đang có tài liệu (dòng cũ bị xóa) | `beneficiary-documents.destroy` |
+| `dependents` khác rỗng | `beneficiary-dependents.storeRelation` |
+| `dependents` khi hồ sơ đang có quan hệ (dòng cũ bị xóa) | `beneficiary-dependents.destroyRelation` |
+
+Thiếu quyền → **403 toàn request**, không ghi gì cả. `classifications` không cần quyền phụ.
 
 ---
 
-## Đổi trạng thái
+## Liên quan
 
-| | |
-|---|---|
-| **Method** | PATCH |
-| **Path** | `/api/beneficiaries/{id}/status` |
-| **Body** | `status` (required), `reason` (nullable), `death_date` (bắt buộc nếu `status = deceased`). |
-| **Side-effect** | Ghi 1 dòng `beneficiary_status_histories`. Nếu chuyển `deceased`/`moved_out`: tự động `terminated` toàn bộ `subsidy_grants` đang `active` của người này. |
-| **Response** | `BeneficiaryResource` đã cập nhật. |
-
----
-
-## Lịch sử thay đổi trạng thái
-
-| | |
-|---|---|
-| **Method** | GET |
-| **Path** | `/api/beneficiaries/{id}/status-histories` |
-| **Query** | `from_date`, `to_date`, `limit`. |
-| **Response** | Paginated collection (`StatusHistoryResource`): `old_status`, `new_status`, `reason`, `changed_by`, `changed_at`. |
-
----
-
-## Xuất Excel
-
-| | |
-|---|---|
-| **Method** | GET |
-| **Path** | `/api/beneficiaries/export` |
-| **Cột xuất** | STT, Họ tên, Ngày sinh, Năm sinh, Giới tính, CCCD/CMND, Mã hộ, Trạng thái, Vĩ độ, Kinh độ, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID. |
-
----
-
-## Nhập Excel
-
-| | |
-|---|---|
-| **Method** | POST |
-| **Path** | `/api/beneficiaries/import` |
-| **Body** | `file` (required, xlsx/xls/csv, max 10MB). |
-| **Cột bắt buộc** | `full_name`, `gender`. **Không bắt buộc**: `date_of_birth`, `id_number`, `status` (mặc định `pending`). |
-
----
-
-## Response mẫu (BeneficiaryResource)
-
-```json
-{
-  "id": 22,
-  "household_id": 3,
-  "household": { "id": 3, "household_code": "HGD-00001", "head_name": "Nguyễn Văn A" },
-  "full_name": "Trần Văn B",
-  "date_of_birth": "20/05/1950",
-  "birth_year": null,
-  "gender": "male",
-  "gender_label": "Nam",
-  "id_number": "049123456789",
-  "injury_rate": 61,
-  "recognition_decision_no": "QD-123/2020",
-  "recognition_date": "15/07/2020",
-  "status": "active",
-  "status_label": "Đang hưởng",
-  "death_date": null,
-  "address": null,
-  "latitude": null,
-  "longitude": null,
-  "phone": null,
-  "note": null,
-  "classifications": [
-    { "id": 5, "type": "war_invalid", "type_label": "Thương binh, người hưởng chính sách như thương binh", "decision_no": "QD-123/2020", "decision_date": "15/07/2020", "issued_by": "Sở LĐTBXH TP Đà Nẵng", "is_primary": true }
-  ],
-  "dependents_count": 2,
-  "active_subsidy_grants_count": 1,
-  "created_by": { "id": 1, "name": "Admin" },
-  "updated_by": { "id": 1, "name": "Admin" },
-  "created_at": "14:09:30 16/07/2026",
-  "updated_at": "14:09:30 16/07/2026"
-}
-```
-
-`classifications`, `dependents_count`, `active_subsidy_grants_count` chỉ có khi endpoint eager-load/`withCount` quan hệ đó (`index`/`show` đã load sẵn).
-
----
-
-*Xem thêm:* [beneficiary-household.md](beneficiary-household.md), [beneficiary-dependent.md](beneficiary-dependent.md), [beneficiary-subsidy-policy.md](beneficiary-subsidy-policy.md), [beneficiary-subsidy-grant.md](beneficiary-subsidy-grant.md), [beneficiary-visit-schedule.md](beneficiary-visit-schedule.md). Cấu hình nhắc lịch viếng thăm dùng chung route pattern ở [notification-config.md](notification-config.md), base path `/api/beneficiary/notification-config`, `module_key=beneficiary`.
+- [Hộ gia đình](beneficiary-household.md) · [Thân nhân](beneficiary-dependent.md)
+- Giấy tờ hồ sơ: `/api/beneficiary-documents` · Tổ dân phố: `/api/beneficiary-residential-areas`
+- Enum cho dropdown: `GET /api/beneficiary-enums`
+- Thống kê dashboard: `/api/beneficiary-statistics`
+- **Hướng dẫn tích hợp chi tiết cho FE:** [nguoi-co-cong-huong-dan-frontend_095245_26072026.md](../answer/nguoi-co-cong-huong-dan-frontend_095245_26072026.md)

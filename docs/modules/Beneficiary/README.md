@@ -1,7 +1,7 @@
 # Module: Beneficiary (Người có công theo Hộ gia đình & Thân nhân)
 
 > Ngày tạo: 11:05:00 16/07/2026
-> Cập nhật lần cuối: 14:26:28 25/07/2026 — **đơn giản hóa**: chỉ lưu thông tin cơ bản + giấy tờ đính kèm. Bỏ trợ cấp, audit trạng thái, lịch viếng thăm, hạ tầng nhắc lịch. Bổ sung `StatisticsService` (dashboard) và hoàn thiện cột export (round-trip đủ với import).
+> Cập nhật lần cuối: 07:40:00 26/07/2026 — (1) tổ dân phố / thôn thành trường riêng của người có công (`beneficiaries.residential_area_id`); (2) chuẩn hóa payload `store`/`update`: hộ + tổ dân phố là ID, thân nhân là mảng liên kết `dependent_id`, thêm mảng `documents`, cả 3 mảng con đồng bộ coarse.
 
 ---
 
@@ -31,17 +31,20 @@ Namespace: `App\Modules\Beneficiary`. **Không có** `Events/`/`Listeners/`/`Job
 |---|---|---|---|
 | `ResidentialArea` | `beneficiary_residential_areas` | ✓ | Tổ dân phố / thôn |
 | `Household` | `beneficiary_households` | ✓ | `member_count` denormalized (HouseholdObserver) |
-| `Beneficiary` | `beneficiaries` | ✓ | có `status` (không audit) |
+| `Beneficiary` | `beneficiaries` | ✓ | có `status` (không audit), `residential_area_id` (tổ dân phố riêng, độc lập với hộ) |
 | `BeneficiaryClassification` | `beneficiary_classifications` | ✗ (qua `beneficiary_id`) | HasMedia — `decision_documents` |
 | `Dependent` | `beneficiary_dependents` | ✓ | có `residential_area_id`, `phone`, tọa độ |
 | `BeneficiaryDependentRelation` | `beneficiary_dependent_relations` | ✗ | pivot chỉ `relationship_type` + `note` |
 | `BeneficiaryDocument` | `beneficiary_documents` | ✓ | HasMedia — `files` (Tên giấy tờ + nhiều file) |
 
 Chi tiết cột/index: [`docs/database/Beneficiary.md`](../../database/Beneficiary.md).
+Chi tiết endpoint: [`docs/api/beneficiary.md`](../../api/beneficiary.md).
+Hướng dẫn tích hợp FE: [`docs/answer/nguoi-co-cong-huong-dan-frontend_095245_26072026.md`](../../answer/nguoi-co-cong-huong-dan-frontend_095245_26072026.md).
 
 ```mermaid
 erDiagram
     ResidentialArea ||--o{ Household : "1-N"
+    ResidentialArea ||--o{ Beneficiary : "1-N nullable"
     ResidentialArea ||--o{ Dependent : "1-N"
     Household ||--o{ Beneficiary : "1-N nullable"
     Household ||--o{ Dependent : "1-N nullable"
@@ -60,15 +63,16 @@ erDiagram
 - `Beneficiary.status` đổi qua `changeStatus()`/`bulkUpdateStatus()` — **không ghi lịch sử** (đã bỏ bảng audit).
 - Media (file quyết định, giấy tờ) luôn qua `Core\Services\MediaService`, không gọi `addMedia()`/`Storage` trực tiếp.
 - `member_count` chỉ ghi qua `HouseholdObserver` (áp mọi đường đổi `household_id`).
+- **Tổ dân phố là trường riêng của từng bảng** (`beneficiaries`, `beneficiary_households`, `beneficiary_dependents`) — gán/đổi hộ **không** tự đồng bộ `residential_area_id` sang người có công. Thống kê `by_residential_area` đọc thẳng `beneficiaries.residential_area_id`.
 
 ---
 
 ## 5. Luồng nghiệp vụ chính
 
 1. **Tổ dân phố / Hộ**: tạo `ResidentialArea` → tạo `Household` (chỉ `head_name` bắt buộc; địa chỉ bổ sung sau). Gán thành viên bằng cách set `household_id` trên Beneficiary/Dependent → Observer cập nhật `member_count`.
-2. **Tiếp nhận người có công**: `POST /beneficiaries` (status mặc định `pending`). Có thể kèm `classifications[]` (mỗi phần tử chỉ bắt buộc `type`), `household` (tạo hộ mới), `dependents[]` (kèm `relationship_type`) — lối tắt nhập liệu cho hồ sơ mới. `PUT` đồng bộ `classifications`/`classifications_deleted` theo quy ước coarse.
+2. **Tiếp nhận người có công**: `POST /beneficiaries` (status mặc định `pending`). Hộ và tổ dân phố là **ID** (`household_id`, `residential_area_id` — tạo trước qua resource của nó). Kèm 3 mảng con: `classifications[]` (chỉ bắt buộc `type`), `dependents[]` (**liên kết** thân nhân có sẵn: `dependent_id` + `relationship_type`), `documents[]` (`name` + `note`; tập tin upload riêng qua `beneficiary-documents`). `PUT` xử lý cả 3 mảng theo **full replace**: gửi mảng nào thì xóa sạch danh sách cũ rồi tạo lại theo mảng đó, không gửi khóa thì giữ nguyên, gửi `[]` là xóa sạch. Không nhận `id` trong phần tử → `PUT` idempotent, không cần `*_deleted`. Đổi lại, thay danh sách `documents`/`classifications` sẽ **xóa file đính kèm** của dòng cũ.
 3. **File quyết định công nhận**: sau khi có classification, upload file qua `POST /beneficiaries/{b}/classifications/{c}/files` (collection `decision_documents`), xóa qua `DELETE .../files/{media}`.
-4. **Thân nhân & quan hệ**: tạo `Dependent` (gắn tổ dân phố, SĐT, tọa độ tùy chọn) → `POST /beneficiary-dependents/{id}/relations` chọn `beneficiary_id` + `relationship_type`.
+4. **Thân nhân & quan hệ**: tạo `Dependent` (gắn tổ dân phố, SĐT, tọa độ tùy chọn) → liên kết theo 1 trong 2 chiều: `POST /beneficiary-dependents/{id}/relations` (chọn `beneficiary_id`) hoặc mảng `dependents[]` trong payload người có công (chọn `dependent_id`). Cùng ghi vào `beneficiary_dependent_relations`.
 5. **Đổi trạng thái**: `PATCH /beneficiaries/{id}/status` (deceased kèm `death_date`).
 6. **Giấy tờ hồ sơ**: `beneficiary-documents` — mỗi bản ghi 1 *Tên giấy tờ* + nhiều file (collection `files`).
 
@@ -85,6 +89,13 @@ erDiagram
 | `beneficiary-documents.*` (`index,show,store,update,destroy,bulkDestroy`) | Giấy tờ hồ sơ |
 
 Cập nhật `PERMISSIONS` trong `database/seeders/PermissionSeeder.php` (đã bỏ block subsidy-policies/subsidy-grants/visit-schedules).
+
+> **Mảng lồng không được vượt quyền**: `store`/`update` hồ sơ nhận kèm `documents[]`/`dependents[]`,
+> nhưng hai bảng này có permission riêng nên `StoreBeneficiaryRequest`/`UpdateBeneficiaryRequest`
+> soát thêm ở `authorize()` (trait `Concerns\AuthorizesBeneficiarySections`): tạo/sửa/xóa tài liệu
+> cần `beneficiary-documents.store/update/destroy`, quan hệ thân nhân cần
+> `beneficiary-dependents.storeRelation/destroyRelation`. Thiếu quyền → 403 toàn request.
+> `classifications` không cần — không có resource riêng.
 
 ---
 

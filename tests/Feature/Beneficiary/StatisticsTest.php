@@ -38,14 +38,15 @@ class StatisticsTest extends TestCase
             'organization_id' => $this->orgA->id, 'residential_area_id' => $area->id, 'head_name' => 'Chủ hộ',
         ]);
 
+        // Tổ dân phố là trường RIÊNG của người có công — thống kê đọc thẳng cột này, không suy qua hộ.
         $b1 = Beneficiary::create([
-            'organization_id' => $this->orgA->id, 'household_id' => $household->id,
+            'organization_id' => $this->orgA->id, 'household_id' => $household->id, 'residential_area_id' => $area->id,
             'full_name' => 'Thương binh', 'gender' => 'male', 'status' => 'active', 'date_of_birth' => '1950-01-01',
         ]);
         $b1->classifications()->create(['type' => 'war_invalid', 'is_primary' => true]);
 
         $b2 = Beneficiary::create([
-            'organization_id' => $this->orgA->id, 'household_id' => $household->id,
+            'organization_id' => $this->orgA->id, 'household_id' => $household->id, 'residential_area_id' => $area->id,
             'full_name' => 'Liệt sĩ', 'gender' => 'female', 'status' => 'deceased', 'birth_year' => '1940',
         ]);
         $b2->classifications()->create(['type' => 'martyr', 'is_primary' => true]);

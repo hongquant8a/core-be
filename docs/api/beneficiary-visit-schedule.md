@@ -1,6 +1,14 @@
-# API Lịch viếng thăm (Beneficiary Visit Schedule)
+# API Lịch viếng thăm (Beneficiary Visit Schedule) — ⚠️ ĐÃ GỠ BỎ
 
-> Cập nhật lần cuối: 16/07/2026 — tạo mới cùng module Beneficiary.
+> Ngày tạo: 10:00:00 16/07/2026
+> Cập nhật lần cuối: 09:55:00 26/07/2026 — đánh dấu đã gỡ bỏ.
+
+> ## ⚠️ Chức năng này KHÔNG CÒN TỒN TẠI
+>
+> Lịch viếng thăm và toàn bộ hạ tầng nhắc lịch đã bị gỡ khi đơn giản hóa module ngày 25/07/2026.
+> **Mọi endpoint mô tả bên dưới trả 404.**
+>
+> Tài liệu giữ lại làm tham chiếu lịch sử. FE còn module nào gọi các endpoint này thì phải gỡ.
 
 Lịch viếng thăm/tặng quà người có công (Tết, 27/7, sinh nhật, tự do). Chỉ có **3 action**: `index`, `show`, `changeStatus` — **không có `store` qua API**, lịch được sinh tự động bởi Console Command (`beneficiary:generate-visit-schedules`, chạy cron hàng năm cho 27/7, chạy tay cho Tết vì âm lịch). Nhắc trước N ngày dùng lại hạ tầng Reminder chung (`ReminderScheduler`/`ProcessRemindersCommand`) — cấu hình "nhắc trước mấy ngày" qua [notification-config.md](notification-config.md) (`module_key=beneficiary`, base path `/api/beneficiary/notification-config`).
 

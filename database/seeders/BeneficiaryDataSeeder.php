@@ -140,6 +140,9 @@ class BeneficiaryDataSeeder extends Seeder
                 ['id_number' => $row['id_number'], 'organization_id' => self::ORG_ID],
                 [
                     'household_id' => $household->id,
+                    // Tổ dân phố là trường riêng của người có công — dữ liệu mẫu lấy theo hộ,
+                    // giống `address` ở dưới (thực tế cán bộ có thể sửa lệch với hộ).
+                    'residential_area_id' => $household->residential_area_id,
                     'full_name' => $row['name'],
                     'date_of_birth' => $row['dob'],
                     'birth_year' => $row['birth_year'],

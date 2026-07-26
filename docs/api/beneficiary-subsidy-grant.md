@@ -1,6 +1,14 @@
-# API Trợ cấp (Beneficiary Subsidy Grant)
+# API Trợ cấp (Beneficiary Subsidy Grant) — ⚠️ ĐÃ GỠ BỎ
 
-> Cập nhật lần cuối: 16/07/2026 — tạo mới cùng module Beneficiary.
+> Ngày tạo: 10:00:00 16/07/2026
+> Cập nhật lần cuối: 09:55:00 26/07/2026 — đánh dấu đã gỡ bỏ.
+
+> ## ⚠️ Chức năng này KHÔNG CÒN TỒN TẠI
+>
+> Toàn bộ engine trợ cấp đã bị gỡ khi đơn giản hóa module ngày 25/07/2026: bảng, model, controller,
+> route và permission đều đã xóa. **Mọi endpoint mô tả bên dưới trả 404.**
+>
+> Tài liệu giữ lại làm tham chiếu lịch sử. FE còn module nào gọi các endpoint này thì phải gỡ.
 
 Cấp & dừng trợ cấp cho người có công/thân nhân. Chỉ có **3 action**: `index`, `store`, `changeStatus` — không có `update`/`destroy`/`bulkDestroy`/`export`/`import`. Lý do: grant chỉ phát sinh qua hành động nghiệp vụ (cấp trợ cấp), không phải danh mục CRUD tự do; sửa mức trợ cấp phải qua `POST /api/beneficiary-subsidy-policies/{id}/renew` để giữ lịch sử.
 

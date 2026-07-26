@@ -1,7 +1,7 @@
 # DATABASE DESIGN — Module Beneficiary (Người có công)
 
 > Ngày tạo: 11:05:00 16/07/2026
-> Cập nhật lần cuối: 14:26:28 25/07/2026 — **đơn giản hóa**: chỉ lưu thông tin cơ bản. Bỏ engine trợ cấp (mức trợ cấp + cấp trợ cấp), audit trạng thái, lịch viếng thăm và toàn bộ hạ tầng nhắc lịch. Thêm bảng giấy tờ đính kèm `beneficiary_documents`.
+> Cập nhật lần cuối: 07:05:00 26/07/2026 — thêm `beneficiaries.residential_area_id` (tổ dân phố / thôn là trường riêng của người có công).
 
 Quản lý người có công theo hộ gia đình & thân nhân (TP Đà Nẵng). Module đa tổ chức — bảng nghiệp vụ có `organization_id` scope theo tenant hiện tại. Mọi model có `organization_id` **extends `TenantModel`**.
 
@@ -18,12 +18,16 @@ organizations (phường/xã)
    │        │ 1-N (nullable)
    ├── beneficiaries ─────┬── beneficiary_classifications ── media (decision_documents)
    │        │             ├── beneficiary_documents ── media (files)
-   │        │             │
+   │        │             ├── beneficiary_residential_areas (FK riêng, độc lập với hộ)
    │        │ N-N (pivot) │
    │        └── beneficiary_dependent_relations ── beneficiary_dependents ── beneficiary_residential_areas
    │
    └── media (spatie/laravel-medialibrary — giấy tờ, hồ sơ scan)
 ```
+
+> Tổ dân phố xuất hiện ở **3 nơi độc lập**: trên hộ (`beneficiary_households`), trên người có công
+> (`beneficiaries`) và trên thân nhân (`beneficiary_dependents`) — mỗi bảng giữ địa bàn của riêng nó,
+> không tự đồng bộ lẫn nhau.
 
 ---
 
@@ -69,6 +73,7 @@ organizations (phường/xã)
 | id | bigint unsigned | No | PK |
 | organization_id | bigint unsigned | No | FK, TenantModel |
 | household_id | bigint unsigned | Yes | FK → beneficiary_households.id, nullOnDelete |
+| residential_area_id | bigint unsigned | Yes | FK → beneficiary_residential_areas.id, nullOnDelete — tổ dân phố/thôn **riêng của người có công**, độc lập với tổ dân phố của hộ |
 | full_name | varchar(255) | No | `VietnameseSort::apply()` khi sort |
 | date_of_birth | date | Yes | Khi biết đầy đủ ngày/tháng/năm |
 | birth_year | varchar(20) | Yes | Năm sinh dạng text (nhiều người chỉ nhớ năm/ước lượng) |
@@ -82,9 +87,15 @@ organizations (phường/xã)
 | note | text | Yes | |
 | created_by / updated_by, created_at / updated_at | | | |
 
-**Index**: `(organization_id, status)`, `(organization_id, household_id)`, unique `(organization_id, id_number)`.
+**Index**: `(organization_id, status)`, `(organization_id, household_id)`, `(organization_id, residential_area_id)`, unique `(organization_id, id_number)`.
 
 > **Bỏ** so với bản trước: `injury_rate`, `recognition_decision_no`, `recognition_date`.
+
+> **`residential_area_id`** (thêm 26/07/2026): trước đây tổ dân phố của người có công chỉ suy ra qua hộ
+> (`household.residential_area_id`) — nhưng `household_id` nullable nên hồ sơ chưa gán hộ không có địa bàn,
+> và không lọc/thống kê được. Nay là trường riêng, đối xứng với `beneficiary_dependents.residential_area_id`.
+> Migration đã **backfill** từ hộ cho dữ liệu cũ. Đây là nguồn dữ liệu duy nhất cho `StatisticsService::byResidentialArea()`
+> — sửa hộ **không** tự cập nhật lại trường này.
 
 ---
 

@@ -1,8 +1,15 @@
 # API Thân nhân (Beneficiary Dependent)
 
-> Cập nhật lần cuối: 16/07/2026 — tạo mới cùng module Beneficiary.
+> Ngày tạo: 10:00:00 16/07/2026
+> Cập nhật lần cuối: 09:55:00 26/07/2026 — bỏ mô tả `eligibility_status` và `status` pivot (đã xóa khi đơn giản hóa 25/07); nêu rõ quan hệ liên kết được từ cả hai chiều.
 
-Quản lý thân nhân và quan hệ với người có công (N-N qua `beneficiary_dependent_relations`). **Không có** `bulk-status`/`{id}/status` — bảng `beneficiary_dependents` không có cột `status` vòng đời (chỉ có `eligibility_status` sửa qua `update()` và `status` của từng quan hệ pivot).
+Quản lý thân nhân và quan hệ với người có công (N-N qua `beneficiary_dependent_relations`). **Không có** `bulk-status`/`{id}/status` — bảng `beneficiary_dependents` không có cột `status` (không có vòng đời trạng thái theo thiết kế). Pivot chỉ giữ `relationship_type` + `note`.
+
+> **Quan hệ liên kết được từ hai chiều, cùng ghi vào một bảng:**
+> - Từ phía thân nhân: `POST /api/beneficiary-dependents/{id}/relations` (chọn `beneficiary_id`) — permission `beneficiary-dependents.storeRelation`.
+> - Từ phía người có công: mảng `dependents[]` trong body `POST`/`PUT /api/beneficiaries` (chọn `dependent_id`) — **thay thế toàn bộ** danh sách quan hệ của hồ sơ đó, xem [beneficiary.md](beneficiary.md#5-cập-nhật-hồ-sơ).
+>
+> Lọc danh sách thân nhân theo một người có công: dùng `GET /api/beneficiaries/{id}` rồi đọc `data.dependents[]` (endpoint `beneficiary-dependents` **không** nhận filter `beneficiary_id`).
 
 **Header bắt buộc:** `Authorization: Bearer {token}` và `X-Organization-Id: {organization_id}`.
 

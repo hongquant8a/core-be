@@ -53,12 +53,13 @@ class BeneficiarySampleSeeder extends Seeder
             'head_id_number' => fake()->unique()->numerify('07#########'),
         ])->id);
 
-        // 3) Người có công (100) — gắn hộ ngẫu nhiên, trải created_at theo tháng trong năm.
-        $beneficiaries = collect(range(1, self::N))->map(function ($i) use ($householdIds, $statuses, $year) {
+        // 3) Người có công (100) — gắn hộ + tổ dân phố ngẫu nhiên, trải created_at theo tháng trong năm.
+        $beneficiaries = collect(range(1, self::N))->map(function ($i) use ($householdIds, $areaIds, $statuses, $year) {
             $date = Carbon::create($year, random_int(1, 12), random_int(1, 28), random_int(7, 17));
 
             return Beneficiary::factory()->create([
                 'household_id' => $householdIds->random(),
+                'residential_area_id' => $areaIds->random(),
                 'status' => $statuses[array_rand($statuses)],
                 'created_at' => $date,
                 'updated_at' => $date,

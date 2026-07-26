@@ -2,20 +2,27 @@
 
 namespace App\Modules\Beneficiary\Requests;
 
+use App\Modules\Beneficiary\Concerns\AuthorizesBeneficiarySections;
+use App\Modules\Beneficiary\Concerns\ValidatesBeneficiarySections;
 use App\Modules\Beneficiary\Enums\BeneficiaryStatusEnum;
-use App\Modules\Beneficiary\Enums\BeneficiaryTypeEnum;
-use App\Modules\Beneficiary\Enums\DependentRelationshipEnum;
 use App\Modules\Beneficiary\Enums\GenderEnum;
-use Illuminate\Support\Facades\Validator as ValidatorFacade;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class StoreBeneficiaryRequest extends BaseRequest
 {
+    use AuthorizesBeneficiarySections, ValidatesBeneficiarySections;
+
+    public function authorize(): bool
+    {
+        return $this->authorizeSections();
+    }
+
     public function rules(): array
     {
         return [
             'household_id' => 'nullable|integer|exists:beneficiary_households,id',
+            'residential_area_id' => 'nullable|integer|exists:beneficiary_residential_areas,id',
             'full_name' => 'required|string|max:255',
             'date_of_birth' => 'nullable|date',
             'birth_year' => 'nullable|string|max:20',
@@ -33,157 +40,14 @@ class StoreBeneficiaryRequest extends BaseRequest
             'note' => 'nullable|string',
 
             'classifications' => 'nullable|array',
-            'household' => 'nullable|array',
             'dependents' => 'nullable|array',
+            'documents' => 'nullable|array',
         ];
     }
 
-    /**
-     * Validate thủ công từng phần tử classifications/household/dependents (thay vì rule
-     * dot-notation `xxx.*.field`) — Scribe không render đúng ví dụ curl cho mảng object lồng
-     * qua rule wildcard, gây lỗi "stdClass could not be converted to string" khi
-     * scribe:generate build ví dụ bash cho TOÀN BỘ project, không riêng endpoint này.
-     *
-     * `household`/`dependents` là lối tắt nhập liệu nhanh cho hồ sơ HOÀN TOÀN MỚI — tái dùng
-     * nguyên `rules()`/`messages()`/`attributes()` của StoreHouseholdRequest/StoreDependentRequest
-     * (chạy qua Validator::make lồng) để không lặp lại danh sách rule, tránh 2 nơi cùng định
-     * nghĩa 1 field rồi lệch nhau theo thời gian.
-     */
     public function withValidator(Validator $validator): void
     {
-        $validator->after(function (Validator $validator) {
-            $this->validateClassifications($validator);
-            $this->validateHousehold($validator);
-            $this->validateDependents($validator);
-        });
-    }
-
-    /**
-     * Chỉ bắt buộc `type` (loại đối tượng — thông tin cơ bản nhất). `decision_no`/
-     * `decision_date`/`issued_by` là giấy tờ hành chính, cho phép bổ sung sau khi cán bộ
-     * có đủ hồ sơ — không chặn nhập liệu ngay từ đầu. `is_primary` chỉ validate "không quá 1",
-     * không bắt buộc phải chọn ngay (chưa chọn thì chưa có loại chính, bổ sung sau).
-     */
-    private function validateClassifications(Validator $validator): void
-    {
-        $classifications = $this->input('classifications', []);
-
-        if (! is_array($classifications)) {
-            return;
-        }
-
-        $primaryCount = 0;
-
-        foreach ($classifications as $index => $classification) {
-            if (! is_array($classification)) {
-                $validator->errors()->add("classifications.{$index}", 'Phân loại không hợp lệ.');
-
-                continue;
-            }
-
-            if (empty($classification['type']) || ! in_array($classification['type'], BeneficiaryTypeEnum::values(), true)) {
-                $validator->errors()->add("classifications.{$index}.type", 'Loại đối tượng không được để trống hoặc không hợp lệ.');
-            }
-            if (! empty($classification['decision_no']) && (! is_string($classification['decision_no']) || strlen($classification['decision_no']) > 255)) {
-                $validator->errors()->add("classifications.{$index}.decision_no", 'Số quyết định không hợp lệ.');
-            }
-            if (! empty($classification['decision_date']) && ! strtotime($classification['decision_date'])) {
-                $validator->errors()->add("classifications.{$index}.decision_date", 'Ngày quyết định không hợp lệ.');
-            }
-            if (! empty($classification['issued_by']) && (! is_string($classification['issued_by']) || strlen($classification['issued_by']) > 255)) {
-                $validator->errors()->add("classifications.{$index}.issued_by", 'Cơ quan ban hành không hợp lệ.');
-            }
-
-            if ((bool) ($classification['is_primary'] ?? false)) {
-                $primaryCount++;
-            }
-        }
-
-        if ($primaryCount > 1) {
-            $validator->errors()->add('classifications', 'Chỉ được chọn tối đa 1 phân loại là loại chính (is_primary = true).');
-        }
-    }
-
-    /** Chỉ dùng khi KHÔNG gửi `household_id` — tạo hộ mới trong cùng lần tạo hồ sơ. */
-    private function validateHousehold(Validator $validator): void
-    {
-        $household = $this->input('household');
-
-        if ($household === null) {
-            return;
-        }
-
-        if (! is_array($household)) {
-            $validator->errors()->add('household', 'Thông tin hộ gia đình không hợp lệ.');
-
-            return;
-        }
-
-        if ($this->filled('household_id')) {
-            $validator->errors()->add('household', 'Không được vừa chọn household_id vừa gửi household để tạo hộ mới — chỉ chọn 1 trong 2.');
-
-            return;
-        }
-
-        $request = new StoreHouseholdRequest;
-        $nested = ValidatorFacade::make($household, $request->rules(), $request->messages(), $request->attributes());
-
-        $this->mergeNestedErrors($validator, $nested, 'household');
-    }
-
-    /**
-     * Mỗi phần tử = thông tin thân nhân (theo StoreDependentRequest) + relationship_type
-     * để tự tạo luôn quan hệ với người có công đang tạo.
-     */
-    private function validateDependents(Validator $validator): void
-    {
-        $dependents = $this->input('dependents', []);
-
-        if (! is_array($dependents)) {
-            return;
-        }
-
-        $dependentRequest = new StoreDependentRequest;
-        $extraRules = [
-            'relationship_type' => ['required', DependentRelationshipEnum::rule()],
-        ];
-        $extraMessages = [
-            'relationship_type.required' => 'Quan hệ với người có công không được để trống.',
-            'relationship_type.in' => 'Quan hệ không hợp lệ.',
-        ];
-        $extraAttributes = [
-            'relationship_type' => 'Quan hệ',
-        ];
-
-        foreach ($dependents as $index => $dependent) {
-            if (! is_array($dependent)) {
-                $validator->errors()->add("dependents.{$index}", 'Thân nhân không hợp lệ.');
-
-                continue;
-            }
-
-            $nested = ValidatorFacade::make(
-                $dependent,
-                [...$dependentRequest->rules(), ...$extraRules],
-                [...$dependentRequest->messages(), ...$extraMessages],
-                [...$dependentRequest->attributes(), ...$extraAttributes],
-            );
-
-            $this->mergeNestedErrors($validator, $nested, "dependents.{$index}");
-        }
-    }
-
-    private function mergeNestedErrors(Validator $parent, Validator $nested, string $prefix): void
-    {
-        if (! $nested->fails()) {
-            return;
-        }
-
-        foreach ($nested->errors()->messages() as $field => $messages) {
-            foreach ($messages as $message) {
-                $parent->errors()->add("{$prefix}.{$field}", $message);
-            }
-        }
+        $validator->after(fn (Validator $validator) => $this->validateSections($validator));
     }
 
     public function messages(): array
@@ -196,19 +60,21 @@ class StoreBeneficiaryRequest extends BaseRequest
             'gender.in' => 'Giới tính không hợp lệ.',
             'id_number.unique' => 'CCCD/CMND này đã tồn tại trong danh sách người có công.',
             'household_id.exists' => 'Hộ gia đình không tồn tại.',
+            'residential_area_id.exists' => 'Tổ dân phố không tồn tại.',
             'status.in' => 'Trạng thái không hợp lệ.',
             'latitude.between' => 'Vĩ độ phải trong khoảng -90 đến 90.',
             'longitude.between' => 'Kinh độ phải trong khoảng -180 đến 180.',
-            'classifications.array' => 'Danh sách phân loại phải là một mảng.',
-            'household.array' => 'Thông tin hộ gia đình không hợp lệ.',
+            'classifications.array' => 'Danh sách loại đối tượng phải là một mảng.',
             'dependents.array' => 'Danh sách thân nhân phải là một mảng.',
+            'documents.array' => 'Danh sách tài liệu phải là một mảng.',
         ];
     }
 
     public function bodyParameters(): array
     {
         return [
-            'household_id' => ['description' => 'ID hộ gia đình có sẵn — không dùng cùng lúc với `household`.', 'example' => 1],
+            'household_id' => ['description' => 'ID hộ gia đình.', 'example' => 1],
+            'residential_area_id' => ['description' => 'ID tổ dân phố / thôn của người có công. Độc lập với tổ dân phố của hộ.', 'example' => 1],
             'full_name' => ['description' => 'Họ tên.', 'example' => 'Trần Văn B'],
             'date_of_birth' => ['description' => 'Ngày sinh (nếu biết đầy đủ ngày/tháng/năm).', 'example' => '1950-05-20'],
             'birth_year' => ['description' => 'Năm sinh dạng text (dùng khi không rõ đầy đủ ngày/tháng sinh).', 'example' => '1950'],
@@ -220,9 +86,9 @@ class StoreBeneficiaryRequest extends BaseRequest
             'longitude' => ['description' => 'Kinh độ (tra cứu bản đồ).', 'example' => 108.2208],
             'phone' => ['description' => 'Số điện thoại.', 'example' => null],
             'note' => ['description' => 'Ghi chú.', 'example' => null],
-            'classifications' => ['description' => 'Danh sách phân loại đối tượng. Mỗi phần tử chỉ bắt buộc `type` — `decision_no`/`decision_date`/`issued_by` có thể bổ sung sau khi có đủ giấy tờ.', 'example' => []],
-            'household' => ['description' => 'Tạo hộ gia đình mới ngay khi tạo hồ sơ — chỉ dùng khi KHÔNG gửi `household_id`. Các trường giống StoreHouseholdRequest, bắt buộc `head_name`.', 'example' => null],
-            'dependents' => ['description' => 'Danh sách thân nhân tạo kèm — mỗi phần tử gồm các trường thân nhân (bắt buộc `full_name`, `gender`) cộng thêm `relationship_type` (bắt buộc) để tự tạo quan hệ với người có công.', 'example' => []],
+            'classifications' => ['description' => 'Danh sách loại đối tượng. Mỗi phần tử: `type` (bắt buộc) + `decision_no`, `decision_date`, `issued_by`, `is_primary` (tùy chọn).', 'example' => []],
+            'dependents' => ['description' => 'Danh sách thân nhân LIÊN KẾT. Mỗi phần tử: `dependent_id` + `relationship_type` (bắt buộc) + `note`. Thân nhân phải tạo trước qua `beneficiary-dependents`.', 'example' => []],
+            'documents' => ['description' => 'Danh sách tài liệu. Mỗi phần tử: `name` (bắt buộc) + `note`. Tập tin đính kèm upload riêng qua `beneficiary-documents`.', 'example' => []],
         ];
     }
 
@@ -230,6 +96,7 @@ class StoreBeneficiaryRequest extends BaseRequest
     {
         return [
             'household_id' => 'Hộ gia đình',
+            'residential_area_id' => 'Tổ dân phố',
             'full_name' => 'Họ tên',
             'date_of_birth' => 'Ngày sinh',
             'birth_year' => 'Năm sinh',
@@ -241,9 +108,9 @@ class StoreBeneficiaryRequest extends BaseRequest
             'longitude' => 'Kinh độ',
             'phone' => 'Số điện thoại',
             'note' => 'Ghi chú',
-            'classifications' => 'Danh sách phân loại',
-            'household' => 'Hộ gia đình (tạo mới)',
-            'dependents' => 'Danh sách thân nhân (tạo kèm)',
+            'classifications' => 'Danh sách loại đối tượng',
+            'dependents' => 'Danh sách thân nhân',
+            'documents' => 'Danh sách tài liệu',
         ];
     }
 }

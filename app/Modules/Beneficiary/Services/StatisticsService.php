@@ -109,13 +109,15 @@ class StatisticsService
         return $this->mapEnum(DependentRelationshipEnum::cases(), $counts);
     }
 
-    /** Số người có công theo tổ dân phố / thôn (qua hộ gia đình). */
+    /**
+     * Số người có công theo tổ dân phố / thôn — đọc thẳng `beneficiaries.residential_area_id`
+     * (trường riêng của người có công), không còn suy ra qua hộ gia đình.
+     */
     public function byResidentialArea(): array
     {
         $counts = Beneficiary::query()
-            ->leftJoin('beneficiary_households as h', 'beneficiaries.household_id', '=', 'h.id')
-            ->selectRaw('h.residential_area_id as area_id, COUNT(*) as total')
-            ->groupBy('h.residential_area_id')
+            ->selectRaw('residential_area_id as area_id, COUNT(*) as total')
+            ->groupBy('residential_area_id')
             ->pluck('total', 'area_id');
 
         $areas = ResidentialArea::query()->orderBy('name')->pluck('name', 'id');

@@ -21,6 +21,11 @@ class BeneficiaryResource extends JsonResource
                 'id' => $this->household->id,
                 'head_name' => $this->household->head_name,
             ] : null),
+            'residential_area_id' => $this->residential_area_id,
+            'residential_area' => $this->whenLoaded('residentialArea', fn () => $this->residentialArea ? [
+                'id' => $this->residentialArea->id,
+                'name' => $this->residentialArea->name,
+            ] : null),
 
             'full_name' => $this->full_name,
             'date_of_birth' => $this->date_of_birth?->format('d/m/Y'),
@@ -38,6 +43,7 @@ class BeneficiaryResource extends JsonResource
             'note' => $this->note,
 
             'classifications' => BeneficiaryClassificationResource::collection($this->whenLoaded('classifications')),
+            'dependents' => DependentRelationResource::collection($this->whenLoaded('dependentRelations')),
             'documents' => BeneficiaryDocumentResource::collection($this->whenLoaded('documents')),
             'dependents_count' => $this->whenCounted('dependents'),
             'documents_count' => $this->whenCounted('documents'),

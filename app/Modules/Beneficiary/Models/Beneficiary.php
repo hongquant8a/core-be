@@ -19,7 +19,7 @@ class Beneficiary extends TenantModel
     protected $table = 'beneficiaries';
 
     protected $fillable = [
-        'household_id', 'full_name', 'date_of_birth', 'birth_year', 'gender', 'id_number',
+        'household_id', 'residential_area_id', 'full_name', 'date_of_birth', 'birth_year', 'gender', 'id_number',
         'status', 'death_date', 'address', 'latitude',
         'longitude', 'phone', 'note', 'organization_id', 'created_by', 'updated_by',
     ];
@@ -50,6 +50,15 @@ class Beneficiary extends TenantModel
     public function household()
     {
         return $this->belongsTo(Household::class);
+    }
+
+    /**
+     * Tổ dân phố / thôn của chính người có công — độc lập với hộ (hộ có thể để trống, hoặc
+     * người có công sinh sống ở địa bàn khác với hộ khẩu).
+     */
+    public function residentialArea()
+    {
+        return $this->belongsTo(ResidentialArea::class);
     }
 
     public function classifications()
@@ -87,6 +96,7 @@ class Beneficiary extends TenantModel
                 ->orWhere('id_number', 'like', '%'.$search.'%')))
             ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
             ->when($filters['household_id'] ?? null, fn ($q, $id) => $q->where('household_id', $id))
+            ->when($filters['residential_area_id'] ?? null, fn ($q, $id) => $q->where('residential_area_id', $id))
             ->when($filters['from_date'] ?? null, fn ($q, $date) => $q->whereDate('created_at', '>=', $date))
             ->when($filters['to_date'] ?? null, fn ($q, $date) => $q->whereDate('created_at', '<=', $date))
             ->when($filters['sort_by'] ?? 'created_at', function ($q, $sortBy) use ($filters) {
