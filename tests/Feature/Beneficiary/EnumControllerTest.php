@@ -43,6 +43,16 @@ class EnumControllerTest extends TestCase
         $res->assertJsonCount(12, 'data.beneficiary_type');
         $res->assertJsonFragment(['value' => 'martyr', 'label' => 'Liệt sĩ']);
         $res->assertJsonFragment(['value' => 'vietnamese_heroic_mother', 'label' => 'Bà mẹ Việt Nam anh hùng']);
+
+        // Vợ/Chồng đã tách, bổ sung cháu + anh/chị/em.
+        $res->assertJsonCount(11, 'data.dependent_relationship');
+        $res->assertJsonFragment(['value' => 'wife', 'label' => 'Vợ']);
+        $res->assertJsonFragment(['value' => 'husband', 'label' => 'Chồng']);
+        $res->assertJsonFragment(['value' => 'grandchild', 'label' => 'Cháu']);
+        $res->assertJsonFragment(['value' => 'older_brother', 'label' => 'Anh']);
+        $res->assertJsonFragment(['value' => 'older_sister', 'label' => 'Chị']);
+        $res->assertJsonFragment(['value' => 'younger_sibling', 'label' => 'Em']);
+        $res->assertJsonMissing(['value' => 'spouse']);
     }
 
     public function test_index_requires_authentication(): void

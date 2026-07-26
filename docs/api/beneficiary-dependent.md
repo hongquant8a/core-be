@@ -99,9 +99,22 @@ Quản lý thân nhân và quan hệ với người có công (N-N qua `benefici
 | **Method** | POST |
 | **Path** | `/api/beneficiary-dependents/{id}/relations` |
 | **Permission** | `beneficiary-dependents.storeRelation` |
-| **Body** | `beneficiary_id` (required, exists `beneficiaries`), `relationship_type` (required: `spouse` \| `child` \| `father` \| `mother` \| `foster_parent` \| `guardian`), `eligible_from` (required date), `note`. |
-| **Validate tự động** | `status` khởi tạo tính theo quy tắc: `is_alive=false` → luôn `expired`; tuổi ≥ 18 mà `eligibility_status` không phải `studying`/`disabled_no_work_capacity` → `expired`; còn lại → `active`. |
+| **Body** | `beneficiary_id` (required, exists `beneficiaries`), `relationship_type` (required — xem bảng dưới), `note` (tùy chọn). |
 | **Response** | 201, `DependentRelationResource`. |
+
+**Giá trị `relationship_type`** (thân nhân là _gì_ của người có công) — lấy động qua `GET /api/beneficiary-enums` → `dependent_relationship`, đừng hardcode:
+
+| Value | Nhãn | | Value | Nhãn |
+|---|---|---|---|---|
+| `wife` | Vợ | | `older_brother` | Anh |
+| `husband` | Chồng | | `older_sister` | Chị |
+| `child` | Con | | `younger_sibling` | Em |
+| `grandchild` | Cháu | | `foster_parent` | Người nuôi dưỡng |
+| `father` | Cha | | `guardian` | Người giám hộ |
+| `mother` | Mẹ | | | |
+
+> `spouse` (Vợ/Chồng) đã **tách** thành `wife`/`husband` từ 26/07/2026; dữ liệu cũ được migration
+> chuyển theo giới tính thân nhân. Không còn `eligible_from` và `status` trên pivot (bỏ từ 25/07).
 
 ---
 

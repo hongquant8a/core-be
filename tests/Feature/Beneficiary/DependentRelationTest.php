@@ -117,4 +117,35 @@ class DependentRelationTest extends TestCase
 
         $this->assertEquals(2, $dependent->dependentRelations()->count());
     }
+
+    /** `spouse` đã tách thành `wife`/`husband`, và bổ sung cháu + anh/chị/em. */
+    public function test_store_relation_accepts_new_relationship_types_and_rejects_spouse(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        $dependent = Dependent::create([
+            'organization_id' => $this->orgA->id, 'full_name' => 'Vợ', 'gender' => 'female',
+            'date_of_birth' => now()->subYears(65),
+        ]);
+
+        foreach (['wife', 'grandchild', 'older_brother', 'older_sister', 'younger_sibling'] as $type) {
+            $relation = $this->postJson("/api/beneficiary-dependents/{$dependent->id}/relations", [
+                'beneficiary_id' => $this->beneficiary1->id,
+                'relationship_type' => $type,
+            ], ['X-Organization-Id' => $this->orgA->id]);
+
+            $relation->assertCreated();
+            $relation->assertJsonPath('data.relationship_type', $type);
+
+            $dependent->dependentRelations()->delete();
+        }
+
+        $res = $this->postJson("/api/beneficiary-dependents/{$dependent->id}/relations", [
+            'beneficiary_id' => $this->beneficiary1->id,
+            'relationship_type' => 'spouse',
+        ], ['X-Organization-Id' => $this->orgA->id]);
+
+        $res->assertUnprocessable();
+        $res->assertJsonValidationErrors('relationship_type');
+    }
 }

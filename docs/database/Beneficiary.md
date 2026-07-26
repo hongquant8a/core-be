@@ -178,7 +178,7 @@ Model `implements HasMedia`, collection **`files`** (nhiều tập tin). Upload/
 | `GenderEnum` | male, female, other |
 | `BeneficiaryTypeEnum` | 12 nhóm theo Pháp lệnh 02/2020 |
 | `BeneficiaryStatusEnum` | pending, active, deceased, moved_out, suspended |
-| `DependentRelationshipEnum` | spouse, child, father, mother, foster_parent, guardian |
+| `DependentRelationshipEnum` | wife, husband, child, grandchild, father, mother, older_brother, older_sister, younger_sibling, foster_parent, guardian |
 
 > **Đã bỏ**: `DependentEligibilityEnum`, `DependentRelationStatusEnum`, `SubsidyStatusEnum`, `ScheduleStatusEnum`, `VisitOccasionEnum`, `DocumentTypeEnum`.
 

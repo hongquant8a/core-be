@@ -21,7 +21,7 @@ class EnumController extends Controller
     /**
      * Danh sách toàn bộ enum tĩnh của module Beneficiary
      *
-     * @response 200 {"success": true, "data": {"beneficiary_type": [{"value": "martyr", "label": "Liệt sĩ"}], "beneficiary_status": [{"value": "active", "label": "Đang hưởng"}], "gender": [{"value": "male", "label": "Nam"}], "dependent_relationship": [{"value": "spouse", "label": "Vợ/Chồng"}]}}
+     * @response 200 {"success": true, "data": {"beneficiary_type": [{"value": "martyr", "label": "Liệt sĩ"}], "beneficiary_status": [{"value": "active", "label": "Đang hưởng"}], "gender": [{"value": "male", "label": "Nam"}], "dependent_relationship": [{"value": "wife", "label": "Vợ"}]}}
      */
     public function index()
     {

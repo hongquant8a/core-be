@@ -50,11 +50,18 @@ const { data } = await $api('/api/beneficiary-enums')
 //   beneficiary_status: [{ value: 'pending', label: 'Chờ công nhận' }, ...],
 //   beneficiary_type:   [{ value: 'war_invalid', label: 'Thương binh, ...' }, ...],  // 12 nhóm
 //   gender:             [{ value: 'male', label: 'Nam' }, ...],
-//   dependent_relationship: [{ value: 'child', label: 'Con' }, ...],
+//   dependent_relationship: [{ value: 'wife', label: 'Vợ' }, ...],   // 11 quan hệ
 // }
 ```
 
 **Không hardcode** value/label. Endpoint này không gắn permission riêng nên user nào cũng gọi được.
+
+`dependent_relationship` có 11 giá trị: `wife` (Vợ), `husband` (Chồng), `child` (Con),
+`grandchild` (Cháu), `father` (Cha), `mother` (Mẹ), `older_brother` (Anh), `older_sister` (Chị),
+`younger_sibling` (Em), `foster_parent` (Người nuôi dưỡng), `guardian` (Người giám hộ).
+
+> ⚠️ **`spouse` không còn tồn tại** — đã tách thành `wife`/`husband` từ 26/07/2026. FE nào còn
+> hardcode danh sách quan hệ (kể cả `spouse`) phải bỏ và chuyển sang đọc từ endpoint enum.
 
 ---
 
@@ -385,4 +392,5 @@ không suy qua hộ. Click vào một cột → mở danh sách bằng
 | `POST /api/beneficiaries/{id}/documents` | Không tồn tại → `POST /api/beneficiary-documents` (multipart, có `beneficiary_id`) |
 | `GET /api/beneficiary-dependents?beneficiary_id=` | Filter này **không có** → đọc `data.dependents[]` ở `GET /api/beneficiaries/{id}` |
 | Trường `eligible_from` trên pivot quan hệ | Không tồn tại — pivot chỉ có `relationship_type` + `note` |
+| `relationship_type: 'spouse'` | Đã tách thành `wife` / `husband` → 422 nếu vẫn gửi `spouse` |
 | Cột `code` của tổ dân phố | Không tồn tại — bảng chỉ có `name` + `note` |
