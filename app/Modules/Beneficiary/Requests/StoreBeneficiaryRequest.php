@@ -87,7 +87,7 @@ class StoreBeneficiaryRequest extends BaseRequest
             'phone' => ['description' => 'Số điện thoại.', 'example' => null],
             'note' => ['description' => 'Ghi chú.', 'example' => null],
             'classifications' => ['description' => 'Danh sách loại đối tượng. Mỗi phần tử: `type` (bắt buộc) + `decision_no`, `decision_date`, `issued_by`, `is_primary` (tùy chọn).', 'example' => []],
-            'dependents' => ['description' => 'Danh sách thân nhân LIÊN KẾT. Mỗi phần tử: `dependent_id` + `relationship_type` (bắt buộc) + `note`. Thân nhân phải tạo trước qua `beneficiary-dependents`.', 'example' => []],
+            'dependents' => ['description' => 'Danh sách thân nhân LIÊN KẾT. Mỗi phần tử: `dependent_id` + `relationship_type` (bắt buộc) + `is_primary`, `note` (tùy chọn). Tối đa 1 phần tử có `is_primary` = true (thân nhân chính). Thân nhân phải tạo trước qua `beneficiary-dependents`.', 'example' => []],
             'documents' => ['description' => 'Danh sách tài liệu. Mỗi phần tử: `name` (bắt buộc) + `note`. Tập tin đính kèm upload riêng qua `beneficiary-documents`.', 'example' => []],
         ];
     }

@@ -90,6 +90,9 @@ class BeneficiaryController extends Controller
      * resource của nó. Thân nhân là mảng **liên kết** thân nhân có sẵn (`dependent_id` +
      * `relationship_type`), tài liệu và loại đối tượng là mảng thông tin đầy đủ.
      *
+     * Mỗi hồ sơ chỉ được tối đa **1 thân nhân chính** (`dependents[].is_primary` = true) và tối đa
+     * **1 loại đối tượng chính** (`classifications[].is_primary` = true) — gửi nhiều hơn sẽ báo lỗi 422.
+     *
      * @bodyParam full_name string required Họ tên. Example: Trần Văn B
      * @bodyParam gender string required Giới tính: male, female, other. Example: male
      *
@@ -110,6 +113,9 @@ class BeneficiaryController extends Controller
      * `classifications` / `dependents` / `documents` là **trạng thái đầy đủ**: gửi mảng nào thì
      * THAY THẾ toàn bộ danh sách đó (xóa hết rồi tạo lại), không gửi khóa thì giữ nguyên, gửi `[]`
      * là xóa sạch. Không nhận `id` trong phần tử. Tập tin đính kèm của tài liệu cũ bị xóa theo.
+     *
+     * Mỗi hồ sơ chỉ được tối đa **1 thân nhân chính** (`dependents[].is_primary` = true) và tối đa
+     * **1 loại đối tượng chính** (`classifications[].is_primary` = true) — gửi nhiều hơn sẽ báo lỗi 422.
      *
      * @urlParam beneficiary integer required ID người có công. Example: 1
      *

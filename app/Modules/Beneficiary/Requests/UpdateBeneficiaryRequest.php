@@ -88,7 +88,7 @@ class UpdateBeneficiaryRequest extends BaseRequest
             'phone' => ['description' => 'Số điện thoại.', 'example' => null],
             'note' => ['description' => 'Ghi chú.', 'example' => null],
             'classifications' => ['description' => 'THAY THẾ toàn bộ danh sách loại đối tượng. Mỗi phần tử: `type` (bắt buộc), `decision_no`, `decision_date`, `issued_by`, `is_primary`. Không gửi khóa = giữ nguyên.', 'example' => []],
-            'dependents' => ['description' => 'THAY THẾ toàn bộ liên kết thân nhân. Mỗi phần tử: `dependent_id` + `relationship_type` (bắt buộc), `note`. Không gửi khóa = giữ nguyên.', 'example' => []],
+            'dependents' => ['description' => 'THAY THẾ toàn bộ liên kết thân nhân. Mỗi phần tử: `dependent_id` + `relationship_type` (bắt buộc), `is_primary`, `note`. Tối đa 1 phần tử có `is_primary` = true (thân nhân chính). Không gửi khóa = giữ nguyên.', 'example' => []],
             'documents' => ['description' => 'THAY THẾ toàn bộ danh sách tài liệu. Mỗi phần tử: `name` (bắt buộc), `note`. Tập tin đính kèm của dòng cũ bị xóa theo — upload lại qua `beneficiary-documents`. Không gửi khóa = giữ nguyên.', 'example' => []],
         ];
     }
