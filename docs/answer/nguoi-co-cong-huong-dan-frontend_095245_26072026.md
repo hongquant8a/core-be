@@ -68,9 +68,17 @@ const { data } = await $api('/api/beneficiary-enums')
 ## 3. Màn danh sách người có công
 
 ```
-GET /api/beneficiaries?search=&status=&household_id=&residential_area_id=
+GET /api/beneficiaries?search=&status=&type=&household_id=&residential_area_id=
     &from_date=&to_date=&sort_by=created_at&sort_order=desc&limit=20
 ```
+
+**Ô tìm kiếm quét 6 cột:** họ tên / CCCD / SĐT của **người có công** + họ tên / CCCD / SĐT của
+**thân nhân liên kết**. Cán bộ gõ một cái tên hoặc một số CCCD bất kỳ là ra hồ sơ liên quan, không
+cần biết mảnh thông tin đó thuộc về ai. Placeholder nên ghi rõ điều này, ví dụ:
+_"Tìm theo tên, CCCD, SĐT của người có công hoặc thân nhân"_.
+
+**Bộ lọc `type`** = loại đối tượng, lấy value từ enum `beneficiary_type`. Một người kiêm nhiều loại
+(vừa thương binh vừa nạn nhân chất độc da cam) sẽ khớp khi lọc theo **bất kỳ** loại nào của họ.
 
 Mỗi dòng trả về:
 
@@ -103,8 +111,9 @@ Mỗi dòng trả về:
 - **`classifications` KHÔNG có ở danh sách.** Muốn cột "Loại đối tượng" ở bảng thì báo BE bổ sung
   (đang chờ chốt: load toàn bộ `classifications` hay chỉ loại chính).
 
-**Thống kê nhanh phía trên bảng:** `GET /api/beneficiaries/stats` nhận cùng bộ filter, trả
-`{ total, pending, active, deceased }`. Gọi song song với `index`, truyền y hệt filter để KPI khớp bảng.
+**Thống kê nhanh phía trên bảng:** `GET /api/beneficiaries/stats` nhận **cùng bộ filter** (kể cả
+`search`, `type`, `residential_area_id`), trả `{ total, pending, active, deceased }`. Gọi song song
+với `index`, truyền y hệt filter để KPI khớp bảng.
 
 ---
 
@@ -118,6 +127,26 @@ Mỗi dòng trả về:
 - `household`, `residential_area`, `created_by`, `updated_by`
 
 Xem cấu trúc JSON đầy đủ ở [docs/api/beneficiary.md §3](../api/beneficiary.md#3-chi-tiết).
+
+### 4.1 Tọa độ bản đồ — dùng `map_*`, không dùng `latitude`/`longitude`
+
+`index` và `show` trả thêm `map_latitude`, `map_longitude`, `map_source`:
+
+| `map_source` | Nghĩa |
+|---|---|
+| `self` | Tọa độ của chính người có công |
+| `primary_dependent` | Người có công **đã mất** → lấy theo **thân nhân chính** |
+
+Người đã khuất thì tọa độ của họ không còn ý nghĩa thực địa, nhưng cán bộ vẫn cần một điểm để đến
+thăm viếng / chi trả cho thân nhân. Chưa gán thân nhân chính, hoặc thân nhân chính chưa có tọa độ →
+giữ tọa độ gốc.
+
+- **Bản đồ, marker, cụm điểm** → đọc `map_latitude` / `map_longitude`
+- **Form nhập / sửa tọa độ** → đọc `latitude` / `longitude` (dữ liệu gốc, không bị ghi đè)
+
+Khi `map_source === 'primary_dependent'`, hiển thị chú thích kiểu _"Vị trí theo thân nhân chính:
+Nguyễn Thị B"_ (tên lấy từ `primary_dependent.dependent.full_name`). Không có chú thích thì người
+dùng sẽ thắc mắc vì sao một người đã mất lại có vị trí trên bản đồ.
 
 ---
 
@@ -195,6 +224,12 @@ Gửi >1 dòng `is_primary: true` → 422 tại field `classifications`.
 
 Thân nhân chưa có trong hệ thống thì tạo trước bằng `POST /api/beneficiary-dependents` (drawer riêng),
 rồi liên kết. Component `BeneficiaryDependentLinkDrawer` hiện có tái dùng được.
+
+**Cột "Thân nhân chính" (`is_primary`)** — radio, **tối đa 1 dòng** trong bảng. Gửi 2 dòng cùng
+`is_primary: true` → 422 tại field `dependents`.
+
+Đây là đầu mối liên hệ của hồ sơ và là nguồn tọa độ bản đồ khi người có công đã mất (xem §4.1).
+Nên nhắc cán bộ gán khi đổi trạng thái sang "Đã mất" mà hồ sơ chưa có thân nhân chính.
 
 ### 5.5 Tài liệu (`documents`) — metadata trong JSON, file upload riêng
 

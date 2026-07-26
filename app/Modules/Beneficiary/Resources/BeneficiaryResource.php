@@ -14,6 +14,8 @@ class BeneficiaryResource extends JsonResource
 
     public function toArray(Request $request): array
     {
+        $map = $this->mapCoordinates();
+
         return [
             'id' => $this->id,
             'household_id' => $this->household_id,
@@ -41,6 +43,18 @@ class BeneficiaryResource extends JsonResource
             'longitude' => $this->longitude,
             'phone' => $this->phone,
             'note' => $this->note,
+
+            // Tọa độ để chấm lên bản đồ: hồ sơ đã mất thì lấy theo thân nhân chính.
+            // `latitude`/`longitude` ở trên vẫn là dữ liệu gốc, không bị ghi đè.
+            'map_latitude' => $map['latitude'],
+            'map_longitude' => $map['longitude'],
+            'map_source' => $map['source'],
+            'primary_dependent' => $this->whenLoaded(
+                'primaryDependentRelation',
+                fn () => $this->primaryDependentRelation
+                    ? new DependentRelationResource($this->primaryDependentRelation)
+                    : null,
+            ),
 
             'classifications' => BeneficiaryClassificationResource::collection($this->whenLoaded('classifications')),
             'dependents' => DependentRelationResource::collection($this->whenLoaded('dependentRelations')),

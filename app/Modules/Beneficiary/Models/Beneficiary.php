@@ -2,6 +2,7 @@
 
 namespace App\Modules\Beneficiary\Models;
 
+use App\Modules\Beneficiary\Enums\BeneficiaryStatusEnum;
 use App\Modules\Core\Models\TenantModel;
 use App\Modules\Core\Models\User;
 use App\Modules\Core\Support\VietnameseSort;
@@ -84,17 +85,72 @@ class Beneficiary extends TenantModel
         return $this->hasMany(BeneficiaryDependentRelation::class);
     }
 
+    /** Thân nhân chính — đầu mối liên hệ của hồ sơ (tối đa 1, xem `mapCoordinates()`). */
+    public function primaryDependentRelation()
+    {
+        return $this->hasOne(BeneficiaryDependentRelation::class)->where('is_primary', true);
+    }
+
+    /**
+     * Tọa độ dùng để định vị hồ sơ trên bản đồ.
+     *
+     * Người có công ĐÃ MẤT thì lấy theo thân nhân chính — hồ sơ vẫn cần một điểm trên bản đồ để
+     * cán bộ đến thăm viếng / chi trả cho thân nhân, trong khi tọa độ của người đã mất không còn
+     * ý nghĩa thực địa. Chưa chỉ định thân nhân chính, hoặc thân nhân chính chưa có tọa độ, thì
+     * giữ nguyên tọa độ gốc của hồ sơ.
+     *
+     * Trả kèm `source` để FE nói rõ vì sao một người đã mất lại có vị trí, tránh gây hiểu nhầm.
+     * Cần eager load `primaryDependentRelation.dependent`.
+     */
+    public function mapCoordinates(): array
+    {
+        $dependent = $this->status === BeneficiaryStatusEnum::Deceased->value
+            ? $this->primaryDependentRelation?->dependent
+            : null;
+
+        if ($dependent?->latitude !== null && $dependent?->longitude !== null) {
+            return [
+                'latitude' => $dependent->latitude,
+                'longitude' => $dependent->longitude,
+                'source' => 'primary_dependent',
+            ];
+        }
+
+        return [
+            'latitude' => $this->latitude,
+            'longitude' => $this->longitude,
+            'source' => 'self',
+        ];
+    }
+
     public function documents()
     {
         return $this->hasMany(BeneficiaryDocument::class);
     }
 
+    /**
+     * `search` quét cả THÂN NHÂN (tên, CCCD, SĐT) chứ không riêng người có công — cán bộ tra cứu
+     * thường chỉ cầm một mảnh thông tin (một cái tên, một số CCCD) mà không biết nó thuộc về ai.
+     *
+     * Điều kiện trong `whereHas` phải bọc thêm một lớp closure: Laravel nối ràng buộc tương quan
+     * (`beneficiaries.id = pivot.beneficiary_id`) và global scope tenant vào cùng cấp với các
+     * `orWhere` bên dưới, không bọc thì AND/OR sai độ ưu tiên và subquery khớp mọi thân nhân.
+     */
     public function scopeFilter($query, array $filters)
     {
         $query->when($filters['search'] ?? null, fn ($q, $search) => $q->where(fn ($q2) => $q2
                 ->where('full_name', 'like', '%'.$search.'%')
-                ->orWhere('id_number', 'like', '%'.$search.'%')))
+                ->orWhere('id_number', 'like', '%'.$search.'%')
+                ->orWhere('phone', 'like', '%'.$search.'%')
+                ->orWhereHas('dependents', fn ($q3) => $q3->where(fn ($q4) => $q4
+                    ->where('beneficiary_dependents.full_name', 'like', '%'.$search.'%')
+                    ->orWhere('beneficiary_dependents.id_number', 'like', '%'.$search.'%')
+                    ->orWhere('beneficiary_dependents.phone', 'like', '%'.$search.'%')))))
             ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
+            // 1 người có thể nhiều loại đối tượng — lọc "Thương binh" vẫn ra hồ sơ kiêm nhiều loại.
+            ->when($filters['type'] ?? null, fn ($q, $type) => $q->whereHas(
+                'classifications', fn ($q2) => $q2->where('type', $type)
+            ))
             ->when($filters['household_id'] ?? null, fn ($q, $id) => $q->where('household_id', $id))
             ->when($filters['residential_area_id'] ?? null, fn ($q, $id) => $q->where('residential_area_id', $id))
             ->when($filters['from_date'] ?? null, fn ($q, $date) => $q->whereDate('created_at', '>=', $date))

@@ -24,7 +24,11 @@ class BeneficiaryDependentRelation extends Pivot
     protected $table = 'beneficiary_dependent_relations';
 
     protected $fillable = [
-        'beneficiary_id', 'dependent_id', 'relationship_type', 'note',
+        'beneficiary_id', 'dependent_id', 'relationship_type', 'is_primary', 'note',
+    ];
+
+    protected $casts = [
+        'is_primary' => 'boolean',
     ];
 
     public function beneficiary()

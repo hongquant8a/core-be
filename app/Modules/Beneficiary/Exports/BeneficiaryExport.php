@@ -16,7 +16,7 @@ class BeneficiaryExport extends AbstractExcelExport implements FromCollection
 
     public function collection()
     {
-        return Beneficiary::with(['household', 'residentialArea', 'classifications', 'dependents', 'documents', 'creator', 'editor'])
+        return Beneficiary::with(['household', 'residentialArea', 'classifications', 'dependents', 'primaryDependentRelation.dependent', 'documents', 'creator', 'editor'])
             ->filter($this->filters)
             ->orderByDesc('id')
             ->get()
@@ -41,6 +41,8 @@ class BeneficiaryExport extends AbstractExcelExport implements FromCollection
                 'classifications' => $b->classifications
                     ->map(fn ($c) => BeneficiaryTypeEnum::tryFrom((string) $c->type)?->label() ?? $c->type)
                     ->implode('; '),
+                // Quan hệ 1-1 → xuất TÊN (đầu mối liên hệ khi người có công đã mất).
+                'primary_dependent' => $b->primaryDependentRelation?->dependent?->full_name,
                 // N-N có thuộc tính pivot → kèm nhãn quan hệ trong ngoặc (đối xứng với DependentExport).
                 'dependents' => $b->dependents
                     ->map(fn ($d) => $d->full_name.' ('.(DependentRelationshipEnum::tryFrom((string) $d->pivot->relationship_type)?->label() ?? $d->pivot->relationship_type).')')
@@ -56,6 +58,6 @@ class BeneficiaryExport extends AbstractExcelExport implements FromCollection
 
     public function headings(): array
     {
-        return ['STT', 'Họ tên', 'Ngày sinh', 'Năm sinh', 'Giới tính', 'CCCD/CMND', 'CCCD chủ hộ', 'Tổ dân phố', 'Trạng thái', 'Ngày mất', 'Địa chỉ', 'Vĩ độ', 'Kinh độ', 'SĐT', 'Ghi chú', 'Loại đối tượng', 'Thân nhân', 'Giấy tờ', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
+        return ['STT', 'Họ tên', 'Ngày sinh', 'Năm sinh', 'Giới tính', 'CCCD/CMND', 'CCCD chủ hộ', 'Tổ dân phố', 'Trạng thái', 'Ngày mất', 'Địa chỉ', 'Vĩ độ', 'Kinh độ', 'SĐT', 'Ghi chú', 'Thân nhân chính', 'Loại đối tượng', 'Thân nhân', 'Giấy tờ', 'Người tạo', 'Người cập nhật', 'Ngày tạo', 'Ngày cập nhật', 'ID'];
     }
 }

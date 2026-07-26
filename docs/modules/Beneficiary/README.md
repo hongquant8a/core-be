@@ -1,7 +1,7 @@
 # Module: Beneficiary (Người có công theo Hộ gia đình & Thân nhân)
 
 > Ngày tạo: 11:05:00 16/07/2026
-> Cập nhật lần cuối: 07:40:00 26/07/2026 — (1) tổ dân phố / thôn thành trường riêng của người có công (`beneficiaries.residential_area_id`); (2) chuẩn hóa payload `store`/`update`: hộ + tổ dân phố là ID, thân nhân là mảng liên kết `dependent_id`, thêm mảng `documents`, cả 3 mảng con đồng bộ coarse.
+> Cập nhật lần cuối: 10:40:00 26/07/2026 — (1) tổ dân phố / thôn thành trường riêng của người có công (`beneficiaries.residential_area_id`); (2) chuẩn hóa payload `store`/`update`: hộ + tổ dân phố là ID, thân nhân là mảng liên kết `dependent_id`, thêm mảng `documents`, cả 3 mảng con **thay thế toàn bộ**; (3) tách quan hệ `spouse` → `wife`/`husband` + bổ sung cháu, anh, chị, em; (4) `search` quét cả thân nhân, thêm bộ lọc `type`.
 
 ---
 
@@ -34,7 +34,7 @@ Namespace: `App\Modules\Beneficiary`. **Không có** `Events/`/`Listeners/`/`Job
 | `Beneficiary` | `beneficiaries` | ✓ | có `status` (không audit), `residential_area_id` (tổ dân phố riêng, độc lập với hộ) |
 | `BeneficiaryClassification` | `beneficiary_classifications` | ✗ (qua `beneficiary_id`) | HasMedia — `decision_documents` |
 | `Dependent` | `beneficiary_dependents` | ✓ | có `residential_area_id`, `phone`, tọa độ |
-| `BeneficiaryDependentRelation` | `beneficiary_dependent_relations` | ✗ | pivot chỉ `relationship_type` + `note` |
+| `BeneficiaryDependentRelation` | `beneficiary_dependent_relations` | ✗ | pivot: `relationship_type`, `is_primary` (thân nhân chính), `note` |
 | `BeneficiaryDocument` | `beneficiary_documents` | ✓ | HasMedia — `files` (Tên giấy tờ + nhiều file) |
 
 Chi tiết cột/index: [`docs/database/Beneficiary.md`](../../database/Beneficiary.md).
@@ -63,6 +63,8 @@ erDiagram
 - `Beneficiary.status` đổi qua `changeStatus()`/`bulkUpdateStatus()` — **không ghi lịch sử** (đã bỏ bảng audit).
 - Media (file quyết định, giấy tờ) luôn qua `Core\Services\MediaService`, không gọi `addMedia()`/`Storage` trực tiếp.
 - `member_count` chỉ ghi qua `HouseholdObserver` (áp mọi đường đổi `household_id`).
+- **Tối đa 1 thân nhân chính / người có công** (`beneficiary_dependent_relations.is_primary`) — enforce ở Request cho mảng `dependents[]` (thay thế toàn bộ nên nhìn thấy cả danh sách) và ở `DependentService::addRelation()` cho đường tạo quan hệ lẻ (chỉ gửi 1 dòng nên phải hạ các dòng cũ).
+- **Người có công đã mất → tọa độ bản đồ lấy theo thân nhân chính** (`Beneficiary::mapCoordinates()`, trả `map_latitude`/`map_longitude`/`map_source`). Tọa độ gốc `latitude`/`longitude` giữ nguyên, không ghi đè. Chưa gán thân nhân chính hoặc thân nhân chính chưa có tọa độ → dùng tọa độ gốc.
 - **Tổ dân phố là trường riêng của từng bảng** (`beneficiaries`, `beneficiary_households`, `beneficiary_dependents`) — gán/đổi hộ **không** tự đồng bộ `residential_area_id` sang người có công. Thống kê `by_residential_area` đọc thẳng `beneficiaries.residential_area_id`.
 
 ---

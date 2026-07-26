@@ -16,7 +16,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class BeneficiaryService
 {
-    private const WITH = ['household', 'residentialArea', 'classifications.media', 'dependentRelations.dependent', 'documents.media', 'creator.media', 'editor.media'];
+    private const WITH = ['household', 'residentialArea', 'classifications.media', 'dependentRelations.dependent', 'primaryDependentRelation.dependent', 'documents.media', 'creator.media', 'editor.media'];
 
     public function __construct(private MediaService $mediaService) {}
 
@@ -34,7 +34,9 @@ class BeneficiaryService
 
     public function index(array $filters, int $limit)
     {
-        return Beneficiary::with(['household', 'residentialArea', 'creator.media', 'editor.media'])
+        // `primaryDependentRelation.dependent` cần cho `map_*` của Resource — không eager load
+        // thì mỗi dòng lazy load thành N+1.
+        return Beneficiary::with(['household', 'residentialArea', 'primaryDependentRelation.dependent', 'creator.media', 'editor.media'])
             ->withCount(['dependents', 'documents'])
             ->filter($filters)
             ->paginate($limit);

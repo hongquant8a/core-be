@@ -27,6 +27,7 @@ class DependentRelationResource extends JsonResource
             ] : null),
             'relationship_type' => $this->relationship_type,
             'relationship_type_label' => DependentRelationshipEnum::tryFrom($this->relationship_type)?->label() ?? $this->relationship_type,
+            'is_primary' => (bool) $this->is_primary,
             'note' => $this->note,
         ];
     }

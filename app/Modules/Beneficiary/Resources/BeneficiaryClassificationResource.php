@@ -22,6 +22,8 @@ class BeneficiaryClassificationResource extends JsonResource
                 'id' => $media->id,
                 'name' => $media->file_name,
                 'url' => $media->getFullUrl(),
+                // Đường dẫn tương đối để FE tự ghép base URL: /storage/{media_id}/{file_name}
+                'path' => '/storage/'.$media->getPathRelativeToRoot(),
                 'size' => $media->size,
             ])),
         ];

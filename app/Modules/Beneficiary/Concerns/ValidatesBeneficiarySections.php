@@ -45,15 +45,18 @@ trait ValidatesBeneficiarySections
         $this->validateSection($validator, 'dependents', [
             'dependent_id' => 'required|integer|exists:beneficiary_dependents,id',
             'relationship_type' => ['required', DependentRelationshipEnum::rule()],
+            'is_primary' => 'nullable|boolean',
             'note' => 'nullable|string',
         ], [
             'dependent_id.required' => 'Thân nhân không được để trống.',
             'dependent_id.exists' => 'Thân nhân không tồn tại.',
             'relationship_type.required' => 'Quan hệ với người có công không được để trống.',
             'relationship_type.in' => 'Quan hệ không hợp lệ.',
+            'is_primary.boolean' => 'Thân nhân chính phải là true hoặc false.',
         ], [
             'dependent_id' => 'Thân nhân',
             'relationship_type' => 'Quan hệ',
+            'is_primary' => 'Thân nhân chính',
             'note' => 'Ghi chú',
         ]);
 
@@ -68,7 +71,8 @@ trait ValidatesBeneficiarySections
             'note' => 'Ghi chú',
         ]);
 
-        $this->validateSinglePrimary($validator);
+        $this->validateSinglePrimary($validator, 'classifications', 'Chỉ được chọn tối đa 1 loại đối tượng là loại chính (is_primary = true).');
+        $this->validateSinglePrimary($validator, 'dependents', 'Chỉ được chọn tối đa 1 thân nhân chính (is_primary = true).');
     }
 
     private function validateSection(Validator $validator, string $key, array $rules, array $messages, array $attributes): void
@@ -100,9 +104,9 @@ trait ValidatesBeneficiarySections
     }
 
     /** Mảng gửi lên là toàn bộ danh sách nên soát ở đây là đủ, Service không cần enforce lại. */
-    private function validateSinglePrimary(Validator $validator): void
+    private function validateSinglePrimary(Validator $validator, string $key, string $message): void
     {
-        $rows = $this->input('classifications', []);
+        $rows = $this->input($key, []);
 
         if (! is_array($rows)) {
             return;
@@ -113,7 +117,7 @@ trait ValidatesBeneficiarySections
             ->count();
 
         if ($primaryCount > 1) {
-            $validator->errors()->add('classifications', 'Chỉ được chọn tối đa 1 loại đối tượng là loại chính (is_primary = true).');
+            $validator->errors()->add($key, $message);
         }
     }
 }

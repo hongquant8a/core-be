@@ -118,6 +118,46 @@ class DependentRelationTest extends TestCase
         $this->assertEquals(2, $dependent->dependentRelations()->count());
     }
 
+    /** Đặt thân nhân chính mới phải tự hạ thân nhân chính cũ của CÙNG hồ sơ xuống phụ. */
+    public function test_store_relation_keeps_only_one_primary_dependent_per_beneficiary(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        $first = Dependent::create([
+            'organization_id' => $this->orgA->id, 'full_name' => 'Con cả', 'gender' => 'male',
+        ]);
+        $second = Dependent::create([
+            'organization_id' => $this->orgA->id, 'full_name' => 'Con thứ', 'gender' => 'female',
+        ]);
+
+        $this->postJson("/api/beneficiary-dependents/{$first->id}/relations", [
+            'beneficiary_id' => $this->beneficiary1->id, 'relationship_type' => 'child', 'is_primary' => true,
+        ], ['X-Organization-Id' => $this->orgA->id])->assertCreated();
+
+        $this->postJson("/api/beneficiary-dependents/{$second->id}/relations", [
+            'beneficiary_id' => $this->beneficiary1->id, 'relationship_type' => 'child', 'is_primary' => true,
+        ], ['X-Organization-Id' => $this->orgA->id])->assertCreated();
+
+        $this->assertDatabaseHas('beneficiary_dependent_relations', [
+            'beneficiary_id' => $this->beneficiary1->id, 'dependent_id' => $first->id, 'is_primary' => false,
+        ]);
+        $this->assertDatabaseHas('beneficiary_dependent_relations', [
+            'beneficiary_id' => $this->beneficiary1->id, 'dependent_id' => $second->id, 'is_primary' => true,
+        ]);
+
+        // Hồ sơ khác không bị ảnh hưởng.
+        $this->postJson("/api/beneficiary-dependents/{$first->id}/relations", [
+            'beneficiary_id' => $this->beneficiary2->id, 'relationship_type' => 'child', 'is_primary' => true,
+        ], ['X-Organization-Id' => $this->orgA->id])->assertCreated();
+
+        $this->assertDatabaseHas('beneficiary_dependent_relations', [
+            'beneficiary_id' => $this->beneficiary2->id, 'dependent_id' => $first->id, 'is_primary' => true,
+        ]);
+        $this->assertDatabaseHas('beneficiary_dependent_relations', [
+            'beneficiary_id' => $this->beneficiary1->id, 'dependent_id' => $second->id, 'is_primary' => true,
+        ]);
+    }
+
     /** `spouse` đã tách thành `wife`/`husband`, và bổ sung cháu + anh/chị/em. */
     public function test_store_relation_accepts_new_relationship_types_and_rejects_spouse(): void
     {

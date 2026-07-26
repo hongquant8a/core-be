@@ -320,6 +320,179 @@ class BeneficiaryCrudTest extends TestCase
         $res->assertJsonValidationErrors('classifications');
     }
 
+    /** `search` quét cả thân nhân: tên, CCCD, SĐT — cán bộ thường chỉ cầm 1 mảnh thông tin. */
+    public function test_index_search_matches_dependent_name_id_number_and_phone(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        $target = Beneficiary::create([
+            'organization_id' => $this->orgA->id, 'full_name' => 'Người có công X',
+            'gender' => 'male', 'status' => 'active',
+        ]);
+        $other = Beneficiary::create([
+            'organization_id' => $this->orgA->id, 'full_name' => 'Người có công Y',
+            'gender' => 'male', 'status' => 'active',
+        ]);
+
+        $dependent = Dependent::create([
+            'organization_id' => $this->orgA->id, 'full_name' => 'Nguyễn Thị Thân Nhân',
+            'gender' => 'female', 'id_number' => '049777888999', 'phone' => '0905777888',
+        ]);
+        $target->dependentRelations()->create([
+            'dependent_id' => $dependent->id, 'relationship_type' => 'child',
+        ]);
+
+        foreach (['Thân Nhân', '049777888999', '0905777888'] as $keyword) {
+            $res = $this->getJson('/api/beneficiaries?search='.urlencode($keyword), ['X-Organization-Id' => $this->orgA->id]);
+
+            $res->assertOk();
+            $ids = collect($res->json('data'))->pluck('id')->all();
+
+            $this->assertContains($target->id, $ids, "Không tìm ra hồ sơ qua từ khóa: {$keyword}");
+            // Chốt chặn cho bẫy AND/OR trong whereHas: không bọc closure thì subquery khớp
+            // MỌI thân nhân và hồ sơ không liên quan cũng lọt vào kết quả.
+            $this->assertNotContains($other->id, $ids, "Từ khóa {$keyword} lọt hồ sơ không liên quan");
+        }
+    }
+
+    public function test_index_search_matches_beneficiary_phone(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        $b = Beneficiary::create([
+            'organization_id' => $this->orgA->id, 'full_name' => 'Có số điện thoại',
+            'gender' => 'male', 'status' => 'active', 'phone' => '0912345678',
+        ]);
+
+        $res = $this->getJson('/api/beneficiaries?search=0912345678', ['X-Organization-Id' => $this->orgA->id]);
+
+        $res->assertOk();
+        $this->assertContains($b->id, collect($res->json('data'))->pluck('id')->all());
+    }
+
+    /** Hồ sơ kiêm nhiều loại vẫn phải khớp khi lọc theo 1 loại bất kỳ. */
+    public function test_index_filters_by_classification_type(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        $multi = Beneficiary::create([
+            'organization_id' => $this->orgA->id, 'full_name' => 'Kiêm 2 loại',
+            'gender' => 'male', 'status' => 'active',
+        ]);
+        $multi->classifications()->create(['type' => 'war_invalid', 'is_primary' => true]);
+        $multi->classifications()->create(['type' => 'agent_orange_victim']);
+
+        $single = Beneficiary::create([
+            'organization_id' => $this->orgA->id, 'full_name' => 'Chỉ bệnh binh',
+            'gender' => 'male', 'status' => 'active',
+        ]);
+        $single->classifications()->create(['type' => 'disease_invalid', 'is_primary' => true]);
+
+        $res = $this->getJson('/api/beneficiaries?type=agent_orange_victim', ['X-Organization-Id' => $this->orgA->id]);
+
+        $res->assertOk();
+        $ids = collect($res->json('data'))->pluck('id')->all();
+        $this->assertContains($multi->id, $ids);
+        $this->assertNotContains($single->id, $ids);
+
+        // Bộ lọc dùng chung cho stats → con số phải khớp danh sách.
+        $stats = $this->getJson('/api/beneficiaries/stats?type=agent_orange_victim', ['X-Organization-Id' => $this->orgA->id]);
+        $stats->assertOk();
+        $stats->assertJsonPath('data.total', 1);
+    }
+
+    /**
+     * Người có công đã mất thì tọa độ bản đồ lấy theo thân nhân chính — hồ sơ vẫn cần một điểm
+     * để cán bộ đến thăm viếng / chi trả. Tọa độ gốc không bị ghi đè.
+     */
+    public function test_map_coordinates_fall_back_to_primary_dependent_when_deceased(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        $beneficiary = Beneficiary::create([
+            'organization_id' => $this->orgA->id, 'full_name' => 'Liệt sĩ Z', 'gender' => 'male',
+            'status' => 'deceased', 'death_date' => '1972-04-30',
+            'latitude' => 16.0000000, 'longitude' => 108.0000000,
+        ]);
+        $primary = Dependent::create([
+            'organization_id' => $this->orgA->id, 'full_name' => 'Mẹ liệt sĩ', 'gender' => 'female',
+            'latitude' => 16.0678000, 'longitude' => 108.2208000,
+        ]);
+        $other = Dependent::create([
+            'organization_id' => $this->orgA->id, 'full_name' => 'Em ruột', 'gender' => 'male',
+            'latitude' => 15.5000000, 'longitude' => 107.5000000,
+        ]);
+        $beneficiary->dependentRelations()->create([
+            'dependent_id' => $primary->id, 'relationship_type' => 'mother', 'is_primary' => true,
+        ]);
+        $beneficiary->dependentRelations()->create([
+            'dependent_id' => $other->id, 'relationship_type' => 'younger_sibling',
+        ]);
+
+        $res = $this->getJson("/api/beneficiaries/{$beneficiary->id}", ['X-Organization-Id' => $this->orgA->id]);
+
+        $res->assertOk();
+        $res->assertJsonPath('data.map_source', 'primary_dependent');
+        $this->assertEquals(16.0678, $res->json('data.map_latitude'));
+        $this->assertEquals(108.2208, $res->json('data.map_longitude'));
+        $res->assertJsonPath('data.primary_dependent.dependent.full_name', 'Mẹ liệt sĩ');
+
+        // Tọa độ gốc của hồ sơ giữ nguyên, không bị ghi đè.
+        $this->assertEquals(16.0, $res->json('data.latitude'));
+        $this->assertEquals(108.0, $res->json('data.longitude'));
+    }
+
+    public function test_map_coordinates_use_own_when_alive_or_no_primary_dependent(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        // Còn sống, có thân nhân chính → vẫn dùng tọa độ của chính mình.
+        $alive = Beneficiary::create([
+            'organization_id' => $this->orgA->id, 'full_name' => 'Còn sống', 'gender' => 'male',
+            'status' => 'active', 'latitude' => 16.1000000, 'longitude' => 108.1000000,
+        ]);
+        $dependent = Dependent::create([
+            'organization_id' => $this->orgA->id, 'full_name' => 'Con', 'gender' => 'male',
+            'latitude' => 10.0000000, 'longitude' => 100.0000000,
+        ]);
+        $alive->dependentRelations()->create([
+            'dependent_id' => $dependent->id, 'relationship_type' => 'child', 'is_primary' => true,
+        ]);
+
+        $res = $this->getJson("/api/beneficiaries/{$alive->id}", ['X-Organization-Id' => $this->orgA->id]);
+        $res->assertJsonPath('data.map_source', 'self');
+        $this->assertEquals(16.1, $res->json('data.map_latitude'));
+
+        // Đã mất nhưng chưa chỉ định thân nhân chính → giữ tọa độ gốc.
+        $deceased = Beneficiary::create([
+            'organization_id' => $this->orgA->id, 'full_name' => 'Đã mất chưa gán', 'gender' => 'male',
+            'status' => 'deceased', 'latitude' => 16.2000000, 'longitude' => 108.2000000,
+        ]);
+
+        $res2 = $this->getJson("/api/beneficiaries/{$deceased->id}", ['X-Organization-Id' => $this->orgA->id]);
+        $res2->assertJsonPath('data.map_source', 'self');
+        $this->assertEquals(16.2, $res2->json('data.map_latitude'));
+    }
+
+    public function test_store_rejects_multiple_primary_dependents(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        $d1 = Dependent::create(['organization_id' => $this->orgA->id, 'full_name' => 'TN 1', 'gender' => 'male']);
+        $d2 = Dependent::create(['organization_id' => $this->orgA->id, 'full_name' => 'TN 2', 'gender' => 'female']);
+
+        $res = $this->postJson('/api/beneficiaries', [
+            'full_name' => 'Trần Văn N', 'gender' => 'male',
+            'dependents' => [
+                ['dependent_id' => $d1->id, 'relationship_type' => 'child', 'is_primary' => true],
+                ['dependent_id' => $d2->id, 'relationship_type' => 'child', 'is_primary' => true],
+            ],
+        ], ['X-Organization-Id' => $this->orgA->id]);
+
+        $res->assertUnprocessable();
+        $res->assertJsonValidationErrors('dependents');
+    }
+
     public function test_index_respects_tenant_isolation(): void
     {
         Sanctum::actingAs($this->admin);

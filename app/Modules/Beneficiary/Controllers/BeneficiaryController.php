@@ -32,8 +32,10 @@ class BeneficiaryController extends Controller
     /**
      * Thống kê người có công
      *
-     * @queryParam search string Tìm theo họ tên hoặc CCCD.
+     * @queryParam search string Tìm theo họ tên / CCCD / SĐT của người có công, hoặc họ tên / CCCD / SĐT của thân nhân.
      * @queryParam status string Lọc theo trạng thái: pending, active, deceased, moved_out, suspended.
+     * @queryParam type string Lọc theo loại đối tượng (BeneficiaryTypeEnum). Example: war_invalid
+     * @queryParam residential_area_id integer Lọc theo tổ dân phố / thôn.
      *
      * @response 200 {"success": true, "data": {"total": 50, "pending": 5, "active": 40, "deceased": 5}}
      */
@@ -45,8 +47,9 @@ class BeneficiaryController extends Controller
     /**
      * Danh sách người có công
      *
-     * @queryParam search string Tìm theo họ tên hoặc CCCD.
+     * @queryParam search string Tìm theo họ tên / CCCD / SĐT của người có công, hoặc họ tên / CCCD / SĐT của thân nhân liên kết.
      * @queryParam status string Lọc theo trạng thái.
+     * @queryParam type string Lọc theo loại đối tượng (BeneficiaryTypeEnum) — hồ sơ kiêm nhiều loại vẫn khớp. Example: war_invalid
      * @queryParam household_id integer Lọc theo hộ gia đình.
      * @queryParam residential_area_id integer Lọc theo tổ dân phố / thôn.
      * @queryParam from_date date Lọc từ ngày tạo (Y-m-d).
@@ -233,8 +236,9 @@ class BeneficiaryController extends Controller
      * updated_by, created_at, updated_at. Kèm 3 cột liệt kê chỉ để tham chiếu (import bỏ qua):
      * "Loại đối tượng", "Thân nhân" (dạng `Tên (Quan hệ)`), "Giấy tờ" — ngăn cách bởi `; `.
      *
-     * @queryParam search string Tìm theo họ tên hoặc CCCD.
+     * @queryParam search string Tìm theo họ tên / CCCD / SĐT của người có công, hoặc của thân nhân liên kết.
      * @queryParam status string Lọc theo trạng thái.
+     * @queryParam type string Lọc theo loại đối tượng (BeneficiaryTypeEnum). Example: war_invalid
      * @queryParam residential_area_id integer Lọc theo tổ dân phố / thôn.
      */
     public function export(FilterRequest $request)

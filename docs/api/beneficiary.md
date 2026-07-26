@@ -19,8 +19,10 @@ Quản lý hồ sơ người có công: thống kê, danh sách, chi tiết, CRU
 |---|---|
 | **Method** | GET |
 | **Path** | `/api/beneficiaries/stats` |
-| **Query** | `search`, `status`, `household_id`, `residential_area_id`, `from_date`, `to_date` |
+| **Query** | Cùng bộ với danh sách (`search`, `status`, `type`, `household_id`, `residential_area_id`, `from_date`, `to_date`) |
 | **Response** | `{ "total": 50, "pending": 5, "active": 40, "deceased": 5 }` |
+
+Truyền y hệt filter đang áp ở bảng để KPI khớp với danh sách đang hiển thị.
 
 ---
 
@@ -30,7 +32,19 @@ Quản lý hồ sơ người có công: thống kê, danh sách, chi tiết, CRU
 |---|---|
 | **Method** | GET |
 | **Path** | `/api/beneficiaries` |
-| **Query** | `search` (họ tên/CCCD), `status` (`pending`\|`active`\|`deceased`\|`moved_out`\|`suspended`), `household_id`, `residential_area_id`, `from_date`, `to_date`, `sort_by` (`id`\|`full_name`\|`date_of_birth`\|`status`\|`created_at`\|`updated_at`), `sort_order`, `limit` (`-1` = không phân trang) |
+| **Query** | `search`, `status`, `type`, `household_id`, `residential_area_id`, `from_date`, `to_date`, `sort_by`, `sort_order`, `limit` |
+
+| Tham số | Ý nghĩa |
+|---|---|
+| `search` | Quét **6 cột**: họ tên / CCCD / SĐT của **người có công**, và họ tên / CCCD / SĐT của **thân nhân liên kết**. Gõ một số CCCD bất kỳ là ra hồ sơ liên quan, không cần biết nó của ai. |
+| `status` | `pending` \| `active` \| `deceased` \| `moved_out` \| `suspended` |
+| `type` | Loại đối tượng (`BeneficiaryTypeEnum`, 12 nhóm). Hồ sơ kiêm nhiều loại vẫn khớp khi lọc theo bất kỳ loại nào của nó. |
+| `household_id` | Hộ gia đình |
+| `residential_area_id` | Tổ dân phố / thôn (trường riêng của người có công, không suy qua hộ) |
+| `from_date` / `to_date` | Khoảng `created_at` (Y-m-d) |
+| `sort_by` | `id` \| `full_name` \| `date_of_birth` \| `status` \| `created_at` \| `updated_at` (sắp tiếng Việt qua `VietnameseSort`) |
+| `sort_order` | `asc` \| `desc` (mặc định `desc`) |
+| `limit` | Số bản ghi/trang; `-1` = không phân trang |
 
 Eager load: `household`, `residentialArea`, `creator`, `editor`. Đếm: `dependents_count`, `documents_count`.
 
@@ -46,6 +60,26 @@ Eager load: `household`, `residentialArea`, `creator`, `editor`. Đếm: `depend
 | **Path** | `/api/beneficiaries/{id}` |
 
 Trả đầy đủ: `household`, `residential_area`, `classifications[]` (kèm `decision_files`), `dependents[]` (kèm thông tin thân nhân lồng), `documents[]` (kèm `files`), `created_by`, `updated_by`.
+
+### Thân nhân chính và tọa độ bản đồ
+
+Mỗi hồ sơ có **tối đa 1 thân nhân chính** (`dependents[].is_primary`), cũng được trả riêng ở
+`primary_dependent` cho tiện.
+
+Ba khóa `map_latitude` / `map_longitude` / `map_source` là **tọa độ để chấm lên bản đồ**:
+
+| `map_source` | Nghĩa |
+|---|---|
+| `self` | Lấy tọa độ của chính người có công |
+| `primary_dependent` | Người có công **đã mất** → lấy theo thân nhân chính |
+
+Hồ sơ đã mất thì tọa độ của người đã khuất không còn ý nghĩa thực địa, nhưng cán bộ vẫn cần một
+điểm để đến thăm viếng / chi trả cho thân nhân. Chưa gán thân nhân chính, hoặc thân nhân chính chưa
+có tọa độ → giữ tọa độ gốc (`map_source = self`).
+
+`latitude` / `longitude` **luôn là dữ liệu gốc**, không bị ghi đè — FE dựng bản đồ thì dùng `map_*`,
+form nhập liệu thì dùng cặp gốc. Nên hiển thị nguồn khi `map_source = primary_dependent` để người
+dùng không thắc mắc vì sao một người đã mất lại có vị trí.
 
 ```json
 {
@@ -96,9 +130,14 @@ Trả đầy đủ: `household`, `residential_area`, `classifications[]` (kèm `
         },
         "relationship_type": "child",
         "relationship_type_label": "Con",
+        "is_primary": true,
         "note": "Con ruột"
       }
     ],
+    "primary_dependent": { "id": 4, "dependent_id": 12, "is_primary": true, "…": "như phần tử trong dependents[]" },
+    "map_latitude": "16.0678000",
+    "map_longitude": "108.2208000",
+    "map_source": "self",
     "documents": [
       {
         "id": 9,
@@ -152,7 +191,7 @@ Trả đầy đủ: `household`, `residential_area`, `classifications[]` (kèm `
       "issued_by": "UBND TP Đà Nẵng", "is_primary": true }
   ],
   "dependents": [
-    { "dependent_id": 12, "relationship_type": "child", "note": "Con ruột" }
+    { "dependent_id": 12, "relationship_type": "child", "is_primary": true, "note": "Con ruột" }
   ],
   "documents": [
     { "name": "Giấy chứng nhận thương binh", "note": "Bản sao" }
@@ -167,6 +206,8 @@ Trả đầy đủ: `household`, `residential_area`, `classifications[]` (kèm `
 **Không nhận `id`** trong phần tử của 3 mảng con → 422.
 
 **`classifications`:** chỉ `type` bắt buộc; `decision_no`/`decision_date`/`issued_by` bổ sung sau khi có đủ giấy tờ. Tối đa 1 phần tử `is_primary = true` (không bắt buộc phải có).
+
+**`dependents`:** `dependent_id` + `relationship_type` bắt buộc. `is_primary` đánh dấu **thân nhân chính** — tối đa 1 phần tử, gửi 2 trở lên → 422 tại field `dependents`. Nên gán cho hồ sơ có khả năng chuyển sang trạng thái đã mất, để bản đồ và đầu mối liên hệ không bị mất theo.
 
 ---
 
@@ -227,7 +268,7 @@ Vì là multipart nên **không** gửi kèm được trong body JSON của `sto
 | Nhập | POST | `/api/beneficiaries/import` — `file` (xlsx/xls/csv, ≤10MB) |
 | Tải file mẫu | GET | `/api/beneficiaries/import-template` |
 
-**Cột export:** STT, Họ tên, Ngày sinh, Năm sinh, Giới tính, CCCD/CMND, CCCD chủ hộ, Tổ dân phố, Trạng thái, Ngày mất, Địa chỉ, Vĩ độ, Kinh độ, SĐT, Ghi chú, **Loại đối tượng**, **Thân nhân**, **Giấy tờ**, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID.
+**Cột export:** STT, Họ tên, Ngày sinh, Năm sinh, Giới tính, CCCD/CMND, CCCD chủ hộ, Tổ dân phố, Trạng thái, Ngày mất, Địa chỉ, Vĩ độ, Kinh độ, SĐT, Ghi chú, Thân nhân chính, **Loại đối tượng**, **Thân nhân**, **Giấy tờ**, Người tạo, Người cập nhật, Ngày tạo, Ngày cập nhật, ID.
 
 Ba cột in đậm là **liệt kê tham chiếu** (ngăn cách `; `), import **bỏ qua**. Cột "Thân nhân" có dạng `Tên (Quan hệ)`.
 

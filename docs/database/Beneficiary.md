@@ -147,6 +147,7 @@ organizations (phường/xã)
 | beneficiary_id | bigint unsigned | No | FK → beneficiaries.id, cascadeOnDelete |
 | dependent_id | bigint unsigned | No | FK → beneficiary_dependents.id, cascadeOnDelete |
 | relationship_type | varchar(50) | No | `DependentRelationshipEnum` |
+| is_primary | boolean | No (false) | **Thân nhân chính** của người có công — tối đa 1 dòng/hồ sơ. Cờ nằm trên PIVOT vì "chính hay phụ" là tính chất của QUAN HỆ: cùng một người có thể là thân nhân chính của hồ sơ này nhưng phụ của hồ sơ khác. Dùng làm đầu mối liên hệ và nguồn tọa độ khi người có công đã mất (`Beneficiary::mapCoordinates()`). |
 | note | text | Yes | |
 | created_at / updated_at | | | |
 

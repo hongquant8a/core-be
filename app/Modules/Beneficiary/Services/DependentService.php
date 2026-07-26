@@ -59,10 +59,24 @@ class DependentService
         Dependent::whereIn('id', $ids)->delete();
     }
 
-    /** Tạo quan hệ pivot với 1 Beneficiary (chỉ loại quan hệ + ghi chú). */
+    /**
+     * Tạo quan hệ pivot với 1 Beneficiary (loại quan hệ + cờ thân nhân chính + ghi chú).
+     *
+     * Bất biến "tối đa 1 thân nhân chính/hồ sơ" phải enforce ở đây: đường này chỉ gửi lên MỘT dòng
+     * nên Request không nhìn thấy các quan hệ cũ của cùng người có công. (Đường còn lại —
+     * mảng `dependents[]` của hồ sơ — thay thế toàn bộ danh sách nên validate ở Request là đủ.)
+     */
     public function addRelation(Dependent $dependent, array $validated): BeneficiaryDependentRelation
     {
-        return $dependent->dependentRelations()->create($validated)->load('beneficiary');
+        $relation = $dependent->dependentRelations()->create($validated);
+
+        if ($relation->is_primary) {
+            BeneficiaryDependentRelation::where('beneficiary_id', $relation->beneficiary_id)
+                ->whereKeyNot($relation->id)
+                ->update(['is_primary' => false]);
+        }
+
+        return $relation->load('beneficiary');
     }
 
     public function removeRelation(Dependent $dependent, int $relationId): void
