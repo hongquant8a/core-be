@@ -745,6 +745,39 @@ class MeetingService
     }
 
     /**
+     * Gửi lại toàn bộ giấy mời cho cuộc họp — idempotent resend.
+     *
+     * Logic:
+     *  1. Tạo invitation mới (idempotent) cho participant/chair/operator chưa có record.
+     *  2. Reset tất cả invitation `sent`/`failed` về `pending` + xóa sent_at.
+     *  3. Fire MeetingPublished để listener gửi thông báo lập tức.
+     *
+     * Chỉ áp dụng cho meeting đang ở trạng thái published.
+     */
+    public function resendInvitations(Meeting $meeting): void
+    {
+        if ($meeting->status !== MeetingStatusEnum::Published->value) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'status' => ['Chỉ có thể gửi lại giấy mời cho cuộc họp đang ở trạng thái đã ban hành (published).'],
+            ]);
+        }
+
+        DB::transaction(function () use ($meeting) {
+            // 1. Tạo invitation cho participant/chair/operator chưa có (idempotent).
+            $this->createInvitationsForParticipants($meeting);
+
+            // 2. Reset tất cả invitation về pending để listener gửi lại.
+            MeetingInvitation::where('meeting_id', $meeting->id)
+                ->where('organization_id', $meeting->organization_id)
+                ->whereIn('status', ['sent', 'failed'])
+                ->update(['status' => 'pending', 'sent_at' => null]);
+        });
+
+        // 3. Fire event để notification listener xử lý gửi lại.
+        Event::dispatch(new MeetingPublished($meeting));
+    }
+
+    /**
      * Operator kết thúc cuộc họp — set status = completed.
      * Hóa các hành động (khóa điểm danh, biểu quyết, thảo luận...).
      */

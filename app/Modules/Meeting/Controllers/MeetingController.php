@@ -266,6 +266,18 @@ class MeetingController extends Controller
     }
 
     /**
+     * Gửi lại toàn bộ giấy mời của cuộc họp — reset invitation pending và fire thông báo ngay lập tức.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     */
+    public function resendInvitations(Meeting $meeting)
+    {
+        $this->meetingService->resendInvitations($meeting);
+
+        return $this->success(null, 'Đã gửi lại toàn bộ giấy mời thành công!');
+    }
+
+    /**
      * Kết thúc cuộc họp — operator bấm khi muốn kết thúc phiên họp.
      * BE set `status = completed`. Các hành động như điểm danh, biểu quyết sẽ bị khóa.
      *
