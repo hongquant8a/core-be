@@ -936,6 +936,38 @@ class MeetingService
         ))->toOthers();
     }
 
+    /**
+     * Operator bật/tắt ảnh chờ chương trình trên màn chiếu (Tab 8) — realtime qua WebSocket.
+     *
+     * Broadcast tới TẤT CẢ subscriber kênh private-meeting.{id} (bao gồm cả người gửi request)
+     * để đồng bộ mọi client đang xem màn chiếu.
+     *
+     * Payload trả về gồm:
+     *   - meeting_id, is_active
+     *   - waiting_image_url: URL ảnh chờ của cuộc họp (null nếu chưa cấu hình riêng).
+     *     FE tự fallback về MeetingSetting.waiting_image_url nếu null.
+     *
+     * @return array{meeting_id: int, is_active: bool, waiting_image_url: string|null}
+     */
+    public function toggleWaitingImage(Meeting $meeting, bool $isActive): array
+    {
+        $meeting->loadMissing('waitingImage');
+
+        $waitingImageUrl = $meeting->waiting_image_media_id && $meeting->waitingImage
+            ? '/storage/'.$meeting->waitingImage->id.'/'.$meeting->waitingImage->file_name
+            : null;
+
+        broadcast(new \App\Modules\Meeting\Events\MeetingWaitingImageToggled(
+            $meeting, $isActive, $waitingImageUrl
+        ));
+
+        return [
+            'meeting_id'        => $meeting->id,
+            'is_active'         => $isActive,
+            'waiting_image_url' => $waitingImageUrl,
+        ];
+    }
+
     public function export(array $filters, ?string $fileName = null): BinaryFileResponse
     {
         return Excel::download(new MeetingExport($filters), $fileName ?? ExportFilename::make('cuoc-hop'));

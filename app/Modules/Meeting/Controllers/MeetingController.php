@@ -12,6 +12,7 @@ use App\Modules\Meeting\Requests\HighlightAgendaMeetingRequest;
 use App\Modules\Meeting\Requests\HighlightDiscussionMeetingRequest;
 use App\Modules\Meeting\Requests\StoreMeetingRequest;
 use App\Modules\Meeting\Requests\ToggleProjectorFileMeetingRequest;
+use App\Modules\Meeting\Requests\ToggleWaitingImageMeetingRequest;
 use App\Modules\Meeting\Requests\UpdateMeetingRequest;
 use App\Modules\Meeting\Resources\MeetingCollection;
 use App\Modules\Meeting\Resources\MeetingResource;
@@ -390,6 +391,25 @@ class MeetingController extends Controller
         );
 
         return $this->success(null, 'Đã gửi tín hiệu chiếu file.');
+    }
+
+    /**
+     * Bật/tắt ảnh chờ chương trình trên màn chiếu (Tab 8) — realtime WebSocket.
+     *
+     * Sau khi nhận request, BE broadcast event `meeting.waiting-image-toggled` tới kênh
+     * `private-meeting.{id}` để TẤT CẢ client (bao gồm người gửi) cập nhật overlay ảnh chờ.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     * @bodyParam is_active boolean required true = bật ảnh chờ, false = tắt. Example: true
+     */
+    public function toggleWaitingImage(ToggleWaitingImageMeetingRequest $request, Meeting $meeting)
+    {
+        $data = $this->meetingService->toggleWaitingImage(
+            $meeting,
+            (bool) $request->input('is_active')
+        );
+
+        return $this->success($data, $data['is_active'] ? 'Đã bật ảnh chờ chương trình.' : 'Đã tắt ảnh chờ chương trình.');
     }
 
     /**
