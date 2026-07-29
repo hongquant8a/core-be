@@ -76,6 +76,11 @@ class MeetingResource extends JsonResource
             'projector_image_url' => $this->projector_image_media_id && $this->projectorImage
                 ? '/storage/'.$this->projectorImage->id.'/'.$this->projectorImage->file_name
                 : null,
+            // Ảnh chờ chương trình riêng cho meeting. Null → FE fallback MeetingSetting.
+            'waiting_image_media_id' => $this->waiting_image_media_id,
+            'waiting_image_url' => $this->waiting_image_media_id && $this->waitingImage
+                ? '/storage/'.$this->waitingImage->id.'/'.$this->waitingImage->file_name
+                : null,
             // Lưu ý: `checkin_token` (UUID dùng gen QR điểm danh) KHÔNG expose ở đây.
             // Token chỉ truy cập qua endpoint riêng `GET /api/meetings/{id}/qr-token`
             // với gate showQrCode (chair OR operator OR qr_manager_user_id).

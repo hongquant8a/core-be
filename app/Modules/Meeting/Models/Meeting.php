@@ -32,6 +32,7 @@ class Meeting extends TenantModel implements HasMedia, Remindable
     use SoftDeletes;
 
     public const COLLECTION_PROJECTOR = 'meeting-projector';
+    public const COLLECTION_WAITING = 'meeting-waiting';
 
     protected $fillable = [
         'organization_id',
@@ -55,6 +56,7 @@ class Meeting extends TenantModel implements HasMedia, Remindable
         'current_meeting_discussion_registration_id',
         'qr_manager_user_id',
         'projector_image_media_id',
+        'waiting_image_media_id',
         'allow_host_management',
         'created_by',
         'updated_by',
@@ -141,6 +143,15 @@ class Meeting extends TenantModel implements HasMedia, Remindable
     }
 
     /**
+     * Ảnh chờ chương trình (Tab 8 màn chiếu). Nếu null → FE fallback sang
+     * MeetingSetting.waiting_image_media_id của tổ chức.
+     */
+    public function waitingImage()
+    {
+        return $this->belongsTo(\Spatie\MediaLibrary\MediaCollections\Models\Media::class, 'waiting_image_media_id');
+    }
+
+    /**
      * Khách mời của cuộc họp (nhập trực tiếp khi admin tạo/sửa meeting).
      * Không có user account, chỉ dùng để gửi thư mời.
      */
@@ -152,6 +163,7 @@ class Meeting extends TenantModel implements HasMedia, Remindable
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection(self::COLLECTION_PROJECTOR)->singleFile();
+        $this->addMediaCollection(self::COLLECTION_WAITING)->singleFile();
     }
 
     public function participants()

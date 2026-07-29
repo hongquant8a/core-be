@@ -297,14 +297,14 @@ class MeetingService
         ]);
     }
 
-    public function store(array $validated, ?UploadedFile $projectorImage = null, array $guests = [], array $reminders = []): Meeting
+    public function store(array $validated, ?UploadedFile $projectorImage = null, ?UploadedFile $waitingImage = null, array $guests = [], array $reminders = []): Meeting
     {
         // guests không phải column trên meetings — strip để không lỗi mass assignment.
         unset($validated['guests']);
 
         $storedFiles = [];
         try {
-            return DB::transaction(function () use ($validated, $projectorImage, $guests, $reminders, &$storedFiles) {
+            return DB::transaction(function () use ($validated, $projectorImage, $waitingImage, $guests, $reminders, &$storedFiles) {
                 $payload = [
                     ...$validated,
                     'organization_id' => $this->resolveCurrentOrganizationId(),
@@ -317,6 +317,12 @@ class MeetingService
                     $meeting->update(['projector_image_media_id' => $media->id]);
                 }
 
+                if ($waitingImage) {
+                    $media = $this->mediaService->uploadOne($meeting, $waitingImage, Meeting::COLLECTION_WAITING, ['disk' => 'public']);
+                    $storedFiles[] = ['disk' => $media->disk, 'path' => $media->getPathRelativeToRoot()];
+                    $meeting->update(['waiting_image_media_id' => $media->id]);
+                }
+
                 if (! empty($guests)) {
                     $this->syncGuests($meeting, $guests);
                 }
@@ -325,7 +331,7 @@ class MeetingService
                     $this->syncReminders($meeting, $reminders);
                 }
 
-                return $meeting->load(['meetingType', 'meetingLocation', 'chairperson.user', 'operator.user', 'creator.media', 'editor.media', 'projectorImage', 'guests', 'reminders']);
+                return $meeting->load(['meetingType', 'meetingLocation', 'chairperson.user', 'operator.user', 'creator.media', 'editor.media', 'projectorImage', 'waitingImage', 'guests', 'reminders']);
             });
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);
@@ -435,16 +441,18 @@ class MeetingService
         });
     }
 
-    public function update(Meeting $meeting, array $validated, ?UploadedFile $projectorImage = null, ?array $guests = null, ?array $reminders = null): Meeting
+    public function update(Meeting $meeting, array $validated, ?UploadedFile $projectorImage = null, ?UploadedFile $waitingImage = null, ?array $guests = null, ?array $reminders = null): Meeting
     {
         unset($validated['guests']);
 
         $storedFiles = [];
         try {
-            return DB::transaction(function () use ($meeting, $validated, $projectorImage, $guests, $reminders, &$storedFiles) {
+            return DB::transaction(function () use ($meeting, $validated, $projectorImage, $waitingImage, $guests, $reminders, &$storedFiles) {
                 $wasPublished = $meeting->status === MeetingStatusEnum::Published->value;
                 $removeProjector = (bool) ($validated['remove_projector_image'] ?? false);
+                $removeWaiting = (bool) ($validated['remove_waiting_image'] ?? false);
                 unset($validated['remove_projector_image']);
+                unset($validated['remove_waiting_image']);
                 $meeting->update($validated);
 
                 if ($wasPublished) {
@@ -468,6 +476,17 @@ class MeetingService
                     $media = $this->mediaService->uploadOne($meeting, $projectorImage, Meeting::COLLECTION_PROJECTOR, ['disk' => 'public']);
                     $storedFiles[] = ['disk' => $media->disk, 'path' => $media->getPathRelativeToRoot()];
                     $meeting->update(['projector_image_media_id' => $media->id]);
+                }
+
+                if (($removeWaiting || $waitingImage) && $meeting->waiting_image_media_id) {
+                    $this->mediaService->removeByIds($meeting, [$meeting->waiting_image_media_id], Meeting::COLLECTION_WAITING);
+                    $meeting->update(['waiting_image_media_id' => null]);
+                }
+
+                if ($waitingImage) {
+                    $media = $this->mediaService->uploadOne($meeting, $waitingImage, Meeting::COLLECTION_WAITING, ['disk' => 'public']);
+                    $storedFiles[] = ['disk' => $media->disk, 'path' => $media->getPathRelativeToRoot()];
+                    $meeting->update(['waiting_image_media_id' => $media->id]);
                 }
 
                 // guests null → FE không gửi field này → không sync (giữ nguyên).
