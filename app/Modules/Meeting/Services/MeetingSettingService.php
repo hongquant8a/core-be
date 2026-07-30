@@ -19,6 +19,7 @@ class MeetingSettingService
     /** Map field key (FE gửi) -> [DB column, media collection]. */
     private const FIELD_MAP = [
         'projector_image' => ['projector_image_media_id', MeetingSetting::COLLECTION_PROJECTOR],
+        'waiting_image'   => ['waiting_image_media_id',   MeetingSetting::COLLECTION_WAITING],
         'chairperson_signature' => ['chairperson_signature_media_id', MeetingSetting::COLLECTION_SIGNATURE],
         'qr_icon' => ['qr_icon_media_id', MeetingSetting::COLLECTION_QR_ICON],
     ];
@@ -27,7 +28,7 @@ class MeetingSettingService
 
     public function show(): MeetingSetting
     {
-        return $this->resolveForCurrentOrg()->load(['projectorImage', 'chairpersonSignature', 'qrIcon']);
+        return $this->resolveForCurrentOrg()->load(['projectorImage', 'waitingImage', 'chairpersonSignature', 'qrIcon']);
     }
 
     /**
@@ -75,7 +76,7 @@ class MeetingSettingService
             throw $exception;
         }
 
-        return $setting->load(['projectorImage', 'chairpersonSignature', 'qrIcon']);
+        return $setting->load(['projectorImage', 'waitingImage', 'chairpersonSignature', 'qrIcon']);
     }
 
     private function resolveForCurrentOrg(): MeetingSetting

@@ -15,6 +15,9 @@ class MeetingSettingResource extends JsonResource
             'projector_image_url' => $this->projectorImage
                 ? '/storage/'.$this->projectorImage->id.'/'.$this->projectorImage->file_name
                 : null,
+            'waiting_image_url' => $this->waitingImage
+                ? '/storage/'.$this->waitingImage->id.'/'.$this->waitingImage->file_name
+                : null,
             'chairperson_signature_url' => $this->chairpersonSignature
                 ? '/storage/'.$this->chairpersonSignature->id.'/'.$this->chairpersonSignature->file_name
                 : null,

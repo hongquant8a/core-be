@@ -35,6 +35,7 @@ class StoreMeetingRequest extends FormRequest
             'reminders.*.channels' => 'nullable|array',
             'reminders.*.channels.*' => 'string',
             'projector_image' => 'nullable|file|mimes:jpg,jpeg,png,webp',
+            'waiting_image'   => 'nullable|file|mimes:jpg,jpeg,png,webp',
             'title' => 'required|string|max:255',
             'is_public' => 'nullable|boolean',
             'has_online_room' => 'nullable|boolean',
@@ -107,6 +108,7 @@ class StoreMeetingRequest extends FormRequest
             'guests.*.zalo_user_id' => 'Zalo user ID khách mời',
             'guests.*.organization_name' => 'Đơn vị khách mời',
             'projector_image' => 'Ảnh nền màn chiếu',
+            'waiting_image'   => 'Ảnh chờ chương trình',
             'title' => 'Tiêu đề',
             'is_public' => 'Trạng thái công khai',
             'has_online_room' => 'Có phòng họp trực tuyến',
@@ -143,6 +145,9 @@ class StoreMeetingRequest extends FormRequest
             ],
             'projector_image' => [
                 'description' => 'Ảnh nền màn chiếu riêng cho meeting (jpg/png/webp, ≤10MB). Null = FE fallback MeetingSetting.projector_image của org.',
+            ],
+            'waiting_image' => [
+                'description' => 'Ảnh chờ chương trình riêng cho meeting (jpg/png/webp, ≤10MB). Hiển thị trên màn chiếu trước khi vào nội dung họp. Null = FE fallback MeetingSetting.waiting_image của org.',
             ],
             'title' => [
                 'description' => 'Tên cuộc họp.',

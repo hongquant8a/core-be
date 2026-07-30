@@ -17,6 +17,7 @@ class UpdateMeetingAgendaRequest extends FormRequest
             'start_time' => 'nullable|date_format:H:i:s',
             'end_time' => 'nullable|date_format:H:i:s|after_or_equal:start_time',
             'content' => 'sometimes|string',
+            'script' => 'nullable|string',
             'person_in_charge' => 'nullable|string|max:255',
             'allow_discussion_registration' => 'nullable|boolean',
             'discussion_duration_minutes' => 'nullable|integer|min:1|max:600',
@@ -54,6 +55,7 @@ class UpdateMeetingAgendaRequest extends FormRequest
             'start_time' => 'Thời gian bắt đầu',
             'end_time' => 'Thời gian kết thúc',
             'content' => 'Nội dung',
+            'script' => 'Lời dẫn',
             'person_in_charge' => 'person in charge',
             'allow_discussion_registration' => 'Cho phép đăng ký thảo luận',
             'discussion_duration_minutes' => 'Thời lượng đăng ký thảo luận (phút)',
@@ -68,6 +70,7 @@ class UpdateMeetingAgendaRequest extends FormRequest
     {
         return [
             'content' => ['description' => 'Nội dung chương trình.', 'example' => 'Thảo luận chuyên đề A'],
+            'script' => ['description' => 'Lời dẫn chương trình (HTML rich text). Dành riêng cho Chủ trì. Hỗ trợ: in đậm, in nghiêng, màu sắc, in hoa. Null để xoá lời dẫn.', 'example' => '<p>Kính thưa <strong>quý vị đại biểu</strong>...</p>'],
             'person_in_charge' => ['description' => 'Người phụ trách.', 'example' => 'Lê Văn C'],
             'allow_discussion_registration' => ['description' => 'Cho phép đăng ký thảo luận.', 'example' => true],
             'discussion_duration_minutes' => ['description' => 'Thời lượng cho phép đăng ký thảo luận (phút).', 'example' => 30],

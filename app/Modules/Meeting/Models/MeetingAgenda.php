@@ -15,6 +15,7 @@ class MeetingAgenda extends TenantModel
         'start_time',
         'end_time',
         'content',
+        'script',
         'person_in_charge',
         'allow_discussion_registration',
         'discussion_duration_minutes',

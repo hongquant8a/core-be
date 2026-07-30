@@ -23,6 +23,7 @@ class MeetingSetting extends TenantModel implements HasMedia
     use InteractsWithMedia;
 
     public const COLLECTION_PROJECTOR = 'meeting-setting-projector';
+    public const COLLECTION_WAITING = 'meeting-setting-waiting';
 
     public const COLLECTION_SIGNATURE = 'meeting-setting-signature';
 
@@ -31,6 +32,7 @@ class MeetingSetting extends TenantModel implements HasMedia
     protected $fillable = [
         'organization_id',
         'projector_image_media_id',
+        'waiting_image_media_id',
         'chairperson_signature_media_id',
         'qr_icon_media_id',
         'created_by',
@@ -51,6 +53,11 @@ class MeetingSetting extends TenantModel implements HasMedia
         return $this->belongsTo(\Spatie\MediaLibrary\MediaCollections\Models\Media::class, 'projector_image_media_id');
     }
 
+    public function waitingImage()
+    {
+        return $this->belongsTo(\Spatie\MediaLibrary\MediaCollections\Models\Media::class, 'waiting_image_media_id');
+    }
+
     public function chairpersonSignature()
     {
         return $this->belongsTo(\Spatie\MediaLibrary\MediaCollections\Models\Media::class, 'chairperson_signature_media_id');
@@ -64,6 +71,7 @@ class MeetingSetting extends TenantModel implements HasMedia
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection(self::COLLECTION_PROJECTOR)->singleFile();
+        $this->addMediaCollection(self::COLLECTION_WAITING)->singleFile();
         $this->addMediaCollection(self::COLLECTION_SIGNATURE)->singleFile();
         $this->addMediaCollection(self::COLLECTION_QR_ICON)->singleFile();
     }

@@ -53,6 +53,7 @@ Route::put('/{meeting}', [MeetingController::class, 'update'])->middleware('perm
 Route::patch('/{meeting}', [MeetingController::class, 'update'])->middleware('permission:meetings.update,web');
 Route::delete('/{meeting}', [MeetingController::class, 'destroy'])->middleware('permission:meetings.destroy,web');
 Route::patch('/{meeting}/status', [MeetingController::class, 'changeStatus'])->middleware('permission:meetings.changeStatus,web');
+Route::post('/{meeting}/resend-invitations', [MeetingController::class, 'resendInvitations'])->middleware('permission:meetings.changeStatus,web');
 Route::patch('/{meeting}/reopen', [MeetingController::class, 'reopen'])->middleware('permission:meetings.changeStatus,web');
 
 // ───────────────────── 2. In-meeting control (chair/operator) ────────────────────
@@ -64,6 +65,7 @@ Route::patch('/{meeting}/end-early', [MeetingController::class, 'endEarly'])->mi
 Route::patch('/{meeting}/highlight-agenda', [MeetingController::class, 'highlightAgenda'])->middleware('can:highlight,meeting');
 Route::patch('/{meeting}/highlight-discussion', [MeetingController::class, 'highlightDiscussion'])->middleware('can:highlight,meeting');
 Route::patch('/{meeting}/toggle-projector-file', [MeetingController::class, 'toggleProjectorFile'])->middleware('can:highlight,meeting');
+Route::patch('/{meeting}/toggle-waiting-image', [MeetingController::class, 'toggleWaitingImage'])->middleware('can:highlight,meeting');
 
 // Tab 5 QR — Gate Policy (khóa ngoại): chair OR operator OR meeting.qr_manager_user_id.
 Route::get('/{meeting}/qr-token', [MeetingController::class, 'qrToken'])->middleware('can:showQrCode,meeting');
