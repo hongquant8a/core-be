@@ -33,8 +33,13 @@ class MeetingAgendaService
     public function update(MeetingAgenda $meetingAgenda, array $validated): MeetingAgenda
     {
         $meetingAgenda->update($validated);
+        $meetingAgenda->load(['parent', 'children']);
 
-        return $meetingAgenda->load(['parent', 'children']);
+        if ($meetingAgenda->wasChanged('script')) {
+            \App\Modules\Meeting\Events\MeetingAgendaUpdated::dispatch($meetingAgenda);
+        }
+
+        return $meetingAgenda;
     }
 
     public function destroy(MeetingAgenda $meetingAgenda): void
