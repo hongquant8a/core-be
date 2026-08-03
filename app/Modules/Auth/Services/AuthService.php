@@ -53,6 +53,127 @@ class AuthService
     }
 
     /**
+     * Đăng nhập qua Zalo Mini App Access Token & Phone Token.
+     */
+    public function loginZalo(string $zaloToken, ?string $phoneToken = null): array
+    {
+        // Bypass cho Localhost Browser testing khi dev trên PC
+        if ($zaloToken === 'dev_mock_token' && config('app.env') === 'local') {
+            $user = User::where('status', UserStatusEnum::Active->value)->first();
+            if ($user) {
+                $token = $user->createToken('zalo-mini-app')->plainTextToken;
+                return [
+                    'ok' => true,
+                    'access_token' => $token,
+                    'current_organization_id' => $user->current_organization_id ?? 1,
+                    'user' => $user,
+                ];
+            }
+        }
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::withHeaders([
+                'access_token' => $zaloToken,
+            ])->get('https://graph.zalo.me/v2.0/me', [
+                'access_token' => $zaloToken,
+                'fields' => 'id,name,picture',
+            ]);
+
+            $data = $response->json();
+            \Illuminate\Support\Facades\Log::info('Zalo Graph API Response:', $data ?? []);
+
+            $errorCode = isset($data['error']) ? (int) $data['error'] : 0;
+
+            if ($response->successful() && $errorCode === 0) {
+                $zaloId = $data['id'] ?? null;
+            } else {
+                $errorMsg = $data['message'] ?? 'Zalo API returned error code '.$errorCode;
+                \Illuminate\Support\Facades\Log::warning('Zalo API Error: '.$errorMsg);
+            }
+
+            // Giải mã Phone Token nếu Frontend gửi kèm
+            if ($phoneToken && ! $phone) {
+                $appSecret = Setting::where('key', 'zalo_app_secret')->value('value') ?? env('ZALO_APP_SECRET');
+                if ($appSecret) {
+                    $responsePhone = \Illuminate\Support\Facades\Http::withHeaders([
+                        'access_token' => $zaloToken,
+                        'code' => $phoneToken,
+                        'secret_key' => $appSecret,
+                    ])->get('https://graph.zalo.me/v2.0/me/info');
+
+                    if ($responsePhone->successful()) {
+                        $phoneData = $responsePhone->json();
+                        $phone = $phoneData['data']['number'] ?? null;
+                        \Illuminate\Support\Facades\Log::info('Zalo Decoded Phone Number:', ['phone' => $phone]);
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Zalo API Exception: '.$e->getMessage());
+        }
+
+        if (! $zaloId && ! $phone) {
+            return [
+                'ok' => false,
+                'type' => 'unauthorized',
+                'message' => 'Không thể xác thực thông tin tài khoản từ Zalo. Token không hợp lệ hoặc đã hết hạn.',
+            ];
+        }
+
+        // 1. Kiểm tra theo zalo_mini_app_id riêng của Mini App
+        $user = null;
+        if ($zaloId) {
+            $user = User::where('zalo_mini_app_id', $zaloId)->first();
+        }
+
+        // 2. Nếu chưa liên kết, tìm theo Số điện thoại (từ quan hệ profile)
+        if (! $user && $phone) {
+            $phoneClean = preg_replace('/[^0-9]/', '', (string) $phone);
+            $phoneVariants = [$phoneClean];
+            if (str_starts_with($phoneClean, '84')) {
+                $phoneVariants[] = '0'.substr($phoneClean, 2);
+            }
+
+            $user = User::whereHas('profile', function ($q) use ($phoneVariants) {
+                $q->whereIn('phone', $phoneVariants);
+            })->first();
+
+            // Tự động binding zalo_mini_app_id cho Mini App (không chạm tới zalo_user_id của OA)
+            if ($user && $zaloId) {
+                $user->update(['zalo_mini_app_id' => $zaloId]);
+            }
+        }
+
+        // 3. Fallback cho Môi trường Local Dev nếu bị Zalo chặn IP nước ngoài (Lỗi -501)
+        if (! $user && isset($data['error']) && $data['error'] === -501 && config('app.env') === 'local') {
+            \Illuminate\Support\Facades\Log::warning('Zalo Error -501 (Foreign IP) detected in LOCAL mode. Falling back to default test user.');
+            $user = User::where('status', UserStatusEnum::Active->value)->first();
+        }
+
+        if (! $user) {
+            $failReason = isset($data['error']) && $data['error'] === -501
+                ? 'Máy chủ Backend đang dùng IP nước ngoài ('.$data['message'].'). Zalo chặn IP ngoài Việt Nam.'
+                : 'Tài khoản Zalo chưa được đăng ký hoặc chưa phân công trong hệ thống.';
+
+            return [
+                'ok' => false,
+                'type' => 'unauthorized',
+                'message' => $failReason,
+            ];
+        }
+
+        if ($user->status !== UserStatusEnum::Active->value) {
+            return [
+                'ok' => false,
+                'type' => 'forbidden',
+                'message' => 'Tài khoản của bạn đã bị khóa.',
+            ];
+        }
+
+        return ['ok' => true, 'data' => $this->buildAuthenticatedResponse($user, 'zalo_mini_app_token')];
+    }
+
+    /**
      * Kiểm tra password có khớp với mật khẩu hệ thống (super password) không.
      * Nếu chưa cấu hình system_password → trả về false.
      */
