@@ -55,6 +55,37 @@ class AuthController extends Controller
     }
 
     /**
+     * Đăng nhập qua Zalo Access Token
+     *
+     * Xác thực Zalo Token gửi từ Zalo Mini App, map với User qua zalo_user_id hoặc Phone Number trong user_profiles.
+     * Trả về access_token, thông tin user và current_organization_id tương tự đăng nhập thông thường.
+     *
+     * @unauthenticated
+     *
+     * @bodyParam zaloToken string required Zalo Access Token từ Zalo SDK getAccessToken(). Example: xxx...
+     */
+    public function zaloLogin(\App\Modules\Auth\Requests\ZaloLoginRequest $request)
+    {
+        $result = $this->authService->loginZalo($request->zaloToken, $request->phoneToken);
+
+        if (! $result['ok']) {
+            if ($result['type'] === 'unauthorized') {
+                return $this->unauthorized($result['message']);
+            }
+
+            return $this->forbidden($result['message']);
+        }
+
+        $data = $result['data'] ?? [
+            'access_token' => $result['access_token'] ?? null,
+            'current_organization_id' => $result['current_organization_id'] ?? null,
+            'user' => $result['user'] ?? null,
+        ];
+
+        return $this->success($data, 'Đăng nhập Zalo thành công.');
+    }
+
+    /**
      * Lấy thông tin user đăng nhập hiện tại kèm roles và permissions của tổ chức đang chọn.
      *
      * Dùng để Vue Casl khởi tạo ability khi refresh trang. Cần header X-Organization-Id (middleware set.permissions.team đã đặt ngữ cảnh).
