@@ -71,6 +71,9 @@ class AuthService
             }
         }
 
+        $zaloId = null;
+        $phone = null;
+
         try {
             $response = \Illuminate\Support\Facades\Http::withHeaders([
                 'access_token' => $zaloToken,
