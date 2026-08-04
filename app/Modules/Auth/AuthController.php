@@ -76,13 +76,7 @@ class AuthController extends Controller
             return $this->forbidden($result['message']);
         }
 
-        $data = $result['data'] ?? [
-            'access_token' => $result['access_token'] ?? null,
-            'current_organization_id' => $result['current_organization_id'] ?? null,
-            'user' => $result['user'] ?? null,
-        ];
-
-        return $this->success($data, 'Đăng nhập Zalo thành công.');
+        return $this->success($result['data'], 'Đăng nhập Zalo thành công.');
     }
 
     /**

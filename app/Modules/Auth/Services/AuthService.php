@@ -57,20 +57,6 @@ class AuthService
      */
     public function loginZalo(string $zaloToken, ?string $phoneToken = null): array
     {
-        // Bypass cho Localhost Browser testing khi dev trên PC
-        if ($zaloToken === 'dev_mock_token' && config('app.env') === 'local') {
-            $user = User::where('status', UserStatusEnum::Active->value)->first();
-            if ($user) {
-                $token = $user->createToken('zalo-mini-app')->plainTextToken;
-                return [
-                    'ok' => true,
-                    'access_token' => $token,
-                    'current_organization_id' => $user->current_organization_id ?? 1,
-                    'user' => $user,
-                ];
-            }
-        }
-
         $zaloId = null;
         $phone = null;
 
@@ -145,12 +131,6 @@ class AuthService
             if ($user && $zaloId) {
                 $user->update(['zalo_mini_app_id' => $zaloId]);
             }
-        }
-
-        // 3. Fallback cho Môi trường Local Dev nếu bị Zalo chặn IP nước ngoài (Lỗi -501)
-        if (! $user && isset($data['error']) && $data['error'] === -501 && config('app.env') === 'local') {
-            \Illuminate\Support\Facades\Log::warning('Zalo Error -501 (Foreign IP) detected in LOCAL mode. Falling back to default test user.');
-            $user = User::where('status', UserStatusEnum::Active->value)->first();
         }
 
         if (! $user) {
