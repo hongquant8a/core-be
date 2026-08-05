@@ -101,22 +101,10 @@ class AuthService
             \Illuminate\Support\Facades\Log::error('Zalo API Exception: '.$e->getMessage());
         }
 
-        if (! $zaloId && ! $phone) {
-            return [
-                'ok' => false,
-                'type' => 'unauthorized',
-                'message' => 'Không thể xác thực thông tin tài khoản từ Zalo. Token không hợp lệ hoặc đã hết hạn.',
-            ];
-        }
-
-        // 1. Kiểm tra theo zalo_mini_app_id riêng của Mini App
         $user = null;
-        if ($zaloId) {
-            $user = User::where('zalo_mini_app_id', $zaloId)->first();
-        }
 
-        // 2. Nếu chưa liên kết, tìm theo Số điện thoại (từ quan hệ profile)
-        if (! $user && $phone) {
+        // Định danh duy nhất theo Số điện thoại từ Zalo (không dùng zalo_mini_app_id để tìm user)
+        if ($phone) {
             $phoneClean = preg_replace('/[^0-9]/', '', (string) $phone);
             $phoneVariants = [$phoneClean];
             if (str_starts_with($phoneClean, '84')) {
@@ -127,16 +115,22 @@ class AuthService
                 $q->whereIn('phone', $phoneVariants);
             })->first();
 
-            // Tự động binding zalo_mini_app_id cho Mini App (không chạm tới zalo_user_id của OA)
+            // Cập nhật zalo_mini_app_id làm thông tin bổ sung nếu tìm thấy user
             if ($user && $zaloId) {
                 $user->update(['zalo_mini_app_id' => $zaloId]);
             }
+        } else if (isset($data['error']) && $data['error'] === -501 && config('app.env') === 'local') {
+            // Fallback cho Môi trường Local Dev nếu bị Zalo chặn IP nước ngoài (Lỗi -501)
+            \Illuminate\Support\Facades\Log::warning('Zalo Error -501 (Foreign IP) detected in LOCAL mode. Falling back to default test user.');
+            $user = User::where('status', UserStatusEnum::Active->value)->first();
         }
 
         if (! $user) {
-            $failReason = isset($data['error']) && $data['error'] === -501
-                ? 'Máy chủ Backend đang dùng IP nước ngoài ('.$data['message'].'). Zalo chặn IP ngoài Việt Nam.'
-                : 'Tài khoản Zalo chưa được đăng ký hoặc chưa phân công trong hệ thống.';
+            $failReason = ! $phone
+                ? 'Không lấy được số điện thoại từ Zalo. Vui lòng cấp quyền chia sẻ số điện thoại trên Zalo Mini App.'
+                : (isset($data['error']) && $data['error'] === -501
+                    ? 'Máy chủ Backend đang dùng IP nước ngoài ('.$data['message'].'). Zalo chặn IP ngoài Việt Nam.'
+                    : 'Số điện thoại Zalo của bạn chưa được đăng ký hoặc chưa có trong hệ thống.');
 
             return [
                 'ok' => false,
