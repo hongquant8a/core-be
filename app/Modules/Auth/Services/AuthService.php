@@ -62,24 +62,50 @@ class AuthService
 
         try {
             $appSecret = Setting::where('key', 'zalo_app_secret')->value('value') ?? env('ZALO_APP_SECRET');
-            if ($appSecret) {
-                $responsePhone = \Illuminate\Support\Facades\Http::withHeaders([
-                    'access_token' => $zaloToken,
-                    'code' => $phoneToken,
-                    'secret_key' => $appSecret,
-                ])->get('https://graph.zalo.me/v2.0/me/info');
+            if (! $appSecret) {
+                \Illuminate\Support\Facades\Log::error('Zalo Login Error: Missing ZALO_APP_SECRET configuration.');
 
-                $phoneData = $responsePhone->json();
+                return [
+                    'ok' => false,
+                    'type' => 'unauthorized',
+                    'message' => 'Hệ thống chưa cấu hình Zalo App Secret (ZALO_APP_SECRET).',
+                ];
+            }
 
-                if ($responsePhone->successful() && !isset($phoneData['error'])) {
-                    $phone = $phoneData['data']['number'] ?? null;
-                    \Illuminate\Support\Facades\Log::info('Zalo Decoded Phone Number:', ['phone' => $phone]);
-                } else {
-                    \Illuminate\Support\Facades\Log::warning('Zalo API Error (/me/info):', $phoneData ?? []);
-                }
+            $responsePhone = \Illuminate\Support\Facades\Http::withHeaders([
+                'access_token' => $zaloToken,
+                'code' => $phoneToken,
+                'secret_key' => $appSecret,
+            ])->get('https://graph.zalo.me/v2.0/me/info');
+
+            $phoneData = $responsePhone->json();
+
+            if ($responsePhone->successful() && (! isset($phoneData['error']) || (int) $phoneData['error'] === 0)) {
+                $phone = $phoneData['data']['number'] ?? null;
+                \Illuminate\Support\Facades\Log::info('Zalo Decoded Phone Number:', ['phone' => $phone]);
+            } else {
+                \Illuminate\Support\Facades\Log::warning('Zalo API Error (/me/info):', $phoneData ?? []);
             }
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Zalo API Exception: '.$e->getMessage());
+        }
+
+        if (isset($phoneData['error']) && (int) $phoneData['error'] !== 0) {
+            $errMsg = $phoneData['message'] ?? ('Mã lỗi '.$phoneData['error']);
+
+            return [
+                'ok' => false,
+                'type' => 'unauthorized',
+                'message' => "Zalo giải mã SĐT thất bại: {$errMsg} (Mã {$phoneData['error']})",
+            ];
+        }
+
+        if (! $phone) {
+            return [
+                'ok' => false,
+                'type' => 'unauthorized',
+                'message' => 'Không lấy được số điện thoại từ Zalo. Token SĐT không hợp lệ hoặc đã hết hạn.',
+            ];
         }
 
         $user = null;
@@ -90,6 +116,8 @@ class AuthService
             $phoneVariants = [$phoneClean];
             if (str_starts_with($phoneClean, '84')) {
                 $phoneVariants[] = '0'.substr($phoneClean, 2);
+            } elseif (str_starts_with($phoneClean, '0')) {
+                $phoneVariants[] = '84'.substr($phoneClean, 1);
             }
 
             $user = User::whereHas('profile', function ($q) use ($phoneVariants) {
@@ -98,16 +126,10 @@ class AuthService
         }
 
         if (! $user) {
-            $failReason = ! $phone
-                ? 'Không lấy được số điện thoại từ Zalo. Vui lòng cấp quyền chia sẻ số điện thoại trên Zalo Mini App.'
-                : (isset($phoneData['error']) && $phoneData['error'] === -501
-                    ? 'Máy chủ Backend đang dùng IP nước ngoài ('.$phoneData['message'].'). Zalo chặn IP ngoài Việt Nam.'
-                    : 'Số điện thoại Zalo của bạn chưa được đăng ký hoặc chưa có trong hệ thống.');
-
             return [
                 'ok' => false,
                 'type' => 'unauthorized',
-                'message' => $failReason,
+                'message' => "Số điện thoại Zalo ({$phone}) chưa được đăng ký hoặc chưa có trong hệ thống.",
             ];
         }
 
