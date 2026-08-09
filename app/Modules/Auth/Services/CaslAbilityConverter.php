@@ -33,9 +33,58 @@ class CaslAbilityConverter
                 'action' => $action,
                 'subject' => $subject,
             ];
+
+            // Map thêm các alias CASL để tương thích 100% với các hàm can() cũ trên Frontend
+            foreach (self::getAbilityAliases($permission) as $alias) {
+                $abilities[] = $alias;
+            }
         }
 
         return $abilities;
+    }
+
+    protected static function getAbilityAliases(string $permission): array
+    {
+        $aliases = [];
+
+        switch ($permission) {
+            case 'my-assigned-tasks.markDone':
+                $aliases[] = ['action' => 'markDone', 'subject' => 'TaskAssignmentItems'];
+                break;
+            case 'my-assigned-tasks.pause':
+                $aliases[] = ['action' => 'pause', 'subject' => 'TaskAssignmentItems'];
+                break;
+            case 'my-assigned-tasks.cancel':
+                $aliases[] = ['action' => 'cancel', 'subject' => 'TaskAssignmentItems'];
+                break;
+            case 'my-assigned-tasks.changeStatus':
+                $aliases[] = ['action' => 'changeStatus', 'subject' => 'TaskAssignmentItems'];
+                break;
+            case 'my-assigned-tasks.transfer':
+                $aliases[] = ['action' => 'store', 'subject' => 'TaskAssignmentItemTransfers'];
+                break;
+            case 'my-assigned-tasks.note':
+                $aliases[] = ['action' => 'store', 'subject' => 'TaskAssignmentItemNotes'];
+                break;
+
+            case 'my-received-tasks.updateProgress':
+                $aliases[] = ['action' => 'updateProgress', 'subject' => 'TaskAssignmentItems'];
+                break;
+            case 'my-received-tasks.report':
+                $aliases[] = ['action' => 'index', 'subject' => 'TaskAssignmentItemReports'];
+                $aliases[] = ['action' => 'show', 'subject' => 'TaskAssignmentItemReports'];
+                $aliases[] = ['action' => 'store', 'subject' => 'TaskAssignmentItemReports'];
+                $aliases[] = ['action' => 'update', 'subject' => 'TaskAssignmentItemReports'];
+                break;
+            case 'my-received-tasks.note':
+                $aliases[] = ['action' => 'store', 'subject' => 'TaskAssignmentItemNotes'];
+                break;
+            case 'my-received-tasks.transfer':
+                $aliases[] = ['action' => 'store', 'subject' => 'TaskAssignmentItemTransfers'];
+                break;
+        }
+
+        return $aliases;
     }
 
     protected static function resourceToSubject(string $resource): string

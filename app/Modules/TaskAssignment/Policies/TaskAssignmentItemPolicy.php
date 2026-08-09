@@ -26,7 +26,9 @@ class TaskAssignmentItemPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasPermissionTo('task-assignment-items.index');
+        return $user->hasPermissionTo('task-assignment-items.index')
+            || $user->hasPermissionTo('my-assigned-tasks.index')
+            || $user->hasPermissionTo('my-received-tasks.index');
     }
 
     /**
@@ -34,7 +36,9 @@ class TaskAssignmentItemPolicy
      */
     public function view(User $user, TaskAssignmentItem $item): bool
     {
-        return $user->hasPermissionTo('task-assignment-items.show');
+        return $user->hasPermissionTo('task-assignment-items.show')
+            || $user->hasPermissionTo('my-assigned-tasks.show')
+            || $user->hasPermissionTo('my-received-tasks.show');
     }
 
     /**
@@ -103,7 +107,10 @@ class TaskAssignmentItemPolicy
     {
         $hasPermission = $user->hasPermissionTo('task-assignment-items.changeStatus')
             || $user->hasPermissionTo('task-assignment-items.pause')
-            || $user->hasPermissionTo('task-assignment-items.cancel');
+            || $user->hasPermissionTo('task-assignment-items.cancel')
+            || $user->hasPermissionTo('my-assigned-tasks.changeStatus')
+            || $user->hasPermissionTo('my-assigned-tasks.pause')
+            || $user->hasPermissionTo('my-assigned-tasks.cancel');
 
         if (! $hasPermission) {
             return false;
@@ -121,7 +128,7 @@ class TaskAssignmentItemPolicy
      */
     public function updateProgress(User $user, TaskAssignmentItem $item): bool
     {
-        if (! $user->hasPermissionTo('task-assignment-items.updateProgress')) {
+        if (! $user->hasPermissionTo('task-assignment-items.updateProgress') && ! $user->hasPermissionTo('my-received-tasks.updateProgress')) {
             return false;
         }
 
@@ -138,7 +145,7 @@ class TaskAssignmentItemPolicy
      */
     public function markDone(User $user, TaskAssignmentItem $item): bool
     {
-        if (! $user->hasPermissionTo('task-assignment-items.markDone')) {
+        if (! $user->hasPermissionTo('task-assignment-items.markDone') && ! $user->hasPermissionTo('my-assigned-tasks.markDone')) {
             return false;
         }
 
