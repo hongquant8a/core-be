@@ -54,6 +54,10 @@ class MeetingResource extends JsonResource
             'published_at' => $this->published_at?->format('H:i:s d/m/Y'),
             'attendance_locked' => (bool) $this->attendance_locked,
             'allow_host_management' => (bool) $this->allow_host_management,
+            // Khi true, đại biểu tự điểm danh được duyệt (present) ngay, không cần điều hành xác nhận.
+            'auto_confirm_attendance' => (bool) $this->auto_confirm_attendance,
+            // Khi true, hiện tab "Trao đổi" (chat nhóm nội bộ) cho cuộc họp.
+            'internal_chat_enabled' => (bool) $this->internal_chat_enabled,
             // FE dùng field này để show/hide button điều hành (end-early, lock-attendance, highlight, vote open/close).
             // Vai trò CHÍNH ưu tiên: FK chair > FK operator > participant entry. Chair có participant entry vẫn trả 'chairperson'.
             // Dùng Auth::guard('sanctum') fallback cho public route không có middleware auth:sanctum.

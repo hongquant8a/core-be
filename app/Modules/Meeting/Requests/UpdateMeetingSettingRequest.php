@@ -2,6 +2,7 @@
 
 namespace App\Modules\Meeting\Requests;
 
+use App\Modules\Meeting\Enums\MeetingHomeDisplayTypeEnum;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateMeetingSettingRequest extends FormRequest
@@ -35,6 +36,7 @@ class UpdateMeetingSettingRequest extends FormRequest
             'remove_waiting_image'      => 'sometimes|boolean',
             'remove_chairperson_signature' => 'sometimes|boolean',
             'remove_qr_icon'            => 'sometimes|boolean',
+            'home_display_type'         => ['sometimes', MeetingHomeDisplayTypeEnum::rule()],
         ];
     }
 
@@ -60,6 +62,7 @@ class UpdateMeetingSettingRequest extends FormRequest
             'remove_chairperson_signature' => 'Xóa chữ ký chủ tọa',
             'remove_qr_icon'               => 'Xóa icon QR code',
             'allow_host_management'        => 'Cho phép chủ trì điều hành',
+            'home_display_type'            => 'Giao diện trang chủ cuộc họp',
         ];
     }
 
@@ -75,6 +78,7 @@ class UpdateMeetingSettingRequest extends FormRequest
             'remove_chairperson_signature' => ['description' => 'Xóa chữ ký hiện tại.', 'example' => false],
             'remove_qr_icon'               => ['description' => 'Xóa icon QR hiện tại.', 'example' => false],
             'allow_host_management'        => ['description' => 'Tùy chọn chủ trì điều hành cuộc họp.', 'example' => true],
+            'home_display_type'            => ['description' => 'Giao diện trang chủ cuộc họp: status_type (theo trạng thái) hoặc meeting_type (theo loại cuộc họp).', 'example' => 'status_type'],
         ];
     }
 }

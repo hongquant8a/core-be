@@ -209,6 +209,16 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
         require base_path('app/Modules/Meeting/Routes/meeting_setting.php');
     });
 
+    // Chat nội bộ — engine dùng chung cho DM (toàn hệ thống) và chat nhóm theo cuộc họp
+    // (khi meeting.internal_chat_enabled = true).
+    Route::prefix('chat')->group(function () {
+        require base_path('app/Modules/Core/Routes/chat.php');
+    });
+    // Admin: xem/xoá lịch sử chat nhóm theo cuộc họp (permission riêng, destroy chỉ Super Admin).
+    Route::prefix('meeting-chat-conversations')->group(function () {
+        require base_path('app/Modules/Core/Routes/meeting_chat_conversation.php');
+    });
+
     // Scheduling module
     Route::prefix('schedules')->middleware('ensure.route.org')->group(function () {
         require base_path('app/Modules/Scheduling/Routes/schedule.php');

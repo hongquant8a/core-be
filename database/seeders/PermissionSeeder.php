@@ -72,6 +72,11 @@ class PermissionSeeder extends Seeder
             'notifications.templates' => [
                 'index', 'store', 'update', 'destroy', 'variables',
             ],
+            // Admin xem/xoá lịch sử chat nhóm nội bộ theo cuộc họp (meeting.internal_chat_enabled).
+            // destroy CHỈ gán cho Super Admin — xem assignPermissionsToRoles().
+            'meeting-chat-conversations' => [
+                'index', 'show', 'destroy',
+            ],
         ],
         'TaskAssignment' => [
             'task-assignment-departments' => [
@@ -276,6 +281,7 @@ class PermissionSeeder extends Seeder
         'notifications.schedules' => 'Cấu hình lịch nhắc',
         'notifications.logs' => 'Nhật ký gửi thông báo',
         'notifications.templates' => 'Cấu hình ZNS template thông báo',
+        'meeting-chat-conversations' => 'Chat nhóm cuộc họp (Admin)',
         'my-received-tasks' => 'Công việc được giao',
         'my-assigned-tasks' => 'Công việc đang giao',
         'meetings' => 'Cuộc họp',
@@ -441,7 +447,9 @@ class PermissionSeeder extends Seeder
 
         $admin = Role::where('name', 'Admin')->where('guard_name', self::GUARD)->first();
         if ($admin) {
-            $admin->syncPermissions($allPermissionNames);
+            // "meeting-chat-conversations.destroy" chỉ dành cho Super Admin — Admin có mọi
+            // quyền khác nhưng không được xoá lịch sử chat nhóm cuộc họp.
+            $admin->syncPermissions(array_diff($allPermissionNames, ['meeting-chat-conversations.destroy']));
         }
 
         // TaskAssignment roles

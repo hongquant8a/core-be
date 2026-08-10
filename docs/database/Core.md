@@ -1,7 +1,7 @@
 # DATABASE DESIGN — Module Core
 
 > Ngày tạo: 00:00:00 16/06/2026  
-> Cập nhật lần cuối: 00:00:00 29/06/2026
+> Cập nhật lần cuối: 13:43:16 10/08/2026
 
 Hệ thống nền tảng: người dùng, tổ chức, phân quyền, thông báo, cấu hình, nhật ký.
 
@@ -384,6 +384,51 @@ Indexes:
 
 ---
 
+## 10. Chat nội bộ (`chat_conversations` / `chat_messages`)
+
+Engine chat dùng chung cho 2 loại hội thoại, đặt trong Core (`App\Modules\Core\Models`) vì
+được cả module Meeting (chat nhóm theo cuộc họp) và tính năng nhắn tin riêng toàn hệ thống
+tái sử dụng. Xem thêm [docs/modules/Chat/README.md](../modules/Chat/README.md).
+
+### `chat_conversations`
+
+| Column | Type | Nullable | Default | Ghi chú |
+|---|---|---|---|---|
+| `id` | bigint PK | No | auto | |
+| `organization_id` | bigint unsigned | No | — | FK → organizations.id CASCADE |
+| `type` | varchar(255) | No | 'direct' | `direct` (DM 1-1) hoặc `meeting_group` (chat nhóm theo cuộc họp) |
+| `meeting_id` | bigint unsigned | Yes | NULL | FK → meetings.id CASCADE — chỉ set khi type=meeting_group. UNIQUE (1 meeting = 1 conversation) |
+| `user_one_id` | bigint unsigned | Yes | NULL | Chỉ dùng cho type=direct — luôn là `min(user_a, user_b)` |
+| `user_two_id` | bigint unsigned | Yes | NULL | Chỉ dùng cho type=direct — luôn là `max(user_a, user_b)` |
+| `created_by` | bigint unsigned | Yes | NULL | FK → users.id |
+| `created_at` / `updated_at` | timestamp | Yes | NULL | `updated_at` được `touch()` mỗi khi có tin nhắn mới → dùng để sort "gần đây nhất" |
+
+UNIQUE: `meeting_id`; `(organization_id, user_one_id, user_two_id)`.  
+INDEX: `(organization_id, type)`.
+
+**Lưu ý:**
+- `type=meeting_group` **không** có bảng participant riêng — quyền truy cập derive động qua `Meeting::userMeetingRole($user)` (chair/operator/participant hiện tại), không lưu snapshot thành viên. Conversation được tạo lazy (`firstOrCreate`) ở lần gửi/xem tin nhắn đầu tiên, và bị chặn tạo nếu `meetings.internal_chat_enabled = false`.
+- `type=direct`: không có bảng participant — chính 2 cột `user_one_id`/`user_two_id` (luôn normalize thứ tự) đóng vai trò định danh cặp hội thoại, đảm bảo unique index không tạo trùng dù gọi API theo thứ tự nào.
+
+### `chat_messages`
+
+| Column | Type | Nullable | Default | Ghi chú |
+|---|---|---|---|---|
+| `id` | bigint PK | No | auto | |
+| `organization_id` | bigint unsigned | No | — | FK → organizations.id CASCADE |
+| `chat_conversation_id` | bigint unsigned | No | — | FK → chat_conversations.id CASCADE |
+| `sender_user_id` | bigint unsigned | No | — | FK → users.id (không ràng buộc DB, check qua service) |
+| `content` | text | No | — | Chỉ text, chưa hỗ trợ đính kèm file/ảnh (v1) |
+| `created_at` / `updated_at` | timestamp | Yes | NULL | |
+
+INDEX: `(organization_id, chat_conversation_id, created_at)`.
+
+**Không hỗ trợ sửa/xoá từng tin nhắn** (kể cả sender) — chỉ Super Admin xoá được **toàn bộ**
+lịch sử của 1 conversation loại `meeting_group` qua `DELETE /api/meeting-chat-conversations/{id}`
+(permission `meeting-chat-conversations.destroy`, chỉ gán role Super Admin — xem `PermissionSeeder`).
+
+---
+
 ## Sơ đồ quan hệ Core (rút gọn)
 
 ```
@@ -413,4 +458,11 @@ roles (global, organization_id luôn NULL)
 users (N:N với role, scoped theo organization)
   └── model_has_roles [organization_id, role_id, model_id, model_type]
   └── model_has_permissions [organization_id, permission_id, model_id, model_type]
+
+── Chat nội bộ ──
+
+chat_conversations (type=direct | meeting_group)
+  ├── meeting_id → meetings.id (type=meeting_group, UNIQUE)
+  ├── user_one_id / user_two_id → users.id (type=direct, cặp normalize)
+  └── (1) ──── (N) chat_messages
 ```

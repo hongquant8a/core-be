@@ -35,6 +35,7 @@ class MeetingSetting extends TenantModel implements HasMedia
         'waiting_image_media_id',
         'chairperson_signature_media_id',
         'qr_icon_media_id',
+        'home_display_type',
         'created_by',
         'updated_by',
     ];
