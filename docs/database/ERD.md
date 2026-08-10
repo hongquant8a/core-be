@@ -23,7 +23,7 @@ app/Modules/
 
 | Module | File | Bảng chính |
 |---|---|---|
-| **Core** | [Core.md](Core.md) | users, organizations, roles, permissions, settings, media, log_activities, notifications, notification_event_configs, notification_schedules, notification_templates |
+| **Core** | [Core.md](Core.md) | users, organizations, roles, permissions, settings, media, log_activities, notifications, notification_event_configs, notification_schedules, notification_templates, chat_conversations, chat_messages |
 | **TaskAssignment** | [TaskAssignment.md](TaskAssignment.md) | task_assignment_items, task_assignment_types, task_assignment_departments, task_assignment_documents, task_assignment_petitions ... |
 | **Meeting** | [Meeting.md](Meeting.md) | meetings, meeting_agendas, meeting_documents, meeting_participants, meeting_vote_topics, meeting_discussion_registrations, meeting_attendees ... |
 | **Scheduling** | [Scheduling.md](Scheduling.md) | schedules, schedule_reminders, schedule_notifications, scheduling_employees, org_scheduling_settings ... |
@@ -66,3 +66,4 @@ Bảng **không** có `organization_id`: `permissions` (global), `media` (polymo
 - Cột `working_sessions` trong `scheduling_settings` đã được tách thành `executive_working_sessions` và `office_working_sessions` trong `org_scheduling_settings` (migration 2026-06-08).
 - Cột `allow_host_management` đã được chuyển từ `meeting_settings` sang `meetings` (migration 2026-06-18).
 - Cột `is_voting_result_hidden_until_end` và `is_vote_change_allowed` đã được chuyển từ `meetings` sang `meeting_vote_topics` (migration 2026-06-18).
+- Cột `meetings.auto_confirm_attendance` và `meetings.internal_chat_enabled` thêm mới (migration 2026-08-10). Bảng `chat_conversations`/`chat_messages` (Core) tạo mới cùng ngày — engine chat dùng chung cho DM toàn hệ thống và chat nhóm theo cuộc họp.
