@@ -48,6 +48,7 @@ class StoreMeetingRequest extends FormRequest
             'published_at' => 'nullable|date',
             'allow_host_management' => 'nullable|boolean',
             'auto_confirm_attendance' => 'nullable|boolean',
+            'internal_chat_enabled' => 'nullable|boolean',
         ];
     }
 
@@ -122,6 +123,7 @@ class StoreMeetingRequest extends FormRequest
             'published_at' => 'Thời gian công khai',
             'allow_host_management' => 'Chủ trì có thể quản lý cuộc họp',
             'auto_confirm_attendance' => 'Tự động xác nhận điểm danh',
+            'internal_chat_enabled' => 'Bật trao đổi nội bộ',
         ];
     }
     public function bodyParameters(): array
@@ -197,6 +199,10 @@ class StoreMeetingRequest extends FormRequest
             ],
             'auto_confirm_attendance' => [
                 'description' => 'Khi true, đại biểu tự điểm danh sẽ được duyệt (present) ngay, không cần điều hành xác nhận thủ công.',
+                'example' => false,
+            ],
+            'internal_chat_enabled' => [
+                'description' => 'Khi true, hiện tab "Trao đổi" cho phép chủ trì/thư ký/đại biểu nhắn tin nhóm trong cuộc họp.',
                 'example' => false,
             ],
         ];
