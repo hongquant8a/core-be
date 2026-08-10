@@ -4,6 +4,9 @@ namespace App\Modules\Meeting\Services;
 
 use App\Modules\Meeting\Enums\MeetingAttendanceStatusEnum;
 use App\Modules\Meeting\Enums\MeetingCheckinMethodEnum;
+use App\Modules\Meeting\Events\MeetingAttendanceApproved;
+use App\Modules\Meeting\Events\MeetingAttendanceCheckedIn;
+use App\Modules\Meeting\Models\Meeting;
 use App\Modules\Meeting\Models\MeetingAttendance;
 use App\Modules\Meeting\Models\MeetingParticipant;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -124,7 +127,8 @@ class MeetingAttendanceService
     }
 
     /**
-     * Đại biểu tự điểm danh — status=pending chờ operator duyệt.
+     * Đại biểu tự điểm danh — mặc định status=pending chờ operator duyệt.
+     * Nếu meeting.auto_confirm_attendance=true → duyệt thẳng (present), không cần operator confirm.
      * Idempotent qua unique (meeting_id, meeting_participant_id) — F5/click lần 2 không tạo trùng.
      */
     public function checkin(int $meetingId, string $checkinMethod = MeetingCheckinMethodEnum::Button->value): MeetingAttendance
@@ -133,6 +137,10 @@ class MeetingAttendanceService
         $this->ensureWithinAttendanceWindow($meetingId);
         $participant = $this->resolveOwnedParticipant($meetingId);
 
+        $autoConfirm = (bool) Meeting::query()
+            ->whereKey($meetingId)
+            ->value('auto_confirm_attendance');
+
         $attendance = MeetingAttendance::updateOrCreate(
             [
                 'meeting_id' => $meetingId,
@@ -140,7 +148,9 @@ class MeetingAttendanceService
             ],
             [
                 'organization_id' => $this->resolveCurrentOrganizationId(),
-                'status' => MeetingAttendanceStatusEnum::Pending->value,
+                'status' => $autoConfirm
+                    ? MeetingAttendanceStatusEnum::Present->value
+                    : MeetingAttendanceStatusEnum::Pending->value,
                 'checkin_method' => $checkinMethod,
                 'checked_in_at' => now(),
                 'checked_in_by' => auth()->id(),
@@ -148,8 +158,13 @@ class MeetingAttendanceService
             ]
         )->load('participant.attendee');
 
-
-        broadcast(new \App\Modules\Meeting\Events\MeetingAttendanceCheckedIn($attendance))->toOthers();
+        // auto_confirm=true → phát event approved thẳng để FE bỏ qua bước chờ duyệt
+        // (Approved event mang is_attendance_confirmed=true mà FE dùng để mở popup vote).
+        if ($autoConfirm) {
+            broadcast(new MeetingAttendanceApproved($attendance))->toOthers();
+        } else {
+            broadcast(new MeetingAttendanceCheckedIn($attendance))->toOthers();
+        }
 
         return $attendance;
     }

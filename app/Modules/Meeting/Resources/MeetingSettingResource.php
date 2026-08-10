@@ -24,6 +24,7 @@ class MeetingSettingResource extends JsonResource
             'qr_icon_url' => $this->qrIcon
                 ? '/storage/'.$this->qrIcon->id.'/'.$this->qrIcon->file_name
                 : null,
+            'home_display_type' => $this->home_display_type,
             'updated_at' => $this->updated_at?->format('H:i:s d/m/Y'),
         ];
     }

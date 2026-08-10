@@ -64,6 +64,7 @@ class UpdateMeetingRequest extends FormRequest
             'status' => ['sometimes', MeetingStatusEnum::rule()],
             'published_at' => 'nullable|date',
             'allow_host_management' => 'nullable|boolean',
+            'auto_confirm_attendance' => 'nullable|boolean',
         ];
     }
 
@@ -134,6 +135,7 @@ class UpdateMeetingRequest extends FormRequest
             'status' => 'Trạng thái',
             'published_at' => 'Thời gian công khai',
             'allow_host_management' => 'Chủ trì có thể quản lý cuộc họp',
+            'auto_confirm_attendance' => 'Tự động xác nhận điểm danh',
         ];
     }
     public function bodyParameters(): array
@@ -207,6 +209,10 @@ class UpdateMeetingRequest extends FormRequest
             'allow_host_management' => [
                 'description' => 'Chủ trì có thể quản lý cuộc họp.',
                 'example' => true,
+            ],
+            'auto_confirm_attendance' => [
+                'description' => 'Khi true, đại biểu tự điểm danh sẽ được duyệt (present) ngay, không cần điều hành xác nhận thủ công.',
+                'example' => false,
             ],
         ];
     }
