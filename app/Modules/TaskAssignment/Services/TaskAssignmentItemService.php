@@ -563,8 +563,6 @@ class TaskAssignmentItemService
 
     public function statsByItemType(array $filters): array
     {
-        $filters = $this->applyDepartmentRestriction($filters);
-
         $itemTypes = \App\Modules\TaskAssignment\Models\TaskAssignmentItemType::where('status', 'active')->get(['id', 'name']);
 
         $done = TaskProgressStatusEnum::Done->value;
@@ -636,8 +634,6 @@ class TaskAssignmentItemService
 
     public function statsByDepartment(array $filters): array
     {
-        $filters = $this->applyDepartmentRestriction($filters);
-
         $departments = TaskAssignmentDepartment::query()
             ->when($filters['department_id'] ?? null, fn ($q, $id) => $q->where('id', $id))
             ->get(['id', 'name', 'status']);
