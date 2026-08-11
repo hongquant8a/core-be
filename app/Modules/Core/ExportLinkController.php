@@ -19,10 +19,18 @@ use Illuminate\Support\Facades\URL;
  * Flow 2 bước:
  *  1. FE gọi GET /api/exports/{type}/link (auth:sanctum như bình thường) —
  *     đây là nơi phân quyền thực sự diễn ra (check permission theo config).
- *  2. BE trả về 1 URL còn hạn 5 phút, trỏ tới GET /api/exports/{type}
+ *  2. BE trả về 1 URL còn hạn 5 phút, trỏ tới GET /api/exports/{type}/{filename}
  *     (middleware 'signed', không cần token) — verify bằng chữ ký, rồi
  *     forward nguyên request sang đúng action export() đã đăng ký trong
  *     config/exports.php (không có logic export riêng ở đây).
+ *
+ * {filename} nằm trên PATH (không phải query) vì zmp-sdk downloadFile({url})
+ * đặt tên file tải về theo segment cuối của URL path, KHÔNG đọc header
+ * Content-Disposition — nếu {filename} cố định/không có, các export khác
+ * scope nhưng cùng {type} (vd assigned/received cùng dùng
+ * task-assignment-items) sẽ luôn ra cùng 1 tên file, dễ gây nhầm lẫn dù nội
+ * dung khác nhau (đã bắt gặp thật). FE truyền filename mong muốn qua query
+ * `filename` khi gọi link().
  *
  * Thêm export type mới: chỉ cần thêm 1 phần tử vào config/exports.php,
  * KHÔNG cần route/controller mới.
@@ -37,6 +45,8 @@ class ExportLinkController extends Controller
             return $this->forbidden();
         }
 
+        $filename = $this->sanitizeFilename($request->query('filename') ?: $type);
+
         // Nhúng user_id + organization_id (team context của Spatie Permission,
         // set bởi middleware set.permissions.team từ header X-Organization-Id)
         // vào params đã ký — route đích (không auth:sanctum, không có header)
@@ -48,8 +58,9 @@ class ExportLinkController extends Controller
         $url = URL::temporarySignedRoute(
             'exports.signed',
             now()->addMinutes(5),
-            array_merge($request->all(), [
+            array_merge($request->except('filename'), [
                 'type' => $type,
+                'filename' => $filename,
                 'user_id' => auth()->id(),
                 'organization_id' => getPermissionsTeamId(),
             ]),
@@ -58,7 +69,7 @@ class ExportLinkController extends Controller
         return $this->success(['url' => $url]);
     }
 
-    public function download(Request $request, string $type)
+    public function download(Request $request, string $type, string $filename)
     {
         $entry = $this->resolve($type);
 
@@ -94,5 +105,17 @@ class ExportLinkController extends Controller
         abort_unless($entry, 404, "Export type không tồn tại: {$type}");
 
         return $entry;
+    }
+
+    // Chỉ giữ ký tự an toàn cho 1 URL path segment (chữ, số, - _ .) — filename
+    // này chỉ dùng để đặt tên file tải về native, không ảnh hưởng tới
+    // Content-Disposition thật mà export() trả về.
+    private function sanitizeFilename(string $filename): string
+    {
+        $filename = preg_replace('/[^A-Za-z0-9\-_.]+/', '_', $filename);
+
+        return $filename !== '' && str_ends_with(strtolower($filename), '.xlsx')
+            ? $filename
+            : $filename.'.xlsx';
     }
 }

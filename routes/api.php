@@ -40,8 +40,10 @@ Route::prefix('public')->middleware('log.activity')->group(function () {
 
     // Tải export qua signed URL (không auth:sanctum — xác thực bằng chữ ký, đã được
     // cấp quyền từ trước ở bước gọi .../exports/{type}/link). Middleware 'signed' tự
-    // verify signature + expires (403 nếu sai/hết hạn). Xem App\Modules\Core\ExportLinkController.
-    Route::get('/exports/{type}', [\App\Modules\Core\ExportLinkController::class, 'download'])
+    // verify signature + expires (403 nếu sai/hết hạn). {filename} nằm trên path vì
+    // zmp-sdk downloadFile({url}) đặt tên file theo segment cuối URL, không đọc
+    // Content-Disposition — xem App\Modules\Core\ExportLinkController.
+    Route::get('/exports/{type}/{filename}', [\App\Modules\Core\ExportLinkController::class, 'download'])
         ->middleware('signed')
         ->name('exports.signed');
 
