@@ -4,6 +4,11 @@ use App\Modules\TaskAssignment\Controllers\TaskAssignmentItemController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/export', [TaskAssignmentItemController::class, 'export'])->middleware('permission:task-assignment-items.export,web');
+// Sinh signed URL tạm thời (5 phút) để Zalo Mini App gọi downloadFile({url}) — native
+// không đính kèm được Authorization header, chỉ nhận 1 URL. Xem route
+// 'task-assignment-items.export.signed' (routes/api.php, nhóm public) — xác thực bằng
+// chữ ký thay vì Bearer token, dùng lại nguyên action export() phía trên.
+Route::get('/export-link', [TaskAssignmentItemController::class, 'exportLink'])->middleware('permission:task-assignment-items.export,web');
 Route::get('/export-monthly-report', [TaskAssignmentItemController::class, 'exportMonthlyReport'])->middleware('permission:task-assignment-items.exportMonthlyReport,web');
 Route::patch('/bulk-status', [TaskAssignmentItemController::class, 'bulkUpdateStatus'])->middleware('can:bulkUpdateStatus,\App\Modules\TaskAssignment\Models\TaskAssignmentItem');
 Route::delete('/bulk-delete', [TaskAssignmentItemController::class, 'bulkDestroy'])->middleware('can:bulkDestroy,\App\Modules\TaskAssignment\Models\TaskAssignmentItem');
