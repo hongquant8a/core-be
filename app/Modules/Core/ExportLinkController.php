@@ -37,14 +37,22 @@ class ExportLinkController extends Controller
             return $this->forbidden();
         }
 
-        // Nhúng user_id vào params đã ký — route đích (không auth:sanctum) dùng
-        // để khôi phục đúng user cho request đó (xem download()). An toàn vì
-        // chữ ký bảo đảm user_id không bị sửa: đổi user_id mà không ký lại thì
-        // route đích trả 403 trước khi tới action export().
+        // Nhúng user_id + organization_id (team context của Spatie Permission,
+        // set bởi middleware set.permissions.team từ header X-Organization-Id)
+        // vào params đã ký — route đích (không auth:sanctum, không có header)
+        // dùng để khôi phục lại đúng ngữ cảnh đó (xem download()). Thiếu
+        // organization_id khiến các model/scope lọc theo team trả sai/thiếu/
+        // trộn dữ liệu nhiều tổ chức — đã bắt gặp thật khi thiếu bước này.
+        // An toàn vì chữ ký bảo đảm các giá trị không bị sửa: đổi mà không ký
+        // lại thì route đích trả 403 trước khi tới action export().
         $url = URL::temporarySignedRoute(
             'exports.signed',
             now()->addMinutes(5),
-            array_merge($request->all(), ['type' => $type, 'user_id' => auth()->id()]),
+            array_merge($request->all(), [
+                'type' => $type,
+                'user_id' => auth()->id(),
+                'organization_id' => getPermissionsTeamId(),
+            ]),
         );
 
         return $this->success(['url' => $url]);
@@ -65,6 +73,10 @@ class ExportLinkController extends Controller
             if ($user) {
                 Auth::setUser($user);
             }
+        }
+
+        if ($request->filled('organization_id')) {
+            setPermissionsTeamId((int) $request->query('organization_id'));
         }
 
         // `[$class, $method]` với $class là string bị PHP hiểu nhầm thành gọi
