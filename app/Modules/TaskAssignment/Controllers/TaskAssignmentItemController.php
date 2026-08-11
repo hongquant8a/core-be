@@ -20,7 +20,6 @@ use App\Modules\TaskAssignment\Resources\ItemResource;
 use App\Modules\TaskAssignment\Resources\TimelineCollection;
 use App\Modules\TaskAssignment\Services\TaskAssignmentItemService;
 use App\Modules\TaskAssignment\Services\TaskAssignmentTimelineService;
-use Illuminate\Support\Facades\URL;
 
 /**
  * @group TaskAssignment - Công việc
@@ -329,29 +328,6 @@ class TaskAssignmentItemController extends Controller
     public function export(FilterRequest $request)
     {
         return $this->itemService->export($request->all());
-    }
-
-    /**
-     * Sinh URL tạm thời (còn hạn 5 phút) để tải file export mà không cần Bearer token.
-     *
-     * Dùng cho Zalo Mini App: `downloadFile()`/`openWebview()` của zmp-sdk chỉ nhận 1
-     * URL, không đính kèm được header Authorization. URL trả về tự xác thực bằng chữ ký
-     * (Laravel signed route) thay vì token — bước gọi endpoint này (có Bearer token như
-     * thường) là nơi phân quyền thực sự diễn ra, route đích chỉ verify chữ ký.
-     *
-     * @queryParam ... (giống export())
-     *
-     * @response 200 {"success": true, "data": {"url": "https://.../api/public/exports/task-assignment-items?scope=assigned&signature=...&expires=..."}}
-     */
-    public function exportLink(FilterRequest $request)
-    {
-        $url = URL::temporarySignedRoute(
-            'task-assignment-items.export.signed',
-            now()->addMinutes(5),
-            $request->all(),
-        );
-
-        return $this->success(['url' => $url]);
     }
 
     /**

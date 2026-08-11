@@ -38,14 +38,12 @@ Route::prefix('public')->middleware('log.activity')->group(function () {
     Route::get('/task-assignment-departments', [\App\Modules\TaskAssignment\Controllers\TaskAssignmentDepartmentController::class, 'public']);
     Route::get('/task-assignment-departments/options', [\App\Modules\TaskAssignment\Controllers\TaskAssignmentDepartmentController::class, 'publicOptions']);
 
-    // Export downloads qua signed URL (không auth:sanctum — xác thực bằng chữ ký,
-    // đã được cấp quyền từ trước tại bước gọi .../export-link). Dùng cho Zalo Mini App
-    // vì zmp-sdk downloadFile()/openWebview() chỉ nhận URL, không đính kèm được header.
-    // Middleware 'signed' tự verify signature + expires, request hết hạn/sai chữ ký sẽ
-    // bị 403 (xem Illuminate\Routing\Middleware\ValidateSignature).
-    Route::get('/exports/task-assignment-items', [\App\Modules\TaskAssignment\Controllers\TaskAssignmentItemController::class, 'export'])
+    // Tải export qua signed URL (không auth:sanctum — xác thực bằng chữ ký, đã được
+    // cấp quyền từ trước ở bước gọi .../exports/{type}/link). Middleware 'signed' tự
+    // verify signature + expires (403 nếu sai/hết hạn). Xem App\Modules\Core\ExportLinkController.
+    Route::get('/exports/{type}', [\App\Modules\Core\ExportLinkController::class, 'download'])
         ->middleware('signed')
-        ->name('task-assignment-items.export.signed');
+        ->name('exports.signed');
 
     // Meeting catalogs
     Route::get('/meeting-types', [\App\Modules\Meeting\Controllers\MeetingTypeController::class, 'public']);
@@ -86,6 +84,11 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
 
     // Zalo OA followers — sync 45p, auth-only, không Spatie. FE admin pick user_id để gán vào users.zalo_user_id.
     Route::get('/zalo-oa-followers', [\App\Modules\Core\ZaloOaFollowerController::class, 'index']);
+
+    // Sinh signed URL tạm thời để tải export (Zalo Mini App). Xem
+    // App\Modules\Core\ExportLinkController + config/exports.php — đăng ký export
+    // type mới ở đó, không cần route riêng.
+    Route::get('/exports/{type}/link', [\App\Modules\Core\ExportLinkController::class, 'link']);
 
     Route::prefix('users')->group(function () {
         require base_path('app/Modules/Core/Routes/user.php');
