@@ -55,14 +55,24 @@ class ExportLinkController extends Controller
         // trộn dữ liệu nhiều tổ chức — đã bắt gặp thật khi thiếu bước này.
         // An toàn vì chữ ký bảo đảm các giá trị không bị sửa: đổi mà không ký
         // lại thì route đích trả 403 trước khi tới action export().
+        //
+        // Tên "_ctx_*" (thay vì "user_id"/"organization_id" trần) CỐ Ý đặt tiền
+        // tố riêng biệt: đây là param nội bộ, không phải filter nghiệp vụ. Nếu
+        // đặt tên trần, khi forward sang action export() thật, nó lọt vào
+        // $request->all() và bị scopeFilter() hiểu nhầm thành filter thật —
+        // đã bắt được thật với "user_id" (TaskAssignmentItem::scopeFilter() có
+        // sẵn filter "user_id" nghĩa là "chỉ hiện việc mà user này được gán",
+        // hoàn toàn khác mục đích của mình là "khôi phục ai đang gọi API") —
+        // khiến export luôn trả về 0 dòng. Tiền tố "_ctx_" đảm bảo không bao
+        // giờ trùng tên với filter nghiệp vụ nào, kể cả filter thêm sau này.
         $url = URL::temporarySignedRoute(
             'exports.signed',
             now()->addMinutes(5),
             array_merge($request->except('filename'), [
                 'type' => $type,
                 'filename' => $filename,
-                'user_id' => auth()->id(),
-                'organization_id' => getPermissionsTeamId(),
+                '_ctx_user_id' => auth()->id(),
+                '_ctx_org_id' => getPermissionsTeamId(),
             ]),
         );
 
@@ -79,16 +89,37 @@ class ExportLinkController extends Controller
         // nhớ của request hiện tại (không tạo session/cookie/token mới) — guard
         // mặc định là Sanctum RequestGuard, không có onceUsingId() (chỉ
         // SessionGuard mới có), nên phải tự load User rồi setUser() thủ công.
-        if ($request->filled('user_id')) {
-            $user = User::find($request->query('user_id'));
+        //
+        // QUAN TRỌNG: User::$guard_name = 'web' (Spatie Permission) — mọi role/
+        // permission check của Spatie resolve qua guard 'web', không phải guard
+        // mặc định ('api'). Middleware SetPermissionsTeamId gốc set CẢ 2 guard
+        // (xem Auth::guard('web')->setUser($user) ở đó); thiếu bước set guard
+        // 'web' khiến Spatie coi như "guest" → mọi scope/permission dựa trên
+        // role âm thầm resolve rỗng, export trả về 0 dòng dù data có thật (đã
+        // tái hiện + xác nhận bug này qua so sánh trực tiếp route gốc: 64 rows
+        // vs route này: 1 row, cùng data/org/user).
+        if ($request->filled('_ctx_user_id')) {
+            $user = User::find($request->query('_ctx_user_id'));
             if ($user) {
                 Auth::setUser($user);
+                Auth::guard('web')->setUser($user);
             }
         }
 
-        if ($request->filled('organization_id')) {
-            setPermissionsTeamId((int) $request->query('organization_id'));
+        if ($request->filled('_ctx_org_id')) {
+            setPermissionsTeamId((int) $request->query('_ctx_org_id'));
         }
+
+        // Bỏ 2 param nội bộ khỏi query trước khi forward — dù đã đặt tiền tố
+        // "_ctx_" để tránh trùng tên filter nghiệp vụ hiện tại, vẫn xoá luôn
+        // cho sạch, không để lọt vào $request->all() của action export() thật.
+        // "expires"/"signature" là do Laravel tự thêm khi ký URL — cũng dọn
+        // luôn cho chắc. Route param {type}/{filename} nằm trên path, không
+        // qua đây (đã verify: không xuất hiện trong $request->all()).
+        $request->query->remove('_ctx_user_id');
+        $request->query->remove('_ctx_org_id');
+        $request->query->remove('expires');
+        $request->query->remove('signature');
 
         // `[$class, $method]` với $class là string bị PHP hiểu nhầm thành gọi
         // tĩnh ("cannot be called statically") — dùng cú pháp "Class@method" để
