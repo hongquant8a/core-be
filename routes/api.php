@@ -24,7 +24,7 @@ Route::prefix('auth')->middleware('log.activity')->group(function () {
 |   - GET /api/public/meetings/{meeting}/{sub}: dữ liệu con của meeting (agendas, documents)
 | Phân quyền (nếu có) qua Gate Policy (vd MeetingPolicy::viewPublic), KHÔNG Spatie.
 */
-Route::prefix('public')->middleware('log.activity')->group(function () {
+Route::prefix('public')->middleware(['log.activity', 'set.public.permissions.team'])->group(function () {
     // Hệ thống & tổ chức
     Route::get('/settings', [\App\Modules\Core\SettingController::class, 'public']);
     Route::get('/organizations', [\App\Modules\Core\OrganizationController::class, 'public']);
