@@ -5,6 +5,7 @@ namespace App\Modules\TaskAssignment\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\TaskAssignment\Models\TaskAssignmentPetition;
 use App\Modules\TaskAssignment\Requests\BulkDestroyPetitionRequest;
+use App\Modules\TaskAssignment\Requests\BulkUpdateStatusPetitionRequest;
 use App\Modules\TaskAssignment\Requests\ChangeStatusPetitionRequest;
 use App\Modules\TaskAssignment\Requests\StorePetitionRequest;
 use App\Modules\TaskAssignment\Requests\UpdatePetitionRequest;
@@ -140,6 +141,19 @@ class TaskAssignmentPetitionController extends Controller
         $this->service->bulkDestroy($ids);
 
         return $this->success(null, "Đã xóa thành công " . count($ids) . " đơn thư!");
+    }
+
+    /**
+     * Cập nhật trạng thái hàng loạt đơn thư
+     *
+     * @bodyParam ids array required Danh sách ID. Example: [1, 2]
+     * @bodyParam processing_status string required Trạng thái mới. Example: processing
+     */
+    public function bulkUpdateStatus(BulkUpdateStatusPetitionRequest $request): JsonResponse
+    {
+        $count = $this->service->bulkUpdateStatus($request->input('ids'), $request->input('processing_status'));
+
+        return $this->success(null, "Đã cập nhật trạng thái $count đơn thư!");
     }
 
     /**

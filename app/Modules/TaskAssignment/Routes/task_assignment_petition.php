@@ -21,6 +21,8 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('can:update,petition');
     Route::delete('/bulk-delete', [TaskAssignmentPetitionController::class, 'bulkDestroy'])
         ->middleware('can:bulkDestroy,\App\Modules\TaskAssignment\Models\TaskAssignmentPetition'); // Bulk delete sử dụng policy
+    Route::patch('/bulk-status', [TaskAssignmentPetitionController::class, 'bulkUpdateStatus'])
+        ->middleware('can:bulkUpdateStatus,\App\Modules\TaskAssignment\Models\TaskAssignmentPetition');
     Route::delete('/{petition}', [TaskAssignmentPetitionController::class, 'destroy'])
         ->whereNumber('petition')
         ->middleware('can:delete,petition');
