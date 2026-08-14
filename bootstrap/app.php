@@ -36,6 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'set.permissions.team' => \App\Modules\Core\Middleware\SetPermissionsTeamId::class,
+            'set.public.permissions.team' => \App\Modules\Core\Middleware\SetPublicPermissionsTeamId::class,
             'log.activity' => \App\Modules\Core\Middleware\LogActivity::class,
             'ensure.route.org' => \App\Modules\Core\Middleware\EnsureRouteModelsBelongToOrganization::class,
             'sync.fcm.token' => \App\Modules\Core\Middleware\SyncFcmToken::class,

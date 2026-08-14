@@ -54,6 +54,10 @@ class MeetingResource extends JsonResource
             'published_at' => $this->published_at?->format('H:i:s d/m/Y'),
             'attendance_locked' => (bool) $this->attendance_locked,
             'allow_host_management' => (bool) $this->allow_host_management,
+            // Khi true, đại biểu tự điểm danh được duyệt (present) ngay, không cần điều hành xác nhận.
+            'auto_confirm_attendance' => (bool) $this->auto_confirm_attendance,
+            // Khi true, hiện tab "Trao đổi" (chat nhóm nội bộ) cho cuộc họp.
+            'internal_chat_enabled' => (bool) $this->internal_chat_enabled,
             // FE dùng field này để show/hide button điều hành (end-early, lock-attendance, highlight, vote open/close).
             // Vai trò CHÍNH ưu tiên: FK chair > FK operator > participant entry. Chair có participant entry vẫn trả 'chairperson'.
             // Dùng Auth::guard('sanctum') fallback cho public route không có middleware auth:sanctum.
@@ -75,6 +79,11 @@ class MeetingResource extends JsonResource
             'projector_image_media_id' => $this->projector_image_media_id,
             'projector_image_url' => $this->projector_image_media_id && $this->projectorImage
                 ? '/storage/'.$this->projectorImage->id.'/'.$this->projectorImage->file_name
+                : null,
+            // Ảnh chờ chương trình riêng cho meeting. Null → FE fallback MeetingSetting.
+            'waiting_image_media_id' => $this->waiting_image_media_id,
+            'waiting_image_url' => $this->waiting_image_media_id && $this->waitingImage
+                ? '/storage/'.$this->waitingImage->id.'/'.$this->waitingImage->file_name
                 : null,
             // Lưu ý: `checkin_token` (UUID dùng gen QR điểm danh) KHÔNG expose ở đây.
             // Token chỉ truy cập qua endpoint riêng `GET /api/meetings/{id}/qr-token`

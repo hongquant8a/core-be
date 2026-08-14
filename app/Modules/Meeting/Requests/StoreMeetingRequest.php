@@ -35,6 +35,7 @@ class StoreMeetingRequest extends FormRequest
             'reminders.*.channels' => 'nullable|array',
             'reminders.*.channels.*' => 'string',
             'projector_image' => 'nullable|file|mimes:jpg,jpeg,png,webp',
+            'waiting_image'   => 'nullable|file|mimes:jpg,jpeg,png,webp',
             'title' => 'required|string|max:255',
             'is_public' => 'nullable|boolean',
             'has_online_room' => 'nullable|boolean',
@@ -46,6 +47,8 @@ class StoreMeetingRequest extends FormRequest
             'status' => ['nullable', MeetingStatusEnum::rule()],
             'published_at' => 'nullable|date',
             'allow_host_management' => 'nullable|boolean',
+            'auto_confirm_attendance' => 'nullable|boolean',
+            'internal_chat_enabled' => 'nullable|boolean',
         ];
     }
 
@@ -107,6 +110,7 @@ class StoreMeetingRequest extends FormRequest
             'guests.*.zalo_user_id' => 'Zalo user ID khách mời',
             'guests.*.organization_name' => 'Đơn vị khách mời',
             'projector_image' => 'Ảnh nền màn chiếu',
+            'waiting_image'   => 'Ảnh chờ chương trình',
             'title' => 'Tiêu đề',
             'is_public' => 'Trạng thái công khai',
             'has_online_room' => 'Có phòng họp trực tuyến',
@@ -118,6 +122,8 @@ class StoreMeetingRequest extends FormRequest
             'status' => 'Trạng thái',
             'published_at' => 'Thời gian công khai',
             'allow_host_management' => 'Chủ trì có thể quản lý cuộc họp',
+            'auto_confirm_attendance' => 'Tự động xác nhận điểm danh',
+            'internal_chat_enabled' => 'Bật trao đổi nội bộ',
         ];
     }
     public function bodyParameters(): array
@@ -143,6 +149,9 @@ class StoreMeetingRequest extends FormRequest
             ],
             'projector_image' => [
                 'description' => 'Ảnh nền màn chiếu riêng cho meeting (jpg/png/webp, ≤10MB). Null = FE fallback MeetingSetting.projector_image của org.',
+            ],
+            'waiting_image' => [
+                'description' => 'Ảnh chờ chương trình riêng cho meeting (jpg/png/webp, ≤10MB). Hiển thị trên màn chiếu trước khi vào nội dung họp. Null = FE fallback MeetingSetting.waiting_image của org.',
             ],
             'title' => [
                 'description' => 'Tên cuộc họp.',
@@ -187,6 +196,14 @@ class StoreMeetingRequest extends FormRequest
             'allow_host_management' => [
                 'description' => 'Chủ trì có thể quản lý cuộc họp.',
                 'example' => true,
+            ],
+            'auto_confirm_attendance' => [
+                'description' => 'Khi true, đại biểu tự điểm danh sẽ được duyệt (present) ngay, không cần điều hành xác nhận thủ công.',
+                'example' => false,
+            ],
+            'internal_chat_enabled' => [
+                'description' => 'Khi true, hiện tab "Trao đổi" cho phép chủ trì/thư ký/đại biểu nhắn tin nhóm trong cuộc họp.',
+                'example' => false,
             ],
         ];
     }

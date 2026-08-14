@@ -65,3 +65,11 @@ Broadcast::channel('meeting.{meetingId}', function ($user, int $meetingId) {
 
     return false;
 });
+
+/**
+ * Private channel cá nhân — dùng cho realtime tin nhắn riêng (direct message).
+ * Chỉ chính chủ user_id mới subscribe được.
+ */
+Broadcast::channel('org.{organizationId}.user.{userId}', function ($user, int $organizationId, int $userId) {
+    return (int) $user->id === $userId;
+});

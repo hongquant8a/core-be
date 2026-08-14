@@ -16,6 +16,7 @@ class MeetingAgendaResource extends JsonResource
             'start_time' => $this->start_time,
             'end_time' => $this->end_time,
             'content' => $this->content,
+            'script' => $this->script,
             'person_in_charge' => $this->person_in_charge,
             'allow_discussion_registration' => $this->allow_discussion_registration,
             'discussion_duration_minutes' => $this->discussion_duration_minutes,

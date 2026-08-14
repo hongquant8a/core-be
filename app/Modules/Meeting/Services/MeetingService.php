@@ -297,14 +297,14 @@ class MeetingService
         ]);
     }
 
-    public function store(array $validated, ?UploadedFile $projectorImage = null, array $guests = [], array $reminders = []): Meeting
+    public function store(array $validated, ?UploadedFile $projectorImage = null, ?UploadedFile $waitingImage = null, array $guests = [], array $reminders = []): Meeting
     {
         // guests không phải column trên meetings — strip để không lỗi mass assignment.
         unset($validated['guests']);
 
         $storedFiles = [];
         try {
-            return DB::transaction(function () use ($validated, $projectorImage, $guests, $reminders, &$storedFiles) {
+            return DB::transaction(function () use ($validated, $projectorImage, $waitingImage, $guests, $reminders, &$storedFiles) {
                 $payload = [
                     ...$validated,
                     'organization_id' => $this->resolveCurrentOrganizationId(),
@@ -317,6 +317,12 @@ class MeetingService
                     $meeting->update(['projector_image_media_id' => $media->id]);
                 }
 
+                if ($waitingImage) {
+                    $media = $this->mediaService->uploadOne($meeting, $waitingImage, Meeting::COLLECTION_WAITING, ['disk' => 'public']);
+                    $storedFiles[] = ['disk' => $media->disk, 'path' => $media->getPathRelativeToRoot()];
+                    $meeting->update(['waiting_image_media_id' => $media->id]);
+                }
+
                 if (! empty($guests)) {
                     $this->syncGuests($meeting, $guests);
                 }
@@ -325,7 +331,7 @@ class MeetingService
                     $this->syncReminders($meeting, $reminders);
                 }
 
-                return $meeting->load(['meetingType', 'meetingLocation', 'chairperson.user', 'operator.user', 'creator.media', 'editor.media', 'projectorImage', 'guests', 'reminders']);
+                return $meeting->load(['meetingType', 'meetingLocation', 'chairperson.user', 'operator.user', 'creator.media', 'editor.media', 'projectorImage', 'waitingImage', 'guests', 'reminders']);
             });
         } catch (\Throwable $exception) {
             $this->mediaService->cleanupStoredFiles($storedFiles);
@@ -435,16 +441,18 @@ class MeetingService
         });
     }
 
-    public function update(Meeting $meeting, array $validated, ?UploadedFile $projectorImage = null, ?array $guests = null, ?array $reminders = null): Meeting
+    public function update(Meeting $meeting, array $validated, ?UploadedFile $projectorImage = null, ?UploadedFile $waitingImage = null, ?array $guests = null, ?array $reminders = null): Meeting
     {
         unset($validated['guests']);
 
         $storedFiles = [];
         try {
-            return DB::transaction(function () use ($meeting, $validated, $projectorImage, $guests, $reminders, &$storedFiles) {
+            return DB::transaction(function () use ($meeting, $validated, $projectorImage, $waitingImage, $guests, $reminders, &$storedFiles) {
                 $wasPublished = $meeting->status === MeetingStatusEnum::Published->value;
                 $removeProjector = (bool) ($validated['remove_projector_image'] ?? false);
+                $removeWaiting = (bool) ($validated['remove_waiting_image'] ?? false);
                 unset($validated['remove_projector_image']);
+                unset($validated['remove_waiting_image']);
                 $meeting->update($validated);
 
                 if ($wasPublished) {
@@ -468,6 +476,17 @@ class MeetingService
                     $media = $this->mediaService->uploadOne($meeting, $projectorImage, Meeting::COLLECTION_PROJECTOR, ['disk' => 'public']);
                     $storedFiles[] = ['disk' => $media->disk, 'path' => $media->getPathRelativeToRoot()];
                     $meeting->update(['projector_image_media_id' => $media->id]);
+                }
+
+                if (($removeWaiting || $waitingImage) && $meeting->waiting_image_media_id) {
+                    $this->mediaService->removeByIds($meeting, [$meeting->waiting_image_media_id], Meeting::COLLECTION_WAITING);
+                    $meeting->update(['waiting_image_media_id' => null]);
+                }
+
+                if ($waitingImage) {
+                    $media = $this->mediaService->uploadOne($meeting, $waitingImage, Meeting::COLLECTION_WAITING, ['disk' => 'public']);
+                    $storedFiles[] = ['disk' => $media->disk, 'path' => $media->getPathRelativeToRoot()];
+                    $meeting->update(['waiting_image_media_id' => $media->id]);
                 }
 
                 // guests null → FE không gửi field này → không sync (giữ nguyên).
@@ -745,6 +764,39 @@ class MeetingService
     }
 
     /**
+     * Gửi lại toàn bộ giấy mời cho cuộc họp — idempotent resend.
+     *
+     * Logic:
+     *  1. Tạo invitation mới (idempotent) cho participant/chair/operator chưa có record.
+     *  2. Reset tất cả invitation `sent`/`failed` về `pending` + xóa sent_at.
+     *  3. Fire MeetingPublished để listener gửi thông báo lập tức.
+     *
+     * Chỉ áp dụng cho meeting đang ở trạng thái published.
+     */
+    public function resendInvitations(Meeting $meeting): void
+    {
+        if ($meeting->status !== MeetingStatusEnum::Published->value) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'status' => ['Chỉ có thể gửi lại giấy mời cho cuộc họp đang ở trạng thái đã ban hành (published).'],
+            ]);
+        }
+
+        DB::transaction(function () use ($meeting) {
+            // 1. Tạo invitation cho participant/chair/operator chưa có (idempotent).
+            $this->createInvitationsForParticipants($meeting);
+
+            // 2. Reset tất cả invitation về pending để listener gửi lại.
+            MeetingInvitation::where('meeting_id', $meeting->id)
+                ->where('organization_id', $meeting->organization_id)
+                ->whereIn('status', ['sent', 'failed'])
+                ->update(['status' => 'pending', 'sent_at' => null]);
+        });
+
+        // 3. Fire event để notification listener xử lý gửi lại.
+        Event::dispatch(new MeetingPublished($meeting));
+    }
+
+    /**
      * Operator kết thúc cuộc họp — set status = completed.
      * Hóa các hành động (khóa điểm danh, biểu quyết, thảo luận...).
      */
@@ -882,6 +934,38 @@ class MeetingService
         broadcast(new \App\Modules\Meeting\Events\MeetingProjectorFileToggled(
             $meeting, $fileUrl, $fileName, $fileType, $isOpen
         ))->toOthers();
+    }
+
+    /**
+     * Operator bật/tắt ảnh chờ chương trình trên màn chiếu (Tab 8) — realtime qua WebSocket.
+     *
+     * Broadcast tới TẤT CẢ subscriber kênh private-meeting.{id} (bao gồm cả người gửi request)
+     * để đồng bộ mọi client đang xem màn chiếu.
+     *
+     * Payload trả về gồm:
+     *   - meeting_id, is_active
+     *   - waiting_image_url: URL ảnh chờ của cuộc họp (null nếu chưa cấu hình riêng).
+     *     FE tự fallback về MeetingSetting.waiting_image_url nếu null.
+     *
+     * @return array{meeting_id: int, is_active: bool, waiting_image_url: string|null}
+     */
+    public function toggleWaitingImage(Meeting $meeting, bool $isActive): array
+    {
+        $meeting->loadMissing('waitingImage');
+
+        $waitingImageUrl = $meeting->waiting_image_media_id && $meeting->waitingImage
+            ? '/storage/'.$meeting->waitingImage->id.'/'.$meeting->waitingImage->file_name
+            : null;
+
+        broadcast(new \App\Modules\Meeting\Events\MeetingWaitingImageToggled(
+            $meeting, $isActive, $waitingImageUrl
+        ));
+
+        return [
+            'meeting_id'        => $meeting->id,
+            'is_active'         => $isActive,
+            'waiting_image_url' => $waitingImageUrl,
+        ];
     }
 
     public function export(array $filters, ?string $fileName = null): BinaryFileResponse

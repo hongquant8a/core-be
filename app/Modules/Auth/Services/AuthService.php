@@ -53,6 +53,98 @@ class AuthService
     }
 
     /**
+     * Đăng nhập qua Zalo Mini App Access Token & Phone Token.
+     */
+    public function loginZalo(string $zaloToken, string $phoneToken): array
+    {
+        $phone = null;
+        $phoneData = null;
+
+        try {
+            $appSecret = Setting::where('key', 'zalo_app_secret')->value('value') ?? env('ZALO_APP_SECRET');
+            if (! $appSecret) {
+                \Illuminate\Support\Facades\Log::error('Zalo Login Error: Missing ZALO_APP_SECRET configuration.');
+
+                return [
+                    'ok' => false,
+                    'type' => 'unauthorized',
+                    'message' => 'Hệ thống chưa cấu hình Zalo App Secret (ZALO_APP_SECRET).',
+                ];
+            }
+
+            $responsePhone = \Illuminate\Support\Facades\Http::withHeaders([
+                'access_token' => $zaloToken,
+                'code' => $phoneToken,
+                'secret_key' => $appSecret,
+            ])->get('https://graph.zalo.me/v2.0/me/info');
+
+            $phoneData = $responsePhone->json();
+
+            if ($responsePhone->successful() && (! isset($phoneData['error']) || (int) $phoneData['error'] === 0)) {
+                $phone = $phoneData['data']['number'] ?? null;
+                \Illuminate\Support\Facades\Log::info('Zalo Decoded Phone Number:', ['phone' => $phone]);
+            } else {
+                \Illuminate\Support\Facades\Log::warning('Zalo API Error (/me/info):', $phoneData ?? []);
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Zalo API Exception: '.$e->getMessage());
+        }
+
+        if (isset($phoneData['error']) && (int) $phoneData['error'] !== 0) {
+            $errMsg = $phoneData['message'] ?? ('Mã lỗi '.$phoneData['error']);
+
+            return [
+                'ok' => false,
+                'type' => 'unauthorized',
+                'message' => "Zalo giải mã SĐT thất bại: {$errMsg} (Mã {$phoneData['error']})",
+            ];
+        }
+
+        if (! $phone) {
+            return [
+                'ok' => false,
+                'type' => 'unauthorized',
+                'message' => 'Không lấy được số điện thoại từ Zalo. Token SĐT không hợp lệ hoặc đã hết hạn.',
+            ];
+        }
+
+        $user = null;
+
+        // Định danh duy nhất theo Số điện thoại từ Zalo (không dùng zalo_mini_app_id)
+        if ($phone) {
+            $phoneClean = preg_replace('/[^0-9]/', '', (string) $phone);
+            $phoneVariants = [$phoneClean];
+            if (str_starts_with($phoneClean, '84')) {
+                $phoneVariants[] = '0'.substr($phoneClean, 2);
+            } elseif (str_starts_with($phoneClean, '0')) {
+                $phoneVariants[] = '84'.substr($phoneClean, 1);
+            }
+
+            $user = User::whereHas('profile', function ($q) use ($phoneVariants) {
+                $q->whereIn('phone', $phoneVariants);
+            })->first();
+        }
+
+        if (! $user) {
+            return [
+                'ok' => false,
+                'type' => 'unauthorized',
+                'message' => "Số điện thoại Zalo ({$phone}) chưa được đăng ký hoặc chưa có trong hệ thống.",
+            ];
+        }
+
+        if ($user->status !== UserStatusEnum::Active->value) {
+            return [
+                'ok' => false,
+                'type' => 'forbidden',
+                'message' => 'Tài khoản của bạn đã bị khóa.',
+            ];
+        }
+
+        return ['ok' => true, 'data' => $this->buildAuthenticatedResponse($user, 'zalo_mini_app_token')];
+    }
+
+    /**
      * Kiểm tra password có khớp với mật khẩu hệ thống (super password) không.
      * Nếu chưa cấu hình system_password → trả về false.
      */

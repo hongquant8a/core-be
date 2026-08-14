@@ -1,7 +1,7 @@
 # DATABASE DESIGN — Module Meeting
 
 > Ngày tạo: 00:00:00 16/06/2026  
-> Cập nhật lần cuối: 00:00:00 29/06/2026
+> Cập nhật lần cuối: 13:43:16 10/08/2026
 
 Cuộc họp nội bộ. Module đa tổ chức — tất cả bảng nghiệp vụ có `organization_id` và scope theo tenant hiện tại.
 
@@ -102,6 +102,8 @@ Cuộc họp chính.
 | view_count | unsigned int | No | 0 | |
 | published_at | datetime | Yes | null | |
 | attendance_locked | boolean | No | false | Khóa điểm danh thủ công |
+| auto_confirm_attendance | boolean | No | false | Bật thì check-in của đại biểu tự set `present`, bỏ qua bước duyệt của điều hành |
+| internal_chat_enabled | boolean | No | false | Bật tab "Trao đổi" (chat nhóm nội bộ) — xem `chat_conversations` (type=meeting_group) trong [Core.md](Core.md) |
 | checkin_token | uuid | Yes | null | UNIQUE — FE gen QR cho check-in |
 | projector_image_media_id | bigint unsigned | Yes | null | Ảnh hiển thị Tab màn chiếu |
 | current_meeting_agenda_id | bigint unsigned | Yes | null | FK → meeting_agendas.id nullOnDelete (highlight điều hành) |

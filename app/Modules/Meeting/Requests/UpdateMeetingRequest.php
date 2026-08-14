@@ -21,6 +21,9 @@ class UpdateMeetingRequest extends FormRequest
         if ($this->has('projector_image') && ! $this->file('projector_image') instanceof \Illuminate\Http\UploadedFile) {
             $this->offsetUnset('projector_image');
         }
+        if ($this->has('waiting_image') && ! $this->file('waiting_image') instanceof \Illuminate\Http\UploadedFile) {
+            $this->offsetUnset('waiting_image');
+        }
     }
 
     public function rules(): array
@@ -46,8 +49,10 @@ class UpdateMeetingRequest extends FormRequest
             'reminders.*.offset_minutes' => 'nullable|integer|min:0',
             'reminders.*.channels' => 'nullable|array',
             'reminders.*.channels.*' => 'string',
-            'projector_image' => 'nullable|file|mimes:jpg,jpeg,png,webp',
+            'projector_image'      => 'nullable|file|mimes:jpg,jpeg,png,webp',
+            'waiting_image'        => 'nullable|file|mimes:jpg,jpeg,png,webp',
             'remove_projector_image' => 'nullable|boolean',
+            'remove_waiting_image'   => 'nullable|boolean',
             'title' => 'sometimes|string|max:255',
             'is_public' => 'sometimes|boolean',
             'has_online_room' => 'sometimes|boolean',
@@ -59,6 +64,8 @@ class UpdateMeetingRequest extends FormRequest
             'status' => ['sometimes', MeetingStatusEnum::rule()],
             'published_at' => 'nullable|date',
             'allow_host_management' => 'nullable|boolean',
+            'auto_confirm_attendance' => 'nullable|boolean',
+            'internal_chat_enabled' => 'nullable|boolean',
         ];
     }
 
@@ -116,8 +123,10 @@ class UpdateMeetingRequest extends FormRequest
             'guests.*.email' => 'Email khách mời',
             'guests.*.zalo_user_id' => 'Zalo user ID khách mời',
             'guests.*.organization_name' => 'Đơn vị khách mời',
-            'projector_image' => 'Ảnh nền màn chiếu',
+            'projector_image'       => 'Ảnh nền màn chiếu',
             'remove_projector_image' => 'Xóa ảnh nền màn chiếu',
+            'waiting_image'         => 'Ảnh chờ chương trình',
+            'remove_waiting_image'  => 'Xóa ảnh chờ chương trình',
             'title' => 'Tiêu đề',
             'is_public' => 'Trạng thái công khai',
             'has_online_room' => 'Có phòng họp trực tuyến',
@@ -127,6 +136,8 @@ class UpdateMeetingRequest extends FormRequest
             'status' => 'Trạng thái',
             'published_at' => 'Thời gian công khai',
             'allow_host_management' => 'Chủ trì có thể quản lý cuộc họp',
+            'auto_confirm_attendance' => 'Tự động xác nhận điểm danh',
+            'internal_chat_enabled' => 'Bật trao đổi nội bộ',
         ];
     }
     public function bodyParameters(): array
@@ -156,6 +167,13 @@ class UpdateMeetingRequest extends FormRequest
             ],
             'remove_projector_image' => [
                 'description' => 'Xóa ảnh nền màn chiếu hiện tại (true = xóa, không upload mới).',
+                'example' => false,
+            ],
+            'waiting_image' => [
+                'description' => 'Ảnh chờ chương trình (jpg/png/webp, ≤10MB). Hiển thị trên màn chiếu trước khi vào nội dung họp. Sẽ thay ảnh cũ nếu có.',
+            ],
+            'remove_waiting_image' => [
+                'description' => 'Xóa ảnh chờ chương trình hiện tại.',
                 'example' => false,
             ],
             'title' => [
@@ -193,6 +211,14 @@ class UpdateMeetingRequest extends FormRequest
             'allow_host_management' => [
                 'description' => 'Chủ trì có thể quản lý cuộc họp.',
                 'example' => true,
+            ],
+            'auto_confirm_attendance' => [
+                'description' => 'Khi true, đại biểu tự điểm danh sẽ được duyệt (present) ngay, không cần điều hành xác nhận thủ công.',
+                'example' => false,
+            ],
+            'internal_chat_enabled' => [
+                'description' => 'Khi true, hiện tab "Trao đổi" cho phép chủ trì/thư ký/đại biểu nhắn tin nhóm trong cuộc họp.',
+                'example' => false,
             ],
         ];
     }

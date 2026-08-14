@@ -24,7 +24,7 @@ Route::prefix('auth')->middleware('log.activity')->group(function () {
 |   - GET /api/public/meetings/{meeting}/{sub}: dữ liệu con của meeting (agendas, documents)
 | Phân quyền (nếu có) qua Gate Policy (vd MeetingPolicy::viewPublic), KHÔNG Spatie.
 */
-Route::prefix('public')->middleware('log.activity')->group(function () {
+Route::prefix('public')->middleware(['log.activity', 'set.public.permissions.team'])->group(function () {
     // Hệ thống & tổ chức
     Route::get('/settings', [\App\Modules\Core\SettingController::class, 'public']);
     Route::get('/organizations', [\App\Modules\Core\OrganizationController::class, 'public']);
@@ -37,6 +37,15 @@ Route::prefix('public')->middleware('log.activity')->group(function () {
     Route::get('/task-assignment-item-types/options', [\App\Modules\TaskAssignment\Controllers\TaskAssignmentItemTypeController::class, 'publicOptions']);
     Route::get('/task-assignment-departments', [\App\Modules\TaskAssignment\Controllers\TaskAssignmentDepartmentController::class, 'public']);
     Route::get('/task-assignment-departments/options', [\App\Modules\TaskAssignment\Controllers\TaskAssignmentDepartmentController::class, 'publicOptions']);
+
+    // Tải export qua signed URL (không auth:sanctum — xác thực bằng chữ ký, đã được
+    // cấp quyền từ trước ở bước gọi .../exports/{type}/link). Middleware 'signed' tự
+    // verify signature + expires (403 nếu sai/hết hạn). {filename} nằm trên path vì
+    // zmp-sdk downloadFile({url}) đặt tên file theo segment cuối URL, không đọc
+    // Content-Disposition — xem App\Modules\Core\ExportLinkController.
+    Route::get('/exports/{type}/{filename}', [\App\Modules\Core\ExportLinkController::class, 'download'])
+        ->middleware('signed')
+        ->name('exports.signed');
 
     // Meeting catalogs
     Route::get('/meeting-types', [\App\Modules\Meeting\Controllers\MeetingTypeController::class, 'public']);
@@ -77,6 +86,11 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
 
     // Zalo OA followers — sync 45p, auth-only, không Spatie. FE admin pick user_id để gán vào users.zalo_user_id.
     Route::get('/zalo-oa-followers', [\App\Modules\Core\ZaloOaFollowerController::class, 'index']);
+
+    // Sinh signed URL tạm thời để tải export (Zalo Mini App). Xem
+    // App\Modules\Core\ExportLinkController + config/exports.php — đăng ký export
+    // type mới ở đó, không cần route riêng.
+    Route::get('/exports/{type}/link', [\App\Modules\Core\ExportLinkController::class, 'link']);
 
     Route::prefix('users')->group(function () {
         require base_path('app/Modules/Core/Routes/user.php');
@@ -207,6 +221,16 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
     // Cấu hình cuộc họp — singleton per org (auto find-or-create theo X-Organization-Id).
     Route::prefix('meeting-settings')->group(function () {
         require base_path('app/Modules/Meeting/Routes/meeting_setting.php');
+    });
+
+    // Chat nội bộ — engine dùng chung cho DM (toàn hệ thống) và chat nhóm theo cuộc họp
+    // (khi meeting.internal_chat_enabled = true).
+    Route::prefix('chat')->group(function () {
+        require base_path('app/Modules/Core/Routes/chat.php');
+    });
+    // Admin: xem/xoá lịch sử chat nhóm theo cuộc họp (permission riêng, destroy chỉ Super Admin).
+    Route::prefix('meeting-chat-conversations')->group(function () {
+        require base_path('app/Modules/Core/Routes/meeting_chat_conversation.php');
     });
 
     // Scheduling module

@@ -117,6 +117,19 @@ class TaskAssignmentPetitionPolicy
     }
 
     /**
+     * Đổi trạng thái hàng loạt — cần quyền bulkUpdateStatus.
+     * Chỉ phòng ban tổng hợp mới được đổi trạng thái hàng loạt (như bulkDestroy).
+     */
+    public function bulkUpdateStatus(User $user): bool
+    {
+        if (! $user->hasPermissionTo('task-assignment-petitions.bulkUpdateStatus')) {
+            return false;
+        }
+
+        return $this->isUserInOverviewDepartment($user);
+    }
+
+    /**
      * Đổi trạng thái đơn thư — cần có quyền changeStatus VÀ là người trong phòng ban được giao.
      */
     public function changeStatus(User $user, TaskAssignmentPetition $petition): bool

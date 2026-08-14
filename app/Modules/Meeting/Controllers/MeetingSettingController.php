@@ -30,28 +30,32 @@ class MeetingSettingController extends Controller
      * Cập nhật cấu hình (multipart) — gửi 1 hoặc nhiều file. Không gửi field -> giữ nguyên.
      *
      * @bodyParam projector_image file Hình nền màn trình chiếu. JPG/PNG/WEBP, max 10MB.
+     * @bodyParam waiting_image file Ảnh chờ chương trình (hiển thị trước khi vào nội dung họp). JPG/PNG/WEBP, max 10MB.
      * @bodyParam chairperson_signature file Ảnh chữ ký chủ tọa. JPG/PNG/WEBP, max 5MB.
      * @bodyParam qr_icon file Icon center QR. JPG/PNG/WEBP/SVG, max 2MB.
      * @bodyParam remove_projector_image boolean Xóa hình hiện tại. Example: false
+     * @bodyParam remove_waiting_image boolean Xóa ảnh chờ chương trình hiện tại. Example: false
      * @bodyParam remove_chairperson_signature boolean Xóa chữ ký hiện tại. Example: false
      * @bodyParam remove_qr_icon boolean Xóa icon QR hiện tại. Example: false
      */
     public function update(UpdateMeetingSettingRequest $request)
     {
         $validated = collect($request->validated())->except([
-            'projector_image', 'chairperson_signature', 'qr_icon',
-            'remove_projector_image', 'remove_chairperson_signature', 'remove_qr_icon'
+            'projector_image', 'waiting_image', 'chairperson_signature', 'qr_icon',
+            'remove_projector_image', 'remove_waiting_image', 'remove_chairperson_signature', 'remove_qr_icon'
         ])->all();
 
         $files = [
-            'projector_image' => $request->file('projector_image'),
+            'projector_image'       => $request->file('projector_image'),
+            'waiting_image'         => $request->file('waiting_image'),
             'chairperson_signature' => $request->file('chairperson_signature'),
-            'qr_icon' => $request->file('qr_icon'),
+            'qr_icon'               => $request->file('qr_icon'),
         ];
         $removeFlags = [
-            'projector_image' => (bool) $request->boolean('remove_projector_image'),
+            'projector_image'       => (bool) $request->boolean('remove_projector_image'),
+            'waiting_image'         => (bool) $request->boolean('remove_waiting_image'),
             'chairperson_signature' => (bool) $request->boolean('remove_chairperson_signature'),
-            'qr_icon' => (bool) $request->boolean('remove_qr_icon'),
+            'qr_icon'               => (bool) $request->boolean('remove_qr_icon'),
         ];
 
         $item = $this->service->update($files, $removeFlags, $validated);

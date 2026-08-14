@@ -12,6 +12,7 @@ use App\Modules\Meeting\Requests\HighlightAgendaMeetingRequest;
 use App\Modules\Meeting\Requests\HighlightDiscussionMeetingRequest;
 use App\Modules\Meeting\Requests\StoreMeetingRequest;
 use App\Modules\Meeting\Requests\ToggleProjectorFileMeetingRequest;
+use App\Modules\Meeting\Requests\ToggleWaitingImageMeetingRequest;
 use App\Modules\Meeting\Requests\UpdateMeetingRequest;
 use App\Modules\Meeting\Resources\MeetingCollection;
 use App\Modules\Meeting\Resources\MeetingResource;
@@ -152,6 +153,8 @@ class MeetingController extends Controller
      * @bodyParam is_public boolean Công khai cuộc họp hay không. Example: true
      * @bodyParam status string Trạng thái cuộc họp. Example: draft
      * @bodyParam reminders object[] Danh sách mốc nhắc lịch (per-record). Gửi mảng rỗng [] nếu không có.
+     * @bodyParam projector_image file Ảnh nền màn chiếu (jpg/png/webp). Null = fallback MeetingSetting.
+     * @bodyParam waiting_image file Ảnh chờ chương trình (jpg/png/webp). Null = fallback MeetingSetting.
      * @bodyParam reminders.*.reminder_type string Loại reminder: instant (gửi ngay khi publish) hoặc scheduled (nhắc theo lịch). Mặc định scheduled. Example: instant
      * @bodyParam reminders.*.moment string Thời điểm nhắc: before, on, after. Bỏ qua nếu reminder_type=instant. Example: before
      * @bodyParam reminders.*.offset_minutes integer Phút offset từ start_time. Bỏ qua nếu reminder_type=instant. Example: 30
@@ -162,6 +165,7 @@ class MeetingController extends Controller
         $meeting = $this->meetingService->store(
             $request->validated(),
             $request->file('projector_image'),
+            $request->file('waiting_image'),
             $request->input('guests', []),
             (array) $request->input('reminders', []),
         );
@@ -194,6 +198,10 @@ class MeetingController extends Controller
      * @bodyParam start_time datetime Thời gian bắt đầu (Y-m-d H:i:s). Example: 2026-05-01 08:30:00
      * @bodyParam end_time datetime Thời gian kết thúc (Y-m-d H:i:s). Example: 2026-05-01 11:45:00
      * @bodyParam content string Nội dung cuộc họp. Example: Nội dung đã cập nhật
+     * @bodyParam projector_image file Ảnh nền màn chiếu mới (jpg/png/webp). Sẽ thay ảnh cũ nếu có.
+     * @bodyParam remove_projector_image boolean Xóa ảnh nền màn chiếu hiện tại. Example: false
+     * @bodyParam waiting_image file Ảnh chờ chương trình mới (jpg/png/webp). Sẽ thay ảnh cũ nếu có.
+     * @bodyParam remove_waiting_image boolean Xóa ảnh chờ chương trình hiện tại. Example: false
      * @bodyParam is_public boolean Công khai cuộc họp hay không. Example: false
      * @bodyParam status string Trạng thái cuộc họp. Example: published
      * @bodyParam reminders object[] Danh sách mốc nhắc lịch (per-record). Không gửi key này = giữ nguyên; gửi mảng rỗng [] = xóa hết CUSTOM.
@@ -208,6 +216,7 @@ class MeetingController extends Controller
             $meeting,
             $request->validated(),
             $request->file('projector_image'),
+            $request->file('waiting_image'),
             $request->has('guests') ? $request->input('guests', []) : null,
             $request->has('reminders') ? (array) $request->input('reminders', []) : null,
         );
@@ -263,6 +272,18 @@ class MeetingController extends Controller
         $meeting = $this->meetingService->changeStatus($meeting, $request->status);
 
         return $this->successResource(new MeetingResource($meeting), 'Đổi trạng thái cuộc họp thành công!');
+    }
+
+    /**
+     * Gửi lại toàn bộ giấy mời của cuộc họp — reset invitation pending và fire thông báo ngay lập tức.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     */
+    public function resendInvitations(Meeting $meeting)
+    {
+        $this->meetingService->resendInvitations($meeting);
+
+        return $this->success(null, 'Đã gửi lại toàn bộ giấy mời thành công!');
     }
 
     /**
@@ -370,6 +391,25 @@ class MeetingController extends Controller
         );
 
         return $this->success(null, 'Đã gửi tín hiệu chiếu file.');
+    }
+
+    /**
+     * Bật/tắt ảnh chờ chương trình trên màn chiếu (Tab 8) — realtime WebSocket.
+     *
+     * Sau khi nhận request, BE broadcast event `meeting.waiting-image-toggled` tới kênh
+     * `private-meeting.{id}` để TẤT CẢ client (bao gồm người gửi) cập nhật overlay ảnh chờ.
+     *
+     * @urlParam meeting integer required ID cuộc họp. Example: 1
+     * @bodyParam is_active boolean required true = bật ảnh chờ, false = tắt. Example: true
+     */
+    public function toggleWaitingImage(ToggleWaitingImageMeetingRequest $request, Meeting $meeting)
+    {
+        $data = $this->meetingService->toggleWaitingImage(
+            $meeting,
+            (bool) $request->input('is_active')
+        );
+
+        return $this->success($data, $data['is_active'] ? 'Đã bật ảnh chờ chương trình.' : 'Đã tắt ảnh chờ chương trình.');
     }
 
     /**

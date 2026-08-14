@@ -27,6 +27,20 @@ class UpdateItemRequest extends BaseRequest
             'processing_status' => ['sometimes', TaskProgressStatusEnum::rule()],
             'completion_percent' => 'nullable|integer|min:0|max:100',
             'priority' => ['sometimes', TaskPriorityEnum::rule()],
+            'assigned_by' => ['sometimes', 'integer', function ($attribute, $value, $fail) {
+                if (! $value) {
+                    return;
+                }
+                $orgId = getPermissionsTeamId();
+                $exists = \Illuminate\Support\Facades\DB::table('task_assignment_employees')
+                    ->where('user_id', $value)
+                    ->where('organization_id', $orgId)
+                    ->where('status', 'active')
+                    ->exists();
+                if (! $exists) {
+                    $fail("Người giao việc (ID {$value}) không phải nhân viên module giao việc của tổ chức này.");
+                }
+            }],
             'users' => 'sometimes|array|min:1',
             'departments' => 'sometimes|array|min:1',
             'departments.*.department_id' => 'required|integer|exists:task_assignment_departments,id',
@@ -124,6 +138,10 @@ class UpdateItemRequest extends BaseRequest
                 'description' => 'Mức độ ưu tiên (low, medium, high, urgent).',
                 'example' => 'high',
             ],
+            'assigned_by' => [
+                'description' => 'ID người giao việc (quản trị).',
+                'example' => 1,
+            ],
             'users' => [
                 'description' => 'Danh sách người thực hiện công việc. Có thể thay bằng departments để tự động lấy đại diện phòng ban.',
             ],
@@ -177,6 +195,7 @@ class UpdateItemRequest extends BaseRequest
             'processing_status' => 'Trạng thái xử lý',
             'completion_percent' => 'Phần trăm hoàn thành',
             'priority' => 'Mức ưu tiên',
+            'assigned_by' => 'Người giao việc',
             'users' => 'Danh sách người thực hiện',
             'users.*' => 'Người thực hiện',
             'departments' => 'Danh sách phòng ban',

@@ -110,6 +110,20 @@ class TaskAssignmentPetitionService
         TaskAssignmentPetition::where('organization_id', getPermissionsTeamId())->whereIn('id', $ids)->delete();
     }
 
+    public function bulkUpdateStatus(array $ids, string $status): int
+    {
+        $data = ['processing_status' => $status];
+
+        if ($status === PetitionStatusEnum::Completed->value) {
+            $data['completed_at'] = now();
+        }
+
+        return TaskAssignmentPetition::where('organization_id', getPermissionsTeamId())
+            ->whereIn('id', $ids)
+            ->where('processing_status', '!=', PetitionStatusEnum::Completed->value)
+            ->update($data);
+    }
+
     public function updateProgress(TaskAssignmentPetition $petition, array $validated, array $files = [], array $removeAttachmentIds = []): TaskAssignmentPetition
     {
         $storedFiles = [];

@@ -15,12 +15,16 @@ class MeetingSettingResource extends JsonResource
             'projector_image_url' => $this->projectorImage
                 ? '/storage/'.$this->projectorImage->id.'/'.$this->projectorImage->file_name
                 : null,
+            'waiting_image_url' => $this->waitingImage
+                ? '/storage/'.$this->waitingImage->id.'/'.$this->waitingImage->file_name
+                : null,
             'chairperson_signature_url' => $this->chairpersonSignature
                 ? '/storage/'.$this->chairpersonSignature->id.'/'.$this->chairpersonSignature->file_name
                 : null,
             'qr_icon_url' => $this->qrIcon
                 ? '/storage/'.$this->qrIcon->id.'/'.$this->qrIcon->file_name
                 : null,
+            'home_display_type' => $this->home_display_type,
             'updated_at' => $this->updated_at?->format('H:i:s d/m/Y'),
         ];
     }
