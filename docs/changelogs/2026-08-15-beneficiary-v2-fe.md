@@ -6,6 +6,9 @@
 **Mức độ:** phá vỡ tương thích hoàn toàn. Module cũ đã bị xoá khỏi backend, mọi endpoint v1 trả
 404. FE (`src/modules/nguoicocong/`) phải dựng lại theo API mới.
 
+**Hướng dẫn triển khai từng bước cho FE (đọc file này trước khi code):**
+[answer/nguoi-co-cong-huong-dan-frontend-v2_134350_15082026.md](../answer/nguoi-co-cong-huong-dan-frontend-v2_134350_15082026.md).
+
 Tài liệu API đầy đủ: [api/beneficiary.md](../api/beneficiary.md).
 Lý do từng quyết định: [answer/module-nguoi-co-cong-thiet-ke-lai-v2_110031_15082026.md](../answer/module-nguoi-co-cong-thiet-ke-lai-v2_110031_15082026.md).
 
