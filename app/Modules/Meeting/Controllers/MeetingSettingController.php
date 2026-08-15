@@ -20,6 +20,8 @@ class MeetingSettingController extends Controller
 
     /**
      * Lấy cấu hình cuộc họp của org hiện tại.
+     *
+     * @unauthenticated
      */
     public function show()
     {

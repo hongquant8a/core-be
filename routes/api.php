@@ -55,6 +55,12 @@ Route::prefix('public')->middleware(['log.activity', 'set.public.permissions.tea
     Route::get('/meeting-document-types', [\App\Modules\Meeting\Controllers\MeetingDocumentTypeController::class, 'public']);
     Route::get('/meeting-document-types/options', [\App\Modules\Meeting\Controllers\MeetingDocumentTypeController::class, 'publicOptions']);
 
+    // Cấu hình cuộc họp — GET công khai: đại biểu (guest, không auth:sanctum) đang xem
+    // trang public cần đọc ảnh màn chiếu / ảnh chờ chương trình / icon QR để render
+    // Tab Màn chiếu, Tab QR điểm danh. UPDATE vẫn yêu cầu auth, xem
+    // app/Modules/Meeting/Routes/meeting_setting.php.
+    Route::get('/meeting-settings', [\App\Modules\Meeting\Controllers\MeetingSettingController::class, 'show']);
+
     // Meetings — list + stats + show
     Route::get('/meetings', [\App\Modules\Meeting\Controllers\MeetingController::class, 'public']);
     Route::get('/meetings/document-tree', [\App\Modules\Meeting\Controllers\MeetingController::class, 'publicDocumentTree']);
