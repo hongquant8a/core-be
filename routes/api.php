@@ -43,8 +43,16 @@ Route::prefix('public')->middleware(['log.activity', 'set.public.permissions.tea
     // verify signature + expires (403 nếu sai/hết hạn). {filename} nằm trên path vì
     // zmp-sdk downloadFile({url}) đặt tên file theo segment cuối URL, không đọc
     // Content-Disposition — xem App\Modules\Core\ExportLinkController.
+    //
+    // 'signed:typeInapp' (KHÔNG phải 'signed' trần): zmp-sdk openWebview() tự chèn
+    // `typeInapp=1` vào URL trước khi mở (xem openWebview.js trong SDK — nó chỉ bỏ
+    // qua khi host là vnpay hoặc param đã có sẵn). Chữ ký Laravel tính trên toàn bộ
+    // query string, nên param tự chèn đó làm mọi link mở bằng webview thành 403.
+    // Tham số sau dấu ':' được ValidateSignature::parseArguments() đưa vào danh sách
+    // bỏ qua rồi gọi hasValidSignatureWhileIgnoring() — link vẫn an toàn vì các
+    // param còn lại (_ctx_*, expires, type, filename) vẫn nằm trong chữ ký.
     Route::get('/exports/{type}/{filename}', [\App\Modules\Core\ExportLinkController::class, 'download'])
-        ->middleware('signed')
+        ->middleware('signed:typeInapp')
         ->name('exports.signed');
 
     // Meeting catalogs
