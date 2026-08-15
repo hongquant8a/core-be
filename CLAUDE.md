@@ -1,68 +1,69 @@
 # CLAUDE.md
 
-Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
+Hướng dẫn hành vi chung, giảm các lỗi thường gặp khi LLM viết code.
 
-**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
+**Thứ tự ưu tiên:** phần này là nền chung. Khi mâu thuẫn với quy ước Danatec bên dưới hoặc với tài liệu trong `docs/system/`, **quy ước dự án thắng**.
 
-## 1. Think Before Coding
+**Đánh đổi:** các hướng dẫn này thiên về cẩn trọng hơn là nhanh. Việc nhỏ thì tự cân nhắc.
 
-**Don't assume. Don't hide confusion. Surface tradeoffs.**
+## 1. Nghĩ trước khi viết code
 
-Before implementing:
-- State your assumptions explicitly. If uncertain, ask.
-- If multiple interpretations exist, present them - don't pick silently.
-- If a simpler approach exists, say so. Push back when warranted.
-- If something is unclear, stop. Name what's confusing. Ask.
+**Đừng suy đoán. Đừng giấu chỗ đang phân vân. Nói rõ đánh đổi.**
 
-## 2. Simplicity First
+Trước khi bắt tay làm:
+- Nêu giả định của mình một cách tường minh. Không chắc thì hỏi.
+- Có nhiều cách hiểu thì trình bày ra — đừng tự chọn một cách im lặng.
+- Có cách đơn giản hơn thì nói. Phản biện khi thấy cần.
+- Chỗ nào không rõ thì dừng lại, gọi tên chỗ khó hiểu, và hỏi.
 
-**Minimum code that solves the problem. Nothing speculative.**
+## 2. Đơn giản trước đã
 
-- No features beyond what was asked.
-- No abstractions for single-use code.
-- No "flexibility" or "configurability" that wasn't requested.
-- No error handling for impossible scenarios.
-- If you write 200 lines and it could be 50, rewrite it.
+**Viết lượng code tối thiểu giải quyết được vấn đề. Không làm gì mang tính phòng xa.**
 
-Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+- Không thêm chức năng ngoài yêu cầu.
+- Không trừu tượng hoá cho đoạn code chỉ dùng một lần.
+- Không thêm "linh hoạt" hay "cấu hình được" khi không ai yêu cầu.
+- Không bắt lỗi cho tình huống không thể xảy ra.
 
-## 3. Surgical Changes
+Tự hỏi: "một senior engineer có nói cái này phức tạp quá mức không?" Nếu có thì làm gọn lại.
 
-**Touch only what you must. Clean up only your own mess.**
+## 3. Sửa đúng chỗ cần sửa
 
-When editing existing code:
-- Don't "improve" adjacent code, comments, or formatting.
-- Don't refactor things that aren't broken.
-- Match existing style, even if you'd do it differently.
-- If you notice unrelated dead code, mention it - don't delete it.
+**Chỉ động vào phần bắt buộc phải động. Chỉ dọn phần mình bày ra.**
 
-When your changes create orphans:
-- Remove imports/variables/functions that YOUR changes made unused.
-- Don't remove pre-existing dead code unless asked.
+Khi sửa code có sẵn:
+- Không "cải thiện" code, comment hay format ở xung quanh.
+- Không tái cấu trúc thứ đang chạy tốt.
+- Bám theo style hiện có, kể cả khi mình muốn làm khác.
+- Thấy code chết không liên quan thì báo lại — đừng tự xoá.
 
-The test: Every changed line should trace directly to the user's request.
+Khi thay đổi của mình để lại phần thừa:
+- Xoá import/biến/hàm mà **chính thay đổi của mình** làm cho không còn ai dùng.
+- Không xoá code chết có sẵn từ trước, trừ khi được yêu cầu.
 
-## 4. Goal-Driven Execution
+Phép thử: mọi dòng bị đổi đều phải truy ngược được về yêu cầu của người dùng.
 
-**Define success criteria. Loop until verified.**
+## 4. Làm việc theo mục tiêu kiểm chứng được
 
-Transform tasks into verifiable goals:
-- "Add validation" → "Write tests for invalid inputs, then make them pass"
-- "Fix the bug" → "Write a test that reproduces it, then make it pass"
-- "Refactor X" → "Ensure tests pass before and after"
+**Định nghĩa tiêu chí hoàn thành. Lặp cho tới khi kiểm chứng được.**
 
-For multi-step tasks, state a brief plan:
+Chuyển yêu cầu thành mục tiêu kiểm chứng được:
+- "Thêm validation" → "viết test cho input không hợp lệ, rồi làm cho test pass"
+- "Sửa bug" → "viết test tái hiện bug, rồi làm cho test pass"
+- "Refactor X" → "test pass trước và sau đều như nhau"
+
+Việc nhiều bước thì nêu kế hoạch ngắn:
 ```
-1. [Step] → verify: [check]
-2. [Step] → verify: [check]
-3. [Step] → verify: [check]
+1. [Bước] → kiểm chứng: [cách kiểm]
+2. [Bước] → kiểm chứng: [cách kiểm]
+3. [Bước] → kiểm chứng: [cách kiểm]
 ```
 
-Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+Tiêu chí rõ thì tự chạy độc lập được. Tiêu chí mơ hồ ("làm cho nó chạy") thì phải hỏi lại liên tục.
 
 ---
 
-**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+**Các hướng dẫn này đang phát huy tác dụng nếu:** diff ít thay đổi thừa hơn, ít phải viết lại do làm phức tạp quá mức, và câu hỏi làm rõ đến **trước** khi triển khai chứ không phải sau khi đã sai.
 
 ---
 
@@ -168,13 +169,52 @@ Không đặt query phức tạp, sync quan hệ, xử lý trạng thái, import
 - Giữ bộ method chuẩn tương ứng các action ở mục 3.
 - Dùng `DB::transaction()` khi ghi nhiều bước có phụ thuộc. Không dùng transaction cho read hoặc single-write đơn lẻ.
 - Nếu transaction có thao tác file: `try/catch` cleanup file khi lỗi (tránh lệch DB vs storage).
-- Mọi upload/xóa media đi qua `App\Modules\Core\Services\MediaService` — không gọi `addMedia()` hay `Storage::put/delete` trực tiếp.
+- Media: **module hiện có** đi qua `App\Modules\Core\Services\MediaService` — không gọi `addMedia()` hay `Storage::put/delete` trực tiếp. **Module mới có quan hệ cha — con** gọi spatie thẳng trong Service theo [docs/system/QUAN_HE_CHA_CON.md](docs/system/QUAN_HE_CHA_CON.md) §0; tệp nhạy cảm bắt buộc `->useDisk('private')`.
 - **Service không bao giờ gọi trực tiếp Notification/Mail/Broadcast — chỉ `event(new XxxEvent($model))`.**  (Chi tiết xem phần EDA.)
 
 **Tenant (đa tổ chức):**
 - Resource thuộc tổ chức phải có `organization_id`; mọi query scope theo tổ chức hiện tại (middleware `set.permissions.team` — header `X-Organization-Id`).
 - Thao tác theo ID (`show`, `update`, `destroy`, `changeStatus`) và bulk phải chặn cross-tenant.
 - `store`/`import` gán `organization_id` từ ngữ cảnh hiện tại, không nhận từ client.
+
+### Quan hệ cha — con (module MỚI)
+
+> **Phạm vi:** chỉ áp cho **module mới** và **quan hệ mới**. Module đã làm (`Auth`, `Core`, `Meeting`, `Scheduling`, `TaskAssignment`, `Beneficiary`) **giữ nguyên** — chỉ tái cấu trúc khi có yêu cầu rõ ràng, không refactor kèm PR khác.
+
+Hai tài liệu, đọc theo thứ tự:
+
+| Tài liệu | Là gì | Đọc khi nào |
+|---|---|---|
+| [docs/system/QUAN_HE_CHA_CON.md](docs/system/QUAN_HE_CHA_CON.md) | **Quy tắc và lý do** — bảng quyết định 5 dạng, 12 bẫy đã gặp, bảng Cấm, checklist | Trước khi bắt đầu; khi phân vân "ca này thuộc dạng nào" |
+| [docs/system/QUAN_HE_CHA_CON_VIDU.md](docs/system/QUAN_HE_CHA_CON_VIDU.md) | **Mã tham chiếu** — 44 tập tin trọn vẹn của module mẫu `Employee`, copy chạy được | Lúc đang gõ, cần khuôn cụ thể |
+
+**Nhận dạng quan hệ rồi copy đúng khuôn:**
+
+| Dạng | Nhận biết | Bộ action |
+|---|---|---|
+| **A.** 1–n có tệp | `hasMany`, dòng con có tài liệu đính kèm | 6: `index, show, store, update, destroy, bulkDestroy` |
+| **B.** 1–n không tệp | `hasMany`, chỉ có cột dữ liệu | 6 (như A) |
+| **C.** 1–1 | `hasOne`, `UNIQUE(parent_id)` | **2**: `show`, `update` (upsert) — POST/DELETE vô nghĩa |
+| **D.** n–n có thuộc tính | Bảng nối mang cột nghiệp vụ | 6 — xử lý **y hệt A**, **cấm** `sync()` |
+| **E.** Danh mục dùng chung | `organization_id = NULL` | 1: `index` (CRUD quản trị ở module hệ thống) |
+
+Bộ 11 action ở mục 3 áp cho **bảng chính của module**; bảng con dùng bộ rút gọn trên (không `stats/export/import/changeStatus` — dữ liệu con đã đi kèm export của bản chính, và import file phẳng không nhận mảng lồng nhau).
+
+**Sáu điều bắt buộc, vi phạm là mất dữ liệu chứ không phải lỗi style:**
+
+1. **Bảng cha bắt buộc `SoftDeletes`** khi bảng con dùng `onDelete('cascade')` — thiếu nó thì xoá cha làm MySQL xoá cứng toàn bộ dòng con, bỏ qua SoftDeletes của chúng và để lại tệp media mồ côi.
+2. **`$touches = ['parent']` ở mọi model con.** Đây là cơ chế duy nhất bắt được xung đột giữa màn hình sub-resource và màn hình gộp. `whereNotIn(...)->delete()` và `bulkDestroy` chạy qua Query Builder nên **không** nổ `$touches` → phải `$parent->touch()` tay.
+3. **Thứ tự media không được đổi:** snapshot `getMedia()` → commit → `addMedia()` → mới xoá tệp cũ. Snapshot chụp sau khi upload thì tệp vừa tải lên bị xoá ngay; xoá tệp trong transaction thì rollback không cứu được.
+4. **`UNIQUE` + `SoftDeletes`**: dòng đã xoá mềm vẫn chiếm chỗ trong unique index (đưa `deleted_at` vào unique không cứu được — MySQL coi mọi `NULL` là khác nhau). Bảng có unique phải `withTrashed()` → `restore()` thay vì `create()`. Bảng **không** có unique thì **không** thêm nhánh này.
+5. **Optimistic lock** cho bảng chính có form trọn gói: Resource trả thêm `lock_version` (ISO8601, tách khỏi `updated_at` hiển thị `H:i:s d/m/Y`), service đọc lại kèm `lockForUpdate()` **bên trong** transaction rồi so bằng `->timestamp`.
+6. **Danh sách con gửi dưới dạng chuỗi JSON** (`educations_json`), không phải mảng lồng FormData — `max_input_vars` cắt phần đuôi payload **im lặng**, và mảng lồng không phân biệt được `"[]"` (xoá hết) với vắng mặt (không quản lý).
+
+**`save-full` — endpoint gộp bản chính + toàn bộ danh sách con:**
+
+- Bắt buộc có cho bảng chính nào có màn hình form trọn gói; dùng chung permission `.store`/`.update`, không tạo permission riêng.
+- **Không tự ghi bản chính** — gọi lại `Service::update()` của resource bản chính, để optimistic lock chỉ nằm đúng một chỗ.
+- **Cấm gọi từ màn hình có phân trang**: `whereNotIn` xoá mềm sạch phần chưa load và vẫn trả 200. Backend không chặn được điều này.
+- Route tĩnh (`/save-full`, `/bulk-delete`, `/stats`) phải khai báo **trước** `/{id}`, và `{id}` có `->whereNumber()` — đặt sau thì Laravel nuốt segment vào model binding và trả 404 khó hiểu.
 
 ## 5. API Response & Resource
 
@@ -317,7 +357,7 @@ Thêm endpoint mới thay vì đổi format endpoint cũ (giữ backward compati
 | Thư mục | Lưu gì | Khi nào cập nhật |
 |---|---|---|
 | `docs/guide/` | GETTING_STARTED, CONTRIBUTING, TROUBLESHOOTING | Khi quy trình/setup thay đổi |
-| `docs/system/` | ARCHITECTURE, AUTH_TENANT, DOMAIN_GLOSSARY, INFRASTRUCTURE | Khi kiến trúc/convention thay đổi |
+| `docs/system/` | ARCHITECTURE, AUTH_TENANT, DOMAIN_GLOSSARY, INFRASTRUCTURE, QUAN_HE_CHA_CON (+ \_VIDU) | Khi kiến trúc/convention thay đổi |
 | `docs/database/` | ERD.md, Core.md, Meeting.md, TaskAssignment.md, Scheduling.md | Khi có Migration mới |
 | `docs/modules/{Module}/` | README.md, models.md, services.md, events.md | Khi thêm/sửa module |
 | `docs/decisions/` | ADR-NNN-ten-quyet-dinh.md | Khi có quyết định kiến trúc quan trọng |
@@ -350,13 +390,25 @@ Thêm endpoint mới thay vì đổi format endpoint cũ (giữ backward compati
 - [ ] Mỗi action có method tương ứng trong Service.
 - [ ] Luồng ghi nhiều bước đã bọc `DB::transaction()`; không lạm dụng cho read/single-write.
 - [ ] Luồng có thao tác file trong transaction có cleanup khi lỗi.
-- [ ] Upload media đi qua `Core\Services\MediaService`.
+- [ ] Upload media: module cũ qua `Core\Services\MediaService`; module mới có quan hệ cha — con theo `QUAN_HE_CHA_CON.md` — `addMedia()` **sau** commit, snapshot **trước** upload, tệp nhạy cảm trên disk `private`.
 - [ ] Resource thuộc tenant scope đúng `organization_id`, không cho cross-tenant.
 - [ ] Response format và HTTP status code đúng chuẩn (`RespondsWithJson`).
 - [ ] Có action `import` thì có kèm `import-template` (dùng `ImportTemplateExport`, permission dùng chung `.import`).
 - [ ] Import nhận đủ trường như Export/StoreRequest (chỉ bỏ mảng lồng nhau); `REQUIRED_KEYS` khớp field `required` trong `rules()`; file mẫu gắn dấu `*` cột bắt buộc, cột không bắt buộc để trần.
 - [ ] Mọi cột enum/boolean có `templateNotes()` (đủ giá trị, dùng `enumHint()`) + `templateOptions()` (giá trị thô), truyền vào `ImportTemplateExport` → file mẫu hiện dropdown/prompt (hoặc comment visible nếu enum dài), KHÔNG dùng comment ẩn.
 - [ ] Module có ≥1 Enum dùng cho FE dropdown → có `{module}-enums` endpoint (`EnumController`, xem mục 2), không gắn permission riêng.
+
+**Quan hệ cha — con (chỉ module mới, xem mục 4):**
+- [ ] Đã xác định dạng A/B/C/D/E và copy đúng khuôn ở `QUAN_HE_CHA_CON_VIDU.md`.
+- [ ] Bảng cha có `SoftDeletes` (bắt buộc khi con `onDelete('cascade')`); bảng con có `organization_id`, `created_by/updated_by`, `SoftDeletes`, index `(organization_id, parent_id)`.
+- [ ] Model con có `$touches = ['parent']`; `parent_id` và `organization_id` **không** nằm trong `$fillable`.
+- [ ] Media: snapshot trước upload, upload sau commit, xoá tệp cũ sau cùng; collection `singleFile()` **không** gọi trong transaction.
+- [ ] Bảng có unique + SoftDeletes → service có nhánh `withTrashed()` → `restore()`; bảng không có unique thì **không** thêm nhánh này.
+- [ ] `whereNotIn(...)->delete()` và `bulkDestroy` có `$parent->touch()` tay.
+- [ ] Có `save-full` thì nó gọi lại `Service::update()` của bản chính, không tự ghi; route tĩnh khai báo trước `/{id}`; `{id}` có `whereNumber()`.
+- [ ] Resource dòng con trả `parent_lock_version` và service đã eager load quan hệ cha (thiếu thì key biến mất khỏi response).
+- [ ] Khoá ngoại trỏ danh mục dùng `Rule::exists` có scope tenant + `whereNull('deleted_at')`.
+- [ ] Có đủ test bắt buộc (4 ca đính kèm, 3 ca `save-full`, 1 ca restore, 2 ca đa tổ chức) — xem `QUAN_HE_CHA_CON.md` §24.
 
 **Event-Driven:**
 - [ ] Service không gọi trực tiếp Notification/Mail/Broadcast — chỉ `event()`.
