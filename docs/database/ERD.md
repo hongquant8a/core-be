@@ -17,7 +17,7 @@ app/Modules/
 └── Scheduling/      Lịch công tác tuần (EXECUTIVE / OFFICE)
 ```
 
-> Module **Beneficiary** (Người có công) đã gỡ bỏ ngày 15/08/2026 để thiết kế lại theo hướng đơn giản hoá.
+> Module **Beneficiary** (Người có công) đã gỡ bỏ ngày 15/08/2026 để thiết kế lại theo hướng đơn giản hoá — xem [answer/module-nguoi-co-cong-thiet-ke-lai-v2_110031_15082026.md](../answer/module-nguoi-co-cong-thiet-ke-lai-v2_110031_15082026.md).
 
 ---
 

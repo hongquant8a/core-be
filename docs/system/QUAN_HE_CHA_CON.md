@@ -15,7 +15,7 @@ Tài liệu chuẩn cho Claude Code và dev khi thêm quan hệ cha — con vào
 
 **Chỉ áp dụng cho module mới và quan hệ mới.** Module đã làm (`Auth`, `Core`, `Meeting`, `Scheduling`, `TaskAssignment`) **giữ nguyên nghiệp vụ và cách làm hiện tại** — không refactor theo tài liệu này, không coi code cũ là sai.
 
-> `Beneficiary` (Người có công) đã gỡ bỏ ngày 15/08/2026, sẽ dựng lại từ đầu → tính là **module mới**, bắt buộc theo tài liệu này.
+> `Beneficiary` (Người có công) đã gỡ bỏ ngày 15/08/2026, dựng lại từ đầu theo thiết kế đơn giản hoá → tính là **module mới**, bắt buộc theo tài liệu này. Xem [answer/module-nguoi-co-cong-thiet-ke-lai-v2_110031_15082026.md](../answer/module-nguoi-co-cong-thiet-ke-lai-v2_110031_15082026.md).
 
 | | Module cũ | Module mới |
 |---|---|---|
@@ -62,11 +62,11 @@ Lý do: phần khó của luồng này là **thứ tự** snapshot → commit �
 
 Quy tắc 3 là thứ giữ cho mô hình không rã: chỉ có **một chỗ ghi bản chính**, nên `assertNotStale`, `lockForUpdate` và `touch()` chỉ cần đặt đúng một lần và không đường nào bỏ sót được.
 
-### 1.1. Ranh giới với bộ 11 action của CLAUDE.md §3
+### 1.1. Ranh giới với bộ chức năng chuẩn của CLAUDE.md B3
 
 | Loại resource | Bộ action |
 |---|---|
-| **Bảng chính của module** | Đủ 11: `stats, index, show, store, update, destroy, bulkDestroy, bulkUpdateStatus, changeStatus, export, import` **+ `saveFull`** |
+| **Bảng chính của module** | `stats, index, show, store, update, destroy, bulkDestroy, export, import` **+ `saveFull`**, cộng `changeStatus`/`bulkUpdateStatus` **nếu** nghiệp vụ có trạng thái (CLAUDE.md B3) |
 | **Bảng con (dạng A, B, D)** | 6: `index, show, store, update, destroy, bulkDestroy` |
 | **Bảng 1–1 (dạng C)** | 2: `show, update` (upsert) |
 | **Danh mục dùng chung (dạng E)** | 1 trong module nghiệp vụ: `index` (CRUD quản trị nằm ở module hệ thống) |

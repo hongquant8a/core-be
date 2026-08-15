@@ -145,17 +145,26 @@ Response: `{ "success": true, "data": { "xxx_status": [{"value": "active", "labe
 
 ## B3. Bộ chức năng chuẩn & HTTP Convention
 
-**Mỗi module mới phải có đủ:** `stats`, `index`, `show`, `store`, `update`, `destroy`, `bulkDestroy`, `bulkUpdateStatus`, `changeStatus`, `export`, `import`.
+**Mỗi module mới phải có đủ:** `stats`, `index`, `show`, `store`, `update`, `destroy`, `bulkDestroy`, `export`, `import`.
 
-**Bộ lọc `index`** phải có: tìm kiếm theo tên/trường chính, `status`, khoảng `created_at` (from/to), sắp xếp theo `id`, `created_at`, `updated_at` và các trường phù hợp.
+**Nhóm trạng thái — CHỈ khi nghiệp vụ thực sự có trạng thái:** cột `status` + `changeStatus` + `bulkUpdateStatus`. Quyết định ở bước phân tích, ghi rõ trong tài liệu module và PR:
+
+- **Có trạng thái** → đủ cột + 2 action + bộ lọc `status` ở `index`. Tên cột đặt theo nghĩa nghiệp vụ khi rõ hơn (`task_assignment_petitions.processing_status`).
+- **Không có trạng thái** → bỏ cả cột lẫn 2 action lẫn permission tương ứng. **Không** thêm `active`/`inactive` chỉ để cho đủ bộ.
+
+Đừng thêm `status` mặc định "cho đúng chuẩn": một cột không ai đọc vẫn kéo theo enum, bộ lọc, 2 endpoint, 2 permission và một cột thừa trên màn danh sách FE. Đây là chỗ **A2 thắng** — ngoại lệ có chủ đích với thứ tự ưu tiên ghi ở đầu file.
+
+> Năm module đầu (`Core`, `Meeting`, `Scheduling`, `TaskAssignment`, `Auth`) đều có `status` trên mọi bảng nghiệp vụ. Đó là vì nghiệp vụ của chúng cần, không phải vì quy ước ép — giữ nguyên, không gỡ.
+
+**Bộ lọc `index`** phải có: tìm kiếm theo tên/trường chính, khoảng `created_at` (from/to), sắp xếp theo `id`, `created_at`, `updated_at` và các trường phù hợp — cộng `status` nếu module có trạng thái.
 
 **HTTP Method chuẩn:**
 
 | Action | Method | Route |
 |---|---|---|
 | Xóa hàng loạt | `DELETE` | `/bulk-delete` — body `{"ids":[...]}` |
-| Cập nhật trạng thái hàng loạt | `PATCH` | `/bulk-status` |
-| Đổi trạng thái đơn | `PATCH` | `/{id}/status` |
+| Cập nhật trạng thái hàng loạt | `PATCH` | `/bulk-status` — chỉ khi module có trạng thái |
+| Đổi trạng thái đơn | `PATCH` | `/{id}/status` — chỉ khi module có trạng thái |
 | Sắp xếp lại | `PATCH` | `/reorder` |
 
 > Laravel tự parse JSON body cho DELETE — không dùng POST thay thế.
@@ -201,7 +210,7 @@ Hai tài liệu, đọc theo thứ tự:
 | **D.** n–n có thuộc tính | Bảng nối mang cột nghiệp vụ | 6 — xử lý **y hệt A**, **cấm** `sync()` |
 | **E.** Danh mục dùng chung | `organization_id = NULL` | 1: `index` (CRUD quản trị ở module hệ thống) |
 
-Bộ 11 action ở B3 áp cho **bảng chính của module**; bảng con dùng bộ rút gọn trên. Bảng con không có `export`/`import` riêng vì dữ liệu con đã đi kèm file của bản chính — cách xuất và lý do ở B7.
+Bộ action ở B3 áp cho **bảng chính của module**; bảng con dùng bộ rút gọn trên. Bảng con không có `export`/`import` riêng vì dữ liệu con đã đi kèm file của bản chính — cách xuất và lý do ở B7.
 
 **Sáu điều bắt buộc, vi phạm là mất dữ liệu chứ không phải lỗi style:**
 
