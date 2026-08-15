@@ -273,6 +273,10 @@ class LogActivity
             'scheduling-employee-groups' => 'nhóm nhân sự',
             'scheduling-settings' => 'cấu hình lịch công tác',
             'scheduling-filter-presets' => 'bộ lọc cá nhân',
+            'beneficiaries' => 'người có công',
+            'beneficiary-residential-areas' => 'danh mục tổ dân phố/thôn',
+            'beneficiary-types' => 'danh mục loại đối tượng',
+            'beneficiary-relationships' => 'danh mục mối quan hệ',
         ];
 
         return $labels[$resource] ?? str_replace('-', ' ', $resource);

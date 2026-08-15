@@ -246,4 +246,26 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
     Route::prefix('scheduling-settings')->group(function () {
         require base_path('app/Modules/Scheduling/Routes/scheduling_setting.php');
     });
+
+    // Beneficiary module — quản lý người có công. Ba sub-resource (đối tượng, thân nhân,
+    // tài liệu) nằm LỒNG trong beneficiary.php dưới /{beneficiary}, không có prefix riêng.
+    Route::prefix('beneficiaries')->middleware('ensure.route.org')->group(function () {
+        require base_path('app/Modules/Beneficiary/Routes/beneficiary.php');
+    });
+
+    // Ba danh mục tenant-scoped, cán bộ tự quản trị.
+    Route::prefix('beneficiary-residential-areas')->middleware('ensure.route.org')->group(function () {
+        require base_path('app/Modules/Beneficiary/Routes/residential_area.php');
+    });
+    Route::prefix('beneficiary-types')->middleware('ensure.route.org')->group(function () {
+        require base_path('app/Modules/Beneficiary/Routes/beneficiary_type.php');
+    });
+    Route::prefix('beneficiary-relationships')->middleware('ensure.route.org')->group(function () {
+        require base_path('app/Modules/Beneficiary/Routes/relationship.php');
+    });
+
+    // Enum tĩnh (giới tính, trạng thái danh mục) — dùng chung, không tenant-scoped.
+    Route::prefix('beneficiary-enums')->group(function () {
+        require base_path('app/Modules/Beneficiary/Routes/enum.php');
+    });
 });

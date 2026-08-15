@@ -84,6 +84,10 @@ class AppServiceProvider extends ServiceProvider
             'task_assignment_item_report'   => \App\Modules\TaskAssignment\Models\TaskAssignmentItemReport::class,
             'task_assignment_petition'      => \App\Modules\TaskAssignment\Models\TaskAssignmentPetition::class,
             'task_assignment_document'      => \App\Modules\TaskAssignment\Models\TaskAssignmentDocument::class,
+
+            // Beneficiary — chỉ hai model có tệp đính kèm. Hồ sơ và thân nhân không gắn media.
+            'beneficiary_type_relation'     => \App\Modules\Beneficiary\Models\BeneficiaryTypeRelation::class,
+            'beneficiary_document'          => \App\Modules\Beneficiary\Models\BeneficiaryDocument::class,
         ]);
 
         // Auto-create UserProfile mỗi khi tạo User.

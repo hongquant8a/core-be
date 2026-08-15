@@ -202,6 +202,37 @@ class PermissionSeeder extends Seeder
                 'show', 'update',
             ],
         ],
+        'Beneficiary' => [
+            // Bảng chính KHÔNG có changeStatus/bulkUpdateStatus — hồ sơ người có công không
+            // có trạng thái nghiệp vụ (CLAUDE.md B3 sau khi nới).
+            'beneficiaries' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'export', 'import',
+            ],
+            // Ba sub-resource dùng bộ rút gọn 6 action của B5.
+            'beneficiary-type-relations' => [
+                'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
+            ],
+            'beneficiary-dependents' => [
+                'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
+            ],
+            'beneficiary-documents' => [
+                'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
+            ],
+            // Ba danh mục CÓ nhóm trạng thái — đây là chỗ trạng thái thực sự có nghĩa.
+            'beneficiary-residential-areas' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
+            ],
+            'beneficiary-types' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
+            ],
+            'beneficiary-relationships' => [
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
+            ],
+        ],
     ];
 
     /** Trả về danh sách permission dạng phẳng [resource => actions] từ cấu trúc module. */
@@ -253,6 +284,7 @@ class PermissionSeeder extends Seeder
         'TaskAssignment' => 'Quản lý công việc',
         'Meeting'        => 'Phòng họp không giấy',
         'Scheduling'     => 'Lịch công tác',
+        'Beneficiary'    => 'Người có công',
     ];
 
     /** Nhãn nhóm permission theo resource (để description). */
@@ -302,6 +334,13 @@ class PermissionSeeder extends Seeder
         'scheduling-employees' => 'Nhân viên lịch công tác',
         'scheduling-employee-groups' => 'Nhóm nhân viên lịch công tác',
         'scheduling-settings' => 'Cấu hình lịch công tác',
+        'beneficiaries' => 'Người có công',
+        'beneficiary-type-relations' => 'Đối tượng của người có công',
+        'beneficiary-dependents' => 'Thân nhân',
+        'beneficiary-documents' => 'Tài liệu hồ sơ',
+        'beneficiary-residential-areas' => 'Danh mục Tổ dân phố/Thôn',
+        'beneficiary-types' => 'Danh mục Loại đối tượng',
+        'beneficiary-relationships' => 'Danh mục Mối quan hệ',
     ];
 
     /** Nhãn action (để description). */

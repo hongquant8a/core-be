@@ -29,7 +29,8 @@ docs/
 │   ├── Core.md                        ← Schema module Core
 │   ├── Meeting.md                     ← Schema module Meeting
 │   ├── TaskAssignment.md              ← Schema module TaskAssignment
-│   └── Scheduling.md                  ← Schema module Scheduling
+│   ├── Scheduling.md                  ← Schema module Scheduling
+│   └── Beneficiary.md                 ← Schema module Beneficiary (Người có công)
 │
 ├── modules/                           ← PHÂN TÍCH MÃ NGUỒN TỪNG MODULE
 │   ├── _TEMPLATE.md                   ← Template — copy khi viết docs module mới
@@ -63,7 +64,8 @@ docs/
 | Cần quy trình tạo PR, đặt tên branch | [guide/CONTRIBUTING.md](guide/CONTRIBUTING.md) |
 | Xem API list | `api/` hoặc chạy `sail artisan scribe:generate` |
 | BE vừa đổi API, cần migrate FE | `changelogs/` — tìm file `YYYY-MM-DD-topic-fe` |
-| Thiết kế lại module Người có công (v2) | [answer/module-nguoi-co-cong-thiet-ke-lai-v2_110031_15082026.md](answer/module-nguoi-co-cong-thiet-ke-lai-v2_110031_15082026.md) |
+| Làm việc với module Người có công (v2) | [modules/Beneficiary/README.md](modules/Beneficiary/README.md) + [api/beneficiary.md](api/beneficiary.md) |
+| Vì sao Người có công thiết kế như vậy | [answer/module-nguoi-co-cong-thiet-ke-lai-v2_110031_15082026.md](answer/module-nguoi-co-cong-thiet-ke-lai-v2_110031_15082026.md) |
 | Luồng notification | [guides/notification-flow-behavior.md](guides/notification-flow-behavior.md) |
 | Ghi lại quyết định kiến trúc | [decisions/_TEMPLATE.md](decisions/_TEMPLATE.md) |
 
