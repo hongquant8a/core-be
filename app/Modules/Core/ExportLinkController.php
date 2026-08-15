@@ -110,16 +110,19 @@ class ExportLinkController extends Controller
             setPermissionsTeamId((int) $request->query('_ctx_org_id'));
         }
 
-        // Bỏ 2 param nội bộ khỏi query trước khi forward — dù đã đặt tiền tố
-        // "_ctx_" để tránh trùng tên filter nghiệp vụ hiện tại, vẫn xoá luôn
-        // cho sạch, không để lọt vào $request->all() của action export() thật.
-        // "expires"/"signature" là do Laravel tự thêm khi ký URL — cũng dọn
-        // luôn cho chắc. Route param {type}/{filename} nằm trên path, không
-        // qua đây (đã verify: không xuất hiện trong $request->all()).
+        // Bỏ các param không phải nghiệp vụ khỏi query trước khi forward — dù đã
+        // đặt tiền tố "_ctx_" để tránh trùng tên filter nghiệp vụ hiện tại, vẫn
+        // xoá luôn cho sạch, không để lọt vào $request->all() của action
+        // export() thật. "expires"/"signature" là do Laravel tự thêm khi ký URL,
+        // "typeInapp" là do zmp-sdk openWebview() tự chèn khi mở link trong
+        // webview Zalo (xem chú thích ở route 'exports.signed') — cùng dọn cho
+        // chắc. Route param {type}/{filename} nằm trên path, không qua đây (đã
+        // verify: không xuất hiện trong $request->all()).
         $request->query->remove('_ctx_user_id');
         $request->query->remove('_ctx_org_id');
         $request->query->remove('expires');
         $request->query->remove('signature');
+        $request->query->remove('typeInapp');
 
         // `[$class, $method]` với $class là string bị PHP hiểu nhầm thành gọi
         // tĩnh ("cannot be called statically") — dùng cú pháp "Class@method" để
