@@ -138,7 +138,6 @@ Route::get('/', [EnumController::class, 'index']);
 - **Không** `permission:` — dữ liệu tra cứu dùng chung cho nhiều form/permission khác nhau trong module, không phải resource CRUD của 1 quyền cụ thể (giống "general views" của `app/Modules/Scheduling/Routes/schedule.php`).
 
 Response: `{ "success": true, "data": { "xxx_status": [{"value": "active", "label": "Đang hưởng"}, ...], "yyy_type": [...] } }`.
-Tham khảo: `app/Modules/Beneficiary/Controllers/EnumController.php`.
 
 **Tên bảng** — bảng danh mục và pivot phải có tiền tố module:
 - Đúng: `meeting_rooms`, `meeting_agendas`, `task_assignment_priorities`, `meeting_meeting_room`
@@ -181,7 +180,7 @@ Không đặt query phức tạp, sync quan hệ, xử lý trạng thái, import
 
 ## B5. Quan hệ cha — con (module MỚI)
 
-> **Phạm vi:** chỉ áp cho **module mới** và **quan hệ mới**. Module đã làm (`Auth`, `Core`, `Meeting`, `Scheduling`, `TaskAssignment`, `Beneficiary`) **giữ nguyên** — chỉ tái cấu trúc khi có yêu cầu rõ ràng, không refactor kèm PR khác.
+> **Phạm vi:** chỉ áp cho **module mới** và **quan hệ mới**. Module đã làm (`Auth`, `Core`, `Meeting`, `Scheduling`, `TaskAssignment`) **giữ nguyên** — chỉ tái cấu trúc khi có yêu cầu rõ ràng, không refactor kèm PR khác. `Beneficiary` đã gỡ bỏ ngày 15/08/2026 và sẽ dựng lại như **module mới** → bắt buộc theo B5.
 
 Hai tài liệu, đọc theo thứ tự:
 

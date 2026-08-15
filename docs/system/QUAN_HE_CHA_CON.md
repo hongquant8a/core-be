@@ -13,7 +13,9 @@ Tài liệu chuẩn cho Claude Code và dev khi thêm quan hệ cha — con vào
 
 ## 0. Phạm vi áp dụng — đọc trước tiên
 
-**Chỉ áp dụng cho module mới và quan hệ mới.** Module đã làm (`Auth`, `Core`, `Meeting`, `Scheduling`, `TaskAssignment`, `Beneficiary`) **giữ nguyên nghiệp vụ và cách làm hiện tại** — không refactor theo tài liệu này, không coi code cũ là sai.
+**Chỉ áp dụng cho module mới và quan hệ mới.** Module đã làm (`Auth`, `Core`, `Meeting`, `Scheduling`, `TaskAssignment`) **giữ nguyên nghiệp vụ và cách làm hiện tại** — không refactor theo tài liệu này, không coi code cũ là sai.
+
+> `Beneficiary` (Người có công) đã gỡ bỏ ngày 15/08/2026, sẽ dựng lại từ đầu → tính là **module mới**, bắt buộc theo tài liệu này.
 
 | | Module cũ | Module mới |
 |---|---|---|
@@ -21,7 +23,7 @@ Tài liệu chuẩn cho Claude Code và dev khi thêm quan hệ cha — con vào
 | `SoftDeletes` cho cha + con | Giữ nguyên (phần lớn chưa có) | **Bắt buộc** |
 | `belongsToMany()->sync()` cho quan hệ n–n | Giữ nguyên (3 chỗ đang dùng) | **Cấm** — xem §2 dạng D |
 | Endpoint `save-full` + optimistic lock | Không thêm | **Bắt buộc** cho bảng chính có form trọn gói |
-| Nested route `cha/{id}/con` | Giữ nguyên (Beneficiary dùng route phẳng) | **Bắt buộc** cho sub-resource của form trọn gói |
+| Nested route `cha/{id}/con` | Giữ nguyên (module cũ dùng route phẳng) | **Bắt buộc** cho sub-resource của form trọn gói |
 
 **Điều kiện tiên quyết:** không cần sửa gì trong `Core`. Tài liệu này dùng spatie trực tiếp — xem **Phụ lục A** để biết quyết định đó đánh đổi những gì và cần chỉnh câu chữ nào trong CLAUDE.md.
 
@@ -108,7 +110,7 @@ Bảng chính        employees
 Bảng con 1–n      employee_educations, employee_work_experiences, employee_family_relationships
 Bảng con 1–1      employee_details                  (số nhiều, dù chỉ một dòng)
 Danh mục          employee_skills                   (tiền tố module — CLAUDE.md §2)
-Bảng nối dạng D   employee_skill_relations          (theo tiền lệ beneficiary_dependent_relations)
+Bảng nối dạng D   employee_skill_relations          ({bảng_cha_số_ít}_{bảng_con_số_ít}_relations)
 
 Model             Employee, EmployeeEducation, EmployeeDetail, EmployeeSkill, EmployeeSkillRelation
 Quan hệ Model     educations(), employeeDetail(), skillRelations()

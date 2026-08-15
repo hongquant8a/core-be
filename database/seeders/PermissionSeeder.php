@@ -202,30 +202,6 @@ class PermissionSeeder extends Seeder
                 'show', 'update',
             ],
         ],
-        'Beneficiary' => [
-            'beneficiaries' => [
-                'stats', 'index', 'show', 'store', 'update', 'destroy',
-                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
-            ],
-            'beneficiary-households' => [
-                'stats', 'index', 'show', 'store', 'update', 'destroy',
-                'bulkDestroy', 'export', 'import',
-            ],
-            'beneficiary-residential-areas' => [
-                'stats', 'index', 'show', 'store', 'update', 'destroy',
-                'bulkDestroy', 'export', 'import',
-            ],
-            'beneficiary-dependents' => [
-                'stats', 'index', 'show', 'store', 'update', 'destroy',
-                'bulkDestroy', 'export', 'import', 'storeRelation', 'destroyRelation',
-            ],
-            'beneficiary-documents' => [
-                'index', 'show', 'store', 'update', 'destroy', 'bulkDestroy',
-            ],
-            'beneficiary-statistics' => [
-                'view',
-            ],
-        ],
     ];
 
     /** Trả về danh sách permission dạng phẳng [resource => actions] từ cấu trúc module. */
@@ -277,7 +253,6 @@ class PermissionSeeder extends Seeder
         'TaskAssignment' => 'Quản lý công việc',
         'Meeting'        => 'Phòng họp không giấy',
         'Scheduling'     => 'Lịch công tác',
-        'Beneficiary'    => 'Người có công',
     ];
 
     /** Nhãn nhóm permission theo resource (để description). */
@@ -327,12 +302,6 @@ class PermissionSeeder extends Seeder
         'scheduling-employees' => 'Nhân viên lịch công tác',
         'scheduling-employee-groups' => 'Nhóm nhân viên lịch công tác',
         'scheduling-settings' => 'Cấu hình lịch công tác',
-        'beneficiaries' => 'Người có công',
-        'beneficiary-households' => 'Hộ gia đình',
-        'beneficiary-residential-areas' => 'Tổ dân phố',
-        'beneficiary-dependents' => 'Thân nhân',
-        'beneficiary-documents' => 'Giấy tờ hồ sơ',
-        'beneficiary-statistics' => 'Thống kê người có công',
     ];
 
     /** Nhãn action (để description). */

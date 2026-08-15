@@ -2,9 +2,6 @@
 
 namespace App\Providers;
 
-use App\Modules\Beneficiary\Models\Beneficiary;
-use App\Modules\Beneficiary\Models\Dependent;
-use App\Modules\Beneficiary\Observers\HouseholdObserver;
 use App\Modules\Core\Models\User;
 use App\Modules\Core\Observers\UserObserver;
 use App\Modules\Core\Services\SettingService;
@@ -87,13 +84,6 @@ class AppServiceProvider extends ServiceProvider
             'task_assignment_item_report'   => \App\Modules\TaskAssignment\Models\TaskAssignmentItemReport::class,
             'task_assignment_petition'      => \App\Modules\TaskAssignment\Models\TaskAssignmentPetition::class,
             'task_assignment_document'      => \App\Modules\TaskAssignment\Models\TaskAssignmentDocument::class,
-
-            // Beneficiary — alias morph cho media (giấy tờ đính kèm) trên các model.
-            'beneficiary'                   => \App\Modules\Beneficiary\Models\Beneficiary::class,
-            'beneficiary_dependent'         => \App\Modules\Beneficiary\Models\Dependent::class,
-            'beneficiary_household'         => \App\Modules\Beneficiary\Models\Household::class,
-            'beneficiary_classification'    => \App\Modules\Beneficiary\Models\BeneficiaryClassification::class,
-            'beneficiary_document'          => \App\Modules\Beneficiary\Models\BeneficiaryDocument::class,
         ]);
 
         // Auto-create UserProfile mỗi khi tạo User.
@@ -101,11 +91,6 @@ class AppServiceProvider extends ServiceProvider
 
         // Track Schedule changes for notifications
         Schedule::observe(ScheduleObserver::class);
-
-        // Beneficiary: member_count denormalized trên Household — áp cho cả Beneficiary lẫn Dependent
-        // vì household_id có thể bị đổi từ 1 trong 2 model.
-        Beneficiary::observe(HouseholdObserver::class);
-        Dependent::observe(HouseholdObserver::class);
 
         // Register policies cho in-meeting control + public/participant view actions.
         // Spatie permission vẫn giữ cho admin catalog/CRUD setup; Policy gate cho mọi action gắn meeting cụ thể.

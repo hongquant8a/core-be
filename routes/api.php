@@ -246,29 +246,4 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
     Route::prefix('scheduling-settings')->group(function () {
         require base_path('app/Modules/Scheduling/Routes/scheduling_setting.php');
     });
-
-    // Beneficiary module — quản lý người có công theo hộ gia đình & thân nhân.
-    Route::prefix('beneficiaries')->middleware('ensure.route.org')->group(function () {
-        require base_path('app/Modules/Beneficiary/Routes/beneficiary.php');
-    });
-    Route::prefix('beneficiary-households')->middleware('ensure.route.org')->group(function () {
-        require base_path('app/Modules/Beneficiary/Routes/household.php');
-    });
-    Route::prefix('beneficiary-residential-areas')->middleware('ensure.route.org')->group(function () {
-        require base_path('app/Modules/Beneficiary/Routes/residential_area.php');
-    });
-    Route::prefix('beneficiary-dependents')->middleware('ensure.route.org')->group(function () {
-        require base_path('app/Modules/Beneficiary/Routes/dependent.php');
-    });
-    Route::prefix('beneficiary-documents')->middleware('ensure.route.org')->group(function () {
-        require base_path('app/Modules/Beneficiary/Routes/beneficiary_document.php');
-    });
-    // Dashboard thống kê người có công (tenant-scoped).
-    Route::prefix('beneficiary-statistics')->middleware('ensure.route.org')->group(function () {
-        require base_path('app/Modules/Beneficiary/Routes/statistics.php');
-    });
-    // Danh mục enum tĩnh (loại đối tượng, trạng thái...) — dùng chung, không tenant-scoped.
-    Route::prefix('beneficiary-enums')->group(function () {
-        require base_path('app/Modules/Beneficiary/Routes/enum.php');
-    });
 });
