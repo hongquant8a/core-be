@@ -3221,10 +3221,17 @@ class EmployeeService
 
     private const SKILL_FILLABLE = ['employee_skill_id', 'level', 'years_experience', 'certified_at', 'note'];
 
+    /**
+     * creator.media / editor.media chứ KHÔNG phải creator / editor:
+     * FormatsUserSummary gọi $user->getFirstMedia('avatars') để lấy ảnh đại diện,
+     * nên chỉ load 'creator' thì mỗi user khác nhau sinh thêm một query. Danh sách
+     * 20 dòng do 20 người khác nhau tạo → tối đa 40 query thừa.
+     * Load 'creator.media' bao hàm luôn 'creator', không cần liệt kê cả hai.
+     */
     private const WITH_ALL = [
         'media', 'educations.media', 'workExperiences.media', 'familyRelationships',
         'employeeDetail.media', 'skillRelations.media', 'skillRelations.skill',
-        'creator', 'editor',
+        'creator.media', 'editor.media',
     ];
 
     /**
@@ -3254,7 +3261,7 @@ class EmployeeService
     public function index(array $filters = [], int $limit = 10): LengthAwarePaginator
     {
         return Employee::query()
-            ->with(['media', 'creator', 'editor'])
+            ->with(['media', 'creator.media', 'editor.media'])
             ->when($filters['search'] ?? null, fn ($q, $kw) => $q->where(
                 fn ($sub) => $sub->where('full_name', 'like', "%{$kw}%")
                     ->orWhere('code', 'like', "%{$kw}%")
@@ -3353,7 +3360,7 @@ class EmployeeService
     {
         $employee->update(['status' => $status]);
 
-        return $employee->load(['media', 'creator', 'editor']);
+        return $employee->load(['media', 'creator.media', 'editor.media']);
     }
 
     /**
@@ -3713,13 +3720,15 @@ class EmployeeEducationService
 
     private const MEDIA_COLLECTION = EmployeeEducation::MEDIA_COLLECTION;
 
-    private const WITH = ['media', 'employee', 'creator', 'editor'];
-
     /**
-     * with('media') tránh N+1 vì Resource gọi getMedia() từng dòng.
-     * with('employee') để Resource xuất được parent_lock_version (quy tắc 4) — thiếu
-     * nó thì whenLoaded trả MissingValue và key biến mất khỏi response.
+     * Ba thứ trong danh sách này đều bắt buộc, thiếu cái nào cũng hỏng một kiểu khác:
+     *   - 'media'          → Resource gọi getMedia() từng dòng, thiếu là N+1
+     *   - 'employee'       → Resource xuất parent_lock_version (quy tắc 4); thiếu thì
+     *                        whenLoaded trả MissingValue và key biến mất khỏi response
+     *   - 'creator.media'  → FormatsUserSummary gọi getFirstMedia('avatars') trên user;
+     *     'editor.media'     chỉ load 'creator' thì mỗi user sinh thêm một query
      */
+    private const WITH = ['media', 'employee', 'creator.media', 'editor.media'];
     public function index(Employee $employee, array $filters = [], int $limit = 10): LengthAwarePaginator
     {
         return $employee->educations()
@@ -3838,7 +3847,7 @@ class EmployeeWorkExperienceService
 
     private const MEDIA_COLLECTION = EmployeeWorkExperience::MEDIA_COLLECTION;
 
-    private const WITH = ['media', 'employee', 'creator', 'editor'];
+    private const WITH = ['media', 'employee', 'creator.media', 'editor.media'];
 
     public function index(Employee $employee, array $filters = [], int $limit = 10): LengthAwarePaginator
     {
@@ -3936,7 +3945,7 @@ class EmployeeFamilyRelationshipService
 {
     private const FILLABLE = ['full_name', 'relationship', 'birth_year', 'occupation', 'phone', 'address', 'note'];
 
-    private const WITH = ['employee', 'creator', 'editor'];
+    private const WITH = ['employee', 'creator.media', 'editor.media'];
 
     public function index(Employee $employee, array $filters = [], int $limit = 10): LengthAwarePaginator
     {
@@ -4012,7 +4021,7 @@ class EmployeeDetailService
 
     public function show(Employee $employee): ?EmployeeDetail
     {
-        return $employee->employeeDetail()->with(['media', 'employee', 'creator', 'editor'])->first();
+        return $employee->employeeDetail()->with(['media', 'employee', 'creator.media', 'editor.media'])->first();
     }
 
     /**
@@ -4125,7 +4134,7 @@ class EmployeeSkillRelationService
 
     private const MEDIA_COLLECTION = EmployeeSkillRelation::MEDIA_COLLECTION;
 
-    private const WITH = ['media', 'employee', 'skill', 'creator', 'editor'];
+    private const WITH = ['media', 'employee', 'skill', 'creator.media', 'editor.media'];
 
     public function index(Employee $employee, array $filters = [], int $limit = 20): LengthAwarePaginator
     {
@@ -4310,7 +4319,7 @@ class EmployeeController extends Controller
         $this->service->syncAvatar($employee, $request->file('avatar'));
 
         return $this->successResource(
-            new EmployeeResource($employee->load(['media', 'creator', 'editor'])),
+            new EmployeeResource($employee->load(['media', 'creator.media', 'editor.media'])),
             'Thêm nhân sự thành công'
         );
     }
@@ -4332,7 +4341,7 @@ class EmployeeController extends Controller
         $this->service->syncAvatar($updated, $request->file('avatar'));
 
         return $this->successResource(
-            new EmployeeResource($updated->fresh(['media', 'creator', 'editor'])),
+            new EmployeeResource($updated->fresh(['media', 'creator.media', 'editor.media'])),
             'Cập nhật nhân sự thành công'
         );
     }
@@ -4842,7 +4851,7 @@ class EmployeeDetailController extends Controller
         );
 
         return $this->successResource(
-            new EmployeeDetailResource($detail->fresh(['media', 'employee', 'creator', 'editor'])),
+            new EmployeeDetailResource($detail->fresh(['media', 'employee', 'creator.media', 'editor.media'])),
             'Cập nhật thông tin định danh thành công'
         );
     }

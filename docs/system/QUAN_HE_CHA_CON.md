@@ -381,11 +381,19 @@ public function update(EmployeeEducation $education, array $data): EmployeeEduca
         $existing->reject(fn ($m) => in_array((int) $m->id, $keep, true))->each->delete();
     }
 
-    return $education->load(['media', 'employee', 'creator', 'editor']);
+    return $education->load(self::WITH);
 }
 ```
 
-Eager load `'employee'` là **bắt buộc** ở `index()`/`show()` — thiếu nó thì `whenLoaded` trả `MissingValue` và `parent_lock_version` biến mất khỏi response (quy tắc 4).
+Danh sách eager load là **bắt buộc**, mỗi phần tử bịt một lỗi khác nhau:
+
+```php
+private const WITH = ['media', 'employee', 'creator.media', 'editor.media'];
+```
+
+- `'media'` — Resource gọi `getMedia()` từng dòng, thiếu là N+1.
+- `'employee'` — thiếu thì `whenLoaded` trả `MissingValue` và `parent_lock_version` biến mất khỏi response (quy tắc 4).
+- `'creator.media'` / `'editor.media'` — **không phải** `'creator'` / `'editor'`: trait `FormatsUserSummary` gọi `$user->getFirstMedia('avatars')` để lấy ảnh đại diện, nên chỉ load `'creator'` thì mỗi user khác nhau trong trang sinh thêm một query. Load `creator.media` bao hàm luôn `creator`.
 
 Xoá luôn là **xoá mềm**: file đính kèm giữ nguyên trên storage, phục hồi được khi restore bản ghi — bắt buộc với dữ liệu có giá trị pháp lý.
 
@@ -902,7 +910,7 @@ Bảng không có unique constraint (dạng A/B) **không** thêm nhánh này: `
 13. Controller — `RespondsWithJson`, PHPDoc Scribe đủ tag, `bulkDestroy` nhớ `touch()` (§15).
 14. Route — trong `Route::scopeBindings()`, route tĩnh trước `{id}`, `whereNumber`, `permission:` cho **mọi** action.
 15. `PermissionSeeder` + `LogActivity` + `sail artisan scribe:generate`.
-16. Eager load quan hệ cha trong `index()`, nếu không `parent_lock_version` biến mất.
+16. Eager load trong `index()`: quan hệ cha (nếu không `parent_lock_version` biến mất) và `creator.media`/`editor.media` (nếu không `FormatsUserSummary` sinh N+1) — §10.
 17. Factory đúng namespace `Database\Factories\Modules\{Module}\Models\` (Scribe cần).
 18. Export/Import: cột liệt kê dòng con ngăn bởi `; `, import bỏ qua (§18).
 19. Copy test VIDU §13, đổi tên model. Chạy `sail artisan test --filter=Employee`.
@@ -948,6 +956,7 @@ Bảng không có unique constraint (dạng A/B) **không** thêm nhánh này: `
 | Gom N request lúc bấm Lưu | Dữ liệu nửa vời không dấu vết |
 | Frontend quên gán lại `lock_version` | Lần lưu thứ hai dính 409 |
 | Frontend không map lại danh sách con sau 200 | Dòng vừa tạo vẫn `id: null` → lần Lưu sau tạo bản ghi trùng |
+| Eager load `'creator'` thay vì `'creator.media'` | `FormatsUserSummary` gọi `getFirstMedia()` → N+1 theo số người tạo |
 | Copy service sang module mới nhưng bỏ test | Lỗi mất file không ai phát hiện |
 
 ---

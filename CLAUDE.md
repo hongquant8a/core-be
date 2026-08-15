@@ -1,12 +1,14 @@
-# CLAUDE.md
+# A. Hướng dẫn hành vi chung
 
-Hướng dẫn hành vi chung, giảm các lỗi thường gặp khi LLM viết code.
+Giảm các lỗi thường gặp khi LLM viết code.
 
-**Thứ tự ưu tiên:** phần này là nền chung. Khi mâu thuẫn với quy ước Danatec bên dưới hoặc với tài liệu trong `docs/system/`, **quy ước dự án thắng**.
+**Thứ tự ưu tiên:** phần này là nền chung. Khi mâu thuẫn với quy ước Danatec (**B**) hoặc với tài liệu trong `docs/system/`, **quy ước dự án thắng**.
 
 **Đánh đổi:** các hướng dẫn này thiên về cẩn trọng hơn là nhanh. Việc nhỏ thì tự cân nhắc.
 
-## 1. Nghĩ trước khi viết code
+> **Cách tham chiếu trong file này:** bốn khối được đánh dấu **A**, **B**, **C**, **D**; mục con ghi kèm tiền tố khối — `B3` là "Bộ chức năng chuẩn", `C4` là "Job & Queue". Đừng viết "mục 4" vì mỗi khối đều có mục 4.
+
+## A1. Nghĩ trước khi viết code
 
 **Đừng suy đoán. Đừng giấu chỗ đang phân vân. Nói rõ đánh đổi.**
 
@@ -16,7 +18,7 @@ Trước khi bắt tay làm:
 - Có cách đơn giản hơn thì nói. Phản biện khi thấy cần.
 - Chỗ nào không rõ thì dừng lại, gọi tên chỗ khó hiểu, và hỏi.
 
-## 2. Đơn giản trước đã
+## A2. Đơn giản trước đã
 
 **Viết lượng code tối thiểu giải quyết được vấn đề. Không làm gì mang tính phòng xa.**
 
@@ -27,7 +29,7 @@ Trước khi bắt tay làm:
 
 Tự hỏi: "một senior engineer có nói cái này phức tạp quá mức không?" Nếu có thì làm gọn lại.
 
-## 3. Sửa đúng chỗ cần sửa
+## A3. Sửa đúng chỗ cần sửa
 
 **Chỉ động vào phần bắt buộc phải động. Chỉ dọn phần mình bày ra.**
 
@@ -43,7 +45,7 @@ Khi thay đổi của mình để lại phần thừa:
 
 Phép thử: mọi dòng bị đổi đều phải truy ngược được về yêu cầu của người dùng.
 
-## 4. Làm việc theo mục tiêu kiểm chứng được
+## A4. Làm việc theo mục tiêu kiểm chứng được
 
 **Định nghĩa tiêu chí hoàn thành. Lặp cho tới khi kiểm chứng được.**
 
@@ -67,14 +69,14 @@ Tiêu chí rõ thì tự chạy độc lập được. Tiêu chí mơ hồ ("là
 
 ---
 
-# Laravel Modular — Quy ước Danatec
+# B. Laravel Modular — Quy ước Danatec
 
-## 1. Môi trường & Ngôn ngữ
+## B1. Môi trường & Ngôn ngữ
 
 - **Ngôn ngữ**: Tiếng Việt cho toàn bộ tài liệu, phản hồi và comment giải thích logic.
 - **Lệnh**: Luôn dùng `sail` thay `php`. Ví dụ: `sail artisan migrate`, `sail artisan scribe:generate`.
 
-## 2. Cấu trúc Thư mục
+## B2. Cấu trúc Thư mục
 
 Làm việc trong `/app/Modules/{Module}/`. Namespace phải khớp thư mục: `App\Modules\{Module}\Controllers`, ...
 
@@ -87,7 +89,7 @@ app/Modules/{Module}/
   Requests/
   Resources/
   Enums/
-  Events/          ← khi có Event-Driven (xem phần EDA)
+  Events/          ← khi có Event-Driven (xem C)
   Listeners/       ← khi có Event-Driven
   Observers/       ← khi có Event-Driven
   Jobs/            ← khi có Event-Driven
@@ -142,7 +144,7 @@ Tham khảo: `app/Modules/Beneficiary/Controllers/EnumController.php`.
 - Đúng: `meeting_rooms`, `meeting_agendas`, `task_assignment_priorities`, `meeting_meeting_room`
 - Sai: `rooms`, `priorities` (xung đột giữa module)
 
-## 3. Bộ chức năng chuẩn & HTTP Convention
+## B3. Bộ chức năng chuẩn & HTTP Convention
 
 **Mỗi module mới phải có đủ:** `stats`, `index`, `show`, `store`, `update`, `destroy`, `bulkDestroy`, `bulkUpdateStatus`, `changeStatus`, `export`, `import`.
 
@@ -159,25 +161,25 @@ Tham khảo: `app/Modules/Beneficiary/Controllers/EnumController.php`.
 
 > Laravel tự parse JSON body cho DELETE — không dùng POST thay thế.
 
-## 4. Controller & Service Layer
+## B4. Controller & Service Layer
 
 **Controller** chỉ làm: nhận request → validate (FormRequest) → gọi Service → trả response chuẩn.  
 Không đặt query phức tạp, sync quan hệ, xử lý trạng thái, import/export trong Controller.
 
 **Service:**
 - Namespace: `App\Modules\{Module}\Services`, tên class: `{Resource}Service` (vd: `MeetingService`, `TaskAssignmentItemService`).
-- Giữ bộ method chuẩn tương ứng các action ở mục 3.
+- Giữ bộ method chuẩn tương ứng các action ở B3.
 - Dùng `DB::transaction()` khi ghi nhiều bước có phụ thuộc. Không dùng transaction cho read hoặc single-write đơn lẻ.
 - Nếu transaction có thao tác file: `try/catch` cleanup file khi lỗi (tránh lệch DB vs storage).
-- Media: **module hiện có** đi qua `App\Modules\Core\Services\MediaService` — không gọi `addMedia()` hay `Storage::put/delete` trực tiếp. **Module mới có quan hệ cha — con** gọi spatie thẳng trong Service theo [docs/system/QUAN_HE_CHA_CON.md](docs/system/QUAN_HE_CHA_CON.md) §0; tệp nhạy cảm bắt buộc `->useDisk('private')`.
-- **Service không bao giờ gọi trực tiếp Notification/Mail/Broadcast — chỉ `event(new XxxEvent($model))`.**  (Chi tiết xem phần EDA.)
+- Media: **module hiện có** đi qua `App\Modules\Core\Services\MediaService` — không gọi `addMedia()` hay `Storage::put/delete` trực tiếp. **Module mới có quan hệ cha — con** gọi spatie thẳng trong Service theo B5.
+- Side-effect không đồng bộ (thông báo, sync, log) → `event(new XxxEvent($model))`, không gọi thẳng Notification/Mail/Broadcast. Quy tắc đầy đủ và cây quyết định ở **C1**.
 
 **Tenant (đa tổ chức):**
 - Resource thuộc tổ chức phải có `organization_id`; mọi query scope theo tổ chức hiện tại (middleware `set.permissions.team` — header `X-Organization-Id`).
 - Thao tác theo ID (`show`, `update`, `destroy`, `changeStatus`) và bulk phải chặn cross-tenant.
 - `store`/`import` gán `organization_id` từ ngữ cảnh hiện tại, không nhận từ client.
 
-### Quan hệ cha — con (module MỚI)
+## B5. Quan hệ cha — con (module MỚI)
 
 > **Phạm vi:** chỉ áp cho **module mới** và **quan hệ mới**. Module đã làm (`Auth`, `Core`, `Meeting`, `Scheduling`, `TaskAssignment`, `Beneficiary`) **giữ nguyên** — chỉ tái cấu trúc khi có yêu cầu rõ ràng, không refactor kèm PR khác.
 
@@ -187,6 +189,8 @@ Hai tài liệu, đọc theo thứ tự:
 |---|---|---|
 | [docs/system/QUAN_HE_CHA_CON.md](docs/system/QUAN_HE_CHA_CON.md) | **Quy tắc và lý do** — bảng quyết định 5 dạng, 12 bẫy đã gặp, bảng Cấm, checklist | Trước khi bắt đầu; khi phân vân "ca này thuộc dạng nào" |
 | [docs/system/QUAN_HE_CHA_CON_VIDU.md](docs/system/QUAN_HE_CHA_CON_VIDU.md) | **Mã tham chiếu** — 44 tập tin trọn vẹn của module mẫu `Employee`, copy chạy được | Lúc đang gõ, cần khuôn cụ thể |
+
+> Mục B5 này **cố ý** tóm tắt lại phần cốt lõi của `QUAN_HE_CHA_CON.md` — CLAUDE.md luôn được nạp, hai tài liệu kia thì không. Hệ quả: sửa một trong sáu điều bắt buộc bên dưới thì **phải sửa cả hai chỗ**.
 
 **Nhận dạng quan hệ rồi copy đúng khuôn:**
 
@@ -198,13 +202,13 @@ Hai tài liệu, đọc theo thứ tự:
 | **D.** n–n có thuộc tính | Bảng nối mang cột nghiệp vụ | 6 — xử lý **y hệt A**, **cấm** `sync()` |
 | **E.** Danh mục dùng chung | `organization_id = NULL` | 1: `index` (CRUD quản trị ở module hệ thống) |
 
-Bộ 11 action ở mục 3 áp cho **bảng chính của module**; bảng con dùng bộ rút gọn trên (không `stats/export/import/changeStatus` — dữ liệu con đã đi kèm export của bản chính, và import file phẳng không nhận mảng lồng nhau).
+Bộ 11 action ở B3 áp cho **bảng chính của module**; bảng con dùng bộ rút gọn trên. Bảng con không có `export`/`import` riêng vì dữ liệu con đã đi kèm file của bản chính — cách xuất và lý do ở B7.
 
 **Sáu điều bắt buộc, vi phạm là mất dữ liệu chứ không phải lỗi style:**
 
 1. **Bảng cha bắt buộc `SoftDeletes`** khi bảng con dùng `onDelete('cascade')` — thiếu nó thì xoá cha làm MySQL xoá cứng toàn bộ dòng con, bỏ qua SoftDeletes của chúng và để lại tệp media mồ côi.
 2. **`$touches = ['parent']` ở mọi model con.** Đây là cơ chế duy nhất bắt được xung đột giữa màn hình sub-resource và màn hình gộp. `whereNotIn(...)->delete()` và `bulkDestroy` chạy qua Query Builder nên **không** nổ `$touches` → phải `$parent->touch()` tay.
-3. **Thứ tự media không được đổi:** snapshot `getMedia()` → commit → `addMedia()` → mới xoá tệp cũ. Snapshot chụp sau khi upload thì tệp vừa tải lên bị xoá ngay; xoá tệp trong transaction thì rollback không cứu được.
+3. **Thứ tự media không được đổi:** snapshot `getMedia()` → commit → `addMedia()` → mới xoá tệp cũ. Snapshot chụp sau khi upload thì tệp vừa tải lên bị xoá ngay; xoá tệp trong transaction thì rollback không cứu được. Tệp nhạy cảm bắt buộc `->useDisk('private')`.
 4. **`UNIQUE` + `SoftDeletes`**: dòng đã xoá mềm vẫn chiếm chỗ trong unique index (đưa `deleted_at` vào unique không cứu được — MySQL coi mọi `NULL` là khác nhau). Bảng có unique phải `withTrashed()` → `restore()` thay vì `create()`. Bảng **không** có unique thì **không** thêm nhánh này.
 5. **Optimistic lock** cho bảng chính có form trọn gói: Resource trả thêm `lock_version` (ISO8601, tách khỏi `updated_at` hiển thị `H:i:s d/m/Y`), service đọc lại kèm `lockForUpdate()` **bên trong** transaction rồi so bằng `->timestamp`.
 6. **Danh sách con gửi dưới dạng chuỗi JSON** (`educations_json`), không phải mảng lồng FormData — `max_input_vars` cắt phần đuôi payload **im lặng**, và mảng lồng không phân biệt được `"[]"` (xoá hết) với vắng mặt (không quản lý).
@@ -215,8 +219,9 @@ Bộ 11 action ở mục 3 áp cho **bảng chính của module**; bảng con d�
 - **Không tự ghi bản chính** — gọi lại `Service::update()` của resource bản chính, để optimistic lock chỉ nằm đúng một chỗ.
 - **Cấm gọi từ màn hình có phân trang**: `whereNotIn` xoá mềm sạch phần chưa load và vẫn trả 200. Backend không chặn được điều này.
 - Route tĩnh (`/save-full`, `/bulk-delete`, `/stats`) phải khai báo **trước** `/{id}`, và `{id}` có `->whereNumber()` — đặt sau thì Laravel nuốt segment vào model binding và trả 404 khó hiểu.
+- Fire event ở cuối `saveFull()` sau khi ghi/xoá tệp xong — đây là **ngoại lệ** của quy tắc `ShouldDispatchAfterCommit` ở C2.
 
-## 5. API Response & Resource
+## B6. API Response & Resource
 
 **Trait `App\Modules\Core\Traits\RespondsWithJson`** — dùng qua Controller base:
 
@@ -232,7 +237,7 @@ Luôn dùng Resource để trả dữ liệu. Định dạng thời gian trong R
 - Chỉ ngày: `$this->birthday->format('d/m/Y')`
 - Có giờ: `$this->created_at->format('H:i:s d/m/Y')`
 
-## 6. Export & Import
+## B7. Export & Import
 
 **Export:** Xuất đầy đủ các trường như index (Resource), bao gồm quan hệ, `created_by`, `updated_by`, `created_at`, `updated_at`, `status`.
 - **Xuất kèm các quan hệ xung quanh bảng chính:**
@@ -284,9 +289,9 @@ public function importTemplate()
 ```
 Không tự implement lại việc sinh file Excel mẫu — luôn tái dùng `App\Modules\Core\Exports\ImportTemplateExport` (đã style sẵn: row 1 header — cột bắt buộc có dấu `*` + dropdown/comment giá trị enum, row 2 ví dụ in nghiêng xám để cán bộ biết xóa trước khi nhập).
 
-> PHPDoc Scribe cho export/import xem mục 7.
+> PHPDoc Scribe cho export/import xem B8.
 
-## 7. Scribe (API Documentation)
+## B8. Scribe (API Documentation)
 
 > Toàn bộ quy tắc Scribe tập trung ở đây. Sau bất kỳ thay đổi API nào: `sail artisan scribe:generate`.  
 > Config: `config/scribe.php` giữ `auth.enabled=true`, `auth.default=true`.
@@ -327,7 +332,7 @@ Action **import** — ghi: `"Cột bắt buộc: [...]. Cột không bắt buộ
 
 **Tham khảo style:** `app/Modules/Meeting/Controllers/` hoặc `app/Modules/Core/` controllers.
 
-## 8. Phân quyền & LogActivity
+## B9. Phân quyền & LogActivity
 
 **Permission** (`database/seeders/PermissionSeeder.php`):
 - Định dạng: `{resource}.{action}` — resource trùng prefix API route (vd: `meeting-rooms`, `task-assignment-items`).
@@ -337,7 +342,7 @@ Action **import** — ghi: `"Cột bắt buộc: [...]. Cột không bắt buộ
 **LogActivity** (`app/Modules/Core/Middleware/LogActivity.php`):
 - Khi thêm resource/action mới: cập nhật `resourceLabel()`, `actionLabels`, `pathActions`, route params.
 
-## 9. Public Catalog APIs
+## B10. Public Catalog APIs
 
 Endpoint public (dropdown/chức năng công khai) đặt ngoài nhóm `auth:sanctum`:
 
@@ -350,7 +355,7 @@ Endpoint public (dropdown/chức năng công khai) đặt ngoài nhóm `auth:san
 Dùng `App\Modules\Core\Resources\PublicOptionResource` cho dropdown.  
 Thêm endpoint mới thay vì đổi format endpoint cũ (giữ backward compatibility với frontend).
 
-## 10. Tài liệu & Thiết kế
+## B11. Tài liệu & Thiết kế
 
 **Cấu trúc thư mục `docs/` — xem [docs/README.md](docs/README.md) để có bản đồ đầy đủ.**
 
@@ -383,52 +388,14 @@ Thêm endpoint mới thay vì đổi format endpoint cũ (giữ backward compati
 ```
 - `Ngày tạo` giữ nguyên sau lần đầu. `Cập nhật lần cuối` cập nhật mỗi lần sửa nội dung.
 
-## 11. Checklist review PR
-
-**Controller & Service:**
-- [ ] Controller không chứa nghiệp vụ phức tạp — chỉ validate → gọi service → trả response.
-- [ ] Mỗi action có method tương ứng trong Service.
-- [ ] Luồng ghi nhiều bước đã bọc `DB::transaction()`; không lạm dụng cho read/single-write.
-- [ ] Luồng có thao tác file trong transaction có cleanup khi lỗi.
-- [ ] Upload media: module cũ qua `Core\Services\MediaService`; module mới có quan hệ cha — con theo `QUAN_HE_CHA_CON.md` — `addMedia()` **sau** commit, snapshot **trước** upload, tệp nhạy cảm trên disk `private`.
-- [ ] Resource thuộc tenant scope đúng `organization_id`, không cho cross-tenant.
-- [ ] Response format và HTTP status code đúng chuẩn (`RespondsWithJson`).
-- [ ] Có action `import` thì có kèm `import-template` (dùng `ImportTemplateExport`, permission dùng chung `.import`).
-- [ ] Import nhận đủ trường như Export/StoreRequest (chỉ bỏ mảng lồng nhau); `REQUIRED_KEYS` khớp field `required` trong `rules()`; file mẫu gắn dấu `*` cột bắt buộc, cột không bắt buộc để trần.
-- [ ] Mọi cột enum/boolean có `templateNotes()` (đủ giá trị, dùng `enumHint()`) + `templateOptions()` (giá trị thô), truyền vào `ImportTemplateExport` → file mẫu hiện dropdown/prompt (hoặc comment visible nếu enum dài), KHÔNG dùng comment ẩn.
-- [ ] Module có ≥1 Enum dùng cho FE dropdown → có `{module}-enums` endpoint (`EnumController`, xem mục 2), không gắn permission riêng.
-
-**Quan hệ cha — con (chỉ module mới, xem mục 4):**
-- [ ] Đã xác định dạng A/B/C/D/E và copy đúng khuôn ở `QUAN_HE_CHA_CON_VIDU.md`.
-- [ ] Bảng cha có `SoftDeletes` (bắt buộc khi con `onDelete('cascade')`); bảng con có `organization_id`, `created_by/updated_by`, `SoftDeletes`, index `(organization_id, parent_id)`.
-- [ ] Model con có `$touches = ['parent']`; `parent_id` và `organization_id` **không** nằm trong `$fillable`.
-- [ ] Media: snapshot trước upload, upload sau commit, xoá tệp cũ sau cùng; collection `singleFile()` **không** gọi trong transaction.
-- [ ] Bảng có unique + SoftDeletes → service có nhánh `withTrashed()` → `restore()`; bảng không có unique thì **không** thêm nhánh này.
-- [ ] `whereNotIn(...)->delete()` và `bulkDestroy` có `$parent->touch()` tay.
-- [ ] Có `save-full` thì nó gọi lại `Service::update()` của bản chính, không tự ghi; route tĩnh khai báo trước `/{id}`; `{id}` có `whereNumber()`.
-- [ ] Resource dòng con trả `parent_lock_version` và service đã eager load quan hệ cha (thiếu thì key biến mất khỏi response).
-- [ ] Khoá ngoại trỏ danh mục dùng `Rule::exists` có scope tenant + `whereNull('deleted_at')`.
-- [ ] Có đủ test bắt buộc (4 ca đính kèm, 3 ca `save-full`, 1 ca restore, 2 ca đa tổ chức) — xem `QUAN_HE_CHA_CON.md` §24.
-
-**Event-Driven:**
-- [ ] Service không gọi trực tiếp Notification/Mail/Broadcast — chỉ `event()`.
-- [ ] Event ghi DB dùng `ShouldDispatchAfterCommit`.
-- [ ] Job có `$tries`, `$backoff`, nhận `organization_id` qua constructor.
-- [ ] Job/Listener nặng vào đúng queue tier (không dồn vào `default`).
-- [ ] Notification dùng Resolver + Enum, không hardcode nội dung.
-- [ ] Schedule command đăng ký ở `routes/console.php`, có `withoutOverlapping`.
-- [ ] Broadcast Event chỉ chứa ID, channel authorization qua Policy.
-- [ ] Observer chỉ xử lý data integrity (kể cả chuẩn bị/ghi reminder rows), không **gửi** Notification.
-- [ ] Cross-tenant Job/Command có `withoutGlobalScope('organization')` khi loop toàn bộ tenant.
-
 ---
 
-# Event-Driven Architecture — Danatec
+# C. Event-Driven Architecture — Danatec
 
 > Áp dụng đồng bộ cho toàn bộ module (Modular Monolith + DDD).  
 > Mục tiêu: AI/Dev biết **chọn đúng primitive** (Event, Listener, Observer, Job, Notification, Schedule) cho từng tình huống, tránh lẫn lộn trách nhiệm.
 
-## 1. Cây quyết định nhanh
+## C1. Cây quyết định nhanh
 
 ```
 Có hành động nghiệp vụ xảy ra (tạo/sửa/xóa/chuyển trạng thái)?
@@ -466,7 +433,7 @@ Service chỉ `event(new XxxEvent($model))`. Mọi side-effect nằm ở Listene
 > Chốt: chọn nơi fire theo "có bao nhiêu đường ghi vào model", không theo "có phải Service hay không".
 > 1 đường ghi duy nhất → Service. Nhiều đường ghi, đều phải notify → Observer fire event.
 
-## 2. Event & Listener
+## C2. Event & Listener
 
 **Dùng Event khi:**
 - Hành động nghiệp vụ có ≥1 side-effect không thuộc logic chính.
@@ -481,7 +448,9 @@ Service chỉ `event(new XxxEvent($model))`. Mọi side-effect nằm ở Listene
 
 **Bắt buộc:** Dùng `ShouldDispatchAfterCommit` cho Event ghi DB rồi fire Notification/Broadcast (tránh race condition khi transaction chưa commit).
 
-## 3. Observer vs Event
+> **Ngoại lệ — `save-full` của quan hệ cha — con (B5):** commit xong vẫn còn bước ghi và xoá tệp, nên "after commit" vẫn quá sớm. Ở đó fire event **tay** ở cuối hàm, sau khi tệp đã yên vị, và **không** dùng `ShouldDispatchAfterCommit`.
+
+## C3. Observer vs Event
 
 | | Observer | Event trong Service |
 |---|---|---|
@@ -497,7 +466,7 @@ Không dùng Observer để **gửi** Notification (khó trace, khó test).
 > row bảng `reminders`) tính là **data-integrity → Observer OK**. Chỉ hành vi **gửi** (mail/SMS/Zalo/FCM/
 > broadcast) mới bắt buộc qua Event → Listener. Chuẩn bị dữ liệu ≠ gửi.
 
-## 4. Job & Queue
+## C4. Job & Queue
 
 **Dispatch Job khi:** gọi API ngoài (Zalo, Firebase, SMS, Gemini/OCR), export file lớn, import hàng loạt, bất kỳ việc có thể fail/timeout mà không nên block response.
 
@@ -517,14 +486,14 @@ Không dùng Observer để **gửi** Notification (khó trace, khó test).
 - Job liên quan tenant nhận `organization_id` qua constructor — không dùng `auth()` trong background (không có session).
 - Job thất bại → log `failed_jobs`; có Listener nghe `JobFailed` để cảnh báo qua kênh nội bộ (Telegram/Zalo Danatec).
 
-## 5. Notification
+## C5. Notification
 
 - Chỉ gọi `Notification::send()` hoặc `$model->notify()` — KHÔNG inject `NotificationService` vào business Service.
 - Mỗi loại thông báo có `XxxNotificationTypeEnum` + Resolver class riêng (quyết định nội dung/template).
 - Custom Channel (`ZaloNotificationChannel`, `FcmChannel`) chỉ lo việc GỬI, không lo nội dung.
 - `via()` trả channel theo cấu hình tenant (đọc từ config tổ chức, không hardcode).
 
-## 6. Schedule (Cron)
+## C6. Schedule (Cron)
 
 **Dùng khi:** nhắc hạn hồ sơ, báo cáo định kỳ, dọn file tạm, đồng bộ ngoài, nhắc lịch công tác.
 
@@ -534,13 +503,13 @@ Không dùng Observer để **gửi** Notification (khó trace, khó test).
 - Cross-tenant: loop qua từng `organization_id`, dùng `withoutGlobalScope`.
 - Multi-server: thêm `->onOneServer()`.
 
-## 7. Horizon
+## C7. Horizon
 
 - Mỗi queue tier có 1 supervisor riêng trong `config/horizon.php` — không dùng 1 supervisor cho tất cả.
 - Production: `balance: auto`, `maxProcesses` theo tải thực tế (`danatecsvr01`).
 - Bật `horizon:snapshot` qua Schedule (mỗi 5 phút) để có metrics.
 
-## 8. Redis
+## C8. Redis
 
 - Driver: `predis/predis` (không cài phpredis extension).
 - 3 connection/database Redis riêng biệt (tránh xung đột key, dễ flush riêng từng loại):
@@ -549,7 +518,7 @@ Không dùng Observer để **gửi** Notification (khó trace, khó test).
     3. Broadcast/Reverb — `REDIS_BROADCAST_CONNECTION`
 - Lock (vd refresh token Zalo OA) dùng `Cache::lock()` — không tự implement lock tay.
 
-## 9. Reverb & Broadcast
+## C9. Reverb & Broadcast
 
 **Broadcast khi:** UI cần update realtime nhiều client (phòng họp, xếp hàng QR, presence "đang online").  
 Không broadcast cho mọi Event — chỉ khi có nhu cầu hiển thị tức thời trên UI.
@@ -562,6 +531,49 @@ Không broadcast cho mọi Event — chỉ khi có nhu cầu hiển thị tức 
 - Ưu tiên `ShouldBroadcastAfterCommit` (nếu trong transaction).
 - Authorization qua `routes/channels.php` dùng Policy — không check tay.
 - Payload chỉ gồm `id` + `type`, client tự gọi API lấy full data (tránh leak dữ liệu nhạy cảm qua WebSocket).
+
+---
+
+# D. Checklist review PR
+
+> Đây là **bản soi gương** rút gọn của B và C, đặt cuối file để đọc sau khi đã nắm quy tắc. Quy tắc gốc nằm ở mục được trỏ trong ngoặc; **mâu thuẫn thì mục gốc thắng** — và sửa được mâu thuẫn đó ngay, đừng để hai chỗ nói khác nhau.
+
+**Controller & Service (B4):**
+- [ ] Controller không chứa nghiệp vụ phức tạp — chỉ validate → gọi service → trả response.
+- [ ] Mỗi action có method tương ứng trong Service.
+- [ ] Luồng ghi nhiều bước đã bọc `DB::transaction()`; không lạm dụng cho read/single-write.
+- [ ] Luồng có thao tác file trong transaction có cleanup khi lỗi.
+- [ ] Upload media: module cũ qua `Core\Services\MediaService`; module mới có quan hệ cha — con theo `QUAN_HE_CHA_CON.md` — `addMedia()` **sau** commit, snapshot **trước** upload, tệp nhạy cảm trên disk `private`.
+- [ ] Resource thuộc tenant scope đúng `organization_id`, không cho cross-tenant.
+- [ ] Response format và HTTP status code đúng chuẩn (`RespondsWithJson`) — B6.
+- [ ] Có action `import` thì có kèm `import-template` (dùng `ImportTemplateExport`, permission dùng chung `.import`) — B7.
+- [ ] Import nhận đủ trường như Export/StoreRequest (chỉ bỏ mảng lồng nhau); `REQUIRED_KEYS` khớp field `required` trong `rules()`; file mẫu gắn dấu `*` cột bắt buộc, cột không bắt buộc để trần.
+- [ ] Mọi cột enum/boolean có `templateNotes()` (đủ giá trị, dùng `enumHint()`) + `templateOptions()` (giá trị thô), truyền vào `ImportTemplateExport` → file mẫu hiện dropdown/prompt (hoặc comment visible nếu enum dài), KHÔNG dùng comment ẩn.
+- [ ] Module có ≥1 Enum dùng cho FE dropdown → có `{module}-enums` endpoint (`EnumController`, B2), không gắn permission riêng.
+
+**Quan hệ cha — con (chỉ module mới, B5):**
+- [ ] Đã xác định dạng A/B/C/D/E và copy đúng khuôn ở `QUAN_HE_CHA_CON_VIDU.md`.
+- [ ] Bảng cha có `SoftDeletes` (bắt buộc khi con `onDelete('cascade')`); bảng con có `organization_id`, `created_by/updated_by`, `SoftDeletes`, index `(organization_id, parent_id)`.
+- [ ] Model con có `$touches = ['parent']`; `parent_id` và `organization_id` **không** nằm trong `$fillable`.
+- [ ] Media: snapshot trước upload, upload sau commit, xoá tệp cũ sau cùng; collection `singleFile()` **không** gọi trong transaction.
+- [ ] Bảng có unique + SoftDeletes → service có nhánh `withTrashed()` → `restore()`; bảng không có unique thì **không** thêm nhánh này.
+- [ ] `whereNotIn(...)->delete()` và `bulkDestroy` có `$parent->touch()` tay.
+- [ ] Có `save-full` thì nó gọi lại `Service::update()` của bản chính, không tự ghi; route tĩnh khai báo trước `/{id}`; `{id}` có `whereNumber()`.
+- [ ] Resource dòng con trả `parent_lock_version` và service đã eager load quan hệ cha (thiếu thì key biến mất khỏi response).
+- [ ] Eager load `creator.media`/`editor.media` (không phải `creator`/`editor`) — `FormatsUserSummary` gọi `getFirstMedia('avatars')` nên thiếu `.media` là N+1.
+- [ ] Khoá ngoại trỏ danh mục dùng `Rule::exists` có scope tenant + `whereNull('deleted_at')`.
+- [ ] Có đủ test bắt buộc (4 ca đính kèm, 3 ca `save-full`, 1 ca restore, 2 ca đa tổ chức) — xem `QUAN_HE_CHA_CON.md` §24.
+
+**Event-Driven (C):**
+- [ ] Service không gọi trực tiếp Notification/Mail/Broadcast — chỉ `event()` (C1).
+- [ ] Event ghi DB dùng `ShouldDispatchAfterCommit` — **trừ** `save-full` của quan hệ cha — con, nơi fire event tay ở cuối hàm sau khi ghi/xoá tệp xong (C2).
+- [ ] Job có `$tries`, `$backoff`, nhận `organization_id` qua constructor (C4).
+- [ ] Job/Listener nặng vào đúng queue tier (không dồn vào `default`).
+- [ ] Notification dùng Resolver + Enum, không hardcode nội dung (C5).
+- [ ] Schedule command đăng ký ở `routes/console.php`, có `withoutOverlapping` (C6).
+- [ ] Broadcast Event chỉ chứa ID, channel authorization qua Policy (C9).
+- [ ] Observer chỉ xử lý data integrity (kể cả chuẩn bị/ghi reminder rows), không **gửi** Notification (C3).
+- [ ] Cross-tenant Job/Command có `withoutGlobalScope('organization')` khi loop toàn bộ tenant.
 
 ---
 
