@@ -116,8 +116,10 @@ Chi tiết: [docs/api/beneficiary.md](../../api/beneficiary.md). Tóm tắt:
 | `/api/beneficiary-relationships` | như trên |
 | `/api/beneficiary-enums` | `index` — không `ensure.route.org`, không `permission:` |
 
-`save-full`, `import-template`, `reorder` và `dashboard` **dùng chung permission**
-`.store`/`.update`/`.import`/`.stats` — không tạo permission riêng.
+`save-full`, `import-template` và `reorder` **dùng chung permission**
+`.store`/`.update`/`.import` — không tạo permission riêng. Riêng **`dashboard` có permission
+riêng** `beneficiaries.dashboard`, TÁCH khỏi `beneficiaries.stats` (nghiệp vụ cấp quyền độc lập
+cho badge số liệu nhanh và trang thống kê đầy đủ).
 
 **`dashboard`** phục vụ trang thống kê (khác `stats` nhẹ dùng cho badge): một request trả
 `kpis` (6 chỉ số), `charts` (8 biểu đồ: giới tính, loại đối tượng, tổ dân phố Top 10 + Khác,

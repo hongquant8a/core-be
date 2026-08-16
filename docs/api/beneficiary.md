@@ -14,7 +14,8 @@ Response theo khuôn chung `RespondsWithJson`: `{ "success": bool, "message": st
 
 | Method | Route | Permission | Ghi chú |
 |---|---|---|---|
-| GET | `/stats` | `beneficiaries.stats` | |
+| GET | `/stats` | `beneficiaries.stats` | Số liệu nhẹ cho badge đầu màn danh sách |
+| GET | `/dashboard` | `beneficiaries.dashboard` | Trang thống kê: 6 KPI, 8 biểu đồ, 3 bảng (quyền RIÊNG, tách khỏi `.stats`) |
 | GET | `/` | `beneficiaries.index` | |
 | GET | `/{id}` | `beneficiaries.show` | Trả kèm 3 danh sách con |
 | POST | `/` | `beneficiaries.store` | Chỉ bản chính |

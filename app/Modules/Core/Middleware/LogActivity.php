@@ -194,6 +194,7 @@ class LogActivity
             'update' => 'Cập nhật',
             'destroy' => 'Xóa',
             'stats' => 'Xem thống kê',
+            'dashboard' => 'Xem trang thống kê',
             'tree' => 'Xem cây',
             'export' => 'Xuất dữ liệu',
             'import' => 'Nhập dữ liệu',

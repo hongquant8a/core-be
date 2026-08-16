@@ -52,8 +52,8 @@ class BeneficiaryController extends Controller
      * Dữ liệu trang thống kê (dashboard)
      *
      * Gộp trong một request cho trang thống kê: 6 chỉ số tổng (`kpis`), 8 biểu đồ (`charts`)
-     * và 3 bảng tổng hợp (`tables`). Khác `stats` (nhẹ, cho badge đầu màn danh sách) — dùng
-     * chung permission `beneficiaries.stats`, không tạo quyền riêng.
+     * và 3 bảng tổng hợp (`tables`). Khác `stats` (nhẹ, cho badge đầu màn danh sách) và có
+     * permission RIÊNG `beneficiaries.dashboard` — hai bên được cấp quyền độc lập.
      *
      * Biểu đồ: giới tính, loại đối tượng, tổ dân phố (Top 10 + Khác), nhóm tuổi, tháp tuổi ×
      * giới, tiến độ nhập hồ sơ 12 tháng, thân nhân theo mối quan hệ, chất lượng dữ liệu.

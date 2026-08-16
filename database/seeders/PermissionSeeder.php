@@ -206,7 +206,9 @@ class PermissionSeeder extends Seeder
             // Bảng chính KHÔNG có changeStatus/bulkUpdateStatus — hồ sơ người có công không
             // có trạng thái nghiệp vụ (CLAUDE.md B3 sau khi nới).
             'beneficiaries' => [
-                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                // 'stats' (badge nhẹ) và 'dashboard' (trang thống kê đầy đủ) là hai quyền
+                // TÁCH RIÊNG có chủ đích — nghiệp vụ cho phép cấp lẻ từng bên.
+                'stats', 'dashboard', 'index', 'show', 'store', 'update', 'destroy',
                 'bulkDestroy', 'export', 'import',
             ],
             // Ba sub-resource dùng bộ rút gọn 6 action của B5.
