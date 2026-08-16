@@ -60,6 +60,8 @@ Route::scopeBindings()->group(function () {
             ->whereNumber('typeRelation')->middleware('permission:beneficiary-type-relations.show,web');
         Route::post('/{typeRelation}', [BeneficiaryTypeRelationController::class, 'update'])   // _method=PUT
             ->whereNumber('typeRelation')->middleware('permission:beneficiary-type-relations.update,web');
+        Route::put('/{typeRelation}', [BeneficiaryTypeRelationController::class, 'update'])
+            ->whereNumber('typeRelation')->middleware('permission:beneficiary-type-relations.update,web');
         Route::delete('/{typeRelation}', [BeneficiaryTypeRelationController::class, 'destroy'])
             ->whereNumber('typeRelation')->middleware('permission:beneficiary-type-relations.destroy,web');
     });
@@ -91,6 +93,8 @@ Route::scopeBindings()->group(function () {
         Route::get('/{document}', [BeneficiaryDocumentController::class, 'show'])
             ->whereNumber('document')->middleware('permission:beneficiary-documents.show,web');
         Route::post('/{document}', [BeneficiaryDocumentController::class, 'update'])   // _method=PUT
+            ->whereNumber('document')->middleware('permission:beneficiary-documents.update,web');
+        Route::put('/{document}', [BeneficiaryDocumentController::class, 'update'])
             ->whereNumber('document')->middleware('permission:beneficiary-documents.update,web');
         Route::delete('/{document}', [BeneficiaryDocumentController::class, 'destroy'])
             ->whereNumber('document')->middleware('permission:beneficiary-documents.destroy,web');

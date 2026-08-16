@@ -93,18 +93,21 @@ class BeneficiaryCatalogService
         if ($trashed) {
             $trashed->restore();
             $trashed->update($attributes);
-
-            return $trashed;
+            $item = $trashed;
+        } else {
+            $item = $modelClass::create($attributes);
         }
 
-        return $modelClass::create($attributes);
+        // Load creator/editor để Resource trả created_by/updated_by — model tự gán 2 cột này
+        // khi creating, nhưng whenLoaded() trả null nếu quan hệ chưa được nạp (giống show()).
+        return $item->load(['creator.media', 'editor.media']);
     }
 
     public function update(Model $catalog, array $data): Model
     {
         $catalog->update(Arr::only($data, self::FILLABLE));
 
-        return $catalog;
+        return $catalog->load(['creator.media', 'editor.media']);
     }
 
     /**
