@@ -2,6 +2,7 @@
 
 namespace App\Modules\Beneficiary\Services;
 
+use App\Modules\Beneficiary\Enums\GenderEnum;
 use App\Modules\Beneficiary\Events\BeneficiaryProfileSaved;
 use App\Modules\Beneficiary\Models\Beneficiary;
 use App\Modules\Beneficiary\Models\BeneficiaryDocument;
@@ -82,6 +83,420 @@ class BeneficiaryService
                 ->selectRaw('t.name, COUNT(DISTINCT tr.beneficiary_id) as total')
                 ->groupBy('t.name')->pluck('total', 'name'),
         ];
+    }
+
+    /**
+     * Nhóm tuổi dùng cho biểu đồ phân bố và tháp tuổi × giới. Người có công phần lớn cao
+     * tuổi nên các rổ nghiêng về nhóm già; hồ sơ không biết năm sinh rơi vào 'Không rõ'.
+     *
+     * @var array<string, array{int, int}>
+     */
+    private const AGE_GROUPS = [
+        '0-29' => [0, 29],
+        '30-44' => [30, 44],
+        '45-59' => [45, 59],
+        '60-74' => [60, 74],
+        '75-89' => [75, 89],
+        '90+' => [90, 200],
+    ];
+
+    private const AGE_UNKNOWN = 'Không rõ';
+
+    /**
+     * Dữ liệu cho trang thống kê (dashboard) — 6 chỉ số tổng, 8 biểu đồ, 3 bảng tổng hợp.
+     *
+     * Gộp trong MỘT endpoint (`GET /beneficiaries/dashboard`) thay vì mỗi widget một route:
+     * FE mở trang gọi một lần. Khác `stats()` (nhẹ, cho badge đầu màn danh sách) ở chỗ nó
+     * trả trọn bộ cụm biểu đồ đã gán nhãn tiếng Việt, format `[{label, value}]` để FE render
+     * thẳng, không cần Resource.
+     *
+     * Nhận cùng bộ lọc của `FilterBeneficiaryRequest`: `from_date`, `to_date` (kỳ báo cáo,
+     * lọc theo `created_at`) và `residential_area_id` (xem riêng một tổ dân phố).
+     */
+    public function dashboard(array $filters = []): array
+    {
+        return [
+            'kpis' => $this->dashboardKpis($filters),
+            'charts' => [
+                'by_gender' => $this->chartByGender($filters),
+                'by_type' => $this->chartByType($filters),
+                'by_residential_area' => $this->chartByResidentialArea($filters),
+                'by_age_group' => $this->chartByAgeGroup($filters),
+                'age_gender_pyramid' => $this->chartAgeGenderPyramid($filters),
+                'created_trend_12m' => $this->chartCreatedTrend($filters),
+                'dependents_by_relationship' => $this->chartDependentsByRelationship($filters),
+                'data_quality' => $this->chartDataQuality($filters),
+            ],
+            'tables' => [
+                'area_type_matrix' => $this->tableAreaTypeMatrix($filters),
+                'type_summary' => $this->tableTypeSummary($filters),
+                'incomplete_profiles' => $this->tableIncompleteProfiles($filters),
+            ],
+        ];
+    }
+
+    // ----------------------------------------------------------------------
+    // Dashboard — chỉ số tổng (KPI)
+    // ----------------------------------------------------------------------
+
+    private function dashboardKpis(array $filters): array
+    {
+        $base = $this->dashboardBase($filters);
+
+        $total = (clone $base)->count();
+        $withCoordinates = (clone $base)
+            ->whereNotNull('latitude')->whereNotNull('longitude')->count();
+
+        return [
+            'total' => $total,
+            'new_in_30_days' => (clone $base)->where('created_at', '>=', now()->subDays(30))->count(),
+            'total_type_relations' => $this->childBase('beneficiary_type_relations', $filters)->count(),
+            'total_dependents' => $this->childBase('beneficiary_dependents', $filters)->count(),
+            // Làm tròn 1 chữ số; 0 hồ sơ thì tránh chia cho 0.
+            'with_coordinates_percent' => $total > 0 ? round($withCoordinates / $total * 100, 1) : 0.0,
+            'incomplete_count' => (clone $base)->where(fn ($q) => $q
+                ->whereNull('id_number')->orWhere('id_number', '')
+                ->orWhereNull('birth_year')
+                ->orWhereNull('latitude')->orWhereNull('longitude')
+            )->count(),
+        ];
+    }
+
+    // ----------------------------------------------------------------------
+    // Dashboard — 8 biểu đồ
+    // ----------------------------------------------------------------------
+
+    /** #1 Cơ cấu giới tính (donut). Null → "Chưa xác định". */
+    private function chartByGender(array $filters): array
+    {
+        $counts = $this->dashboardBase($filters)
+            ->selectRaw('gender, COUNT(*) as total')->groupBy('gender')
+            ->pluck('total', 'gender');
+
+        return $counts->map(fn ($total, $gender) => [
+            'label' => $this->genderLabel($gender === '' ? null : $gender),
+            'value' => (int) $total,
+        ])->values()->all();
+    }
+
+    /** #2 Cơ cấu theo loại đối tượng (cột ngang) — đếm DISTINCT hồ sơ vì n–n. */
+    private function chartByType(array $filters): array
+    {
+        return $this->typeRelationBase($filters)
+            ->join('beneficiary_types as t', 't.id', '=', 'tr.beneficiary_type_id')
+            ->selectRaw('t.name, COUNT(DISTINCT tr.beneficiary_id) as total')
+            ->groupBy('t.name')->orderByDesc('total')
+            ->get()
+            ->map(fn ($r) => ['label' => $r->name, 'value' => (int) $r->total])
+            ->all();
+    }
+
+    /** #3 Phân bố theo tổ dân phố (Top 10 + "Khác"). Hồ sơ chưa gán tổ → "Chưa phân tổ". */
+    private function chartByResidentialArea(array $filters): array
+    {
+        $rows = $this->dashboardBase($filters)
+            ->leftJoin('beneficiary_residential_areas as ra', 'ra.id', '=', 'beneficiaries.residential_area_id')
+            ->selectRaw("COALESCE(ra.name, 'Chưa phân tổ') as name, COUNT(*) as total")
+            ->groupBy('name')->orderByDesc('total')
+            ->get();
+
+        return $this->topNWithOther($rows->map(fn ($r) => [
+            'label' => $r->name, 'value' => (int) $r->total,
+        ])->all(), 10);
+    }
+
+    /** #4 Phân bố nhóm tuổi (cột). Bucket trong PHP để không phụ thuộc SQL từng loại DB. */
+    private function chartByAgeGroup(array $filters): array
+    {
+        $byYear = $this->dashboardBase($filters)
+            ->selectRaw('birth_year, COUNT(*) as total')->groupBy('birth_year')
+            ->pluck('total', 'birth_year');
+
+        $buckets = array_fill_keys([...array_keys(self::AGE_GROUPS), self::AGE_UNKNOWN], 0);
+        $currentYear = (int) now()->year;
+
+        foreach ($byYear as $year => $total) {
+            $group = $year ? $this->ageGroupOf($currentYear - (int) $year) : self::AGE_UNKNOWN;
+            $buckets[$group] += (int) $total;
+        }
+
+        return array_map(
+            fn ($label, $value) => ['label' => $label, 'value' => $value],
+            array_keys($buckets), array_values($buckets)
+        );
+    }
+
+    /** #5 Tháp tuổi × giới. Mỗi nhóm tuổi tách nam/nữ/khác/chưa rõ. */
+    private function chartAgeGenderPyramid(array $filters): array
+    {
+        $rows = $this->dashboardBase($filters)
+            ->selectRaw('birth_year, gender, COUNT(*) as total')
+            ->groupBy('birth_year', 'gender')->get();
+
+        $groups = [...array_keys(self::AGE_GROUPS), self::AGE_UNKNOWN];
+        $pyramid = [];
+        foreach ($groups as $g) {
+            $pyramid[$g] = ['age_group' => $g, 'male' => 0, 'female' => 0, 'other' => 0, 'unknown' => 0];
+        }
+
+        $currentYear = (int) now()->year;
+        foreach ($rows as $row) {
+            $group = $row->birth_year ? $this->ageGroupOf($currentYear - (int) $row->birth_year) : self::AGE_UNKNOWN;
+            $key = match ($row->gender) {
+                GenderEnum::Male->value => 'male',
+                GenderEnum::Female->value => 'female',
+                GenderEnum::Other->value => 'other',
+                default => 'unknown',
+            };
+            $pyramid[$group][$key] += (int) $row->total;
+        }
+
+        return array_values($pyramid);
+    }
+
+    /**
+     * #6 Tiến độ nhập hồ sơ 12 tháng gần nhất (đường).
+     *
+     * CỐ Ý bỏ qua `from_date`/`to_date`: biểu đồ luôn phủ 12 tháng gần nhất theo tên gọi.
+     * Chỉ tôn trọng `residential_area_id`. Lưu ý nghiệp vụ: đây là tiến độ NHẬP LIỆU của cán
+     * bộ (theo `created_at`), KHÔNG phải tăng/giảm số người có công thực tế — FE cần ghi nhãn.
+     */
+    private function chartCreatedTrend(array $filters): array
+    {
+        $since = now()->startOfMonth()->subMonths(11);
+
+        $counts = Beneficiary::query()
+            ->when($filters['residential_area_id'] ?? null, fn ($q, $id) => $q->where('residential_area_id', $id))
+            ->where('created_at', '>=', $since)
+            ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as ym, COUNT(*) as total")
+            ->groupBy('ym')->pluck('total', 'ym');
+
+        // Dựng đủ 12 mốc kể cả tháng không có hồ sơ nào (điền 0) để đường liền mạch.
+        $series = [];
+        for ($i = 0; $i < 12; $i++) {
+            $month = (clone $since)->addMonths($i);
+            $series[] = [
+                'label' => $month->format('m/Y'),
+                'value' => (int) ($counts[$month->format('Y-m')] ?? 0),
+            ];
+        }
+
+        return $series;
+    }
+
+    /** #7 Thân nhân theo mối quan hệ (donut). Thân nhân chưa gán quan hệ → "Chưa phân loại". */
+    private function chartDependentsByRelationship(array $filters): array
+    {
+        return $this->dependentBase($filters)
+            ->leftJoin('beneficiary_relationships as r', 'r.id', '=', 'd.relationship_id')
+            ->selectRaw("COALESCE(r.name, 'Chưa phân loại') as name, COUNT(*) as total")
+            ->groupBy('name')->orderByDesc('total')
+            ->get()
+            ->map(fn ($r) => ['label' => $r->name, 'value' => (int) $r->total])
+            ->all();
+    }
+
+    /** #8 Chất lượng dữ liệu (cột) — bốn chỉ số độc lập, một hồ sơ có thể thiếu nhiều thứ. */
+    private function chartDataQuality(array $filters): array
+    {
+        $base = $this->dashboardBase($filters);
+
+        return [
+            ['label' => 'Đủ toạ độ', 'value' => (clone $base)
+                ->whereNotNull('latitude')->whereNotNull('longitude')->count()],
+            ['label' => 'Thiếu toạ độ', 'value' => (clone $base)
+                ->where(fn ($q) => $q->whereNull('latitude')->orWhereNull('longitude'))->count()],
+            ['label' => 'Thiếu CCCD/CMND', 'value' => (clone $base)
+                ->where(fn ($q) => $q->whereNull('id_number')->orWhere('id_number', ''))->count()],
+            ['label' => 'Thiếu năm sinh', 'value' => (clone $base)->whereNull('birth_year')->count()],
+        ];
+    }
+
+    // ----------------------------------------------------------------------
+    // Dashboard — 3 bảng tổng hợp
+    // ----------------------------------------------------------------------
+
+    /**
+     * Bảng chéo Tổ dân phố × Loại đối tượng — báo cáo hành chính chuẩn.
+     * Trả `types` (tên cột) + `rows` (mỗi tổ một dòng, `counts` theo từng loại + `total`).
+     */
+    private function tableAreaTypeMatrix(array $filters): array
+    {
+        $rows = $this->typeRelationBase($filters)
+            ->join('beneficiary_types as t', 't.id', '=', 'tr.beneficiary_type_id')
+            ->leftJoin('beneficiary_residential_areas as ra', 'ra.id', '=', 'b.residential_area_id')
+            ->selectRaw("COALESCE(ra.name, 'Chưa phân tổ') as area, t.name as type, COUNT(DISTINCT tr.beneficiary_id) as total")
+            ->groupBy('area', 'type')->get();
+
+        $types = $rows->pluck('type')->unique()->sort()->values()->all();
+
+        $matrix = [];
+        foreach ($rows as $row) {
+            $matrix[$row->area] ??= ['area' => $row->area, 'counts' => array_fill_keys($types, 0), 'total' => 0];
+            $matrix[$row->area]['counts'][$row->type] = (int) $row->total;
+            $matrix[$row->area]['total'] += (int) $row->total;
+        }
+
+        // Tổ nhiều đối tượng nhất lên đầu.
+        $ordered = array_values($matrix);
+        usort($ordered, fn ($a, $b) => $b['total'] <=> $a['total']);
+
+        return ['types' => $types, 'rows' => $ordered];
+    }
+
+    /** Tổng hợp theo loại đối tượng: số lượng + tỉ lệ % trên tổng hồ sơ. */
+    private function tableTypeSummary(array $filters): array
+    {
+        $total = $this->dashboardBase($filters)->count();
+
+        return $this->typeRelationBase($filters)
+            ->join('beneficiary_types as t', 't.id', '=', 'tr.beneficiary_type_id')
+            ->selectRaw('t.name, COUNT(DISTINCT tr.beneficiary_id) as total')
+            ->groupBy('t.name')->orderByDesc('total')
+            ->get()
+            ->map(fn ($r) => [
+                'name' => $r->name,
+                'total' => (int) $r->total,
+                'percent' => $total > 0 ? round($r->total / $total * 100, 1) : 0.0,
+            ])->all();
+    }
+
+    /**
+     * Danh sách hồ sơ cần hoàn thiện (thiếu CCCD / năm sinh / toạ độ) — tối đa 50 dòng để cán
+     * bộ bắt tay hoàn thiện. Tổng số đầy đủ nằm ở KPI `incomplete_count`.
+     */
+    private function tableIncompleteProfiles(array $filters): array
+    {
+        return $this->dashboardBase($filters)
+            ->with('residentialArea:id,name')
+            ->where(fn ($q) => $q
+                ->whereNull('id_number')->orWhere('id_number', '')
+                ->orWhereNull('birth_year')
+                ->orWhereNull('latitude')->orWhereNull('longitude'))
+            ->orderByDesc('created_at')
+            ->limit(50)
+            ->get(['id', 'full_name', 'id_number', 'birth_year', 'residential_area_id', 'latitude', 'longitude', 'created_at'])
+            ->map(function (Beneficiary $b) {
+                $missing = [];
+                if (empty($b->id_number)) {
+                    $missing[] = 'CCCD/CMND';
+                }
+                if (empty($b->birth_year)) {
+                    $missing[] = 'Năm sinh';
+                }
+                if ($b->latitude === null || $b->longitude === null) {
+                    $missing[] = 'Toạ độ';
+                }
+
+                return [
+                    'id' => $b->id,
+                    'full_name' => $b->full_name,
+                    'residential_area' => $b->residentialArea?->name,
+                    'missing' => $missing,
+                ];
+            })->all();
+    }
+
+    // ----------------------------------------------------------------------
+    // Dashboard — helper dùng chung
+    // ----------------------------------------------------------------------
+
+    /** Query bảng chính đã áp bộ lọc dashboard (đi qua global scope tenant của TenantModel). */
+    private function dashboardBase(array $filters)
+    {
+        return $this->applyBeneficiaryFilters(Beneficiary::query(), $filters, 'beneficiaries');
+    }
+
+    /**
+     * Áp bộ lọc dashboard lên cột của bảng `beneficiaries` (hoặc alias `b` khi join từ bảng
+     * con). Dùng chung để logic lọc chỉ nằm một chỗ.
+     */
+    private function applyBeneficiaryFilters($query, array $filters, string $alias)
+    {
+        return $query
+            ->when($filters['from_date'] ?? null, fn ($q, $d) => $q->whereDate("$alias.created_at", '>=', $d))
+            ->when($filters['to_date'] ?? null, fn ($q, $d) => $q->whereDate("$alias.created_at", '<=', $d))
+            ->when($filters['residential_area_id'] ?? null, fn ($q, $id) => $q->where("$alias.residential_area_id", $id));
+    }
+
+    /**
+     * Query đếm dòng con (đối tượng/thân nhân) join sang `beneficiaries` đã lọc.
+     * Bảng con không có global scope trong ngữ cảnh raw nên tự scope tenant + loại bản ghi
+     * đã xoá mềm ở cả hai bảng — cùng khuôn với `stats()->by_type`.
+     */
+    private function childBase(string $childTable, array $filters)
+    {
+        return $this->applyBeneficiaryFilters(
+            DB::table("$childTable as c")
+                ->join('beneficiaries as b', 'b.id', '=', 'c.beneficiary_id')
+                ->whereNull('c.deleted_at')->whereNull('b.deleted_at')
+                ->where('b.organization_id', getPermissionsTeamId()),
+            $filters, 'b'
+        );
+    }
+
+    /** Như childBase nhưng alias cố định `tr` cho bảng đối tượng (dùng khi còn join tiếp). */
+    private function typeRelationBase(array $filters)
+    {
+        return $this->applyBeneficiaryFilters(
+            DB::table('beneficiary_type_relations as tr')
+                ->join('beneficiaries as b', 'b.id', '=', 'tr.beneficiary_id')
+                ->whereNull('tr.deleted_at')->whereNull('b.deleted_at')
+                ->where('b.organization_id', getPermissionsTeamId()),
+            $filters, 'b'
+        );
+    }
+
+    /** Như childBase nhưng alias cố định `d` cho bảng thân nhân. */
+    private function dependentBase(array $filters)
+    {
+        return $this->applyBeneficiaryFilters(
+            DB::table('beneficiary_dependents as d')
+                ->join('beneficiaries as b', 'b.id', '=', 'd.beneficiary_id')
+                ->whereNull('d.deleted_at')->whereNull('b.deleted_at')
+                ->where('b.organization_id', getPermissionsTeamId()),
+            $filters, 'b'
+        );
+    }
+
+    private function genderLabel(?string $gender): string
+    {
+        if ($gender === null) {
+            return 'Chưa xác định';
+        }
+
+        return GenderEnum::tryFrom($gender)?->label() ?? $gender;
+    }
+
+    private function ageGroupOf(int $age): string
+    {
+        foreach (self::AGE_GROUPS as $label => [$min, $max]) {
+            if ($age >= $min && $age <= $max) {
+                return $label;
+            }
+        }
+
+        // Tuổi âm (năm sinh > năm hiện tại do nhập sai) — gom vào nhóm trẻ nhất.
+        return array_key_first(self::AGE_GROUPS);
+    }
+
+    /**
+     * Giữ Top N mục lớn nhất, gộp phần còn lại vào "Khác" (giả định đầu vào đã sắp giảm dần).
+     *
+     * @param  array<int, array{label: string, value: int}>  $items
+     * @return array<int, array{label: string, value: int}>
+     */
+    private function topNWithOther(array $items, int $n): array
+    {
+        if (count($items) <= $n) {
+            return $items;
+        }
+
+        $top = array_slice($items, 0, $n);
+        $otherValue = array_sum(array_column(array_slice($items, $n), 'value'));
+        $top[] = ['label' => 'Khác', 'value' => $otherValue];
+
+        return $top;
     }
 
     public function index(array $filters = [], int $limit = 10): LengthAwarePaginator

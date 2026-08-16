@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\Route;
 // {beneficiary}="save-full" → model binding hỏng → 404 không giải thích được.
 Route::get('/stats', [BeneficiaryController::class, 'stats'])
     ->middleware('permission:beneficiaries.stats,web');
+// Dashboard dùng CHUNG permission .stats — cùng lý lẽ import-template: đều là dữ liệu tra
+// cứu tổng hợp của cùng một quyền xem thống kê, không tách quyền riêng.
+Route::get('/dashboard', [BeneficiaryController::class, 'dashboard'])
+    ->middleware('permission:beneficiaries.stats,web');
 Route::get('/export', [BeneficiaryController::class, 'export'])
     ->middleware('permission:beneficiaries.export,web');
 Route::post('/import', [BeneficiaryController::class, 'import'])

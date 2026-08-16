@@ -107,7 +107,7 @@ Chi tiết: [docs/api/beneficiary.md](../../api/beneficiary.md). Tóm tắt:
 
 | Prefix | Bộ action |
 |---|---|
-| `/api/beneficiaries` | `stats, index, show, store, update, destroy, bulkDestroy, export, import, importTemplate` **+ `save-full`** |
+| `/api/beneficiaries` | `stats, dashboard, index, show, store, update, destroy, bulkDestroy, export, import, importTemplate` **+ `save-full`** |
 | `/api/beneficiaries/{beneficiary}/type-relations` | 6 action (dạng D) |
 | `/api/beneficiaries/{beneficiary}/dependents` | 6 action (dạng B) |
 | `/api/beneficiaries/{beneficiary}/documents` | 6 action (dạng A) |
@@ -116,8 +116,15 @@ Chi tiết: [docs/api/beneficiary.md](../../api/beneficiary.md). Tóm tắt:
 | `/api/beneficiary-relationships` | như trên |
 | `/api/beneficiary-enums` | `index` — không `ensure.route.org`, không `permission:` |
 
-`save-full`, `import-template` và `reorder` **dùng chung permission** `.store`/`.update`/`.import`
-— không tạo permission riêng.
+`save-full`, `import-template`, `reorder` và `dashboard` **dùng chung permission**
+`.store`/`.update`/`.import`/`.stats` — không tạo permission riêng.
+
+**`dashboard`** phục vụ trang thống kê (khác `stats` nhẹ dùng cho badge): một request trả
+`kpis` (6 chỉ số), `charts` (8 biểu đồ: giới tính, loại đối tượng, tổ dân phố Top 10 + Khác,
+nhóm tuổi, tháp tuổi × giới, tiến độ nhập 12 tháng, thân nhân theo quan hệ, chất lượng dữ
+liệu) và `tables` (ma trận tổ × loại, tổng hợp theo loại, hồ sơ cần hoàn thiện). Lọc theo
+`from_date`/`to_date`/`residential_area_id`. Biểu đồ "tiến độ nhập" đếm theo `created_at`
+(thời điểm NHẬP LIỆU, không phải tăng/giảm đối tượng thực) và luôn phủ 12 tháng gần nhất.
 
 ---
 

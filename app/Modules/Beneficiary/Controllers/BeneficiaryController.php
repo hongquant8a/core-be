@@ -49,6 +49,31 @@ class BeneficiaryController extends Controller
     }
 
     /**
+     * Dữ liệu trang thống kê (dashboard)
+     *
+     * Gộp trong một request cho trang thống kê: 6 chỉ số tổng (`kpis`), 8 biểu đồ (`charts`)
+     * và 3 bảng tổng hợp (`tables`). Khác `stats` (nhẹ, cho badge đầu màn danh sách) — dùng
+     * chung permission `beneficiaries.stats`, không tạo quyền riêng.
+     *
+     * Biểu đồ: giới tính, loại đối tượng, tổ dân phố (Top 10 + Khác), nhóm tuổi, tháp tuổi ×
+     * giới, tiến độ nhập hồ sơ 12 tháng, thân nhân theo mối quan hệ, chất lượng dữ liệu.
+     * Bảng: ma trận tổ dân phố × loại đối tượng, tổng hợp theo loại, hồ sơ cần hoàn thiện.
+     *
+     * Lưu ý: biểu đồ "tiến độ nhập hồ sơ" đếm theo `created_at` (thời điểm nhập liệu), luôn
+     * phủ 12 tháng gần nhất và không chịu tác động của `from_date`/`to_date`.
+     *
+     * @queryParam from_date date Lọc từ ngày tạo. Example: 2026-01-01
+     * @queryParam to_date date Lọc đến ngày tạo. Example: 2026-12-31
+     * @queryParam residential_area_id integer Xem riêng một tổ dân phố/thôn. Example: 3
+     *
+     * @response 200 {"success": true, "data": {"kpis": {"total": 120, "new_in_30_days": 8, "total_type_relations": 140, "total_dependents": 210, "with_coordinates_percent": 83.3, "incomplete_count": 25}, "charts": {"by_gender": [{"label": "Nam", "value": 90}], "by_type": [{"label": "Thương binh", "value": 55}], "by_residential_area": [{"label": "Tổ dân phố 1", "value": 40}], "by_age_group": [{"label": "75-89", "value": 30}], "age_gender_pyramid": [{"age_group": "75-89", "male": 20, "female": 10, "other": 0, "unknown": 0}], "created_trend_12m": [{"label": "08/2026", "value": 8}], "dependents_by_relationship": [{"label": "Con", "value": 80}], "data_quality": [{"label": "Đủ toạ độ", "value": 100}]}, "tables": {"area_type_matrix": {"types": ["Thương binh"], "rows": [{"area": "Tổ dân phố 1", "counts": {"Thương binh": 20}, "total": 20}]}, "type_summary": [{"name": "Thương binh", "total": 55, "percent": 45.8}], "incomplete_profiles": [{"id": 12, "full_name": "Nguyễn Văn A", "residential_area": "Tổ dân phố 1", "missing": ["Toạ độ"]}]}}}
+     */
+    public function dashboard(FilterBeneficiaryRequest $request)
+    {
+        return $this->success($this->service->dashboard($request->validated()));
+    }
+
+    /**
      * Danh sách người có công
      *
      * @queryParam search string Tìm theo họ tên, CCCD/CMND hoặc số điện thoại.

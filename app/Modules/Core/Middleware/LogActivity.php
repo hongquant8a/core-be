@@ -130,6 +130,7 @@ class LogActivity
             'export' => 'Xuất dữ liệu',
             'import' => 'Nhập dữ liệu',
             'stats' => 'Xem thống kê',
+            'dashboard' => 'Xem trang thống kê',
             'public' => 'Xem dữ liệu công khai',
             'public-options' => 'Xem dữ liệu dropdown công khai',
             'bulk-delete' => 'Xóa hàng loạt',
