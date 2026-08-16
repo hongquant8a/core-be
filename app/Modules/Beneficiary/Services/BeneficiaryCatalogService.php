@@ -60,6 +60,10 @@ class BeneficiaryCatalogService
         $sortBy = $filters['sort_by'] ?? null;
 
         $query = $modelClass::query()
+            // creator.media/editor.media (không phải creator/editor): FormatsUserSummary gọi
+            // getFirstMedia('avatars') nên thiếu .media là N+1. Không nạp thì Resource trả
+            // created_by/updated_by = null vì dùng whenLoaded() — cùng lý do với show().
+            ->with(['creator.media', 'editor.media'])
             ->withCount(self::USAGE_RELATIONS[$modelClass])
             ->when($filters['search'] ?? null, fn ($q, $kw) => $q->where('name', 'like', "%{$kw}%"))
             ->when($filters['status'] ?? null, fn ($q, $s) => $q->where('status', $s))
