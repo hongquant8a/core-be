@@ -1,7 +1,7 @@
 # API — Module Người có công (v2)
 
 > Ngày tạo: 13:45:00 15/08/2026  
-> Cập nhật lần cuối: 13:45:00 15/08/2026
+> Cập nhật lần cuối: 16:42:12 16/08/2026 — bổ sung endpoint `dashboard` + permission riêng `beneficiaries.dashboard`
 
 Mọi endpoint nằm trong nhóm `auth:sanctum`. Trừ `/beneficiary-enums`, tất cả đều cần header
 `X-Organization-Id` **và** middleware `ensure.route.org`.
@@ -55,6 +55,43 @@ phân trang).
 
 Không đếm theo trạng thái. `without_coordinates` là con số cán bộ cần để biết còn bao nhiêu hồ
 sơ chưa chấm được lên bản đồ.
+
+`stats` là số liệu **nhẹ** cho badge đầu màn danh sách. Trang thống kê đầy đủ dùng `dashboard`
+bên dưới — permission **RIÊNG** `beneficiaries.dashboard`, KHÔNG dùng chung `.stats`.
+
+### `dashboard` trả gì
+
+Phục vụ trang thống kê: gộp trong một request. Nhận filter `from_date`, `to_date`,
+`residential_area_id`. Permission **riêng** `beneficiaries.dashboard`.
+
+```jsonc
+{
+  "kpis": {                        // 6 chỉ số tổng
+    "total": 120, "new_in_30_days": 8,
+    "total_type_relations": 140, "total_dependents": 210,
+    "with_coordinates_percent": 83.3, "incomplete_count": 25
+  },
+  "charts": {                      // 8 biểu đồ, format [{label, value}] trừ tháp tuổi
+    "by_gender": [ { "label": "Nam", "value": 90 } ],
+    "by_type": [ { "label": "Thương binh", "value": 55 } ],
+    "by_residential_area": [ { "label": "Tổ dân phố 1", "value": 40 } ],   // Top 10 + "Khác"
+    "by_age_group": [ { "label": "75-89", "value": 30 } ],                 // gồm rổ "Không rõ"
+    "age_gender_pyramid": [ { "age_group": "75-89", "male": 20, "female": 10, "other": 0, "unknown": 0 } ],
+    "created_trend_12m": [ { "label": "08/2026", "value": 8 } ],           // 12 mốc, theo created_at
+    "dependents_by_relationship": [ { "label": "Con", "value": 80 } ],
+    "data_quality": [ { "label": "Đủ toạ độ", "value": 100 } ]             // 4 chỉ số độc lập
+  },
+  "tables": {                      // 3 bảng tổng hợp
+    "area_type_matrix": { "types": ["Thương binh"], "rows": [ { "area": "Tổ dân phố 1", "counts": { "Thương binh": 20 }, "total": 20 } ] },
+    "type_summary": [ { "name": "Thương binh", "total": 55, "percent": 45.8 } ],
+    "incomplete_profiles": [ { "id": 12, "full_name": "Nguyễn Văn A", "residential_area": "Tổ dân phố 1", "missing": ["Toạ độ"] } ]
+  }
+}
+```
+
+Hướng dẫn FE dựng trang: [../changelogs/2026-08-16-beneficiary-dashboard-fe.md](../changelogs/2026-08-16-beneficiary-dashboard-fe.md).
+Biểu đồ `created_trend_12m` đếm theo `created_at` (tiến độ NHẬP LIỆU) và luôn phủ 12 tháng gần
+nhất, KHÔNG chịu tác động `from_date`/`to_date`.
 
 ### `show` trả gì
 
@@ -279,7 +316,7 @@ không phải lỗi trùng.
 ## 7. Danh sách permission
 
 ```
-beneficiaries.{stats,index,show,store,update,destroy,bulkDestroy,export,import}
+beneficiaries.{stats,dashboard,index,show,store,update,destroy,bulkDestroy,export,import}
 beneficiary-type-relations.{index,show,store,update,destroy,bulkDestroy}
 beneficiary-dependents.{index,show,store,update,destroy,bulkDestroy}
 beneficiary-documents.{index,show,store,update,destroy,bulkDestroy}
