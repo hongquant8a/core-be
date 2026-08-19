@@ -18,7 +18,9 @@ class UpdateItemRequest extends BaseRequest
     public function rules(): array
     {
         return [
-            'name' => 'sometimes|string|max:255',
+            // Xem chú thích ở StoreItemRequest: cột đã là TEXT, 20000 ký tự chỉ
+            // là chốt chặn để lỗi tràn trả về 422 thay vì 500.
+            'name' => 'sometimes|string|max:20000',
             'description' => 'sometimes|nullable|string',
             'task_assignment_item_type_id' => 'nullable|integer|exists:task_assignment_item_types,id',
             'deadline_type' => ['sometimes', TaskDeadlineTypeEnum::rule()],

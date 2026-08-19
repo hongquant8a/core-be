@@ -19,7 +19,11 @@ class StoreItemRequest extends BaseRequest
     {
         return [
             'task_assignment_document_id' => 'required|integer|exists:task_assignment_documents,id',
-            'name' => 'required|string|max:255',
+            // Cột `name` đã đổi sang TEXT (~65535 byte). `max` ở đây đếm KÝ TỰ,
+            // mà tiếng Việt có dấu tốn tới 3 byte/ký tự → chốt 20000 để 3 byte
+            // vẫn nằm dưới trần TEXT. Mục đích chỉ là trả 422 sạch thay vì để
+            // MySQL strict mode ném SQLSTATE 22001 thành lỗi 500.
+            'name' => 'required|string|max:20000',
             'description' => 'nullable|string|max:65535',
             'task_assignment_item_type_id' => 'nullable|integer|exists:task_assignment_item_types,id',
             'deadline_type' => ['required', TaskDeadlineTypeEnum::rule()],
