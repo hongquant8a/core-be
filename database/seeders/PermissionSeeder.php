@@ -22,6 +22,20 @@ class PermissionSeeder extends Seeder
     protected const GUARD = 'web';
 
     /**
+     * 6 tài khoản đơn vị Đảng — dùng chung cho phân hệ Quản lý công việc.
+     * user_name là chữ cái đầu của tên đơn vị, mật khẩu 123123, vai trò Trưởng phòng.
+     * TaskAssignmentDataSeeder dùng key 'department' để gắn user vào đúng đơn vị.
+     */
+    public const PARTY_UNIT_ACCOUNTS = [
+        ['user_name' => 'vpdu',   'email' => 'vpdu@example.com',   'name' => 'Văn phòng Đảng uỷ',  'department' => 'Văn phòng Đảng uỷ'],
+        ['user_name' => 'bxdd',   'email' => 'bxdd@example.com',   'name' => 'Ban Xây dựng Đảng',  'department' => 'Ban Xây dựng Đảng'],
+        ['user_name' => 'ubkt',   'email' => 'ubkt@example.com',   'name' => 'Uỷ ban Kiểm tra',    'department' => 'Uỷ ban Kiểm tra'],
+        ['user_name' => 'duubnd', 'email' => 'duubnd@example.com', 'name' => 'Đảng uỷ UBND',       'department' => 'Đảng uỷ UBND'],
+        ['user_name' => 'duca',   'email' => 'duca@example.com',   'name' => 'Đảng uỷ Công an',    'department' => 'Đảng uỷ Công an'],
+        ['user_name' => 'cuqs',   'email' => 'cuqs@example.com',   'name' => 'Chi uỷ Quân sự',     'department' => 'Chi uỷ Quân sự'],
+    ];
+
+    /**
      * Danh sách đầy đủ permission theo nhóm module (Core, TaskAssignment, Meeting, Scheduling).
      * Định dạng: 'Module' => ['resource' => ['action', ...]] — resource trùng prefix API.
      * Khi thêm module/chức năng: bổ sung vào đúng nhóm và chạy sail artisan db:seed --class=PermissionSeeder.
@@ -595,6 +609,32 @@ class PermissionSeeder extends Seeder
 
             if ($userData['role']) {
                 $user->syncRoles([$userData['role']]);
+            }
+        }
+
+        // 6 tài khoản đơn vị Đảng — mật khẩu 123123, vai trò Trưởng phòng.
+        foreach (self::PARTY_UNIT_ACCOUNTS as $userData) {
+            $user = User::where('user_name', $userData['user_name'])
+                ->orWhere('email', $userData['email'])
+                ->first();
+
+            if (! $user) {
+                $user = User::create([
+                    'email' => $userData['email'],
+                    'user_name' => $userData['user_name'],
+                    'name' => $userData['name'],
+                    'password' => '123123',
+                    'status' => StatusEnum::Active->value,
+                    'email_verified_at' => now(),
+                ]);
+            }
+            $user->forceFill([
+                'created_by' => $superAdminUser->id,
+                'updated_by' => $superAdminUser->id,
+            ])->save();
+
+            if ($truongPhongRole) {
+                $user->syncRoles([$truongPhongRole]);
             }
         }
 
