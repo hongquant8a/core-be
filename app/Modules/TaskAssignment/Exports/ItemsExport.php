@@ -18,12 +18,17 @@ class ItemsExport extends AbstractExcelExport implements FromCollection
 
     public function collection()
     {
-        $items = TaskAssignmentItem::with(['document', 'itemType', 'users', 'creator', 'editor', 'reporter', 'approver'])
+        $items = TaskAssignmentItem::with(['document', 'itemType', 'users.taskAssignmentUser.department', 'creator', 'editor', 'reporter', 'approver'])
             ->filter($this->filters)
             ->orderByDesc('id')
             ->get();
 
-        $deptIds = $items->flatMap(fn ($item) => $item->users->pluck('pivot.department_id'))->unique();
+        $deptIds = $items->flatMap(function ($item) {
+            return $item->users->map(function ($user) {
+                return $user->pivot->department_id ?? $user->taskAssignmentUser?->task_assignment_department_id;
+            });
+        })->filter()->unique();
+
         $depts = \App\Modules\TaskAssignment\Models\TaskAssignmentDepartment::whereIn('id', $deptIds)->pluck('name', 'id');
 
         return $items->values()->map(fn ($item, $i) => [
@@ -43,7 +48,16 @@ class ItemsExport extends AbstractExcelExport implements FromCollection
                 'priority' => TaskPriorityEnum::tryFrom((string) $item->priority)?->label() ?? $item->priority,
                 'completed_at' => $item->completed_at?->format('H:i:s d/m/Y'),
                 'approved_by' => $item->approver?->name ?? 'N/A',
-                'departments' => $item->users->pluck('pivot.department_id')->unique()->map(fn ($id) => $depts->get($id))->filter()->join(', '),
+                'departments' => $item->users
+                    ->filter(fn ($u) => $u->pivot->assignment_status !== 'transferred')
+                    ->map(function ($user) use ($depts) {
+                        $deptId = $user->pivot->department_id ?? $user->taskAssignmentUser?->task_assignment_department_id;
+
+                        return $deptId ? ($depts->get((int) $deptId) ?? $depts->get((string) $deptId)) : null;
+                    })
+                    ->filter()
+                    ->unique()
+                    ->join(', ') ?: 'N/A',
                 'created_by' => $item->creator?->name ?? 'N/A',
                 'updated_by' => $item->editor?->name ?? 'N/A',
                 'created_at' => $item->created_at?->format('H:i:s d/m/Y'),

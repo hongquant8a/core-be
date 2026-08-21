@@ -39,7 +39,6 @@ class SyncTaskPermissionsCommand extends Command
         $organizations = Organization::all();
         $assignedTaskPermissions = [
             'my-assigned-tasks.index',
-            'my-assigned-tasks.show',
             'my-assigned-tasks.pause',
             'my-assigned-tasks.cancel',
             'my-assigned-tasks.transfer',
@@ -50,7 +49,6 @@ class SyncTaskPermissionsCommand extends Command
 
         $receivedTaskPermissions = [
             'my-received-tasks.index',
-            'my-received-tasks.show',
             'my-received-tasks.updateProgress',
             'my-received-tasks.report',
             'my-received-tasks.note',
@@ -73,13 +71,13 @@ class SyncTaskPermissionsCommand extends Command
 
                 // Kiểm tra nếu role có quyền xem Công việc đang giao hoặc từng có quyền pause cũ
                 if (in_array('my-assigned-tasks.index', $rolePermissionNames) || in_array('task-assignment-items.pause', $rolePermissionNames)) {
-                    $role->givePermissionTo($assignedTaskPermissions);
+                    $role->givePermissionTo($this->existingPermissions($assignedTaskPermissions));
                     $rolesCount++;
                 }
 
                 // Kiểm tra nếu role có quyền xem Công việc được giao hoặc từng có quyền updateProgress cũ
                 if (in_array('my-received-tasks.index', $rolePermissionNames) || in_array('task-assignment-items.updateProgress', $rolePermissionNames)) {
-                    $role->givePermissionTo($receivedTaskPermissions);
+                    $role->givePermissionTo($this->existingPermissions($receivedTaskPermissions));
                     $rolesCount++;
                 }
             }
@@ -96,5 +94,18 @@ class SyncTaskPermissionsCommand extends Command
         $this->info('=== HOÀN THÀNH VÁ PERMISSION PRODUCTION THÀNH CÔNG ===');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Lọc lấy các permission còn tồn tại trong DB.
+     * Bộ quyền chuẩn có thể bị gộp/bỏ ở lần refactor sau (xem permissions:migrate-task-tree),
+     * nên phải lọc để givePermissionTo không ném PermissionDoesNotExist khi chạy lại migration.
+     */
+    protected function existingPermissions(array $names): array
+    {
+        return Permission::whereIn('name', $names)
+            ->where('guard_name', 'web')
+            ->pluck('name')
+            ->all();
     }
 }

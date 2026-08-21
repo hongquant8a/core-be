@@ -73,46 +73,44 @@ class PermissionSeeder extends Seeder
                 'index', 'store', 'update', 'destroy', 'variables',
             ],
         ],
+        // TaskAssignment — thứ tự resource theo đúng sidebar core-fe.
         'TaskAssignment' => [
-            'task-assignment-departments' => [
-                'stats', 'index', 'show', 'store', 'update', 'destroy',
-                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
-                'users', 'syncUsers', 'removeUser',
+            'task-overview' => [
+                'index', 'exportMonthlyReport',
             ],
-            'task-assignment-employees' => [
-                'stats', 'index', 'show', 'store', 'update', 'destroy',
-                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
-            ],
-            'task-assignment-types' => [
-                'stats', 'index', 'show', 'store', 'update', 'destroy',
-                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
-            ],
-            'task-assignment-item-types' => [
-                'stats', 'index', 'show', 'store', 'update', 'destroy',
-                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
-            ],
+            // Công việc chỉ được tạo/sửa/xóa trong màn Văn bản giao việc (core-fe chặn
+            // giao đột xuất ngoài luồng) → 3 action *Item nằm cùng nhóm văn bản.
             'task-assignment-documents' => [
-                'stats', 'statsByTime', 'index', 'show', 'store', 'update', 'destroy',
-                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
+                'index', 'store', 'update', 'destroy',
+                'bulkDestroy', 'bulkUpdateStatus', 'export',
+                'storeItem', 'updateItem', 'destroyItem',
+            ],
+            'my-assigned-tasks' => [
+                'index', 'export', 'pause', 'cancel', 'transfer', 'markDone', 'changeStatus', 'note',
+            ],
+            'my-received-tasks' => [
+                'index', 'export', 'updateProgress', 'report', 'note', 'transfer',
             ],
             'presentation' => [
                 'index',
             ],
-            'task-assignment-items' => [
-                'stats', 'index', 'show', 'store', 'update', 'destroy',
-                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
-                'statsByDepartment', 'statsByUser', 'statsByTime', 'overdue', 'upcomingDeadline',
-                'statsByItemType', 'statsByDocument', 'exportMonthlyReport',
-            ],
             'task-assignment-petitions' => [
-                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'index', 'show', 'store', 'update', 'destroy',
                 'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'manage',
             ],
-            'my-received-tasks' => [
-                'index', 'show', 'updateProgress', 'report', 'note', 'transfer',
+            'task-assignment-types' => [
+                'index', 'store', 'update', 'destroy', 'export', 'import',
             ],
-            'my-assigned-tasks' => [
-                'index', 'show', 'pause', 'cancel', 'transfer', 'markDone', 'changeStatus', 'note',
+            'task-assignment-item-types' => [
+                'index', 'store', 'update', 'destroy', 'export', 'import',
+            ],
+            'task-assignment-departments' => [
+                'index', 'store', 'update', 'destroy', 'export', 'import',
+                'users', 'syncUsers', 'removeUser',
+            ],
+            'task-assignment-employees' => [
+                'index', 'stats', 'store', 'update', 'destroy', 'export', 'import',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus',
             ],
         ],
         'Meeting' => [
@@ -189,6 +187,41 @@ class PermissionSeeder extends Seeder
         ],
     ];
 
+    /**
+     * Permission đã bị gộp/bỏ khi refactor cây theo nav — xóa khỏi DB mỗi lần seed.
+     * Quy tắc gộp: `.show`/`.stats` → `.index`; `.bulkDestroy` → `.destroy`;
+     * `.bulkUpdateStatus`/`.changeStatus` → `.update`; thống kê dashboard → `task-overview.index`.
+     */
+    protected static array $REMOVED_PERMISSIONS = [
+        // Nhóm task-assignment-items bị bỏ hẳn: CRUD công việc về Văn bản giao việc,
+        // thao tác riêng về 2 màn cá nhân, thống kê về task-overview.
+        'task-assignment-items' => [
+            'index', 'show', 'store', 'update', 'destroy', 'export',
+            'stats', 'changeStatus', 'bulkDestroy', 'bulkUpdateStatus',
+            'pause', 'cancel', 'updateProgress', 'markDone',
+            'statsByDepartment', 'statsByUser', 'statsByTime', 'overdue', 'upcomingDeadline',
+            'statsByItemType', 'statsByDocument', 'exportMonthlyReport',
+        ],
+        'task-assignment-documents' => ['stats', 'statsByTime', 'show', 'changeStatus'],
+        'task-assignment-departments' => ['stats', 'show', 'bulkDestroy', 'bulkUpdateStatus', 'changeStatus'],
+        'task-assignment-employees' => ['show'],
+        'task-assignment-types' => ['stats', 'show', 'bulkDestroy', 'bulkUpdateStatus', 'changeStatus'],
+        'task-assignment-item-types' => ['stats', 'show', 'bulkDestroy', 'bulkUpdateStatus', 'changeStatus'],
+        'task-assignment-petitions' => ['stats'],
+        'my-assigned-tasks' => ['show'],
+        'my-received-tasks' => ['show'],
+    ];
+
+    /** Nhóm (tầng group) không còn dùng — xóa để cây không còn nhánh rỗng. */
+    protected static array $REMOVED_GROUPS = [
+        'section:task-tracking',
+        'section:task-catalog',
+        'group:task-assignment-items',
+        'group:task-assignment-item-reports',
+        'group:task-assignment-item-transfers',
+        'group:task-assignment-item-notes',
+    ];
+
     /** Trả về danh sách permission dạng phẳng [resource => actions] từ cấu trúc module. */
     private static function getFlatPermissions(): array
     {
@@ -249,14 +282,14 @@ class PermissionSeeder extends Seeder
         'log-activities' => 'Nhật ký truy cập',
         'settings' => 'Cấu hình hệ thống',
         'sso-settings' => 'Cấu hình SSO',
-        'task-assignment-departments' => 'Phòng ban giao việc',
-        'task-assignment-employees' => 'Nhân viên giao việc',
-        'task-assignment-types' => 'Loại văn bản giao việc',
-        'task-assignment-item-types' => 'Loại công việc',
+        'task-assignment-departments' => 'Danh mục phòng ban',
+        'task-assignment-employees' => 'Danh mục nhân viên',
+        'task-assignment-types' => 'Danh mục loại văn bản',
+        'task-assignment-item-types' => 'Danh mục loại công việc',
         'task-assignment-documents' => 'Văn bản giao việc',
-        'task-assignment-items' => 'Công việc',
-        'task-assignment-petitions' => 'Đơn thư',
-        'presentation' => 'Trình chiếu tổng quan công việc',
+        'task-overview' => 'Tổng quan công việc',
+        'task-assignment-petitions' => 'Quản lý đơn thư',
+        'presentation' => 'Trình diễn công việc',
         'dashboard' => 'Tổng quan',
         'notifications' => 'Thông báo',
         'notifications.event-configs' => 'Cấu hình sự kiện thông báo',
@@ -266,22 +299,22 @@ class PermissionSeeder extends Seeder
         'my-received-tasks' => 'Công việc được giao',
         'my-assigned-tasks' => 'Công việc đang giao',
         'meetings' => 'Cuộc họp',
-        'meeting-types' => 'Loại cuộc họp',
-        'meeting-locations' => 'Địa điểm họp',
-        'meeting-document-types' => 'Loại tài liệu họp',
-        'meeting-attendee-groups' => 'Nhóm đại biểu họp',
-        'meeting-attendees' => 'Đại biểu họp',
+        'meeting-types' => 'Danh mục loại cuộc họp',
+        'meeting-locations' => 'Danh mục địa điểm họp',
+        'meeting-document-types' => 'Danh mục loại tài liệu họp',
+        'meeting-attendee-groups' => 'Danh mục nhóm đại biểu họp',
+        'meeting-attendees' => 'Danh mục đại biểu họp',
         'meeting-agendas' => 'Chương trình họp',
         'meeting-documents' => 'Tài liệu họp',
         'meeting-participants' => 'Người tham dự họp',
         'meeting-vote-topics' => 'Chương trình biểu quyết',
-        'meeting-minutes-templates' => 'Template biên bản họp',
-        'meeting-invitation-templates' => 'Template giấy mời họp',
+        'meeting-minutes-templates' => 'Danh mục template biên bản họp',
+        'meeting-invitation-templates' => 'Danh mục template giấy mời họp',
         'meeting-settings' => 'Cấu hình cuộc họp',
         'schedules-executive' => 'Lịch công tác - Thường trực',
         'schedules-office'    => 'Lịch công tác - Văn phòng',
-        'scheduling-employees' => 'Nhân viên lịch công tác',
-        'scheduling-employee-groups' => 'Nhóm nhân viên lịch công tác',
+        'scheduling-employees' => 'Danh mục nhân viên lịch công tác',
+        'scheduling-employee-groups' => 'Danh mục nhóm nhân viên lịch công tác',
         'scheduling-settings' => 'Cấu hình lịch công tác',
     ];
 
@@ -304,14 +337,10 @@ class PermissionSeeder extends Seeder
         'destroyAll' => 'Xóa toàn bộ',
         'updateProgress' => 'Cập nhật tiến độ',
         'markDone' => 'Đánh dấu hoàn thành',
-        'statsByDepartment' => 'Thống kê theo phòng ban',
-        'statsByUser' => 'Thống kê theo người dùng',
-        'statsByTime' => 'Thống kê theo thời gian',
-        'overdue' => 'Danh sách quá hạn',
-        'upcomingDeadline' => 'Danh sách sắp đến hạn',
-        'statsByItemType' => 'Thống kê theo loại công việc',
-        'statsByDocument' => 'Thống kê theo văn bản giao việc',
         'exportMonthlyReport' => 'Xuất báo cáo giao ban tháng',
+        'storeItem' => 'Thêm công việc',
+        'updateItem' => 'Sửa công việc',
+        'destroyItem' => 'Xóa công việc',
         'exportReports' => 'Xuất báo cáo tổng hợp cuộc họp',
         'users' => 'Danh sách người dùng',
         'syncUsers' => 'Đồng bộ người dùng',
@@ -338,56 +367,62 @@ class PermissionSeeder extends Seeder
      * Cây 3 tầng: module → group:resource → resource.action. */
     protected function seedPermissions(): void
     {
-        // Dọn dẹp các permission và group dư thừa đã được chuyển sang my-assigned-tasks / my-received-tasks
-        $obsoletePermissions = [
-            'task-assignment-items.pause',
-            'task-assignment-items.cancel',
-            'task-assignment-items.updateProgress',
-            'task-assignment-items.markDone',
-            'group:task-assignment-item-reports',
-            'group:task-assignment-item-transfers',
-            'group:task-assignment-item-notes',
-        ];
-        Permission::whereIn('name', $obsoletePermissions)
-            ->orWhere('name', 'like', 'task-assignment-item-reports.%')
-            ->orWhere('name', 'like', 'task-assignment-item-transfers.%')
-            ->orWhere('name', 'like', 'task-assignment-item-notes.%')
-            ->delete();
+        $this->deleteRemovedPermissions();
 
         $sortOrder = 0;
 
         foreach (self::$PERMISSIONS as $module => $resources) {
-            // Tầng 1: nhóm module (Hệ thống, Giao việc, Cuộc họp, Lịch công tác)
-            $moduleGroupName = "module:{$module}";
-            $moduleLabel = self::$MODULE_LABELS[$module] ?? $module;
+            // Tầng 1: nhóm module (Hệ thống, Quản lý công việc, Phòng họp, Lịch công tác)
             $moduleGroup = Permission::updateOrCreate(
-                ['name' => $moduleGroupName, 'guard_name' => self::GUARD],
-                ['description' => $moduleLabel, 'sort_order' => $sortOrder++, 'parent_id' => null]
+                ['name' => "module:{$module}", 'guard_name' => self::GUARD],
+                [
+                    'description' => self::$MODULE_LABELS[$module] ?? $module,
+                    'sort_order' => $sortOrder++,
+                    'parent_id' => null,
+                ]
             );
 
             foreach ($resources as $resource => $actions) {
                 // Tầng 2: nhóm resource (group:users, group:roles, ...)
-                $groupName = "group:{$resource}";
                 $groupLabel = self::$RESOURCE_LABELS[$resource] ?? ucfirst($resource);
                 $group = Permission::updateOrCreate(
-                    ['name' => $groupName, 'guard_name' => self::GUARD],
+                    ['name' => "group:{$resource}", 'guard_name' => self::GUARD],
                     ['description' => $groupLabel, 'sort_order' => $sortOrder++, 'parent_id' => $moduleGroup->id]
                 );
 
                 // Tầng 3: action (users.stats, users.index, ...)
                 foreach ($actions as $idx => $action) {
-                    $name = "{$resource}.{$action}";
-                    $actionLabel = self::$ACTION_LABELS[$action] ?? $action;
-                    $desc = ($groupLabel ?? '').' - '.$actionLabel;
                     Permission::updateOrCreate(
-                        ['name' => $name, 'guard_name' => self::GUARD],
-                        ['description' => $desc, 'sort_order' => $idx, 'parent_id' => $group->id]
+                        ['name' => "{$resource}.{$action}", 'guard_name' => self::GUARD],
+                        [
+                            'description' => $groupLabel.' - '.(self::$ACTION_LABELS[$action] ?? $action),
+                            'sort_order' => $idx,
+                            'parent_id' => $group->id,
+                        ]
                     );
                 }
             }
         }
 
         app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+    }
+
+    /** Xóa permission đã gộp/bỏ — FK cascade tự gỡ khỏi mọi role đang giữ chúng. */
+    protected function deleteRemovedPermissions(): void
+    {
+        $names = [];
+        foreach (self::$REMOVED_PERMISSIONS as $resource => $actions) {
+            foreach ($actions as $action) {
+                $names[] = "{$resource}.{$action}";
+            }
+        }
+
+        Permission::whereIn('name', $names)
+            ->orWhereIn('name', self::$REMOVED_GROUPS)
+            ->orWhere('name', 'like', 'task-assignment-item-reports.%')
+            ->orWhere('name', 'like', 'task-assignment-item-transfers.%')
+            ->orWhere('name', 'like', 'task-assignment-item-notes.%')
+            ->delete();
     }
 
     /** Tạo các role mặc định. */
@@ -640,20 +675,15 @@ class PermissionSeeder extends Seeder
             }
         }
 
-        // Xem + thống kê + export văn bản và công việc
-        foreach (['task-assignment-documents', 'task-assignment-items'] as $resource) {
-            foreach (['stats', 'index', 'show', 'export'] as $action) {
-                $names[] = "{$resource}.{$action}";
-            }
+        // Xem + export văn bản giao việc
+        foreach (['index', 'export'] as $action) {
+            $names[] = "task-assignment-documents.{$action}";
         }
 
-        // Thống kê nâng cao (giai đoạn 2)
-        foreach (['statsByDepartment', 'statsByUser', 'statsByTime', 'overdue', 'upcomingDeadline', 'statsByItemType', 'statsByDocument', 'exportMonthlyReport'] as $action) {
-            $names[] = "task-assignment-items.{$action}";
+        // Trang Tổng quan công việc (gộp toàn bộ thống kê dashboard)
+        foreach ($flat['task-overview'] as $action) {
+            $names[] = "task-overview.{$action}";
         }
-
-        // Thống kê văn bản theo thời gian
-        $names[] = 'task-assignment-documents.statsByTime';
 
         // Đơn thư — full quyền
         foreach ($flat['task-assignment-petitions'] as $action) {
@@ -676,36 +706,20 @@ class PermissionSeeder extends Seeder
     protected function getTruongPhongPermissionNames(): array
     {
         return [
-            // Văn bản giao việc
-            'task-assignment-documents.stats',
+            // Văn bản giao việc (kèm quyền thêm/sửa công việc bên trong văn bản)
             'task-assignment-documents.index',
-            'task-assignment-documents.show',
             'task-assignment-documents.store',
             'task-assignment-documents.update',
-            'task-assignment-documents.changeStatus',
+            'task-assignment-documents.storeItem',
+            'task-assignment-documents.updateItem',
 
-            // Công việc
-            'task-assignment-items.stats',
-            'task-assignment-items.index',
-            'task-assignment-items.show',
-            'task-assignment-items.store',
-            'task-assignment-items.update',
-            'task-assignment-items.changeStatus',
-
-            // Thống kê nâng cao (giai đoạn 2) - BE ép department_id phòng mình
-            'task-assignment-items.statsByDepartment',
-            'task-assignment-items.statsByUser',
-            'task-assignment-items.statsByTime',
-            'task-assignment-items.overdue',
-            'task-assignment-items.upcomingDeadline',
-            'task-assignment-items.statsByItemType',
-            'task-assignment-items.statsByDocument',
-            'task-assignment-items.exportMonthlyReport',
-            'task-assignment-documents.statsByTime',
+            // Tổng quan công việc - BE ép department_id phòng mình
+            'task-overview.index',
+            'task-overview.exportMonthlyReport',
 
             // Công việc đang giao (full quyền người giao việc)
             'my-assigned-tasks.index',
-            'my-assigned-tasks.show',
+            'my-assigned-tasks.export',
             'my-assigned-tasks.pause',
             'my-assigned-tasks.cancel',
             'my-assigned-tasks.transfer',
@@ -715,7 +729,7 @@ class PermissionSeeder extends Seeder
 
             // Công việc được giao
             'my-received-tasks.index',
-            'my-received-tasks.show',
+            'my-received-tasks.export',
             'my-received-tasks.updateProgress',
             'my-received-tasks.report',
             'my-received-tasks.note',
@@ -730,20 +744,8 @@ class PermissionSeeder extends Seeder
     protected function getNhanVienPermissionNames(): array
     {
         return [
-            // Công việc
-            'task-assignment-items.stats',
-            'task-assignment-items.index',
-            'task-assignment-items.show',
-            'task-assignment-items.update',
-            'task-assignment-items.changeStatus',
-
-            // Quá hạn + sắp đến hạn (giai đoạn 2) - BE ép department_id phòng mình
-            'task-assignment-items.overdue',
-            'task-assignment-items.upcomingDeadline',
-
             // Công việc được giao (full quyền người thực hiện)
             'my-received-tasks.index',
-            'my-received-tasks.show',
             'my-received-tasks.updateProgress',
             'my-received-tasks.report',
             'my-received-tasks.note',

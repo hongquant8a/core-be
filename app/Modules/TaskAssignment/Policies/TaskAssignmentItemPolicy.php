@@ -22,53 +22,54 @@ class TaskAssignmentItemPolicy
     }
 
     /**
-     * Xem danh sách — bất kỳ user có quyền index.
+     * Xem danh sách — bất kỳ màn nào có hiển thị công việc:
+     * Văn bản giao việc (chi tiết văn bản), Đang giao, Được giao, Tổng quan, Trình diễn.
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasPermissionTo('task-assignment-items.index')
+        return $user->hasPermissionTo('task-assignment-documents.index')
             || $user->hasPermissionTo('my-assigned-tasks.index')
-            || $user->hasPermissionTo('my-received-tasks.index');
+            || $user->hasPermissionTo('my-received-tasks.index')
+            || $user->hasPermissionTo('task-overview.index')
+            || $user->hasPermissionTo('presentation.index');
     }
 
     /**
-     * Xem chi tiết — bất kỳ user có quyền show.
+     * Xem chi tiết — dùng chung quyền index (xem được danh sách thì xem được chi tiết).
      */
     public function view(User $user, TaskAssignmentItem $item): bool
     {
-        return $user->hasPermissionTo('task-assignment-items.show')
-            || $user->hasPermissionTo('my-assigned-tasks.show')
-            || $user->hasPermissionTo('my-received-tasks.show');
+        return $this->viewAny($user);
     }
 
     /**
-     * Tạo mới — bất kỳ user có quyền store.
+     * Tạo mới — công việc chỉ được tạo trong màn Văn bản giao việc.
      */
     public function create(User $user): bool
     {
-        return $user->hasPermissionTo('task-assignment-items.store');
+        return $user->hasPermissionTo('task-assignment-documents.storeItem');
     }
 
     /**
-     * Đổi trạng thái hàng loạt — cần quyền bulkUpdateStatus.
+     * Đổi trạng thái hàng loạt — dùng chung quyền update.
      * Quy tắc kiểm tra quyền sở hữu (ownership) chi tiết được xử lý ở Service.
      */
     public function bulkUpdateStatus(User $user): bool
     {
-        return $user->hasPermissionTo('task-assignment-items.bulkUpdateStatus');
+        return $user->hasPermissionTo('task-assignment-documents.updateItem');
     }
 
     /**
-     * Xóa hàng loạt — cần quyền bulkDestroy.
+     * Xóa hàng loạt — dùng chung quyền destroy.
      * Quy tắc kiểm tra quyền sở hữu (ownership) chi tiết được xử lý ở Service.
      */
     public function bulkDestroy(User $user): bool
     {
-        return $user->hasPermissionTo('task-assignment-items.bulkDestroy');
+        return $user->hasPermissionTo('task-assignment-documents.destroyItem');
     }
 
     /**
-     * Cập nhật — cần có quyền update VÀ là người liên quan đến task:
+     * Cập nhật — cần quyền sửa công việc trong văn bản VÀ là người liên quan đến task:
      *   - Người giao (assigned_by)
      *   - Người được giao (pivot task_assignment_item_user)
      *
@@ -77,7 +78,7 @@ class TaskAssignmentItemPolicy
      */
     public function update(User $user, TaskAssignmentItem $item): bool
     {
-        if (! $user->hasPermissionTo('task-assignment-items.update')) {
+        if (! $user->hasPermissionTo('task-assignment-documents.updateItem')) {
             return false;
         }
 
@@ -89,11 +90,11 @@ class TaskAssignmentItemPolicy
     }
 
     /**
-     * Xóa — cần có quyền destroy VÀ là người giao.
+     * Xóa — cần quyền xóa công việc trong văn bản VÀ là người giao.
      */
     public function delete(User $user, TaskAssignmentItem $item): bool
     {
-        if (! $user->hasPermissionTo('task-assignment-items.destroy')) {
+        if (! $user->hasPermissionTo('task-assignment-documents.destroyItem')) {
             return false;
         }
 
@@ -105,10 +106,7 @@ class TaskAssignmentItemPolicy
      */
     public function changeStatus(User $user, TaskAssignmentItem $item): bool
     {
-        $hasPermission = $user->hasPermissionTo('task-assignment-items.changeStatus')
-            || $user->hasPermissionTo('task-assignment-items.pause')
-            || $user->hasPermissionTo('task-assignment-items.cancel')
-            || $user->hasPermissionTo('my-assigned-tasks.changeStatus')
+        $hasPermission = $user->hasPermissionTo('my-assigned-tasks.changeStatus')
             || $user->hasPermissionTo('my-assigned-tasks.pause')
             || $user->hasPermissionTo('my-assigned-tasks.cancel');
 
@@ -128,7 +126,7 @@ class TaskAssignmentItemPolicy
      */
     public function updateProgress(User $user, TaskAssignmentItem $item): bool
     {
-        if (! $user->hasPermissionTo('task-assignment-items.updateProgress') && ! $user->hasPermissionTo('my-received-tasks.updateProgress')) {
+        if (! $user->hasPermissionTo('my-received-tasks.updateProgress') && ! $user->hasPermissionTo('task-assignment-documents.updateItem')) {
             return false;
         }
 
@@ -145,7 +143,7 @@ class TaskAssignmentItemPolicy
      */
     public function markDone(User $user, TaskAssignmentItem $item): bool
     {
-        if (! $user->hasPermissionTo('task-assignment-items.markDone') && ! $user->hasPermissionTo('my-assigned-tasks.markDone')) {
+        if (! $user->hasPermissionTo('my-assigned-tasks.markDone')) {
             return false;
         }
 
