@@ -36,12 +36,13 @@ class AuthController extends Controller
      *
      * @bodyParam email string required Email hoặc tên đăng nhập (user_name). Example: admin@example.com
      * @bodyParam password string required Mật khẩu. Example: password
+     * @bodyParam zaloToken string optional Zalo Access Token từ getAccessToken(). Gửi kèm khi đăng nhập lần đầu trên Zalo Mini App để liên kết tài khoản. Example: xxx...
      *
      * @response 200 {"success": true, "message": "Đăng nhập thành công.", "data": {"access_token": "1|xxx...", "token_type": "Bearer", "user": {"id": 1, "name": "Admin"}, "available_organizations": [{"id": 2, "name": "Sở Nội vụ"}], "current_organization_id": 2, "roles": ["admin"], "permissions": ["users.index", "users.store"], "abilities": [{"action": "index", "subject": "User"}, {"action": "store", "subject": "User"}]}}
      */
     public function login(LoginRequest $request)
     {
-        $result = $this->authService->login($request->email, $request->password);
+        $result = $this->authService->login($request->email, $request->password, $request->zaloToken);
 
         if (! $result['ok']) {
             if ($result['type'] === 'unauthorized') {
@@ -55,25 +56,30 @@ class AuthController extends Controller
     }
 
     /**
-     * Đăng nhập qua Zalo Access Token
+     * Đăng nhập im lặng qua Zalo Access Token
      *
-     * Xác thực Zalo Token gửi từ Zalo Mini App, map với User qua zalo_user_id hoặc Phone Number trong user_profiles.
+     * Xác thực Zalo Token gửi từ Zalo Mini App, map với User qua `zalo_mini_app_id`.
      * Trả về access_token, thông tin user và current_organization_id tương tự đăng nhập thông thường.
+     *
+     * Trả 409 `ZALO_NOT_LINKED` khi token hợp lệ nhưng tài khoản Zalo chưa được liên kết:
+     * FE hiện form đăng nhập truyền thống rồi gọi `POST /auth/login` kèm `zaloToken` để liên kết.
      *
      * @unauthenticated
      *
      * @bodyParam zaloToken string required Zalo Access Token từ Zalo SDK getAccessToken(). Example: xxx...
+     *
+     * @response 409 {"success": false, "message": "Tài khoản Zalo chưa được liên kết. Vui lòng đăng nhập để liên kết tài khoản.", "code": "ZALO_NOT_LINKED"}
      */
     public function zaloLogin(\App\Modules\Auth\Requests\ZaloLoginRequest $request)
     {
-        $result = $this->authService->loginZalo($request->zaloToken, $request->phoneToken);
+        $result = $this->authService->loginZalo($request->zaloToken);
 
         if (! $result['ok']) {
-            if ($result['type'] === 'unauthorized') {
-                return $this->unauthorized($result['message']);
-            }
-
-            return $this->forbidden($result['message']);
+            return match ($result['type']) {
+                'unlinked' => $this->error($result['message'], 409, null, 'ZALO_NOT_LINKED'),
+                'forbidden' => $this->forbidden($result['message']),
+                default => $this->unauthorized($result['message']),
+            };
         }
 
         return $this->success($result['data'], 'Đăng nhập Zalo thành công.');

@@ -20,6 +20,7 @@ class LoginRequest extends FormRequest
         return [
             'email' => 'required|string',
             'password' => 'required',
+            'zaloToken' => 'sometimes|nullable|string',
         ];
     }
 
@@ -41,6 +42,10 @@ class LoginRequest extends FormRequest
             'password' => [
                 'description' => 'Mật khẩu',
                 'example' => 'password',
+            ],
+            'zaloToken' => [
+                'description' => 'Zalo Access Token từ getAccessToken(). Gửi kèm khi đăng nhập lần đầu trên Zalo Mini App để liên kết tài khoản.',
+                'example' => 'xxx...',
             ],
         ];
     }

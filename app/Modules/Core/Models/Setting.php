@@ -45,6 +45,7 @@ class Setting extends Model implements HasMedia
     public const GROUP_SMS          = 'sms';
     public const GROUP_NOTIFICATION = 'notification';
     public const GROUP_ZALO         = 'zalo';      // Zalo OA (free-text)
+    public const GROUP_ZALO_MINI_APP = 'zalo_mini_app'; // Zalo Mini App (đăng nhập)
     public const GROUP_ZALO_ZNS     = 'zalo_zns';  // Zalo ZNS via WorldSMS
     public const GROUP_CHAT         = 'chat';
     public const GROUP_LOG          = 'log';
@@ -60,6 +61,13 @@ class Setting extends Model implements HasMedia
     public const KEY_ZALO_APP_SECRET    = 'zalo_app_secret';
     public const KEY_ZALO_ACCESS_TOKEN  = 'zalo_access_token';
     public const KEY_ZALO_REFRESH_TOKEN = 'zalo_refresh_token';
+
+    // ─── Zalo Mini App keys (group: zalo_mini_app) ───────────────────────────
+    // Tách bạch khỏi Zalo OA: Mini App là app riêng trên Zalo Platform, có App ID
+    // và Secret riêng. appsecret_proof khi gọi graph.zalo.me/v2.0/me phải ký bằng
+    // secret của chính Mini App, ký bằng secret OA sẽ bị Zalo từ chối.
+    public const KEY_ZALO_MINI_APP_ID     = 'zalo_mini_app_id';
+    public const KEY_ZALO_MINI_APP_SECRET = 'zalo_mini_app_secret';
 
     // ─── Zalo ZNS keys (group: zalo_zns) ─────────────────────────────────────
     public const KEY_ZNS_ENABLED              = 'zns_enabled';
