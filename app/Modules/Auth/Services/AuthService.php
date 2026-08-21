@@ -10,13 +10,15 @@ use App\Modules\Core\Resources\UserResource;
 use App\Modules\Core\Services\UserPreferenceService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 
 class AuthService
 {
     public function __construct(private UserPreferenceService $userPreferenceService) {}
 
-    public function login(string $login, string $password): array
+    public function login(string $login, string $password, ?string $zaloToken = null): array
     {
         $user = User::where('email', $login)
             ->orWhere('user_name', $login)
@@ -49,87 +51,65 @@ class AuthService
             ];
         }
 
+        // Liên kết tài khoản Zalo sau khi đăng nhập thành công (chính sách kiểm duyệt
+        // Zalo mục 6.5). Liên kết hỏng không chặn đăng nhập: user vẫn vào được, chỉ là
+        // lần sau phải nhập mật khẩu lại thay vì đăng nhập im lặng.
+        if ($zaloToken !== null) {
+            $resolved = $this->resolveZaloMiniAppId($zaloToken);
+
+            if ($resolved['ok']) {
+                $this->linkZaloMiniAppId($user, $resolved['id']);
+            } else {
+                Log::warning('Liên kết Zalo thất bại sau khi đăng nhập.', [
+                    'user_id' => $user->getKey(),
+                    'message' => $resolved['message'],
+                ]);
+            }
+        }
+
         return ['ok' => true, 'data' => $this->buildAuthenticatedResponse($user)];
     }
 
     /**
-     * Đăng nhập qua Zalo Mini App Access Token & Phone Token.
+     * Đăng nhập im lặng qua Zalo Mini App Access Token.
+     *
+     * Định danh bằng zalo_mini_app_id lấy từ Zalo Open API, không dùng số điện thoại:
+     * chính sách kiểm duyệt Zalo mục 6.5 yêu cầu việc liên kết SĐT chỉ được thực hiện
+     * sau khi đăng nhập thành công, không được dùng SĐT làm cơ chế đăng nhập.
+     *
+     * Trả type 'unlinked' khi token hợp lệ nhưng chưa gắn với tài khoản nào — FE dùng
+     * tín hiệu này để hiện form đăng nhập truyền thống.
      */
-    public function loginZalo(string $zaloToken, string $phoneToken): array
+    public function loginZalo(string $zaloToken): array
     {
-        $phone = null;
-        $phoneData = null;
+        $resolved = $this->resolveZaloMiniAppId($zaloToken);
 
-        try {
-            $appSecret = Setting::where('key', 'zalo_app_secret')->value('value') ?? env('ZALO_APP_SECRET');
-            if (! $appSecret) {
-                \Illuminate\Support\Facades\Log::error('Zalo Login Error: Missing ZALO_APP_SECRET configuration.');
-
-                return [
-                    'ok' => false,
-                    'type' => 'unauthorized',
-                    'message' => 'Hệ thống chưa cấu hình Zalo App Secret (ZALO_APP_SECRET).',
-                ];
-            }
-
-            $responsePhone = \Illuminate\Support\Facades\Http::withHeaders([
-                'access_token' => $zaloToken,
-                'code' => $phoneToken,
-                'secret_key' => $appSecret,
-            ])->get('https://graph.zalo.me/v2.0/me/info');
-
-            $phoneData = $responsePhone->json();
-
-            if ($responsePhone->successful() && (! isset($phoneData['error']) || (int) $phoneData['error'] === 0)) {
-                $phone = $phoneData['data']['number'] ?? null;
-                \Illuminate\Support\Facades\Log::info('Zalo Decoded Phone Number:', ['phone' => $phone]);
-            } else {
-                \Illuminate\Support\Facades\Log::warning('Zalo API Error (/me/info):', $phoneData ?? []);
-            }
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Zalo API Exception: '.$e->getMessage());
+        if (! $resolved['ok']) {
+            return $resolved;
         }
 
-        if (isset($phoneData['error']) && (int) $phoneData['error'] !== 0) {
-            $errMsg = $phoneData['message'] ?? ('Mã lỗi '.$phoneData['error']);
+        $zaloMiniAppId = (string) ($resolved['id'] ?? '');
+
+        // Chặn tuyệt đối id rỗng: Eloquent chuyển where('cot', null) thành "IS NULL",
+        // nên một id rỗng lọt qua đây sẽ khớp user chưa liên kết đầu tiên và cấp token
+        // cho nhầm người. resolveZaloMiniAppId đã chặn, đây là lớp phòng thủ thứ hai.
+        if ($zaloMiniAppId === '') {
+            Log::error('Zalo Login Error: resolveZaloMiniAppId trả về id rỗng.');
 
             return [
                 'ok' => false,
                 'type' => 'unauthorized',
-                'message' => "Zalo giải mã SĐT thất bại: {$errMsg} (Mã {$phoneData['error']})",
+                'message' => 'Không xác định được tài khoản Zalo.',
             ];
         }
 
-        if (! $phone) {
-            return [
-                'ok' => false,
-                'type' => 'unauthorized',
-                'message' => 'Không lấy được số điện thoại từ Zalo. Token SĐT không hợp lệ hoặc đã hết hạn.',
-            ];
-        }
-
-        $user = null;
-
-        // Định danh duy nhất theo Số điện thoại từ Zalo (không dùng zalo_mini_app_id)
-        if ($phone) {
-            $phoneClean = preg_replace('/[^0-9]/', '', (string) $phone);
-            $phoneVariants = [$phoneClean];
-            if (str_starts_with($phoneClean, '84')) {
-                $phoneVariants[] = '0'.substr($phoneClean, 2);
-            } elseif (str_starts_with($phoneClean, '0')) {
-                $phoneVariants[] = '84'.substr($phoneClean, 1);
-            }
-
-            $user = User::whereHas('profile', function ($q) use ($phoneVariants) {
-                $q->whereIn('phone', $phoneVariants);
-            })->first();
-        }
+        $user = User::where('zalo_mini_app_id', $zaloMiniAppId)->first();
 
         if (! $user) {
             return [
                 'ok' => false,
-                'type' => 'unauthorized',
-                'message' => "Số điện thoại Zalo ({$phone}) chưa được đăng ký hoặc chưa có trong hệ thống.",
+                'type' => 'unlinked',
+                'message' => 'Tài khoản Zalo chưa được liên kết. Vui lòng đăng nhập để liên kết tài khoản.',
             ];
         }
 
@@ -142,6 +122,85 @@ class AuthService
         }
 
         return ['ok' => true, 'data' => $this->buildAuthenticatedResponse($user, 'zalo_mini_app_token')];
+    }
+
+    /**
+     * Truy xuất Zalo Mini App User ID từ access token qua Zalo Open API.
+     *
+     * Từ 01/01/2024 Zalo bắt buộc gửi kèm appsecret_proof = HMAC-SHA256 của access_token
+     * với khóa là Mini App Secret (group settings `zalo_mini_app`, tách bạch khỏi Zalo
+     * OA), nhằm đảm bảo token được sinh ra thuộc App ID đã đăng ký. Secret không rời
+     * khỏi server, chỉ dùng để ký.
+     *
+     * ID luôn phải suy ra từ token tại server, tuyệt đối không nhận từ client: endpoint
+     * đăng nhập Zalo vốn không yêu cầu xác thực, nên nếu tin ID do client gửi lên thì
+     * chiếm được tài khoản bất kỳ chỉ bằng một chuỗi ID không hề bí mật.
+     */
+    private function resolveZaloMiniAppId(string $zaloToken): array
+    {
+        // Secret của Zalo Mini App, KHÔNG phải secret Zalo OA: appsecret_proof phải
+        // được ký bằng secret của chính App ID đã cấp access token, ký sai app Zalo
+        // sẽ từ chối. Dùng ?: để giá trị rỗng trong DB cũng rơi về biến môi trường.
+        $appSecret = Setting::where('key', Setting::KEY_ZALO_MINI_APP_SECRET)->value('value') ?: env('ZALO_MINI_APP_SECRET');
+
+        if (! $appSecret) {
+            Log::error('Zalo Login Error: Missing Zalo Mini App Secret configuration.');
+
+            return [
+                'ok' => false,
+                'type' => 'unauthorized',
+                'message' => 'Hệ thống chưa cấu hình Zalo Mini App Secret (zalo_mini_app_secret).',
+            ];
+        }
+
+        try {
+            $response = Http::withHeaders([
+                'access_token' => $zaloToken,
+                'appsecret_proof' => hash_hmac('sha256', $zaloToken, $appSecret),
+            ])->get('https://graph.zalo.me/v2.0/me', ['fields' => 'id']);
+        } catch (\Throwable $e) {
+            Log::error('Zalo API Exception: '.$e->getMessage());
+
+            return [
+                'ok' => false,
+                'type' => 'unauthorized',
+                'message' => 'Không kết nối được tới Zalo để xác thực. Vui lòng thử lại.',
+            ];
+        }
+
+        $data = $response->json();
+
+        if (! $response->successful() || (int) ($data['error'] ?? 0) !== 0 || empty($data['id'])) {
+            Log::warning('Zalo API Error (/v2.0/me):', $data ?? []);
+
+            return [
+                'ok' => false,
+                'type' => 'unauthorized',
+                'message' => 'Xác thực Zalo thất bại: '.($data['message'] ?? 'Token không hợp lệ hoặc đã hết hạn.'),
+            ];
+        }
+
+        return ['ok' => true, 'id' => (string) $data['id']];
+    }
+
+    /**
+     * Gắn Zalo Mini App ID vào user sau khi danh tính đã được xác thực.
+     *
+     * Cột unique nên phải gỡ ID khỏi user cũ trước: khi một người dùng Zalo đăng nhập
+     * lại bằng tài khoản khác trên cùng thiết bị, ID phải chuyển sang tài khoản mới
+     * thay vì làm vỡ ràng buộc unique.
+     */
+    private function linkZaloMiniAppId(User $user, string $zaloMiniAppId): void
+    {
+        if ($zaloMiniAppId === '' || $user->zalo_mini_app_id === $zaloMiniAppId) {
+            return;
+        }
+
+        User::where('zalo_mini_app_id', $zaloMiniAppId)
+            ->whereKeyNot($user->getKey())
+            ->update(['zalo_mini_app_id' => null]);
+
+        $user->forceFill(['zalo_mini_app_id' => $zaloMiniAppId])->save();
     }
 
     /**

@@ -15,7 +15,6 @@ class ZaloLoginRequest extends FormRequest
     {
         return [
             'zaloToken' => ['required', 'string'],
-            'phoneToken' => ['required', 'string'],
         ];
     }
 
@@ -23,7 +22,6 @@ class ZaloLoginRequest extends FormRequest
     {
         return [
             'zaloToken.required' => 'Zalo Token không được để trống.',
-            'phoneToken.required' => 'Phone Token không được để trống.',
         ];
     }
 }
