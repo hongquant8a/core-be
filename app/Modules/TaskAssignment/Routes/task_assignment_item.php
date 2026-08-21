@@ -3,18 +3,18 @@
 use App\Modules\TaskAssignment\Controllers\TaskAssignmentItemController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/export', [TaskAssignmentItemController::class, 'export'])->middleware('permission:task-assignment-items.export,web');
-Route::get('/export-monthly-report', [TaskAssignmentItemController::class, 'exportMonthlyReport'])->middleware('permission:task-assignment-items.exportMonthlyReport,web');
+Route::get('/export', [TaskAssignmentItemController::class, 'export'])->middleware('permission:my-assigned-tasks.export|my-received-tasks.export,web');
+Route::get('/export-monthly-report', [TaskAssignmentItemController::class, 'exportMonthlyReport'])->middleware('permission:task-overview.exportMonthlyReport,web');
 Route::patch('/bulk-status', [TaskAssignmentItemController::class, 'bulkUpdateStatus'])->middleware('can:bulkUpdateStatus,\App\Modules\TaskAssignment\Models\TaskAssignmentItem');
 Route::delete('/bulk-delete', [TaskAssignmentItemController::class, 'bulkDestroy'])->middleware('can:bulkDestroy,\App\Modules\TaskAssignment\Models\TaskAssignmentItem');
-Route::get('/stats', [TaskAssignmentItemController::class, 'stats'])->middleware('permission:task-assignment-items.stats|presentation.index,web');
-Route::get('/stats-by-department', [TaskAssignmentItemController::class, 'statsByDepartment'])->middleware('permission:task-assignment-items.statsByDepartment|presentation.index,web');
-Route::get('/stats-by-user', [TaskAssignmentItemController::class, 'statsByUser'])->middleware('permission:task-assignment-items.statsByUser,web');
-Route::get('/stats-by-time', [TaskAssignmentItemController::class, 'statsByTime'])->middleware('permission:task-assignment-items.statsByTime,web');
-Route::get('/stats-by-item-type', [TaskAssignmentItemController::class, 'statsByItemType'])->middleware('permission:task-assignment-items.statsByItemType|presentation.index,web');
-Route::get('/stats-by-document', [TaskAssignmentItemController::class, 'statsByDocument'])->middleware('permission:task-assignment-items.statsByDocument,web');
-Route::get('/overdue', [TaskAssignmentItemController::class, 'overdue'])->middleware('permission:task-assignment-items.overdue|presentation.index,web');
-Route::get('/upcoming-deadline', [TaskAssignmentItemController::class, 'upcomingDeadline'])->middleware('permission:task-assignment-items.upcomingDeadline|presentation.index,web');
+Route::get('/stats', [TaskAssignmentItemController::class, 'stats'])->middleware('can:viewAny,\App\Modules\TaskAssignment\Models\TaskAssignmentItem');
+Route::get('/stats-by-department', [TaskAssignmentItemController::class, 'statsByDepartment'])->middleware('permission:task-overview.index|presentation.index,web');
+Route::get('/stats-by-user', [TaskAssignmentItemController::class, 'statsByUser'])->middleware('permission:task-overview.index,web');
+Route::get('/stats-by-time', [TaskAssignmentItemController::class, 'statsByTime'])->middleware('permission:task-overview.index,web');
+Route::get('/stats-by-item-type', [TaskAssignmentItemController::class, 'statsByItemType'])->middleware('permission:task-overview.index|presentation.index,web');
+Route::get('/stats-by-document', [TaskAssignmentItemController::class, 'statsByDocument'])->middleware('permission:task-overview.index,web');
+Route::get('/overdue', [TaskAssignmentItemController::class, 'overdue'])->middleware('permission:task-overview.index|presentation.index,web');
+Route::get('/upcoming-deadline', [TaskAssignmentItemController::class, 'upcomingDeadline'])->middleware('permission:task-overview.index|presentation.index,web');
 Route::get('/', [TaskAssignmentItemController::class, 'index'])->middleware('can:viewAny,\App\Modules\TaskAssignment\Models\TaskAssignmentItem');
 Route::get('/{taskAssignmentItem}/timeline', [TaskAssignmentItemController::class, 'timeline'])->middleware('can:view,taskAssignmentItem');
 Route::get('/{taskAssignmentItem}', [TaskAssignmentItemController::class, 'show'])->middleware('can:view,taskAssignmentItem');
