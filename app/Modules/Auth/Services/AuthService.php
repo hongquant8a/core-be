@@ -88,7 +88,22 @@ class AuthService
             return $resolved;
         }
 
-        $user = User::where('zalo_mini_app_id', $resolved['id'])->first();
+        $zaloMiniAppId = (string) ($resolved['id'] ?? '');
+
+        // Chặn tuyệt đối id rỗng: Eloquent chuyển where('cot', null) thành "IS NULL",
+        // nên một id rỗng lọt qua đây sẽ khớp user chưa liên kết đầu tiên và cấp token
+        // cho nhầm người. resolveZaloMiniAppId đã chặn, đây là lớp phòng thủ thứ hai.
+        if ($zaloMiniAppId === '') {
+            Log::error('Zalo Login Error: resolveZaloMiniAppId trả về id rỗng.');
+
+            return [
+                'ok' => false,
+                'type' => 'unauthorized',
+                'message' => 'Không xác định được tài khoản Zalo.',
+            ];
+        }
+
+        $user = User::where('zalo_mini_app_id', $zaloMiniAppId)->first();
 
         if (! $user) {
             return [
@@ -177,7 +192,7 @@ class AuthService
      */
     private function linkZaloMiniAppId(User $user, string $zaloMiniAppId): void
     {
-        if ($user->zalo_mini_app_id === $zaloMiniAppId) {
+        if ($zaloMiniAppId === '' || $user->zalo_mini_app_id === $zaloMiniAppId) {
             return;
         }
 
