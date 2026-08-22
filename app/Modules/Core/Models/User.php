@@ -49,8 +49,20 @@ class User extends Authenticatable implements HasMedia
 
     protected static function booted()
     {
-        static::creating(fn ($user) => $user->created_by = $user->updated_by = auth()->id());
-        static::updating(fn ($user) => $user->updated_by = auth()->id());
+        // Chỉ ghi khi CÓ user đăng nhập. Trước đây gán thẳng auth()->id() nên
+        // mọi lần save ngoài ngữ cảnh request (seeder, artisan command, queued
+        // job) đều ghi đè updated_by thành NULL — xoá mất người sửa đã lưu
+        // trước đó, khiến cột "Cập nhật" trên UI mất tên + avatar.
+        static::creating(function ($user) {
+            if ($id = auth()->id()) {
+                $user->created_by = $user->updated_by = $id;
+            }
+        });
+        static::updating(function ($user) {
+            if ($id = auth()->id()) {
+                $user->updated_by = $id;
+            }
+        });
 
         // BC routing cho 'phone': mass-assign hoặc $user->phone = '...' không insert vào users
         // mà stash → sau khi save xong, apply vào user_profiles.phone.
