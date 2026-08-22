@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Modules\Core\Models\User;
 use App\Modules\Core\Requests\BulkDestroyUserRequest;
 use App\Modules\Core\Requests\BulkUpdateStatusUserRequest;
+use App\Modules\Core\Requests\ChangePasswordRequest;
 use App\Modules\Core\Requests\ChangeStatusUserRequest;
 use App\Modules\Core\Requests\FilterRequest;
 use App\Modules\Core\Requests\ImportUserRequest;
@@ -17,6 +18,7 @@ use App\Modules\Core\Services\UserService;
 
 /**
  * @group Core - User
+ *
  * @header X-Organization-Id ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1
  *
  * Quản lý người dùng: danh sách, chi tiết, tạo, cập nhật, xóa, thao tác hàng loạt, xuất/nhập Excel, đổi trạng thái.
@@ -120,17 +122,46 @@ class UserController extends Controller
      * Cập nhật self profile — tài khoản đang đăng nhập.
      *
      * Auth-only, dùng cùng UpdateUserRequest. Service đảm bảo không cho phép đổi role/quyền (assignments)
-     * — non-admin chỉ sửa được name/email/phone/avatar/password/profile basic fields.
+     * — non-admin chỉ sửa được name/email/phone/avatar/profile basic fields.
+     *
+     * Đổi mật khẩu KHÔNG đi qua endpoint này (xem `PUT /users/me/password`): ở đây không có
+     * cách nào xác minh mật khẩu hiện tại nên field `password` bị loại khỏi payload.
      */
     public function updateMe(UpdateUserRequest $request)
     {
         $payload = $request->validated();
         // Self-update tuyệt đối không động vào assignments/status — chặn ở payload trước khi gọi service.
-        unset($payload['assignments'], $payload['status']);
+        // 'password' cũng bị chặn: đổi mật khẩu bắt buộc qua changeMyPassword() để check mật khẩu cũ.
+        unset($payload['assignments'], $payload['status'], $payload['password']);
 
         $user = $this->userService->update(auth()->user(), $payload);
 
         return $this->successResource(new UserResource($user), 'Tài khoản đã được cập nhật!');
+    }
+
+    /**
+     * Đổi mật khẩu cá nhân
+     *
+     * Auth-only. Bắt buộc nhập mật khẩu hiện tại — chỉ có Bearer token là chưa đủ để đổi mật khẩu.
+     * Sau khi đổi thành công, toàn bộ phiên đăng nhập KHÁC bị thu hồi (token hiện tại vẫn dùng được,
+     * frontend không cần đăng nhập lại).
+     *
+     * @bodyParam current_password string required Mật khẩu hiện tại. Example: password123
+     * @bodyParam password string required Mật khẩu mới (tối thiểu 6 ký tự, khác mật khẩu hiện tại). Example: newpassword123
+     * @bodyParam password_confirmation string required Nhập lại mật khẩu mới. Example: newpassword123
+     *
+     * @response 200 {"success": true, "message": "Đổi mật khẩu thành công!"}
+     * @response 422 {"success": false, "message": "Dữ liệu không hợp lệ.", "errors": {"current_password": ["Mật khẩu hiện tại không đúng."]}}
+     */
+    public function changeMyPassword(ChangePasswordRequest $request)
+    {
+        $this->userService->changePassword(
+            auth()->user(),
+            $request->validated()['password'],
+            $request->bearerToken(),
+        );
+
+        return $this->success(null, 'Đổi mật khẩu thành công!');
     }
 
     /**
@@ -169,7 +200,7 @@ class UserController extends Controller
      *
      * @bodyParam name string Tên người dùng.
      * @bodyParam email string Email (duy nhất).
-     * @bodyParam password string Mật khẩu mới (nếu muốn đổi).
+     * @bodyParam password string Mật khẩu mới (admin đặt lại hộ — mọi phiên đăng nhập của user đó sẽ bị thu hồi). Người dùng tự đổi mật khẩu thì dùng `PUT /users/me/password`.
      * @bodyParam password_confirmation string Xác nhận mật khẩu.
      * @bodyParam status string Trạng thái: active, inactive, banned.
      * @bodyParam avatar file Ảnh đại diện (jpg, png, svg, webp, max 5MB).

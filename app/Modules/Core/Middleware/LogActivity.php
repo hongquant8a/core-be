@@ -20,7 +20,7 @@ class LogActivity
 {
     /** Các trường nhạy cảm không lưu vào request_data. */
     protected static array $excludedRequestKeys = [
-        'password', 'password_confirmation', '_token', 'token',
+        'password', 'password_confirmation', 'current_password', '_token', 'token',
         'email_smtp_password', 'sms_password', 'zalo_password', 'chat_api_key',
         'api_gemini_token', 'api_deepseek_token', 'api_chatgpt_token',
         'firebase_service_account', 'api_google_maps_token',
@@ -118,6 +118,11 @@ class LogActivity
             $authLabels = ['login' => 'Đăng nhập', 'logout' => 'Đăng xuất', 'forgot-password' => 'Quên mật khẩu', 'reset-password' => 'Đặt lại mật khẩu'];
 
             return $authLabels[$sub] ?? "Xác thực: {$sub}";
+        }
+
+        // Users: api/users/me/password
+        if ($resource === 'users' && $sub === 'me' && ($segments[2] ?? null) === 'password') {
+            return 'Đổi mật khẩu cá nhân';
         }
 
         // Settings: api/settings/public
