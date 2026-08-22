@@ -16,6 +16,8 @@ Route::get('/', [UserController::class, 'index'])->middleware('permission:users.
 Route::get('/me', [UserController::class, 'me']);
 Route::put('/me', [UserController::class, 'updateMe']);
 Route::patch('/me', [UserController::class, 'updateMe']);
+// Đổi mật khẩu tách riêng khỏi PUT /me: cần validate mật khẩu hiện tại + throttle chống dò.
+Route::put('/me/password', [UserController::class, 'changeMyPassword'])->middleware('throttle:5,10');
 Route::get('/me/profile', [UserProfileController::class, 'showMe']);
 Route::put('/me/profile', [UserProfileController::class, 'updateMe']);
 

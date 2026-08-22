@@ -12,12 +12,14 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Laravel\Sanctum\PersonalAccessToken;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class UserService
 {
     public function __construct(private MediaService $mediaService) {}
+
     public function stats(array $filters): array
     {
         $base = User::filter($filters);
@@ -112,7 +114,8 @@ class UserService
                 unset($data[$f]);
             }
 
-            if (isset($data['password'])) {
+            $passwordChanged = isset($data['password']);
+            if ($passwordChanged) {
                 $data['password'] = Hash::make($data['password']);
             }
 
@@ -146,8 +149,56 @@ class UserService
                 $this->handleAvatar($user, $avatar);
             }
 
+            // Admin đặt lại mật khẩu hộ → mọi phiên đang mở của user đó phải hết hiệu lực,
+            // nếu không việc "reset mật khẩu vì nghi bị chiếm tài khoản" hoàn toàn vô nghĩa.
+            // Trường hợp admin tự sửa chính mình thì giữ lại phiên đang thao tác.
+            if ($passwordChanged) {
+                $this->revokeTokens($user, request()->bearerToken());
+            }
+
             return $user->load(['creator.media', 'editor.media', 'profile']);
         });
+    }
+
+    /**
+     * Đổi mật khẩu cho chính tài khoản đang đăng nhập.
+     *
+     * Mật khẩu hiện tại đã được ChangePasswordRequest kiểm tra trước khi vào đây.
+     * Sau khi đổi: thu hồi toàn bộ token của các phiên KHÁC (giữ token đang dùng để
+     * người dùng không bị đá ra ngay) — nếu token cũ bị lộ thì đổi mật khẩu mới thực sự
+     * cắt được quyền truy cập của kẻ tấn công.
+     *
+     * @param  string|null  $keepBearerToken  Plain-text token của request hiện tại (giữ lại phiên này).
+     */
+    public function changePassword(User $user, string $newPassword, ?string $keepBearerToken = null): User
+    {
+        return DB::transaction(function () use ($user, $newPassword, $keepBearerToken) {
+            $user->forceFill(['password' => Hash::make($newPassword)])->save();
+
+            $this->revokeTokens($user, $keepBearerToken);
+
+            return $user;
+        });
+    }
+
+    /**
+     * Thu hồi token của user, giữ lại đúng token đang gọi request (nếu có).
+     *
+     * KHÔNG dùng $user->currentAccessToken(): middleware SetPermissionsTeamId đã
+     * Auth::guard('web')->setUser(), nên Sanctum trả TransientToken thay vì PersonalAccessToken
+     * thật → không biết token nào cần giữ và sẽ xoá nhầm cả phiên hiện tại. Resolve thẳng
+     * từ plain-text token cho chắc chắn.
+     */
+    protected function revokeTokens(User $user, ?string $keepBearerToken = null): void
+    {
+        $tokens = $user->tokens();
+
+        $keep = $keepBearerToken ? PersonalAccessToken::findToken($keepBearerToken) : null;
+        if ($keep && (int) $keep->tokenable_id === (int) $user->id) {
+            $tokens->whereKeyNot($keep->getKey());
+        }
+
+        $tokens->delete();
     }
 
     public function destroy(User $user): void
