@@ -116,11 +116,26 @@ class UserService
                 $data['password'] = Hash::make($data['password']);
             }
 
+            $hasPhone = array_key_exists('phone', $data);
+
             $user->update($data);
+
+            // Sửa riêng phone/profile không làm "bẩn" bảng users: 'phone' bị hook
+            // saving() gỡ khỏi attributes, còn field profile đã tách sang bảng
+            // khác từ trước. Model hết dirty → save() bỏ qua performUpdate →
+            // event 'updating' không chạy → updated_by/updated_at đứng im dù
+            // người dùng vừa sửa, khiến cột "Cập nhật" trên UI trống trơn.
+            $usersRowChanged = $user->wasChanged();
 
             if (! empty($profileData)) {
                 \App\Modules\Core\Models\UserProfile::firstOrCreate(['user_id' => $user->id])
                     ->update($profileData);
+            }
+
+            // touch() bump updated_at → model dirty trở lại → 'updating' chạy và
+            // ghi updated_by như mọi thay đổi khác.
+            if (! $usersRowChanged && ($hasPhone || ! empty($profileData))) {
+                $user->touch();
             }
 
             if ($hasAssignments) {
