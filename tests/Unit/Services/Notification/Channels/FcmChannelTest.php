@@ -91,7 +91,7 @@ class FcmChannelTest extends TestCase
         $r = $this->send($ch, ['token-1']);
 
         $this->assertFalse($r->success);
-        $this->assertSame('FCM is disabled', $r->error);
+        $this->assertSame('Kênh thông báo đẩy đang bị tắt.', $r->error);
     }
 
     public function test_returns_failure_when_service_account_missing(): void
