@@ -110,6 +110,11 @@ class AuthService
             \App\Modules\Core\Models\FcmToken::where('user_id', $user->id)
                 ->where('device_id', $deviceId)
                 ->delete();
+
+            // Xoá luôn dấu vết throttle của middleware sync, nếu không thì lần đăng
+            // nhập lại trên máy này bị bỏ qua việc ghi (token Firebase thường không
+            // đổi sau đăng xuất) và thiết bị nằm ngoài danh sách nhận thông báo.
+            \App\Modules\Core\Middleware\SyncFcmToken::forget($user->id, $deviceId);
         }
     }
 

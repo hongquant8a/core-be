@@ -75,4 +75,22 @@ class FcmTokenControllerTest extends TestCase
 
         $this->deleteJson('/api/fcm-tokens/me', [], ['Authorization' => ''])->assertUnauthorized();
     }
+
+    /**
+     * Tắt rồi bật lại ngay: dấu vết throttle của middleware phải bị xoá, nếu không
+     * request kế tiếp tưởng "không có gì đổi" và thiết bị không được đăng ký lại.
+     */
+    public function test_bat_lai_duoc_ngay_sau_khi_tat(): void
+    {
+        $headers = ['X-FCM-Token' => 'token-a', 'X-Device-Id' => 'may-nay'];
+
+        $this->withHeaders($headers)->getJson('/api/user')->assertOk();
+        $this->assertSame(1, FcmToken::where('user_id', $this->user->id)->count());
+
+        $this->withHeader('X-Device-Id', 'may-nay')->deleteJson('/api/fcm-tokens/me')->assertOk();
+        $this->assertSame(0, FcmToken::where('user_id', $this->user->id)->count());
+
+        $this->withHeaders($headers)->getJson('/api/user')->assertOk();
+        $this->assertSame(1, FcmToken::where('user_id', $this->user->id)->count());
+    }
 }

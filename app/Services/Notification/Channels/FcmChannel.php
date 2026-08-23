@@ -43,7 +43,9 @@ class FcmChannel implements NotificationChannel
         }
 
         // Lấy danh sách tokens — ưu tiên array (multi-device), fallback single token (BC).
-        $tokens = $recipient->fcmTokens ?? ($recipient->fcmToken ? [$recipient->fcmToken] : []);
+        // array_unique: chắn lớp cuối cho trường hợp cùng một token Firebase lọt vào
+        // nhiều dòng fcm_tokens — gửi lặp thì máy hiện hai thông báo giống hệt nhau.
+        $tokens = array_unique($recipient->fcmTokens ?? ($recipient->fcmToken ? [$recipient->fcmToken] : []));
         if (empty($tokens)) {
             return $this->fail('Missing FCM device token');
         }

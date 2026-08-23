@@ -110,4 +110,67 @@ class SyncFcmTokenMiddlewareTest extends TestCase
         $this->assertSame(0, FcmToken::where('user_id', $oldOwner->id)->count());
         $this->assertSame(1, FcmToken::where('user_id', $newOwner->id)->count());
     }
+
+    /** Header do client tự sinh: dài quá cột thì bỏ qua, không được để DB ném lỗi. */
+    public function test_bo_qua_khi_header_dai_qua_kich_thuoc_cot(): void
+    {
+        $user = $this->createUser();
+        Sanctum::actingAs($user);
+
+        $this->withHeaders([
+            'X-FCM-Token' => str_repeat('a', 513),
+            'X-Device-Id' => 'browser-1',
+        ])->getJson('/api/user')->assertOk();
+
+        $this->withHeaders([
+            'X-FCM-Token' => 'token-ngan',
+            'X-Device-Id' => str_repeat('b', 101),
+        ])->getJson('/api/user')->assertOk();
+
+        $this->assertSame(0, FcmToken::count(), 'không được ghi gì khi header vượt kích thước cột');
+    }
+
+    /**
+     * Xoá dữ liệu trang sinh device_id mới trong khi service worker giữ nguyên
+     * token cũ. Để lại hai dòng cùng token thì người dùng nhận hai thông báo giống hệt.
+     */
+    public function test_don_dong_cu_khi_cung_user_dung_lai_token_o_device_id_moi(): void
+    {
+        $user = $this->createUser();
+        FcmToken::create([
+            'user_id' => $user->id, 'device_id' => 'browser-cu',
+            'fcm_token' => 'token-giu-nguyen', 'last_used_at' => now()->subHour(),
+        ]);
+        Sanctum::actingAs($user);
+
+        $this->withHeaders([
+            'X-FCM-Token' => 'token-giu-nguyen',
+            'X-Device-Id' => 'browser-moi',
+        ])->getJson('/api/user')->assertOk();
+
+        $this->assertSame(1, FcmToken::where('user_id', $user->id)->count(), 'chỉ còn đúng một dòng cho token này');
+        $this->assertSame('browser-moi', FcmToken::first()->device_id);
+    }
+
+    /** Không có gì đổi thì bỏ qua việc ghi — middleware chạy trên mọi request. */
+    public function test_bo_qua_ghi_lai_khi_token_khong_doi(): void
+    {
+        $user = $this->createUser();
+        Sanctum::actingAs($user);
+
+        $headers = ['X-FCM-Token' => 'token-on-dinh', 'X-Device-Id' => 'browser-1'];
+
+        $this->withHeaders($headers)->getJson('/api/user')->assertOk();
+        $this->assertSame(1, FcmToken::count());
+
+        // Xoá dòng rồi gọi lại: còn dấu vết throttle nên request này không ghi lại.
+        FcmToken::query()->delete();
+        $this->withHeaders($headers)->getJson('/api/user')->assertOk();
+        $this->assertSame(0, FcmToken::count());
+
+        // Token đổi thì phải ghi ngay, không đợi hết hạn throttle.
+        $this->withHeaders(['X-FCM-Token' => 'token-moi', 'X-Device-Id' => 'browser-1'])
+            ->getJson('/api/user')->assertOk();
+        $this->assertSame(1, FcmToken::count());
+    }
 }

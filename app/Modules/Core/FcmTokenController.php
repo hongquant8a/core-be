@@ -3,6 +3,7 @@
 namespace App\Modules\Core;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Core\Middleware\SyncFcmToken;
 use App\Modules\Core\Models\FcmToken;
 use Illuminate\Http\Request;
 
@@ -43,9 +44,15 @@ class FcmTokenController extends Controller
             return $this->error('Thiếu header X-Device-Id nên không xác định được thiết bị.', 422);
         }
 
-        $deleted = FcmToken::where('user_id', $request->user()->id)
+        $userId = $request->user()->id;
+
+        $deleted = FcmToken::where('user_id', $userId)
             ->where('device_id', $deviceId)
             ->delete();
+
+        // Middleware sync bỏ qua việc ghi khi thấy token không đổi; xoá dấu vết đó
+        // để lần bật lại đăng ký được ngay cả khi Firebase cấp lại đúng token cũ.
+        SyncFcmToken::forget($userId, $deviceId);
 
         return $this->success(
             ['deleted' => $deleted],
