@@ -84,6 +84,10 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
     // Zalo OA followers — sync 45p, auth-only, không Spatie. FE admin pick user_id để gán vào users.zalo_user_id.
     Route::get('/zalo-oa-followers', [\App\Modules\Core\ZaloOaFollowerController::class, 'index']);
 
+    // Huỷ đăng ký thông báo đẩy cho thiết bị hiện tại (nhận diện qua header X-Device-Id).
+    // Auth-only, không cần quyền: người dùng tự tắt thông báo trên máy của chính mình.
+    Route::delete('/fcm-tokens/me', [\App\Modules\Core\FcmTokenController::class, 'destroyMe']);
+
     Route::prefix('users')->group(function () {
         require base_path('app/Modules/Core/Routes/user.php');
     });
