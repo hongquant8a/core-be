@@ -80,10 +80,6 @@ class SettingSeeder extends Seeder
         ['key' => 'zalo_app_secret', 'value' => null, 'group' => 'zalo', 'is_public' => false, 'type' => 'string', 'label' => 'Secret Key', 'sort_order' => 2],
         ['key' => 'zalo_access_token', 'value' => null, 'group' => 'zalo', 'is_public' => false, 'type' => 'string', 'label' => 'Access Token', 'sort_order' => 3],
         ['key' => 'zalo_refresh_token', 'value' => null, 'group' => 'zalo', 'is_public' => false, 'type' => 'string', 'label' => 'Refresh Token', 'sort_order' => 4],
-        // Zalo Mini App — app riêng, KHÔNG dùng chung credentials với Zalo OA ở trên.
-        // Secret dùng để ký appsecret_proof khi đổi access token lấy Zalo user id.
-        ['key' => 'zalo_mini_app_id', 'value' => null, 'group' => 'zalo_mini_app', 'is_public' => false, 'type' => 'string', 'label' => 'Mini App ID', 'sort_order' => 0],
-        ['key' => 'zalo_mini_app_secret', 'value' => null, 'group' => 'zalo_mini_app', 'is_public' => false, 'type' => 'string', 'label' => 'Mini App Secret Key', 'sort_order' => 1],
         // Zalo ZNS — template-based qua WorldSMS relay (South Telecom) (channel key: 'zalo_zns')
         // Endpoint: POST https://api-04.worldsms.vn/apidebit/sendZNS
         // Auth: Basic base64(username:password)

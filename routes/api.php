@@ -38,23 +38,6 @@ Route::prefix('public')->middleware(['log.activity', 'set.public.permissions.tea
     Route::get('/task-assignment-departments', [\App\Modules\TaskAssignment\Controllers\TaskAssignmentDepartmentController::class, 'public']);
     Route::get('/task-assignment-departments/options', [\App\Modules\TaskAssignment\Controllers\TaskAssignmentDepartmentController::class, 'publicOptions']);
 
-    // Tải export qua signed URL (không auth:sanctum — xác thực bằng chữ ký, đã được
-    // cấp quyền từ trước ở bước gọi .../exports/{type}/link). Middleware 'signed' tự
-    // verify signature + expires (403 nếu sai/hết hạn). {filename} nằm trên path vì
-    // zmp-sdk downloadFile({url}) đặt tên file theo segment cuối URL, không đọc
-    // Content-Disposition — xem App\Modules\Core\ExportLinkController.
-    //
-    // 'signed:typeInapp' (KHÔNG phải 'signed' trần): zmp-sdk openWebview() tự chèn
-    // `typeInapp=1` vào URL trước khi mở (xem openWebview.js trong SDK — nó chỉ bỏ
-    // qua khi host là vnpay hoặc param đã có sẵn). Chữ ký Laravel tính trên toàn bộ
-    // query string, nên param tự chèn đó làm mọi link mở bằng webview thành 403.
-    // Tham số sau dấu ':' được ValidateSignature::parseArguments() đưa vào danh sách
-    // bỏ qua rồi gọi hasValidSignatureWhileIgnoring() — link vẫn an toàn vì các
-    // param còn lại (_ctx_*, expires, type, filename) vẫn nằm trong chữ ký.
-    Route::get('/exports/{type}/{filename}', [\App\Modules\Core\ExportLinkController::class, 'download'])
-        ->middleware('signed:typeInapp')
-        ->name('exports.signed');
-
     // Meeting catalogs
     Route::get('/meeting-types', [\App\Modules\Meeting\Controllers\MeetingTypeController::class, 'public']);
     Route::get('/meeting-types/options', [\App\Modules\Meeting\Controllers\MeetingTypeController::class, 'publicOptions']);
@@ -100,11 +83,6 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
 
     // Zalo OA followers — sync 45p, auth-only, không Spatie. FE admin pick user_id để gán vào users.zalo_user_id.
     Route::get('/zalo-oa-followers', [\App\Modules\Core\ZaloOaFollowerController::class, 'index']);
-
-    // Sinh signed URL tạm thời để tải export (Zalo Mini App). Xem
-    // App\Modules\Core\ExportLinkController + config/exports.php — đăng ký export
-    // type mới ở đó, không cần route riêng.
-    Route::get('/exports/{type}/link', [\App\Modules\Core\ExportLinkController::class, 'link']);
 
     Route::prefix('users')->group(function () {
         require base_path('app/Modules/Core/Routes/user.php');

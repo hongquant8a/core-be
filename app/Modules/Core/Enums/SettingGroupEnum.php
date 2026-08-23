@@ -16,7 +16,6 @@ enum SettingGroupEnum: string
     case Email = 'email';
     case Sms = 'sms';
     case Zalo = 'zalo';
-    case ZaloMiniApp = 'zalo_mini_app';
     case Chat = 'chat';
     case Log = 'log';
     case SsoDanang = 'sso_danang';
@@ -48,7 +47,6 @@ enum SettingGroupEnum: string
             self::Email => 'Cấu hình Email',
             self::Sms => 'Cấu hình SMS',
             self::Zalo => 'Cấu hình Zalo',
-            self::ZaloMiniApp => 'Zalo Mini App',
             self::Chat => 'Chat nội bộ',
             self::Log => 'Cấu hình nhật ký',
             self::SsoDanang => 'SSO Đà Nẵng',
