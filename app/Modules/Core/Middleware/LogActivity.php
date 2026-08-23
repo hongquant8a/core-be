@@ -79,6 +79,7 @@ class LogActivity
                 'ip_address' => $request->ip() ?? '0.0.0.0',
                 'country' => $this->resolveCountry($request),
                 'user_agent' => $request->userAgent(),
+                'device_id' => $this->resolveDeviceId($request),
                 'request_data' => $this->sanitizeRequestData($request),
             ]);
         } catch (\Throwable $e) {
@@ -283,6 +284,21 @@ class LogActivity
         ];
 
         return $labels[$resource] ?? str_replace('-', ' ', $resource);
+    }
+
+    /**
+     * Định danh thiết bị lấy từ header X-Device-Id (FE tự sinh, giữ trong localStorage).
+     *
+     * Đây là giá trị client gửi lên nên KHÔNG tin tuyệt đối được — user sửa localStorage
+     * hoặc gọi API bằng curl là đặt được giá trị bất kỳ. Dùng để đối chiếu/nhóm hành vi,
+     * không dùng làm bằng chứng định danh. Cắt 100 ký tự cho khớp độ dài cột, tránh
+     * header rác dài làm cả bản ghi nhật ký không ghi được.
+     */
+    protected function resolveDeviceId(Request $request): ?string
+    {
+        $deviceId = trim((string) $request->header('X-Device-Id'));
+
+        return $deviceId === '' ? null : mb_substr($deviceId, 0, 100);
     }
 
     protected function resolveCountry(Request $request): ?string

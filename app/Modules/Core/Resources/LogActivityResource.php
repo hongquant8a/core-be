@@ -23,6 +23,7 @@ class LogActivityResource extends JsonResource
             'ip_address' => $this->ip_address,
             'country' => $this->country,
             'user_agent' => $this->user_agent,
+            'device_id' => $this->device_id,
             'request_data' => $this->request_data,
             'created_at' => $this->created_at?->format('H:i:s d/m/Y'),
             'updated_at' => $this->updated_at?->format('H:i:s d/m/Y'),

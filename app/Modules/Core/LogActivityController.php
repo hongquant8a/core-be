@@ -26,14 +26,15 @@ class LogActivityController extends Controller
      *
      * Tổng số bản ghi sau khi áp dụng bộ lọc.
      *
-     * @queryParam search string Tìm kiếm (description, route, ip_address, country, user_type). Example: 127.0.0.1
+     * @queryParam search string Tìm kiếm (description, route, ip_address, country, user_type, device_id). Example: 127.0.0.1
      * @queryParam organization_id integer Lọc theo tổ chức. Example: 1
      * @queryParam user_id integer Lọc theo người thực hiện. Example: 1
+     * @queryParam device_id string Lọc theo mã thiết bị (khớp một phần). Example: 3f9c1b2a
      * @queryParam from_date date Lọc từ ngày (Y-m-d). Example: 2026-01-01
      * @queryParam to_date date Lọc đến ngày (Y-m-d). Example: 2026-12-31
      * @queryParam method_type string GET, POST, PUT, PATCH, DELETE — hoặc alias "view"/"create"/"update"/"delete" (update gom PUT+PATCH). Example: GET
      * @queryParam status_code integer Mã HTTP (200, 400, 500...). Example: 200
-     * @queryParam sort_by string id, description, route, method_type, status_code, ip_address, country, created_at. Example: created_at
+     * @queryParam sort_by string id, description, route, method_type, status_code, ip_address, country, device_id, created_at. Example: created_at
      * @queryParam sort_order string asc, desc. Example: desc
      * @queryParam limit integer 1-100. Example: 10
      *
@@ -133,6 +134,7 @@ class LogActivityController extends Controller
      * @queryParam search string Tìm kiếm. Example: login
      * @queryParam organization_id integer Lọc theo tổ chức. Example: 1
      * @queryParam user_id integer Lọc theo người thực hiện. Example: 1
+     * @queryParam device_id string Lọc theo mã thiết bị (khớp một phần). Example: 3f9c1b2a
      * @queryParam from_date date Từ ngày. Example: 2026-01-01
      * @queryParam to_date date Đến ngày. Example: 2026-12-31
      * @queryParam method_type string GET, POST, PUT, PATCH, DELETE — hoặc alias "view"/"create"/"update"/"delete" (update gom PUT+PATCH).
@@ -188,17 +190,18 @@ class LogActivityController extends Controller
      *
      * Áp dụng cùng bộ lọc với index. Trả về file Excel.
      *
-     * @queryParam search string Tìm kiếm (description, route, ip_address, country, user_type).
+     * @queryParam search string Tìm kiếm (description, route, ip_address, country, user_type, device_id).
      * @queryParam organization_id integer Lọc theo tổ chức. Example: 1
      * @queryParam user_id integer Lọc theo người thực hiện. Example: 1
+     * @queryParam device_id string Lọc theo mã thiết bị (khớp một phần). Example: 3f9c1b2a
      * @queryParam from_date date Lọc từ ngày (Y-m-d). Example: 2026-01-01
      * @queryParam to_date date Lọc đến ngày (Y-m-d). Example: 2026-12-31
      * @queryParam method_type string GET, POST, PUT, PATCH, DELETE — hoặc alias "view"/"create"/"update"/"delete" (update gom PUT+PATCH). Example: GET
      * @queryParam status_code integer Mã HTTP (200, 400, 500...). Example: 200
-     * @queryParam sort_by string id, description, route, method_type, status_code, ip_address, country, created_at.
+     * @queryParam sort_by string id, description, route, method_type, status_code, ip_address, country, device_id, created_at.
      * @queryParam sort_order string asc, desc. Example: desc
      *
-     * Xuất ra các trường: id, description, user_type, user_id, user_name, organization_id, route, method_type, status_code, ip_address, country, user_agent, request_data, created_at, updated_at.
+     * Xuất ra các trường: id, description, user_type, user_id, user_name, organization_id, route, method_type, status_code, ip_address, country, user_agent, device_id, request_data, created_at, updated_at.
      */
     public function export(FilterRequest $request)
     {

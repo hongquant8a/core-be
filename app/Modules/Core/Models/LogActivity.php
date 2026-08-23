@@ -30,6 +30,7 @@ class LogActivity extends Model
         'ip_address',
         'country',
         'user_agent',
+        'device_id',
         'request_data',
     ];
 
@@ -57,6 +58,7 @@ class LogActivity extends Model
                     ->orWhere('ip_address', 'like', '%'.$search.'%')
                     ->orWhere('country', 'like', '%'.$search.'%')
                     ->orWhere('user_type', 'like', '%'.$search.'%')
+                    ->orWhere('device_id', 'like', '%'.$search.'%')
                     ->orWhereHas('user', fn ($q3) => $q3->where('name', 'like', '%'.$search.'%'));
             });
         });
@@ -69,6 +71,10 @@ class LogActivity extends Model
         // Filter IP address (LIKE) — hỗ trợ subnet ngắn vd "192.168" match nhiều IP cùng dải.
         $query->when(isset($filters['ip_address']) && $filters['ip_address'] !== '', function ($q) use ($filters) {
             $q->where('ip_address', 'like', '%'.$filters['ip_address'].'%');
+        });
+        // Filter mã thiết bị (LIKE) — cho phép dán một đoạn UUID thay vì phải đủ 36 ký tự.
+        $query->when(isset($filters['device_id']) && $filters['device_id'] !== '', function ($q) use ($filters) {
+            $q->where('device_id', 'like', '%'.$filters['device_id'].'%');
         });
         $query->when(isset($filters['from_date']) && $filters['from_date'], fn ($q) => $q->whereDate('created_at', '>=', $filters['from_date']));
         $query->when(isset($filters['to_date']) && $filters['to_date'], fn ($q) => $q->whereDate('created_at', '<=', $filters['to_date']));
@@ -91,7 +97,7 @@ class LogActivity extends Model
         });
         $query->when(isset($filters['status_code']) && $filters['status_code'] !== null && $filters['status_code'] !== '', fn ($q) => $q->where('status_code', $filters['status_code']));
         $query->when($filters['sort_by'] ?? 'id', function ($q, $sortBy) use ($filters) {
-            $allowed = ['id', 'description', 'route', 'method_type', 'status_code', 'ip_address', 'country', 'created_at'];
+            $allowed = ['id', 'description', 'route', 'method_type', 'status_code', 'ip_address', 'country', 'device_id', 'created_at'];
             $column = in_array($sortBy, $allowed) ? $sortBy : 'id';
             \App\Modules\Core\Support\VietnameseSort::apply($q, $column, $filters['sort_order'] ?? 'desc');
         });

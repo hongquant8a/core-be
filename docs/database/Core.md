@@ -262,6 +262,7 @@ Nhật ký hoạt động (middleware `log.activity`).
 | `details` | text | Yes | JSON chi tiết |
 | `ip_address` | varchar(45) | Yes | |
 | `user_agent` | text | Yes | |
+| `device_id` | varchar(100) | Yes | Header `X-Device-Id` — cùng nguồn với `fcm_tokens.device_id`, client tự sinh nên chỉ dùng để đối chiếu |
 | `created_at` | datetime | Yes | |
 
 ---

@@ -25,6 +25,7 @@ class LogActivityFactory extends Factory
             'ip_address' => fake()->ipv4(),
             'country' => fake()->country(),
             'user_agent' => fake()->userAgent(),
+            'device_id' => fake()->uuid(),
             'request_data' => [
                 'sample' => fake()->word(),
             ],
