@@ -186,6 +186,32 @@ class LogActivityController extends Controller
     }
 
     /**
+     * Xuất nhật ký của chính mình
+     *
+     * Auth-only, không cần quyền log-activities.export — user thường chỉ lấy được dữ liệu
+     * của chính họ vì user_id bị ép bằng auth()->id() sau khi đọc filter, client không ghi
+     * đè được.
+     *
+     * @queryParam search string Tìm kiếm (description, route, ip_address, country, user_type, device_id). Example: login
+     * @queryParam device_id string Lọc theo mã thiết bị (khớp một phần). Example: 3f9c1b2a
+     * @queryParam from_date date Từ ngày (Y-m-d). Example: 2026-01-01
+     * @queryParam to_date date Đến ngày (Y-m-d). Example: 2026-12-31
+     * @queryParam method_type string GET, POST, PUT, PATCH, DELETE — hoặc alias "view"/"create"/"update"/"delete" (update gom PUT+PATCH). Example: GET
+     * @queryParam status_code integer Mã HTTP. Example: 200
+     * @queryParam sort_by string id, description, route, method_type, status_code, ip_address, country, device_id, created_at. Example: created_at
+     * @queryParam sort_order string asc, desc. Example: desc
+     *
+     * Xuất ra các trường: id, description, user_type, user_id, user_name, organization_id, route, method_type, status_code, ip_address, country, user_agent, device_id, request_data, created_at, updated_at.
+     */
+    public function meExport(FilterRequest $request)
+    {
+        $filters = $request->all();
+        $filters['user_id'] = auth()->id();
+
+        return $this->logActivityService->export($filters);
+    }
+
+    /**
      * Xuất danh sách nhật ký
      *
      * Áp dụng cùng bộ lọc với index. Trả về file Excel.
