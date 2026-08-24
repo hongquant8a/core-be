@@ -1,6 +1,6 @@
 # API Loại văn bản giao việc (Task Assignment Type)
 
-> Cập nhật lần cuối: 15/07/2026 — sửa path public (`/api/public/...`), sửa method `bulk-delete` (POST → DELETE).
+> Cập nhật lần cuối: 24/08/2026 — tách quyền: mỗi endpoint gác một permission riêng (`show`, `stats`, `bulkDestroy`, `bulkUpdateStatus`, `changeStatus` không còn dùng chung `index`/`destroy`/`update`).
 
 Quản lý loại văn bản trong hệ thống giao việc liên phòng ban: thống kê, danh sách, chi tiết, CRUD, xóa/cập nhật trạng thái hàng loạt, đổi trạng thái, xuất/nhập Excel. Hỗ trợ endpoint công khai không cần xác thực.
 
@@ -41,7 +41,7 @@ Quản lý loại văn bản trong hệ thống giao việc liên phòng ban: th
 |---|---|
 | **Method** | GET |
 | **Path** | `/api/task-assignment-types/stats` |
-| **Auth** | Bắt buộc. |
+| **Auth** | Bắt buộc (permission: `task-assignment-types.stats`). |
 | **Query** | `search` (tên), `status` (active \| inactive), `sort_by`, `sort_order`, `limit` (1-100). |
 | **Response** | `{ "total": 10, "active": 8, "inactive": 2 }` — total (sau lọc), active = đang hoạt động, inactive = ngừng hoạt động. |
 
@@ -53,7 +53,7 @@ Quản lý loại văn bản trong hệ thống giao việc liên phòng ban: th
 |---|---|
 | **Method** | GET |
 | **Path** | `/api/task-assignment-types` |
-| **Auth** | Bắt buộc. |
+| **Auth** | Bắt buộc (permission: `task-assignment-types.index`). |
 | **Query** | `search` (tên), `status` (active \| inactive), `sort_by` (id \| name \| created_at), `sort_order` (asc \| desc), `limit` (1-100). |
 | **Response** | Paginated collection; mỗi item gồm đầy đủ các trường của loại văn bản. |
 
@@ -65,7 +65,7 @@ Quản lý loại văn bản trong hệ thống giao việc liên phòng ban: th
 |---|---|
 | **Method** | GET |
 | **Path** | `/api/task-assignment-types/{id}` |
-| **Auth** | Bắt buộc. |
+| **Auth** | Bắt buộc (permission: `task-assignment-types.show`). |
 | **UrlParam** | `id` — ID loại văn bản. |
 | **Response** | Object loại văn bản (TaskAssignmentTypeResource). |
 
@@ -77,7 +77,7 @@ Quản lý loại văn bản trong hệ thống giao việc liên phòng ban: th
 |---|---|
 | **Method** | POST |
 | **Path** | `/api/task-assignment-types` |
-| **Auth** | Bắt buộc. |
+| **Auth** | Bắt buộc (permission: `task-assignment-types.store`). |
 | **Body** | `name` (required, duy nhất trong tổ chức), `description` (optional), `status` (required: active \| inactive). |
 | **Response** | 201, object loại văn bản + `"message": "Loại văn bản đã được tạo thành công!"`. |
 
@@ -89,7 +89,7 @@ Quản lý loại văn bản trong hệ thống giao việc liên phòng ban: th
 |---|---|
 | **Method** | PUT / PATCH |
 | **Path** | `/api/task-assignment-types/{id}` |
-| **Auth** | Bắt buộc. |
+| **Auth** | Bắt buộc (permission: `task-assignment-types.update`). |
 | **Body** | Giống tạo (các trường tùy chọn). `name` phải duy nhất trừ bản ghi hiện tại. |
 | **Response** | Object loại văn bản đã cập nhật. |
 
@@ -101,7 +101,7 @@ Quản lý loại văn bản trong hệ thống giao việc liên phòng ban: th
 |---|---|
 | **Method** | DELETE |
 | **Path** | `/api/task-assignment-types/{id}` |
-| **Auth** | Bắt buộc. |
+| **Auth** | Bắt buộc (permission: `task-assignment-types.destroy`). |
 | **Response** | `{ "message": "Loại văn bản đã được xóa thành công!" }`. |
 
 ---
@@ -112,7 +112,7 @@ Quản lý loại văn bản trong hệ thống giao việc liên phòng ban: th
 |---|---|
 | **Method** | DELETE |
 | **Path** | `/api/task-assignment-types/bulk-delete` |
-| **Auth** | Bắt buộc. |
+| **Auth** | Bắt buộc (permission: `task-assignment-types.bulkDestroy`). |
 | **Body** | `ids` (array) — danh sách ID loại văn bản. |
 | **Response** | `{ "message": "Đã xóa thành công các loại văn bản được chọn!" }`. |
 
@@ -124,7 +124,7 @@ Quản lý loại văn bản trong hệ thống giao việc liên phòng ban: th
 |---|---|
 | **Method** | PATCH |
 | **Path** | `/api/task-assignment-types/bulk-status` |
-| **Auth** | Bắt buộc. |
+| **Auth** | Bắt buộc (permission: `task-assignment-types.bulkUpdateStatus`). |
 | **Body** | `ids` (array), `status` (required: active \| inactive). |
 | **Response** | `{ "message": "Cập nhật trạng thái thành công các loại văn bản được chọn!" }`. |
 
@@ -136,7 +136,7 @@ Quản lý loại văn bản trong hệ thống giao việc liên phòng ban: th
 |---|---|
 | **Method** | PATCH |
 | **Path** | `/api/task-assignment-types/{id}/status` |
-| **Auth** | Bắt buộc. |
+| **Auth** | Bắt buộc (permission: `task-assignment-types.changeStatus`). |
 | **Body** | `status` (required: active \| inactive). |
 | **Response** | `{ "message": "Cập nhật trạng thái thành công!", "data": TaskAssignmentTypeResource }`. |
 
@@ -148,7 +148,7 @@ Quản lý loại văn bản trong hệ thống giao việc liên phòng ban: th
 |---|---|
 | **Method** | GET |
 | **Path** | `/api/task-assignment-types/export` |
-| **Auth** | Bắt buộc. |
+| **Auth** | Bắt buộc (permission: `task-assignment-types.export`). |
 | **Query** | Cùng bộ lọc với index: `search`, `status`, `sort_by`, `sort_order`. |
 | **Response** | File `task-assignment-types.xlsx`. |
 
@@ -160,7 +160,7 @@ Quản lý loại văn bản trong hệ thống giao việc liên phòng ban: th
 |---|---|
 | **Method** | POST |
 | **Path** | `/api/task-assignment-types/import` |
-| **Auth** | Bắt buộc. |
+| **Auth** | Bắt buộc (permission: `task-assignment-types.import`). |
 | **Body** | `file` (required) — xlsx, xls, csv. Cột theo chuẩn export. |
 | **Response** | `{ "message": "Import loại văn bản thành công." }`. |
 
@@ -172,7 +172,7 @@ Quản lý loại văn bản trong hệ thống giao việc liên phòng ban: th
 |---|---|
 | **Method** | GET |
 | **Path** | `/api/task-assignment-types/import-template` |
-| **Auth** | Bắt buộc (permission: import). |
+| **Auth** | Bắt buộc (permission: `task-assignment-types.import`). |
 | **Response** | File `import-types-template.xlsx` — chỉ có header row: `name`, `description`, `status`. |
 
 ---
