@@ -58,27 +58,22 @@ class MigrateTaskPermissionTreeCommand extends Command
         'task-assignment-documents.show' => ['task-assignment-documents.index'],
         'task-assignment-departments.show' => ['task-assignment-departments.index'],
         'task-assignment-employees.show' => ['task-assignment-employees.index'],
-        'task-assignment-item-types.show' => ['task-assignment-item-types.index'],
         'my-assigned-tasks.show' => ['my-assigned-tasks.index'],
         'my-received-tasks.show' => ['my-received-tasks.index'],
 
         // .stats gộp vào .index
         'task-assignment-departments.stats' => ['task-assignment-departments.index'],
-        'task-assignment-item-types.stats' => ['task-assignment-item-types.index'],
         'task-assignment-petitions.stats' => ['task-assignment-petitions.index'],
 
         // .bulkDestroy gộp vào .destroy
         'task-assignment-items.bulkDestroy' => ['task-assignment-documents.destroyItem'],
         'task-assignment-departments.bulkDestroy' => ['task-assignment-departments.destroy'],
-        'task-assignment-item-types.bulkDestroy' => ['task-assignment-item-types.destroy'],
 
         // .bulkUpdateStatus / .changeStatus gộp vào .update
         'task-assignment-items.bulkUpdateStatus' => ['task-assignment-documents.updateItem'],
         'task-assignment-documents.changeStatus' => ['task-assignment-documents.update'],
         'task-assignment-departments.bulkUpdateStatus' => ['task-assignment-departments.update'],
         'task-assignment-departments.changeStatus' => ['task-assignment-departments.update'],
-        'task-assignment-item-types.bulkUpdateStatus' => ['task-assignment-item-types.update'],
-        'task-assignment-item-types.changeStatus' => ['task-assignment-item-types.update'],
     ];
 
     public function handle(): int

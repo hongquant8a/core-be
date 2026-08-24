@@ -122,7 +122,8 @@ class PermissionSeeder extends Seeder
                 'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
             ],
             'task-assignment-item-types' => [
-                'index', 'store', 'update', 'destroy', 'export', 'import',
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
             ],
             'task-assignment-departments' => [
                 'index', 'store', 'update', 'destroy', 'export', 'import',
@@ -225,9 +226,9 @@ class PermissionSeeder extends Seeder
         'task-assignment-documents' => ['stats', 'statsByTime', 'show', 'changeStatus'],
         'task-assignment-departments' => ['stats', 'show', 'bulkDestroy', 'bulkUpdateStatus', 'changeStatus'],
         'task-assignment-employees' => ['show'],
-        // task-assignment-types KHÔNG còn gộp: danh mục loại văn bản tách đủ 11 quyền
-        // (kể cả changeStatus 1 bản ghi và bulkUpdateStatus hàng loạt) theo yêu cầu nghiệp vụ.
-        'task-assignment-item-types' => ['stats', 'show', 'bulkDestroy', 'bulkUpdateStatus', 'changeStatus'],
+        // task-assignment-types và task-assignment-item-types KHÔNG còn gộp: hai danh mục này
+        // tách đủ 11 quyền (kể cả changeStatus 1 bản ghi và bulkUpdateStatus hàng loạt)
+        // theo yêu cầu nghiệp vụ.
         'task-assignment-petitions' => ['stats'],
         'my-assigned-tasks' => ['show'],
         'my-received-tasks' => ['show'],
