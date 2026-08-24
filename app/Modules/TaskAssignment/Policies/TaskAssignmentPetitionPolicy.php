@@ -3,18 +3,26 @@
 namespace App\Modules\TaskAssignment\Policies;
 
 use App\Modules\Core\Models\User;
-use App\Modules\TaskAssignment\Models\TaskAssignmentPetition;
+use App\Modules\TaskAssignment\Enums\PetitionStatusEnum;
 use App\Modules\TaskAssignment\Models\TaskAssignmentEmployeeDepartment;
+use App\Modules\TaskAssignment\Models\TaskAssignmentPetition;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
+/**
+ * Phân quyền đơn thư theo hai trục tách bạch:
+ *  - QUYỀN  (`task-assignment-petitions.*`) quyết định ĐƯỢC LÀM GÌ.
+ *  - PHẠM VI quyết định LÀM TRÊN ĐƠN NÀO: có `viewAll` thì mọi phòng ban,
+ *    không có thì chỉ đơn thuộc phòng ban mình là thành viên.
+ *
+ * Trước đây bốn thao tác destroy/bulkDestroy/bulkUpdateStatus/manage còn AND
+ * ngầm với cờ `is_petition_overview` của phòng ban, nên cấp quyền ở màn Vai trò
+ * mà người dùng vẫn nhận 403. Cờ đó đã bỏ — phạm vi nay do quyền quyết định.
+ */
 class TaskAssignmentPetitionPolicy
 {
     use HandlesAuthorization;
 
-    /**
-     * Ai có quyền `task-overview.manageAll` thì bypass mọi check ownership.
-     * Kiểm theo QUYỀN, không theo tên vai trò.
-     */
+    /** Ai có `task-overview.manageAll` thì bypass mọi kiểm tra phạm vi. */
     public function before(User $user, string $ability): ?bool
     {
         if ($user->can('task-overview.manageAll')) {
@@ -24,168 +32,84 @@ class TaskAssignmentPetitionPolicy
         return null;
     }
 
-    /**
-     * Xem danh sách đơn thư — bất kỳ user có quyền index.
-     */
     public function viewAny(User $user): bool
     {
-        return $user->hasPermissionTo('task-assignment-petitions.index');
+        return $user->can('task-assignment-petitions.index');
     }
 
-    /**
-     * Xem chi tiết đơn thư — bất kỳ user có quyền show VÀ là người có đơn thư này ở phòng ban của mình (nếu không phải là người tạo).
-     */
     public function view(User $user, TaskAssignmentPetition $petition): bool
     {
-        if (! $user->hasPermissionTo('task-assignment-petitions.show')) {
-            return false;
-        }
-
-
-
-        if ($this->isUserInOverviewDepartment($user)) {
-            return true;
-        }
-
-        // Người trong phòng ban được giao của đơn thư cũng có quyền xem.
-        if ($petition->department_id) {
-            return TaskAssignmentEmployeeDepartment::forUser($user->id)
-                ->where('task_assignment_department_id', $petition->department_id)
-                ->exists();
-        }
-
-        return false;
+        return $user->can('task-assignment-petitions.show')
+            && $this->inScope($user, $petition);
     }
 
-    /**
-     * Tạo mới đơn thư — bất kỳ user có quyền store.
-     */
     public function create(User $user): bool
     {
-        return $user->hasPermissionTo('task-assignment-petitions.store');
+        return $user->can('task-assignment-petitions.store');
     }
 
-    /**
-     * Cập nhật đơn thư — cần có quyền update VÀ là người tạo hoặc trong phòng ban được giao.
-     */
     public function update(User $user, TaskAssignmentPetition $petition): bool
     {
-        if ($petition->processing_status === \App\Modules\TaskAssignment\Enums\PetitionStatusEnum::Completed->value) {
-            return false;
-        }
-
-        if (! $user->hasPermissionTo('task-assignment-petitions.update')) {
-            return false;
-        }
-
-
-        if ($this->isUserInOverviewDepartment($user)) {
-            return true;
-        }
-
-        // Người trong phòng ban được giao của đơn thư cũng có quyền cập nhật.
-        if ($petition->department_id) {
-            return TaskAssignmentEmployeeDepartment::forUser($user->id)
-                ->where('task_assignment_department_id', $petition->department_id)
-                ->exists();
-        }
-
-        return false;
+        return ! $this->isCompleted($petition)
+            && $user->can('task-assignment-petitions.update')
+            && $this->inScope($user, $petition);
     }
 
-    /**
-     * Xóa đơn thư — cần có quyền destroy VÀ là người tạo.
-     */
     public function delete(User $user, TaskAssignmentPetition $petition): bool
     {
-        if (! $user->hasPermissionTo('task-assignment-petitions.destroy')) {
-            return false;
-        }
-
-        return $this->isUserInOverviewDepartment($user);
+        return $user->can('task-assignment-petitions.destroy')
+            && $this->inScope($user, $petition);
     }
 
-    /**
-     * Xóa đơn thư hàng loạt — cần quyền bulkDestroy.
-     * Phòng ban tổng hợp có toàn quyền, nếu không phải là người tạo của tất cả đơn thư được chọn.
-     */
+    /** Bulk: kiểm quyền ở đây, phạm vi từng dòng do service lọc theo phòng ban. */
     public function bulkDestroy(User $user): bool
     {
-        if (! $user->hasPermissionTo('task-assignment-petitions.bulkDestroy')) {
-            return false;
-        }
-
-        return $this->isUserInOverviewDepartment($user);
+        return $user->can('task-assignment-petitions.bulkDestroy');
     }
 
-    /**
-     * Đổi trạng thái hàng loạt — cần quyền bulkUpdateStatus.
-     * Chỉ phòng ban tổng hợp mới được đổi trạng thái hàng loạt (như bulkDestroy).
-     */
     public function bulkUpdateStatus(User $user): bool
     {
-        if (! $user->hasPermissionTo('task-assignment-petitions.bulkUpdateStatus')) {
-            return false;
-        }
+        return $user->can('task-assignment-petitions.bulkUpdateStatus');
+    }
 
-        return $this->isUserInOverviewDepartment($user);
+    public function changeStatus(User $user, TaskAssignmentPetition $petition): bool
+    {
+        return ! $this->isCompleted($petition)
+            && $user->can('task-assignment-petitions.changeStatus')
+            && $this->inScope($user, $petition);
+    }
+
+    /** Mở khóa đơn đã hoàn thành để sửa lại. */
+    public function unlock(User $user, TaskAssignmentPetition $petition): bool
+    {
+        return $user->can('task-assignment-petitions.manage')
+            && $this->inScope($user, $petition);
+    }
+
+    private function isCompleted(TaskAssignmentPetition $petition): bool
+    {
+        return $petition->processing_status === PetitionStatusEnum::Completed->value;
     }
 
     /**
-     * Đổi trạng thái đơn thư — cần có quyền changeStatus VÀ là người trong phòng ban được giao.
+     * Đơn thư có nằm trong phạm vi thao tác của user không.
+     *
+     * `viewAll` = mọi phòng ban. Không có thì phải là thành viên đang hoạt động
+     * của chính phòng ban tiếp nhận đơn.
      */
-    public function changeStatus(User $user, TaskAssignmentPetition $petition): bool
+    private function inScope(User $user, TaskAssignmentPetition $petition): bool
     {
-        if ($petition->processing_status === \App\Modules\TaskAssignment\Enums\PetitionStatusEnum::Completed->value) {
-            return false;
-        }
-
-        if (! $user->hasPermissionTo('task-assignment-petitions.changeStatus')) {
-            return false;
-        }
-
-
-
-        if ($this->isUserInOverviewDepartment($user)) {
+        if ($user->can('task-assignment-petitions.viewAll')) {
             return true;
         }
 
-        // Người trong phòng ban được giao mới có quyền đổi trạng thái.
-        if ($petition->department_id) {
-            return TaskAssignmentEmployeeDepartment::forUser($user->id)
-                ->where('task_assignment_department_id', $petition->department_id)
-                ->exists();
-        }
-
-        return false;
-    }
-
-    /**
-     * Mở khóa đơn thư — chỉ phòng ban tổng hợp mới được mở (và phải có quyền manage).
-     * Người tạo không liên quan.
-     */
-    public function unlock(User $user, TaskAssignmentPetition $petition): bool
-    {
-        if (! $user->hasPermissionTo('task-assignment-petitions.manage')) {
+        if (! $petition->department_id) {
             return false;
         }
 
-        return $this->isUserInOverviewDepartment($user);
-    }
-
-    private function isUserInOverviewDepartment(User $user): bool
-    {
-        $deptIds = TaskAssignmentEmployeeDepartment::forUser($user->id)
+        return TaskAssignmentEmployeeDepartment::forUser($user->id)
             ->activeEmployee()
-            ->pluck('task_assignment_department_id')
-            ->toArray();
-
-        if (empty($deptIds)) {
-            return false;
-        }
-
-        return \App\Modules\TaskAssignment\Models\TaskAssignmentDepartment::whereIn('id', $deptIds)
-            ->where('is_petition_overview', true)
+            ->where('task_assignment_department_id', $petition->department_id)
             ->exists();
     }
 }

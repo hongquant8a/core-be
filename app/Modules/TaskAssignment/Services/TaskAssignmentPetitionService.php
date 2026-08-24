@@ -6,6 +6,7 @@ use App\Modules\Core\Services\MediaService;
 use App\Modules\Core\Support\ExportFilename;
 use App\Modules\TaskAssignment\Enums\PetitionStatusEnum;
 use App\Modules\TaskAssignment\Exports\PetitionsExport;
+use App\Modules\TaskAssignment\Models\TaskAssignmentDepartment;
 use App\Modules\TaskAssignment\Models\TaskAssignmentEmployeeDepartment;
 use App\Modules\TaskAssignment\Models\TaskAssignmentPetition;
 use App\Modules\TaskAssignment\Models\TaskAssignmentPetitionAttachment;
@@ -106,9 +107,10 @@ class TaskAssignmentPetitionService
         $petition->delete();
     }
 
+    /** Chỉ xóa được đơn nằm trong phạm vi của user (policy đã kiểm quyền). */
     public function bulkDestroy(array $ids): void
     {
-        TaskAssignmentPetition::where('organization_id', getPermissionsTeamId())->whereIn('id', $ids)->delete();
+        $this->scopedQuery()->whereIn('id', $ids)->delete();
     }
 
     public function bulkUpdateStatus(array $ids, string $status): int
@@ -119,7 +121,7 @@ class TaskAssignmentPetitionService
             $data['completed_at'] = now();
         }
 
-        return TaskAssignmentPetition::where('organization_id', getPermissionsTeamId())
+        return $this->scopedQuery()
             ->whereIn('id', $ids)
             ->where('processing_status', '!=', PetitionStatusEnum::Completed->value)
             ->update($data);
@@ -195,48 +197,68 @@ class TaskAssignmentPetitionService
             ->toArray();
     }
 
+    /**
+     * Query đơn thư đã giới hạn theo phạm vi của user — dùng cho thao tác hàng loạt,
+     * nơi policy chỉ kiểm được quyền chứ không kiểm được từng dòng.
+     */
+    private function scopedQuery()
+    {
+        $query = TaskAssignmentPetition::where('organization_id', getPermissionsTeamId());
+
+        if (! $this->canViewAll()) {
+            $query->whereIn('department_id', $this->getUserDepartmentIds() ?: [0]);
+        }
+
+        return $query;
+    }
+
+    /** Có được xem/thao tác đơn thư của mọi phòng ban không. */
+    private function canViewAll(): bool
+    {
+        return auth()->user()?->can('task-assignment-petitions.viewAll') ?? false;
+    }
+
+    /** Phòng ban được phép chọn khi lập đơn: tất cả nếu có `viewAll`, không thì phòng của mình. */
     public function getAvailableDepartments()
     {
-        $deptIds = $this->getUserDepartmentIds();
-
-        $hasOverview = \App\Modules\TaskAssignment\Models\TaskAssignmentDepartment::whereIn('id', $deptIds)
-            ->where('is_petition_overview', true)
-            ->exists();
-
-        $query = \App\Modules\TaskAssignment\Models\TaskAssignmentDepartment::where('status', 'active')
-            ->select(['id', 'name', 'is_petition_overview'])
+        $query = TaskAssignmentDepartment::where('status', 'active')
+            ->select(['id', 'name'])
             ->orderBy('name');
 
-        if (! $hasOverview) {
-            $query->whereIn('id', $deptIds);
+        if (! $this->canViewAll()) {
+            $query->whereIn('id', $this->getUserDepartmentIds());
         }
 
         return $query->get();
     }
 
+    /**
+     * Giới hạn dữ liệu theo phòng ban.
+     *
+     * Có `task-assignment-petitions.viewAll` → không giới hạn. Không có → chỉ đơn
+     * thuộc phòng ban mình là thành viên; không thuộc phòng nào thì không thấy gì
+     * (department_id = 0 để không khớp bản ghi nào).
+     */
     private function applyDepartmentRestriction(array $filters): array
     {
+        if ($this->canViewAll()) {
+            return $filters;
+        }
+
         $userDeptIds = $this->getUserDepartmentIds();
 
         if (empty($userDeptIds)) {
             $filters['department_id'] = 0;
+
             return $filters;
         }
 
-        $hasOverview = \App\Modules\TaskAssignment\Models\TaskAssignmentDepartment::whereIn('id', $userDeptIds)
-            ->where('is_petition_overview', true)
-            ->exists();
-
-        if ($hasOverview) {
-            return $filters;
-        }
-
+        // Người dùng tự lọc theo một phòng cụ thể — chỉ cho nếu phòng đó thuộc của họ.
         if (isset($filters['department_id'])) {
-            $requestedDeptId = (int) $filters['department_id'];
-            if (in_array($requestedDeptId, $userDeptIds, true)) {
-                return $filters;
-            }
-            $filters['department_id'] = 0;
+            $filters['department_id'] = in_array((int) $filters['department_id'], $userDeptIds, true)
+                ? (int) $filters['department_id']
+                : 0;
+
             return $filters;
         }
 

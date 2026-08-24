@@ -17,11 +17,10 @@ class TaskAssignmentDepartment extends TenantModel
 
     protected $table = 'task_assignment_departments';
 
-    protected $fillable = ['name', 'description', 'status', 'sort_order', 'is_petition_overview', 'organization_id', 'created_by', 'updated_by'];
+    protected $fillable = ['name', 'description', 'status', 'sort_order', 'organization_id', 'created_by', 'updated_by'];
 
     protected $casts = [
         'sort_order' => 'integer',
-        'is_petition_overview' => 'boolean',
     ];
 
     protected static function booted()

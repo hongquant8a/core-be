@@ -3,13 +3,40 @@
 namespace App\Modules\TaskAssignment\Requests;
 
 use App\Modules\TaskAssignment\Enums\PetitionStatusEnum;
+use App\Modules\TaskAssignment\Models\TaskAssignmentEmployeeDepartment;
 
 class UpdatePetitionRequest extends BaseRequest
 {
     public function rules(): array
     {
         return [
-            'department_id' => 'sometimes|integer|exists:task_assignment_departments,id',
+            'department_id' => [
+                'sometimes',
+                'integer',
+                'exists:task_assignment_departments,id',
+                function ($attribute, $value, $fail) {
+                    if (! $value) {
+                        return;
+                    }
+
+                    // Chỉ lập/chuyển đơn thư cho phòng ban mình thuộc về; ai có
+                    // `viewAll` thì thao tác được với mọi phòng ban.
+                    if (auth()->user()?->can('task-assignment-petitions.viewAll')) {
+                        return;
+                    }
+
+                    $deptIds = TaskAssignmentEmployeeDepartment::forUser(auth()->id())
+                        ->activeEmployee()
+                        ->pluck('task_assignment_department_id')
+                        ->all();
+
+                    if (in_array((int) $value, array_map('intval', $deptIds), true)) {
+                        return;
+                    }
+
+                    $fail('Bạn chỉ được lập đơn thư cho phòng ban mình thuộc về.');
+                },
+            ],
             'submission_date' => 'sometimes|date',
             'deadline_date' => 'nullable|date|after_or_equal:submission_date',
             'sender_name' => 'sometimes|string|max:255',

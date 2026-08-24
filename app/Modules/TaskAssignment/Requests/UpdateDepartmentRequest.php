@@ -14,7 +14,6 @@ class UpdateDepartmentRequest extends BaseRequest
             'description' => 'nullable|string|max:65535',
             'status' => ['sometimes', StatusEnum::rule()],
             'sort_order' => 'nullable|integer|min:0',
-            'is_petition_overview' => 'boolean',
             // Thành viên phòng ban là một trường của chính phòng ban — không có endpoint quan hệ riêng.
             // Gửi mảng rỗng để xoá hết thành viên; không gửi khoá này thì giữ nguyên.
             'employee_ids' => 'sometimes|array',
@@ -59,10 +58,6 @@ class UpdateDepartmentRequest extends BaseRequest
                 'description' => 'Thứ tự sắp xếp.',
                 'example' => 1,
             ],
-            'is_petition_overview' => [
-                'description' => 'Phòng ban tổng hợp đơn thư, được xem toàn bộ đơn thư.',
-                'example' => false,
-            ],
             'employee_ids' => [
                 'description' => 'Danh sách ID nhân viên thuộc phòng ban (task_assignment_employees.id). Gửi mảng rỗng để xoá hết.',
                 'example' => [3, 7],
@@ -81,7 +76,6 @@ class UpdateDepartmentRequest extends BaseRequest
             'description' => 'Mô tả',
             'status' => 'Trạng thái',
             'sort_order' => 'Thứ tự sắp xếp',
-            'is_petition_overview' => 'Tổng hợp đơn thư',
             'employee_ids' => 'Danh sách nhân viên',
             'representative_employee_id' => 'Người đại diện',
         ];

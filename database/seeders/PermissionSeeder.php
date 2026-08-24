@@ -103,6 +103,9 @@ class PermissionSeeder extends Seeder
             'task-assignment-petitions' => [
                 'index', 'show', 'store', 'update', 'destroy',
                 'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'manage',
+                // Xem/thao tác đơn thư của MỌI phòng ban. Không có quyền này thì chỉ
+                // thấy đơn thư của phòng ban mình thuộc về.
+                'viewAll',
             ],
             'task-assignment-types' => [
                 'stats', 'index', 'show', 'store', 'update', 'destroy',
@@ -262,8 +265,8 @@ class PermissionSeeder extends Seeder
         Organization::firstOrCreate(
             ['slug' => 'default'],
             [
-                'name' => 'Default',
-                'description' => 'Organization mặc định của hệ thống',
+                'name' => 'Danatec',
+                'description' => 'Tổ chức mặc định của hệ thống',
                 'status' => StatusEnum::Active->value,
             ]
         );
@@ -493,6 +496,15 @@ class PermissionSeeder extends Seeder
             'my-received-tasks.report',
             'my-received-tasks.note',
             'my-received-tasks.transfer',
+
+            // Đơn thư: thêm, xem và xử lý đơn của phòng ban mình.
+            // Phạm vi dữ liệu do service + policy chặn theo phòng ban, không do quyền.
+            // Xóa / xóa hàng loạt / mở khóa dành riêng phòng ban tổng hợp.
+            'task-assignment-petitions.index',
+            'task-assignment-petitions.show',
+            'task-assignment-petitions.store',
+            'task-assignment-petitions.update',
+            'task-assignment-petitions.changeStatus',
         ];
     }
 
@@ -539,6 +551,11 @@ class PermissionSeeder extends Seeder
 
                 $names[] = "{$resource}.{$action}";
             }
+        }
+
+        // Đơn thư — toàn quyền (policy vẫn chặn xoá/mở khoá nếu không thuộc phòng tổng hợp).
+        foreach ($flat['task-assignment-petitions'] as $action) {
+            $names[] = "task-assignment-petitions.{$action}";
         }
 
         $names[] = 'presentation.index';

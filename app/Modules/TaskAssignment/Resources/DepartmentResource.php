@@ -19,7 +19,6 @@ class DepartmentResource extends JsonResource
             'description' => $this->description,
             'status' => $this->status,
             'sort_order' => $this->sort_order,
-            'is_petition_overview' => (bool) $this->is_petition_overview,
             'employees_count' => $this->whenCounted('employeeMemberships'),
             'employees' => $this->whenLoaded('employeeMemberships', fn () => $this->employeeMemberships
                 ->map(fn ($m) => [

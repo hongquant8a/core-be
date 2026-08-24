@@ -6,6 +6,7 @@ use App\Modules\Core\Enums\StatusEnum;
 use App\Modules\Core\Models\Role;
 use App\Modules\Core\Models\User;
 use App\Modules\Core\Models\UserPreference;
+use App\Modules\TaskAssignment\Enums\PetitionStatusEnum;
 use App\Modules\TaskAssignment\Enums\TaskAssignmentDocumentStatusEnum;
 use App\Modules\TaskAssignment\Enums\TaskDeadlineTypeEnum;
 use App\Modules\TaskAssignment\Enums\TaskPriorityEnum;
@@ -18,6 +19,7 @@ use App\Modules\TaskAssignment\Models\TaskAssignmentEmployeeDepartment;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItemReport;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItemType;
+use App\Modules\TaskAssignment\Models\TaskAssignmentPetition;
 use App\Modules\TaskAssignment\Models\TaskAssignmentType;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
@@ -45,9 +47,9 @@ class TaskAssignmentDemoSeeder extends Seeder
     protected const BASE_DATE = '2026-08-01 08:00:00';
 
     protected const DEPARTMENTS = [
-        ['name' => 'Phòng Hành chính - Tổng hợp', 'description' => 'Đầu mối tổng hợp, theo dõi tiến độ chung.', 'is_petition_overview' => true],
-        ['name' => 'Phòng Kế hoạch - Tài chính', 'description' => 'Lập kế hoạch, dự toán và quyết toán.', 'is_petition_overview' => false],
-        ['name' => 'Phòng Kỹ thuật - Công nghệ', 'description' => 'Vận hành hệ thống và hạ tầng kỹ thuật.', 'is_petition_overview' => false],
+        ['name' => 'Phòng Hành chính - Tổng hợp', 'description' => 'Đầu mối tổng hợp, theo dõi tiến độ chung.'],
+        ['name' => 'Phòng Kế hoạch - Tài chính', 'description' => 'Lập kế hoạch, dự toán và quyết toán.'],
+        ['name' => 'Phòng Kỹ thuật - Công nghệ', 'description' => 'Vận hành hệ thống và hạ tầng kỹ thuật.'],
     ];
 
     /** user_name => [tên hiển thị, chỉ số phòng ban trong DEPARTMENTS] */
@@ -77,13 +79,15 @@ class TaskAssignmentDemoSeeder extends Seeder
         $this->seedEmployees();
         $this->seedCatalogs();
         $this->seedDocumentsAndItems();
+        $this->seedPetitions();
 
         $this->command?->info('   → '.count($this->users).' tài khoản, '
             .count($this->departments).' phòng ban, '
             .count($this->employees).' nhân viên, '
             .TaskAssignmentDocument::count().' văn bản, '
             .TaskAssignmentItem::withoutGlobalScopes()->count().' công việc, '
-            .TaskAssignmentItemReport::count().' báo cáo.');
+            .TaskAssignmentItemReport::count().' báo cáo, '
+            .TaskAssignmentPetition::count().' đơn thư.');
     }
 
     // ── 1. Tài khoản ────────────────────────────────────────────
@@ -156,7 +160,6 @@ class TaskAssignmentDemoSeeder extends Seeder
                     'description' => $data['description'],
                     'status' => StatusEnum::Active->value,
                     'sort_order' => $i + 1,
-                    'is_petition_overview' => $data['is_petition_overview'],
                 ]
             );
         }
@@ -335,6 +338,47 @@ class TaskAssignmentDemoSeeder extends Seeder
                     );
                 }
             }
+        }
+    }
+
+    // ── 6. Đơn thư ──────────────────────────────────────────────
+
+    /**
+     * Mỗi phòng ban một đơn thư để kiểm chứng phạm vi xem:
+     * nhân viên chỉ thấy đơn của phòng mình, phòng tổng hợp thấy tất cả.
+     */
+    protected function seedPetitions(): void
+    {
+        $base = Carbon::parse(self::BASE_DATE);
+
+        $plan = [
+            [0, 'Nguyễn Thị Hoa', 'Kiến nghị về thủ tục hành chính tại bộ phận một cửa.', PetitionStatusEnum::New],
+            [1, 'Trần Văn Bảy', 'Phản ánh việc chậm thanh toán chế độ hỗ trợ.', PetitionStatusEnum::Processing],
+            [2, 'Lê Thị Cúc', 'Đề nghị hỗ trợ khắc phục sự cố đường truyền mạng.', PetitionStatusEnum::Completed],
+        ];
+
+        foreach ($plan as $i => [$deptIndex, $sender, $content, $status]) {
+            $submittedAt = $base->copy()->addDays($i * 3);
+            $isDone = $status === PetitionStatusEnum::Completed;
+
+            TaskAssignmentPetition::withoutGlobalScopes()->updateOrCreate(
+                [
+                    'department_id' => $this->departments[$deptIndex]->id,
+                    'sender_name' => $sender,
+                ],
+                [
+                    'submission_date' => $submittedAt->toDateString(),
+                    'deadline_date' => $submittedAt->copy()->addDays(15)->toDateString(),
+                    'sender_phone' => '09'.str_pad((string) (10000000 + $i), 8, '0', STR_PAD_LEFT),
+                    'content' => $content,
+                    'processing_status' => $status->value,
+                    'completed_at' => $isDone ? $submittedAt->copy()->addDays(10) : null,
+                    'document_number' => sprintf('DT-%02d/2026', $i + 1),
+                    'document_excerpt' => $content,
+                    'response_content' => $isDone ? 'Đã xử lý và phản hồi công dân bằng văn bản.' : null,
+                    'organization_id' => self::ORG_ID,
+                ]
+            );
         }
     }
 }
