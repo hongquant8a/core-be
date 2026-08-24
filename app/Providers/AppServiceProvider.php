@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Modules\Core\Events\UsersDeleting;
 use App\Modules\Core\Models\User;
 use App\Modules\Core\Observers\UserObserver;
 use App\Modules\Core\Services\SettingService;
@@ -30,10 +31,12 @@ use App\Modules\Scheduling\Models\SchedulingEmployee;
 use App\Modules\Scheduling\Policies\SchedulingEmployeePolicy;
 use App\Modules\Scheduling\Models\SchedulingEmployeeGroup;
 use App\Modules\Scheduling\Policies\SchedulingEmployeeGroupPolicy;
+use App\Modules\TaskAssignment\Listeners\BlockUserDeletionWithActiveTasks;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Modules\TaskAssignment\Policies\TaskAssignmentItemPolicy;
 use App\Modules\TaskAssignment\Models\TaskAssignmentPetition;
 use App\Modules\TaskAssignment\Policies\TaskAssignmentPetitionPolicy;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -114,6 +117,9 @@ class AppServiceProvider extends ServiceProvider
         // Register TaskAssignment Policies
         Gate::policy(TaskAssignmentItem::class, TaskAssignmentItemPolicy::class);
         Gate::policy(TaskAssignmentPetition::class, TaskAssignmentPetitionPolicy::class);
+
+        // Phân hệ tự đăng ký luật chặn xóa user của mình — Core không biết bảng của phân hệ.
+        Event::listen(UsersDeleting::class, BlockUserDeletionWithActiveTasks::class);
 
         $this->loadViewsFrom(resource_path('views/scheduling'), 'scheduling');
 

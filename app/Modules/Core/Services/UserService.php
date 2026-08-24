@@ -6,6 +6,7 @@ use App\Modules\Core\Enums\UserStatusEnum;
 use App\Modules\Core\Exports\UsersExport;
 use App\Modules\Core\Imports\UsersImport;
 use App\Modules\Core\Models\Role;
+use App\Modules\Core\Events\UsersDeleting;
 use App\Modules\Core\Models\User;
 use App\Modules\Core\Support\ExportFilename;
 use Illuminate\Http\UploadedFile;
@@ -206,7 +207,7 @@ class UserService
         $this->guardActiveAssignments([$user->id]);
 
         DB::transaction(function () use ($user) {
-            $user->taskAssignmentUser()->delete();
+            // Hồ sơ nhân viên + membership phân hệ tự xoá theo khoá ngoại CASCADE.
             $user->delete();
         });
     }
@@ -216,45 +217,19 @@ class UserService
         $this->guardActiveAssignments($ids);
 
         DB::transaction(function () use ($ids) {
-            \App\Modules\TaskAssignment\Models\TaskAssignmentUser::whereIn('user_id', $ids)->delete();
             User::whereIn('id', $ids)->delete();
         });
     }
 
     /**
-     * Chặn xóa user nếu họ đang được giao task chưa done/cancelled.
-     * Lý do: cascadeOnDelete sẽ xóa silently các pivot row → manager mất assignee
-     * mà không hay biết. Bắt buộc transfer sạch trước khi xóa.
+     * Cho từng phân hệ cơ hội chặn việc xóa (listener ném ValidationException).
+     * Core không biết phân hệ nào ràng buộc cái gì — xem `UsersDeleting`.
      *
      * @param  array<int>  $userIds
-     *
-     * @throws ValidationException
      */
     private function guardActiveAssignments(array $userIds): void
     {
-        if (empty($userIds)) {
-            return;
-        }
-
-        $blocked = DB::table('task_assignment_item_user as tiu')
-            ->join('task_assignment_items as ti', 'ti.id', '=', 'tiu.task_assignment_item_id')
-            ->whereIn('tiu.user_id', $userIds)
-            ->whereIn('tiu.assignment_status', ['assigned', 'done'])
-            ->whereNotIn('ti.processing_status', ['done', 'cancelled'])
-            ->select('tiu.user_id', DB::raw('count(*) as task_count'))
-            ->groupBy('tiu.user_id')
-            ->get();
-
-        if ($blocked->isEmpty()) {
-            return;
-        }
-
-        $names = User::whereIn('id', $blocked->pluck('user_id'))->pluck('name', 'id');
-        $details = $blocked->map(fn ($row) => ($names[$row->user_id] ?? "User #{$row->user_id}").": {$row->task_count} công việc")->implode('; ');
-
-        throw ValidationException::withMessages([
-            'user_id' => ["Không thể xóa user đang có công việc chưa hoàn tất. Vui lòng chuyển công việc trước. Chi tiết: {$details}"],
-        ]);
+        UsersDeleting::dispatch($userIds);
     }
 
     public function bulkUpdateStatus(array $ids, string $status): void

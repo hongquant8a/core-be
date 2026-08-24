@@ -28,7 +28,6 @@ class UserResource extends JsonResource
             'temporary_address' => $this->profile?->temporary_address,
             'user_name' => $this->user_name,
             'status' => $this->status,
-            'task_assignment_department_id' => $this->whenLoaded('taskAssignmentUser', fn () => $this->taskAssignmentUser?->task_assignment_department_id),
             'current_organization_id' => $this->when($this->relationLoaded('preference'), fn () => $this->preference?->current_organization_id),
             'avatar' => ($avatar = $this->getFirstMedia('avatars')) ? '/storage/'.$avatar->id.'/'.$avatar->file_name : null,
             'created_by' => $this->whenLoaded('creator', fn () => $this->formatUserSummary($this->creator), null),

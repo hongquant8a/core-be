@@ -2,7 +2,6 @@
 
 namespace App\Modules\Core\Models;
 
-use App\Modules\TaskAssignment\Models\TaskAssignmentUser;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -177,16 +176,6 @@ class User extends Authenticatable implements HasMedia
         return $this->hasMany(FcmToken::class);
     }
 
-    public function taskAssignmentUser()
-    {
-        return $this->hasOne(TaskAssignmentUser::class, 'user_id');
-    }
-
-    public function taskAssignmentUsers()
-    {
-        return $this->hasMany(TaskAssignmentUser::class, 'user_id');
-    }
-
     public function scopeFilter($query, array $filters)
     {
         $query->when($filters['search'] ?? null, function ($query, $search) {
@@ -197,10 +186,6 @@ class User extends Authenticatable implements HasMedia
             });
         })->when($filters['status'] ?? null, function ($query, $status) {
             $query->where('status', $status);
-        })->when($filters['task_assignment_department_id'] ?? null, function ($query, $deptId) {
-            $query->whereHas('taskAssignmentUser', fn ($q) => $q->where('task_assignment_department_id', $deptId));
-        })->when(filter_var($filters['in_task_assignment'] ?? false, FILTER_VALIDATE_BOOLEAN), function ($query) {
-            $query->whereHas('taskAssignmentUser', fn ($q) => $q->where('status', 'active'));
         })->when($filters['role_id'] ?? null, function ($query, $roleId) {
             $teamId = function_exists('getPermissionsTeamId') ? getPermissionsTeamId() : null;
             $query->whereExists(function ($sub) use ($roleId, $teamId) {
