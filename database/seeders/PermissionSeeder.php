@@ -6,8 +6,6 @@ use App\Modules\Core\Enums\StatusEnum;
 use App\Modules\Core\Models\Organization;
 use App\Modules\Core\Models\Permission;
 use App\Modules\Core\Models\Role;
-use App\Modules\Core\Models\User;
-use App\Modules\Core\Models\UserPreference;
 use Illuminate\Database\Seeder;
 
 /**
@@ -22,21 +20,7 @@ class PermissionSeeder extends Seeder
     protected const GUARD = 'web';
 
     /**
-     * 6 tài khoản đơn vị Đảng — dùng chung cho phân hệ Quản lý công việc.
-     * user_name là chữ cái đầu của tên đơn vị, mật khẩu 123123, vai trò Trưởng phòng.
-     * TaskAssignmentDataSeeder dùng key 'department' để gắn user vào đúng đơn vị.
-     */
-    public const PARTY_UNIT_ACCOUNTS = [
-        ['user_name' => 'vpdu',   'email' => 'vpdu@example.com',   'name' => 'Văn phòng Đảng uỷ',  'department' => 'Văn phòng Đảng uỷ'],
-        ['user_name' => 'bxdd',   'email' => 'bxdd@example.com',   'name' => 'Ban Xây dựng Đảng',  'department' => 'Ban Xây dựng Đảng'],
-        ['user_name' => 'ubkt',   'email' => 'ubkt@example.com',   'name' => 'Uỷ ban Kiểm tra',    'department' => 'Uỷ ban Kiểm tra'],
-        ['user_name' => 'duubnd', 'email' => 'duubnd@example.com', 'name' => 'Đảng uỷ UBND',       'department' => 'Đảng uỷ UBND'],
-        ['user_name' => 'duca',   'email' => 'duca@example.com',   'name' => 'Đảng uỷ Công an',    'department' => 'Đảng uỷ Công an'],
-        ['user_name' => 'cuqs',   'email' => 'cuqs@example.com',   'name' => 'Chi uỷ Quân sự',     'department' => 'Chi uỷ Quân sự'],
-    ];
-
-    /**
-     * Danh sách đầy đủ permission theo nhóm module (Core, TaskAssignment, Meeting, Scheduling).
+     * Danh sách đầy đủ permission theo nhóm module (Core, TaskAssignment, Meeting).
      * Định dạng: 'Module' => ['resource' => ['action', ...]] — resource trùng prefix API.
      * Khi thêm module/chức năng: bổ sung vào đúng nhóm và chạy sail artisan db:seed --class=PermissionSeeder.
      */
@@ -86,8 +70,7 @@ class PermissionSeeder extends Seeder
             'notifications.templates' => [
                 'index', 'store', 'update', 'destroy', 'variables',
             ],
-            // Admin xem/xoá lịch sử chat nhóm nội bộ theo cuộc họp (meeting.internal_chat_enabled).
-            // destroy CHỈ gán cho Super Admin — xem assignPermissionsToRoles().
+            // Xem/xoá lịch sử chat nhóm nội bộ theo cuộc họp (meeting.internal_chat_enabled).
             'meeting-chat-conversations' => [
                 'index', 'show', 'destroy',
             ],
@@ -96,6 +79,10 @@ class PermissionSeeder extends Seeder
         'TaskAssignment' => [
             'task-overview' => [
                 'index', 'exportMonthlyReport',
+                // Hai quyền "vượt phạm vi" — thay cho việc hardcode tên vai trò trong code:
+                //  viewAll   : xem dữ liệu toàn tổ chức, không bị giới hạn theo phòng ban.
+                //  manageAll : thao tác trên công việc của người khác (bỏ kiểm tra sở hữu).
+                'viewAll', 'manageAll',
             ],
             // Công việc chỉ được tạo/sửa/xóa trong màn Văn bản giao việc (core-fe chặn
             // giao đột xuất ngoài luồng) → 3 action *Item nằm cùng nhóm văn bản.
@@ -139,6 +126,8 @@ class PermissionSeeder extends Seeder
                 'stats', 'index', 'show', 'store', 'update', 'destroy',
                 'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
                 'exportReports', 'home',
+                // Xem chi tiết điểm danh/biểu quyết theo từng người (góc nhìn quản trị).
+                'viewAll',
             ],
             'meeting-types' => [
                 'stats', 'index', 'show', 'store', 'update', 'destroy',
@@ -183,29 +172,6 @@ class PermissionSeeder extends Seeder
                 'show', 'update',
             ],
         ],
-        'Scheduling' => [
-            'schedules-executive' => [
-                'stats', 'index', 'show', 'store', 'update', 'destroy',
-                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
-                'approve', 'duplicate', 'reorder', 'driver-view', 'home',
-            ],
-            'schedules-office' => [
-                'stats', 'index', 'show', 'store', 'update', 'destroy',
-                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
-                'approve', 'duplicate', 'reorder', 'driver-view', 'home',
-            ],
-            'scheduling-employees' => [
-                'stats', 'index', 'show', 'store', 'update', 'destroy',
-                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
-            ],
-            'scheduling-employee-groups' => [
-                'stats', 'index', 'show', 'store', 'update', 'destroy',
-                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export',
-            ],
-            'scheduling-settings' => [
-                'show', 'update',
-            ],
-        ],
     ];
 
     /**
@@ -233,6 +199,21 @@ class PermissionSeeder extends Seeder
         'task-assignment-petitions' => ['stats'],
         'my-assigned-tasks' => ['show'],
         'my-received-tasks' => ['show'],
+    ];
+
+    /**
+     * Vai trò đã bỏ — xóa khỏi DB mỗi lần seed.
+     * `Quản trị` gộp vào `Quản lý công việc`; 3 vai trò Lịch công tác và `Đại biểu`
+     * không còn tài khoản nào dùng và không chỗ nào trong code kiểm tra tới.
+     */
+    protected static array $REMOVED_ROLES = [
+        'Quản trị',
+        'Tổng hợp lịch',
+        'Thư ký',
+        'Văn phòng',
+        'Đại biểu',
+        'Lái xe',
+        'Admin',
     ];
 
     /** Nhóm (tầng group) không còn dùng — xóa để cây không còn nhánh rỗng. */
@@ -263,8 +244,8 @@ class PermissionSeeder extends Seeder
         $this->seedOrganizations();
         $this->seedPermissions();
         $this->seedRoles();
+        $this->deleteRemovedRoles();
         $this->assignPermissionsToRoles();
-        $this->seedFixedUsersAndAssignRoles();
     }
 
     /** Chuyển permission/role từ guard api sang web (một lần khi đổi chiến lược guard). */
@@ -293,7 +274,6 @@ class PermissionSeeder extends Seeder
         'Core'           => 'Hệ thống',
         'TaskAssignment' => 'Quản lý công việc',
         'Meeting'        => 'Phòng họp không giấy',
-        'Scheduling'     => 'Lịch công tác',
     ];
 
     /** Nhãn nhóm permission theo resource (để description). */
@@ -319,7 +299,7 @@ class PermissionSeeder extends Seeder
         'notifications.schedules' => 'Cấu hình lịch nhắc',
         'notifications.logs' => 'Nhật ký gửi thông báo',
         'notifications.templates' => 'Cấu hình ZNS template thông báo',
-        'meeting-chat-conversations' => 'Chat nhóm cuộc họp (Admin)',
+        'meeting-chat-conversations' => 'Chat nhóm cuộc họp',
         'my-received-tasks' => 'Công việc được giao',
         'my-assigned-tasks' => 'Công việc đang giao',
         'meetings' => 'Cuộc họp',
@@ -335,11 +315,6 @@ class PermissionSeeder extends Seeder
         'meeting-minutes-templates' => 'Danh mục template biên bản họp',
         'meeting-invitation-templates' => 'Danh mục template giấy mời họp',
         'meeting-settings' => 'Cấu hình cuộc họp',
-        'schedules-executive' => 'Lịch công tác - Thường trực',
-        'schedules-office'    => 'Lịch công tác - Văn phòng',
-        'scheduling-employees' => 'Danh mục nhân viên lịch công tác',
-        'scheduling-employee-groups' => 'Danh mục nhóm nhân viên lịch công tác',
-        'scheduling-settings' => 'Cấu hình lịch công tác',
     ];
 
     /** Nhãn action (để description). */
@@ -373,6 +348,8 @@ class PermissionSeeder extends Seeder
         'reject' => 'Từ chối',
         'attendees' => 'Quản lý đại biểu trong nhóm',
         'systemOverview' => 'Tổng quan hệ thống',
+        'viewAll' => 'Xem toàn tổ chức',
+        'manageAll' => 'Thao tác trên dữ liệu của người khác',
         'reorder' => 'Sắp xếp lại',
         'duplicate' => 'Sao chép',
         'driver-view' => 'Xem lịch phân công lái xe',
@@ -454,42 +431,31 @@ class PermissionSeeder extends Seeder
             ['name' => 'Super Admin', 'guard_name' => self::GUARD],
             ['organization_id' => null]
         );
-        Role::firstOrCreate(
-            ['name' => 'Admin', 'guard_name' => self::GUARD],
-            ['organization_id' => null]
-        );
         // TaskAssignment - 3 role nghiệp vụ giao việc
         Role::firstOrCreate(
-            ['name' => 'Quản trị', 'guard_name' => self::GUARD],
-            ['organization_id' => null]
-        );
-        Role::firstOrCreate(
-            ['name' => 'Trưởng phòng', 'guard_name' => self::GUARD],
+            ['name' => 'Quản lý công việc', 'guard_name' => self::GUARD],
             ['organization_id' => null]
         );
         Role::firstOrCreate(
             ['name' => 'Nhân viên', 'guard_name' => self::GUARD],
             ['organization_id' => null]
         );
-        Role::firstOrCreate(
-            ['name' => 'Tổng hợp lịch', 'guard_name' => self::GUARD],
-            ['organization_id' => null]
-        );
-        Role::firstOrCreate(
-            ['name' => 'Thư ký', 'guard_name' => self::GUARD],
-            ['organization_id' => null]
-        );
-        Role::firstOrCreate(
-            ['name' => 'Văn phòng', 'guard_name' => self::GUARD],
-            ['organization_id' => null]
-        );
-        Role::firstOrCreate(
-            ['name' => 'Lái xe', 'guard_name' => self::GUARD],
-            ['organization_id' => null]
-        );
 
         // Chuẩn hóa dữ liệu cũ nếu còn role theo organization.
         Role::query()->update(['organization_id' => null]);
+    }
+
+    /** Xóa vai trò đã bỏ (kèm quan hệ gán quyền và gán user do khóa ngoại cascade). */
+    protected function deleteRemovedRoles(): void
+    {
+        $roles = Role::whereIn('name', self::$REMOVED_ROLES)
+            ->where('guard_name', self::GUARD)
+            ->get();
+
+        foreach ($roles as $role) {
+            $role->syncPermissions([]);
+            $role->delete();
+        }
     }
 
     /** Gán permission cho từng role. */
@@ -501,208 +467,40 @@ class PermissionSeeder extends Seeder
             $superAdmin->syncPermissions($allPermissionNames);
         }
 
-        $admin = Role::where('name', 'Admin')->where('guard_name', self::GUARD)->first();
-        if ($admin) {
-            // "meeting-chat-conversations.destroy" chỉ dành cho Super Admin — Admin có mọi
-            // quyền khác nhưng không được xoá lịch sử chat nhóm cuộc họp.
-            $admin->syncPermissions(array_diff($allPermissionNames, ['meeting-chat-conversations.destroy']));
-        }
-
         // TaskAssignment roles
-        $quanTriRole = Role::where('name', 'Quản trị')->where('guard_name', self::GUARD)->first();
-        if ($quanTriRole) {
-            $quanTriRole->syncPermissions($this->getQuanTriPermissionNames());
-        }
-
-        $truongPhongRole = Role::where('name', 'Trưởng phòng')->where('guard_name', self::GUARD)->first();
-        if ($truongPhongRole) {
-            $truongPhongRole->syncPermissions($this->getTruongPhongPermissionNames());
+        $quanLyCongViecRole = Role::where('name', 'Quản lý công việc')->where('guard_name', self::GUARD)->first();
+        if ($quanLyCongViecRole) {
+            $quanLyCongViecRole->syncPermissions($this->getQuanLyCongViecPermissionNames());
         }
 
         $nhanVienRole = Role::where('name', 'Nhân viên')->where('guard_name', self::GUARD)->first();
         if ($nhanVienRole) {
             $nhanVienRole->syncPermissions($this->getNhanVienPermissionNames());
         }
-
-        $tongHopRole = Role::where('name', 'Tổng hợp lịch')->where('guard_name', self::GUARD)->first();
-        if ($tongHopRole) {
-            $tongHopRole->syncPermissions($this->getTongHopPermissionNames());
-        }
-
-        $thuKyRole = Role::where('name', 'Thư ký')->where('guard_name', self::GUARD)->first();
-        if ($thuKyRole) {
-            $thuKyRole->syncPermissions($this->getThuKyPermissionNames());
-        }
-
-        $vanPhongRole = Role::where('name', 'Văn phòng')->where('guard_name', self::GUARD)->first();
-        if ($vanPhongRole) {
-            $vanPhongRole->syncPermissions($this->getVanPhongPermissionNames());
-        }
-
-        $laiXeRole = Role::where('name', 'Lái xe')->where('guard_name', self::GUARD)->first();
-        if ($laiXeRole) {
-            $laiXeRole->syncPermissions($this->getLaiXePermissionNames());
-        }
     }
+
 
     /**
-     * Tạo user cố định để đăng nhập kiểm tra và gán role:
-     * - admin@example.com => Super Admin
-     * - basic@example.com => Vai trò mẫu (quyền cơ bản)
+     * Permission cho Nhân viên — người thực hiện: nhận việc, cập nhật tiến độ,
+     * làm báo cáo. KHÔNG có markDone; xác nhận hoàn thành thuộc Quản lý công việc.
      */
-    protected function seedFixedUsersAndAssignRoles(): void
+    protected function getNhanVienPermissionNames(): array
     {
-        $defaultOrganization = Organization::where('slug', 'default')->first();
-        if (! $defaultOrganization) {
-            return;
-        }
-        setPermissionsTeamId($defaultOrganization->id);
-
-        $superAdmin = Role::where('name', 'Super Admin')->where('guard_name', self::GUARD)->first();
-
-        $superAdminUser = User::where('user_name', 'admin')
-            ->orWhere('email', 'admin@example.com')
-            ->first();
-
-        if (! $superAdminUser) {
-            $superAdminUser = User::create([
-                'email' => 'admin@example.com',
-                'name' => 'Admin',
-                'user_name' => 'admin',
-                'password' => 'quandcore**11',
-                'status' => StatusEnum::Active->value,
-                'email_verified_at' => now(),
-            ]);
-        }
-        $superAdminUser->forceFill([
-            'created_by' => $superAdminUser->id,
-            'updated_by' => $superAdminUser->id,
-        ])->save();
-
-        if ($superAdmin) {
-            $superAdminUser->syncRoles([$superAdmin]);
-        }
-
-        // TaskAssignment test users
-        $quanTriRole = Role::where('name', 'Quản trị')->where('guard_name', self::GUARD)->first();
-        $truongPhongRole = Role::where('name', 'Trưởng phòng')->where('guard_name', self::GUARD)->first();
-        $nhanVienRole = Role::where('name', 'Nhân viên')->where('guard_name', self::GUARD)->first();
-
-        foreach ([
-            ['email' => 'quantri@example.com', 'user_name' => 'quantri', 'name' => 'Quản trị', 'role' => $quanTriRole],
-            ['email' => 'truongphong@example.com', 'user_name' => 'truongphong', 'name' => 'Trưởng Phòng', 'role' => $truongPhongRole],
-            ['email' => 'nhanvien@example.com', 'user_name' => 'nhanvien', 'name' => 'Nhân viên', 'role' => $nhanVienRole],
-        ] as $userData) {
-            // Tìm user đã tồn tại theo user_name HOẶC email — tránh duplicate khi prod đã có account.
-            $user = User::where('user_name', $userData['user_name'])
-                ->orWhere('email', $userData['email'])
-                ->first();
-
-            if (! $user) {
-                $user = User::create([
-                    'email' => $userData['email'],
-                    'user_name' => $userData['user_name'],
-                    'name' => $userData['name'],
-                    'password' => 'quandcore**11',
-                    'status' => StatusEnum::Active->value,
-                    'email_verified_at' => now(),
-                ]);
-            }
-            $user->forceFill([
-                'created_by' => $superAdminUser->id,
-                'updated_by' => $superAdminUser->id,
-            ])->save();
-
-            if ($userData['role']) {
-                $user->syncRoles([$userData['role']]);
-            }
-        }
-
-        // Scheduling test users
-        $tongHopRole = Role::where('name', 'Tổng hợp lịch')->where('guard_name', self::GUARD)->first();
-        $thuKyRole = Role::where('name', 'Thư ký')->where('guard_name', self::GUARD)->first();
-        $vanPhongRole = Role::where('name', 'Văn phòng')->where('guard_name', self::GUARD)->first();
-        $laiXeRole = Role::where('name', 'Lái xe')->where('guard_name', self::GUARD)->first();
-
-        foreach ([
-            ['email' => 'tonghoplich@example.com', 'user_name' => 'tonghoplich', 'name' => 'Tổng hợp lịch', 'role' => $tongHopRole],
-            ['email' => 'thuky@example.com', 'user_name' => 'thuky', 'name' => 'Thư ký', 'role' => $thuKyRole],
-            ['email' => 'vanphong@example.com', 'user_name' => 'vanphong', 'name' => 'Văn phòng', 'role' => $vanPhongRole],
-            ['email' => 'laixe@example.com', 'user_name' => 'laixe', 'name' => 'Lái xe', 'role' => $laiXeRole],
-        ] as $userData) {
-            $user = User::where('user_name', $userData['user_name'])
-                ->orWhere('email', $userData['email'])
-                ->first();
-
-            if (! $user) {
-                $user = User::create([
-                    'email' => $userData['email'],
-                    'user_name' => $userData['user_name'],
-                    'name' => $userData['name'],
-                    'password' => 'quandcore**11',
-                    'status' => StatusEnum::Active->value,
-                    'email_verified_at' => now(),
-                ]);
-            }
-            $user->forceFill([
-                'created_by' => $superAdminUser->id,
-                'updated_by' => $superAdminUser->id,
-            ])->save();
-
-            if ($userData['role']) {
-                $user->syncRoles([$userData['role']]);
-            }
-        }
-
-        // 6 tài khoản đơn vị Đảng — mật khẩu 123123, vai trò Trưởng phòng.
-        foreach (self::PARTY_UNIT_ACCOUNTS as $userData) {
-            $user = User::where('user_name', $userData['user_name'])
-                ->orWhere('email', $userData['email'])
-                ->first();
-
-            if (! $user) {
-                $user = User::create([
-                    'email' => $userData['email'],
-                    'user_name' => $userData['user_name'],
-                    'name' => $userData['name'],
-                    'password' => '123123',
-                    'status' => StatusEnum::Active->value,
-                    'email_verified_at' => now(),
-                ]);
-            }
-            $user->forceFill([
-                'created_by' => $superAdminUser->id,
-                'updated_by' => $superAdminUser->id,
-            ])->save();
-
-            if ($truongPhongRole) {
-                $user->syncRoles([$truongPhongRole]);
-            }
-        }
-
-        // Gán tất cả user chưa có role vào org "Default" với role "Nhân viên"
-        $allUsersWithoutRoles = User::whereDoesntHave('roles')->get();
-        foreach ($allUsersWithoutRoles as $u) {
-            if ($nhanVienRole) {
-                $u->syncRoles([$nhanVienRole]);
-            }
-        }
-
-        // Gán tất cả user vào organization "Default" qua user_preferences
-        User::all()->each(function ($u) use ($defaultOrganization) {
-            UserPreference::firstOrCreate(
-                ['user_id' => $u->id],
-                ['current_organization_id' => $defaultOrganization->id]
-            );
-        });
+        return [
+            'my-received-tasks.index',
+            'my-received-tasks.export',
+            'my-received-tasks.updateProgress',
+            'my-received-tasks.report',
+            'my-received-tasks.note',
+            'my-received-tasks.transfer',
+        ];
     }
 
-    /** Lấy toàn bộ tên permission (resource.action). */
+    /** Toàn bộ tên permission dạng phẳng — dùng cho Super Admin. */
     protected function getAllPermissionNames(): array
     {
         $names = [];
-        $flat = self::getFlatPermissions();
-        foreach ($flat as $resource => $actions) {
+        foreach (self::getFlatPermissions() as $resource => $actions) {
             foreach ($actions as $action) {
                 $names[] = "{$resource}.{$action}";
             }
@@ -711,149 +509,42 @@ class PermissionSeeder extends Seeder
         return $names;
     }
 
-    /** Permission cho Quản trị: full danh mục + xem/thống kê/export văn bản, công việc, báo cáo. */
-    protected function getQuanTriPermissionNames(): array
+    /**
+     * Permission cho Quản lý công việc — người giao và xác nhận:
+     * full 4 danh mục, full văn bản giao việc (kèm CRUD công việc bên trong),
+     * tổng quan, trình diễn và toàn bộ thao tác trên 2 màn công việc cá nhân.
+     */
+    protected function getQuanLyCongViecPermissionNames(): array
     {
         $names = [];
         $flat = self::getFlatPermissions();
 
-        // Full quyền trên danh mục
-        foreach (['task-assignment-departments', 'task-assignment-employees', 'task-assignment-types', 'task-assignment-item-types'] as $resource) {
+        foreach ([
+            'task-assignment-types',
+            'task-assignment-item-types',
+            'task-assignment-departments',
+            'task-assignment-employees',
+        ] as $resource) {
             foreach ($flat[$resource] as $action) {
                 $names[] = "{$resource}.{$action}";
             }
         }
 
-        // Xem + export văn bản giao việc
-        foreach (['index', 'export'] as $action) {
-            $names[] = "task-assignment-documents.{$action}";
+        foreach (['task-assignment-documents', 'task-overview', 'my-assigned-tasks', 'my-received-tasks'] as $resource) {
+            foreach ($flat[$resource] as $action) {
+                // `manageAll` (bỏ kiểm tra sở hữu) chỉ dành cho quản trị hệ thống.
+                if ($resource === 'task-overview' && $action === 'manageAll') {
+                    continue;
+                }
+
+                $names[] = "{$resource}.{$action}";
+            }
         }
 
-        // Trang Tổng quan công việc (gộp toàn bộ thống kê dashboard)
-        foreach ($flat['task-overview'] as $action) {
-            $names[] = "task-overview.{$action}";
-        }
-
-        // Đơn thư — full quyền
-        foreach ($flat['task-assignment-petitions'] as $action) {
-            $names[] = "task-assignment-petitions.{$action}";
-        }
-
-        // Dashboard + 2 màn công việc cá nhân (kèm đầy đủ quyền thao tác)
+        $names[] = 'presentation.index';
         $names[] = 'dashboard.systemOverview';
-        foreach ($flat['my-assigned-tasks'] as $action) {
-            $names[] = "my-assigned-tasks.{$action}";
-        }
-        foreach ($flat['my-received-tasks'] as $action) {
-            $names[] = "my-received-tasks.{$action}";
-        }
 
         return $names;
     }
 
-    /** Permission cho Trưởng phòng: tạo/sửa văn bản, công việc, assign, xem báo cáo. */
-    protected function getTruongPhongPermissionNames(): array
-    {
-        return [
-            // Văn bản giao việc (kèm quyền thêm/sửa công việc bên trong văn bản)
-            'task-assignment-documents.index',
-            'task-assignment-documents.store',
-            'task-assignment-documents.update',
-            'task-assignment-documents.storeItem',
-            'task-assignment-documents.updateItem',
-
-            // Tổng quan công việc - BE ép department_id phòng mình
-            'task-overview.index',
-            'task-overview.exportMonthlyReport',
-
-            // Công việc đang giao (full quyền người giao việc)
-            'my-assigned-tasks.index',
-            'my-assigned-tasks.export',
-            'my-assigned-tasks.pause',
-            'my-assigned-tasks.cancel',
-            'my-assigned-tasks.transfer',
-            'my-assigned-tasks.markDone',
-            'my-assigned-tasks.changeStatus',
-            'my-assigned-tasks.note',
-
-            // Công việc được giao
-            'my-received-tasks.index',
-            'my-received-tasks.export',
-            'my-received-tasks.updateProgress',
-            'my-received-tasks.report',
-            'my-received-tasks.note',
-            'my-received-tasks.transfer',
-
-            // Dashboard
-            'dashboard.systemOverview',
-        ];
-    }
-
-    /** Permission cho Nhân viên: xem văn bản/công việc, cập nhật tiến độ, tạo/sửa báo cáo. */
-    protected function getNhanVienPermissionNames(): array
-    {
-        return [
-            // Công việc được giao (full quyền người thực hiện)
-            'my-received-tasks.index',
-            'my-received-tasks.updateProgress',
-            'my-received-tasks.report',
-            'my-received-tasks.note',
-            'my-received-tasks.transfer',
-        ];
-    }
-
-    protected function getTongHopPermissionNames(): array
-    {
-        $names = [];
-        $flat = self::getFlatPermissions();
-        foreach (['schedules-executive', 'schedules-office', 'scheduling-employees', 'scheduling-employee-groups', 'scheduling-settings'] as $resource) {
-            foreach ($flat[$resource] as $action) {
-                $names[] = "{$resource}.{$action}";
-            }
-        }
-        return $names;
-    }
-
-    protected function getThuKyPermissionNames(): array
-    {
-        return [
-            // Lịch Thường trực — full quyền
-            'schedules-executive.stats',
-            'schedules-executive.index',
-            'schedules-executive.show',
-            'schedules-executive.store',
-            'schedules-executive.update',
-            'schedules-executive.destroy',
-            'schedules-executive.bulkDestroy',
-            'schedules-executive.bulkUpdateStatus',
-            'schedules-executive.changeStatus',
-            'schedules-executive.export',
-            'schedules-executive.duplicate',
-            'schedules-executive.reorder',
-            'schedules-executive.home',
-        ];
-    }
-
-    protected function getVanPhongPermissionNames(): array
-    {
-        return [
-            'schedules-office.index',
-            'schedules-office.show',
-            'schedules-office.update',
-            'schedules-office.export',
-            'schedules-office.stats',
-            'schedules-office.approve',
-            'schedules-office.home',
-        ];
-    }
-
-    protected function getLaiXePermissionNames(): array
-    {
-        return [
-            'schedules-executive.driver-view',
-            'schedules-executive.home',
-            'schedules-office.driver-view',
-            'schedules-office.home',
-        ];
-    }
 }

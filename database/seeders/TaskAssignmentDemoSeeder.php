@@ -1,0 +1,340 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Modules\Core\Enums\StatusEnum;
+use App\Modules\Core\Models\Role;
+use App\Modules\Core\Models\User;
+use App\Modules\Core\Models\UserPreference;
+use App\Modules\TaskAssignment\Enums\TaskAssignmentDocumentStatusEnum;
+use App\Modules\TaskAssignment\Enums\TaskDeadlineTypeEnum;
+use App\Modules\TaskAssignment\Enums\TaskPriorityEnum;
+use App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum;
+use App\Modules\TaskAssignment\Enums\TaskUserAssignmentStatusEnum;
+use App\Modules\TaskAssignment\Models\TaskAssignmentDepartment;
+use App\Modules\TaskAssignment\Models\TaskAssignmentDocument;
+use App\Modules\TaskAssignment\Models\TaskAssignmentEmployee;
+use App\Modules\TaskAssignment\Models\TaskAssignmentEmployeeDepartment;
+use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
+use App\Modules\TaskAssignment\Models\TaskAssignmentItemReport;
+use App\Modules\TaskAssignment\Models\TaskAssignmentItemType;
+use App\Modules\TaskAssignment\Models\TaskAssignmentType;
+use Carbon\Carbon;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+
+/**
+ * Dữ liệu mẫu cho phân hệ Quản lý công việc.
+ *
+ * Chạy SAU PermissionSeeder (cần sẵn permission + 2 vai trò nghiệp vụ).
+ * Trình tự: tài khoản → phòng ban → nhân viên → danh mục → văn bản giao việc
+ * → công việc → báo cáo.
+ *
+ * Hai vai trò nghiệp vụ:
+ *  - Nhân viên: nhận việc, cập nhật tiến độ, làm báo cáo.
+ *  - Quản lý công việc: tạo văn bản, giao việc, theo dõi và xác nhận hoàn thành.
+ */
+class TaskAssignmentDemoSeeder extends Seeder
+{
+    protected const ORG_ID = 1;
+
+    /** Mật khẩu chung cho tài khoản nghiệp vụ mẫu. */
+    protected const DEMO_PASSWORD = '123123';
+
+    /** Mốc thời gian cố định để dữ liệu mẫu ổn định giữa các lần seed. */
+    protected const BASE_DATE = '2026-08-01 08:00:00';
+
+    protected const DEPARTMENTS = [
+        ['name' => 'Phòng Hành chính - Tổng hợp', 'description' => 'Đầu mối tổng hợp, theo dõi tiến độ chung.', 'is_petition_overview' => true],
+        ['name' => 'Phòng Kế hoạch - Tài chính', 'description' => 'Lập kế hoạch, dự toán và quyết toán.', 'is_petition_overview' => false],
+        ['name' => 'Phòng Kỹ thuật - Công nghệ', 'description' => 'Vận hành hệ thống và hạ tầng kỹ thuật.', 'is_petition_overview' => false],
+    ];
+
+    /** user_name => [tên hiển thị, chỉ số phòng ban trong DEPARTMENTS] */
+    protected const STAFF = [
+        'nhanvien1' => ['Nguyễn Văn An', 0],
+        'nhanvien2' => ['Trần Thị Bình', 0],
+        'nhanvien3' => ['Lê Hoàng Cường', 1],
+        'nhanvien4' => ['Phạm Thị Dung', 1],
+        'nhanvien5' => ['Võ Minh Đức', 2],
+    ];
+
+    /** @var array<string, User> */
+    protected array $users = [];
+
+    /** @var array<int, TaskAssignmentDepartment> */
+    protected array $departments = [];
+
+    /** @var array<string, TaskAssignmentEmployee> */
+    protected array $employees = [];
+
+    public function run(): void
+    {
+        setPermissionsTeamId(self::ORG_ID);
+
+        $this->seedAccounts();
+        $this->seedDepartments();
+        $this->seedEmployees();
+        $this->seedCatalogs();
+        $this->seedDocumentsAndItems();
+
+        $this->command?->info('   → '.count($this->users).' tài khoản, '
+            .count($this->departments).' phòng ban, '
+            .count($this->employees).' nhân viên, '
+            .TaskAssignmentDocument::count().' văn bản, '
+            .TaskAssignmentItem::withoutGlobalScopes()->count().' công việc, '
+            .TaskAssignmentItemReport::count().' báo cáo.');
+    }
+
+    // ── 1. Tài khoản ────────────────────────────────────────────
+
+    protected function seedAccounts(): void
+    {
+        $superAdmin = Role::where('name', 'Super Admin')->where('guard_name', 'web')->first();
+        $manager = Role::where('name', 'Quản lý công việc')->where('guard_name', 'web')->first();
+        $staff = Role::where('name', 'Nhân viên')->where('guard_name', 'web')->first();
+
+        // Tài khoản quản trị mặc định.
+        $this->users['admin'] = $this->upsertUser('admin', 'Quản trị hệ thống', 'admin@example.com', 'quandcore**11', $superAdmin);
+
+        // Quản lý công việc.
+        $this->users['quanly1'] = $this->upsertUser('quanly1', 'Đặng Quốc Quản', 'quanly1@example.com', self::DEMO_PASSWORD, $manager);
+
+        // Nhân viên thực hiện.
+        foreach (self::STAFF as $userName => [$fullName]) {
+            $this->users[$userName] = $this->upsertUser($userName, $fullName, "{$userName}@example.com", self::DEMO_PASSWORD, $staff);
+        }
+    }
+
+    protected function upsertUser(string $userName, string $name, string $email, string $password, ?Role $role): User
+    {
+        $user = User::where('user_name', $userName)->orWhere('email', $email)->first();
+
+        if ($user) {
+            // Luôn đặt lại mật khẩu để tài khoản mẫu dùng được ngay sau mỗi lần seed.
+            $user->forceFill([
+                'name' => $name,
+                'email' => $email,
+                'user_name' => $userName,
+                'password' => $password,
+                'status' => StatusEnum::Active->value,
+                'email_verified_at' => now(),
+            ])->save();
+        } else {
+            $user = User::create([
+                'name' => $name,
+                'email' => $email,
+                'user_name' => $userName,
+                'password' => $password,
+                'status' => StatusEnum::Active->value,
+                'email_verified_at' => now(),
+            ]);
+        }
+
+        if ($role) {
+            $user->syncRoles([$role]);
+        }
+
+        // Tổ chức hiện tại lấy từ preference — không đặt thì sau khi đăng nhập
+        // user rơi vào màn chọn tổ chức và chưa có vai trò nào.
+        UserPreference::updateOrCreate(
+            ['user_id' => $user->id],
+            ['current_organization_id' => self::ORG_ID]
+        );
+
+        return $user;
+    }
+
+    // ── 2. Phòng ban ────────────────────────────────────────────
+
+    protected function seedDepartments(): void
+    {
+        foreach (self::DEPARTMENTS as $i => $data) {
+            $this->departments[$i] = TaskAssignmentDepartment::withoutGlobalScopes()->updateOrCreate(
+                ['name' => $data['name'], 'organization_id' => self::ORG_ID],
+                [
+                    'description' => $data['description'],
+                    'status' => StatusEnum::Active->value,
+                    'sort_order' => $i + 1,
+                    'is_petition_overview' => $data['is_petition_overview'],
+                ]
+            );
+        }
+    }
+
+    // ── 3. Nhân viên phân hệ + gán phòng ban ────────────────────
+
+    protected function seedEmployees(): void
+    {
+        // Quản lý công việc thuộc phòng tổng hợp và là người đại diện phòng đó.
+        $this->employees['quanly1'] = $this->upsertEmployee($this->users['quanly1'], 0, true);
+
+        foreach (self::STAFF as $userName => [, $deptIndex]) {
+            $this->employees[$userName] = $this->upsertEmployee($this->users[$userName], $deptIndex, false);
+        }
+
+        // Mỗi phòng còn lại cần một người đại diện thì mới giao việc cho cả phòng được.
+        foreach ([1 => 'nhanvien3', 2 => 'nhanvien5'] as $deptIndex => $userName) {
+            TaskAssignmentEmployeeDepartment::withoutGlobalScopes()
+                ->where('task_assignment_employee_id', $this->employees[$userName]->id)
+                ->where('task_assignment_department_id', $this->departments[$deptIndex]->id)
+                ->update(['is_representative' => true]);
+        }
+    }
+
+    protected function upsertEmployee(User $user, int $deptIndex, bool $isRepresentative): TaskAssignmentEmployee
+    {
+        $employee = TaskAssignmentEmployee::withoutGlobalScopes()->updateOrCreate(
+            ['user_id' => $user->id, 'organization_id' => self::ORG_ID],
+            ['status' => StatusEnum::Active->value]
+        );
+
+        TaskAssignmentEmployeeDepartment::withoutGlobalScopes()->updateOrCreate(
+            [
+                'task_assignment_employee_id' => $employee->id,
+                'task_assignment_department_id' => $this->departments[$deptIndex]->id,
+            ],
+            ['organization_id' => self::ORG_ID, 'is_representative' => $isRepresentative]
+        );
+
+        return $employee;
+    }
+
+    // ── 4. Danh mục ─────────────────────────────────────────────
+
+    protected function seedCatalogs(): void
+    {
+        foreach (['Công văn', 'Kế hoạch', 'Thông báo'] as $i => $name) {
+            TaskAssignmentType::withoutGlobalScopes()->updateOrCreate(
+                ['name' => $name, 'organization_id' => self::ORG_ID],
+                ['status' => StatusEnum::Active->value]
+            );
+        }
+
+        foreach (['Công việc thường xuyên', 'Công việc đột xuất', 'Công việc trọng tâm'] as $name) {
+            TaskAssignmentItemType::withoutGlobalScopes()->updateOrCreate(
+                ['name' => $name, 'organization_id' => self::ORG_ID],
+                ['status' => StatusEnum::Active->value]
+            );
+        }
+    }
+
+    // ── 5. Văn bản giao việc + công việc + báo cáo ──────────────
+
+    protected function seedDocumentsAndItems(): void
+    {
+        $base = Carbon::parse(self::BASE_DATE);
+        $docType = TaskAssignmentType::withoutGlobalScopes()->where('organization_id', self::ORG_ID)->orderBy('id')->first();
+        $itemTypes = TaskAssignmentItemType::withoutGlobalScopes()->where('organization_id', self::ORG_ID)->orderBy('id')->pluck('id')->all();
+        $assigner = $this->users['quanly1'];
+
+        $plan = [
+            [
+                'doc' => 'Công văn 101/CV-VP về triển khai nhiệm vụ quý III',
+                'summary' => 'Giao các phòng triển khai nhiệm vụ trọng tâm quý III/2026.',
+                'items' => [
+                    // [tên công việc, người thực hiện, trạng thái, % hoàn thành, số ngày hạn]
+                    ['Rà soát và cập nhật quy trình nội bộ', 'nhanvien1', TaskProgressStatusEnum::Done, 100, 10],
+                    ['Tổng hợp báo cáo nhân sự quý III', 'nhanvien2', TaskProgressStatusEnum::PendingApproval, 100, 14],
+                    ['Lập dự toán kinh phí quý IV', 'nhanvien3', TaskProgressStatusEnum::InProgress, 60, 20],
+                ],
+            ],
+            [
+                'doc' => 'Kế hoạch 205/KH-VP về nâng cấp hạ tầng công nghệ',
+                'summary' => 'Nâng cấp hạ tầng máy chủ và bảo đảm an toàn thông tin.',
+                'items' => [
+                    ['Khảo sát hiện trạng máy chủ', 'nhanvien5', TaskProgressStatusEnum::InProgress, 40, 15],
+                    ['Đối chiếu quyết toán kinh phí năm 2026', 'nhanvien4', TaskProgressStatusEnum::Todo, 0, 25],
+                    ['Xây dựng phương án sao lưu dữ liệu', 'nhanvien5', TaskProgressStatusEnum::Todo, 0, 30],
+                ],
+            ],
+        ];
+
+        foreach ($plan as $d => $entry) {
+            $issueDate = $base->copy()->addDays($d * 7);
+
+            $document = TaskAssignmentDocument::withoutGlobalScopes()->updateOrCreate(
+                ['name' => $entry['doc'], 'organization_id' => self::ORG_ID],
+                [
+                    'summary' => $entry['summary'],
+                    'issue_date' => $issueDate->toDateString(),
+                    'task_assignment_type_id' => $docType?->id,
+                    'status' => TaskAssignmentDocumentStatusEnum::Issued->value,
+                    'issued_at' => $issueDate,
+                    'created_by' => $assigner->id,
+                    'updated_by' => $assigner->id,
+                ]
+            );
+
+            foreach ($entry['items'] as $i => [$itemName, $staffKey, $status, $percent, $deadlineDays]) {
+                $employee = $this->employees[$staffKey];
+                $performer = $this->users[$staffKey];
+                $membership = TaskAssignmentEmployeeDepartment::withoutGlobalScopes()
+                    ->where('task_assignment_employee_id', $employee->id)
+                    ->first();
+
+                $startAt = $issueDate->copy()->addDay();
+                $endAt = $issueDate->copy()->addDays($deadlineDays);
+                $isDone = $status === TaskProgressStatusEnum::Done;
+                $isReported = $percent >= 100;
+
+                $item = TaskAssignmentItem::withoutGlobalScopes()->updateOrCreate(
+                    ['name' => $itemName, 'task_assignment_document_id' => $document->id],
+                    [
+                        'task_assignment_item_type_id' => $itemTypes[$i % count($itemTypes)] ?? null,
+                        'deadline_type' => TaskDeadlineTypeEnum::HasDeadline->value,
+                        'start_at' => $startAt,
+                        'end_at' => $endAt,
+                        'processing_status' => $status->value,
+                        'completion_percent' => $percent,
+                        'priority' => [TaskPriorityEnum::High, TaskPriorityEnum::Medium, TaskPriorityEnum::Low][$i % 3]->value,
+                        'assigned_by' => $assigner->id,
+                        'reported_by' => $isReported ? $performer->id : null,
+                        'reported_at' => $isReported ? $endAt->copy()->subDays(2) : null,
+                        'approved_by' => $isDone ? $assigner->id : null,
+                        'completed_at' => $isDone ? $endAt->copy()->subDay() : null,
+                        'organization_id' => self::ORG_ID,
+                        'created_by' => $assigner->id,
+                        'updated_by' => $assigner->id,
+                    ]
+                );
+
+                // Phân công người thực hiện (pivot khoá theo user_id, xem CLAUDE.md).
+                DB::table('task_assignment_item_user')->updateOrInsert(
+                    ['task_assignment_item_id' => $item->id, 'user_id' => $performer->id],
+                    [
+                        'department_id' => $membership->task_assignment_department_id,
+                        'department_role' => 'main',
+                        'assignment_role' => 'main',
+                        'assignment_status' => $isReported
+                            ? TaskUserAssignmentStatusEnum::Done->value
+                            : TaskUserAssignmentStatusEnum::Assigned->value,
+                        'assigned_at' => $startAt,
+                        'completed_at' => $isDone ? $endAt->copy()->subDay() : null,
+                        'created_at' => $startAt,
+                        'updated_at' => $startAt,
+                    ]
+                );
+
+                // Báo cáo mẫu: chỉ những công việc đã báo cáo (100%) mới có.
+                if ($isReported) {
+                    TaskAssignmentItemReport::withoutGlobalScopes()->updateOrCreate(
+                        ['task_assignment_item_id' => $item->id, 'reporter_user_id' => $performer->id],
+                        [
+                            'assignee_user_id' => $performer->id,
+                            'completion_percent' => 100,
+                            'completed_at' => $endAt->copy()->subDays(2),
+                            'report_document_number' => sprintf('BC-%02d/%02d', $d + 1, $i + 1),
+                            'report_document_excerpt' => "Báo cáo kết quả thực hiện: {$itemName}.",
+                            'report_document_content' => "Đã hoàn thành nội dung được giao tại văn bản \"{$entry['doc']}\". "
+                                .'Kết quả đạt yêu cầu về tiến độ và chất lượng, không phát sinh vướng mắc.',
+                            'organization_id' => self::ORG_ID,
+                            'created_by' => $performer->id,
+                            'updated_by' => $performer->id,
+                        ]
+                    );
+                }
+            }
+        }
+    }
+}
