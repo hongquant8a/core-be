@@ -73,7 +73,7 @@ class UpdateSettingRequest extends FormRequest
             ],
             'copyright' => [
                 'description' => 'Thông tin bản quyền hiển thị.',
-                'example' => '© 2026 QuânDH',
+                'example' => '© 2026 Danatec',
             ],
             'log_retention_days' => [
                 'description' => 'Số ngày lưu log.',
@@ -81,7 +81,7 @@ class UpdateSettingRequest extends FormRequest
             ],
             'social' => [
                 'description' => 'Cấu hình object/json cho nhóm social (nếu có).',
-                'example' => ['facebook' => 'https://facebook.com/quandh'],
+                'example' => ['facebook' => 'https://facebook.com/danatec'],
             ],
         ];
     }

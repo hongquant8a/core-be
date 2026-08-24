@@ -12,17 +12,17 @@ class SettingSeeder extends Seeder
 {
     protected static array $items = [
         // General
-        ['key' => 'copyright', 'value' => '', 'group' => 'general', 'is_public' => true, 'type' => 'string', 'label' => 'Thông tin bản quyền', 'sort_order' => 1],
-        ['key' => 'designed_by', 'value' => '', 'group' => 'general', 'is_public' => true, 'type' => 'string', 'label' => 'Thiết kế bởi', 'sort_order' => 2],
+        ['key' => 'copyright', 'value' => '© 2026 Danatec', 'group' => 'general', 'is_public' => true, 'type' => 'string', 'label' => 'Thông tin bản quyền', 'sort_order' => 1],
+        ['key' => 'designed_by', 'value' => 'Danatec', 'group' => 'general', 'is_public' => true, 'type' => 'string', 'label' => 'Thiết kế bởi', 'sort_order' => 2],
         ['key' => 'language', 'value' => 'vi', 'group' => 'general', 'is_public' => true, 'type' => 'string', 'label' => 'Ngôn ngữ', 'sort_order' => 3],
         ['key' => 'time_format', 'value' => 'H:i:s d/m/Y', 'group' => 'general', 'is_public' => true, 'type' => 'string', 'label' => 'Định dạng thời gian', 'sort_order' => 4],
         ['key' => 'icon', 'value' => null, 'group' => 'general', 'is_public' => true, 'type' => 'image', 'label' => 'Biểu tượng favicon', 'sort_order' => 5],
         ['key' => 'logo', 'value' => null, 'group' => 'general', 'is_public' => true, 'type' => 'image', 'label' => 'Logo trang', 'sort_order' => 6],
         ['key' => 'contact_email', 'value' => null, 'group' => 'general', 'is_public' => false, 'type' => 'string', 'label' => 'Email tiếp nhận yêu cầu liên hệ', 'sort_order' => 7],
-        ['key' => 'organization_name', 'value' => '', 'group' => 'general', 'is_public' => true, 'type' => 'string', 'label' => 'Tên đơn vị', 'sort_order' => 8],
-        ['key' => 'app_name', 'value' => 'QuânDH Core', 'group' => 'general', 'is_public' => true, 'type' => 'string', 'label' => 'Tên ứng dụng', 'sort_order' => 9],
-        ['key' => 'app_description', 'value' => '', 'group' => 'general', 'is_public' => true, 'type' => 'text', 'label' => 'Mô tả ứng dụng', 'sort_order' => 10],
-        ['key' => 'app_title', 'value' => 'Tiêu đề trang', 'group' => 'general', 'is_public' => true, 'type' => 'string', 'label' => 'Tiêu đề trang', 'sort_order' => 11],
+        ['key' => 'organization_name', 'value' => 'Danatec', 'group' => 'general', 'is_public' => true, 'type' => 'string', 'label' => 'Tên đơn vị', 'sort_order' => 8],
+        ['key' => 'app_name', 'value' => 'Danatec', 'group' => 'general', 'is_public' => true, 'type' => 'string', 'label' => 'Tên ứng dụng', 'sort_order' => 9],
+        ['key' => 'app_description', 'value' => 'Hệ thống quản lý công việc Danatec', 'group' => 'general', 'is_public' => true, 'type' => 'text', 'label' => 'Mô tả ứng dụng', 'sort_order' => 10],
+        ['key' => 'app_title', 'value' => 'Danatec', 'group' => 'general', 'is_public' => true, 'type' => 'string', 'label' => 'Tiêu đề trang', 'sort_order' => 11],
         // Admin page — admin_app_name/admin_app_description/admin_welcome_title đã chuyển sang general.app_name/app_description.
         // seed:cleanup-obsolete sẽ tự xóa 3 key cũ trong DB.
         ['key' => 'admin_logo_title', 'value' => 'Hệ thống quản trị', 'group' => 'admin_page', 'is_public' => true, 'type' => 'string', 'label' => 'Tiêu đề trang đăng nhập(cạnh logo Trang quản trị)', 'sort_order' => 1],

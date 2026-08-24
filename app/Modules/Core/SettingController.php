@@ -85,7 +85,7 @@ class SettingController extends Controller
      * - `application/json` + URL string → giữ nguyên ảnh cũ, không thay đổi.
      * - `application/json` + chuỗi rỗng `""` → xóa ảnh, trả `null`.
      *
-     * @bodyParam copyright string optional Thông tin bản quyền. Example: © 2026 QuânDH
+     * @bodyParam copyright string optional Thông tin bản quyền. Example: © 2026 Danatec
      * @bodyParam language string optional Ngôn ngữ. Example: vi
      * @bodyParam logo file optional Ảnh logo (jpg, png, svg, webp, ico, max 5MB).
      * @bodyParam icon file optional Ảnh favicon (jpg, png, svg, webp, ico, max 5MB).

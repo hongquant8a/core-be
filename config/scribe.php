@@ -14,11 +14,11 @@ return [
     'title' => config('app.name').' API Documentation',
 
     // A short description of your API. Will be included in the docs webpage, Postman collection and OpenAPI spec.
-    'description' => 'Quandh Core API - RESTful API cho quản lý xác thực (Auth), người dùng (User) và bài viết (Post). Sử dụng Laravel Sanctum để xác thực Bearer token.',
+    'description' => 'Danatec Core API - RESTful API cho quản lý xác thực (Auth), người dùng (User) và bài viết (Post). Sử dụng Laravel Sanctum để xác thực Bearer token.',
 
     // Text to place in the "Introduction" section, right after the `description`. Markdown and HTML are supported.
     'intro_text' => <<<'INTRO'
-            Tài liệu này cung cấp thông tin chi tiết để tích hợp và sử dụng Quandh Core API.
+            Tài liệu này cung cấp thông tin chi tiết để tích hợp và sử dụng Danatec Core API.
 
             <aside>Khi cuộn xuống, bạn sẽ thấy ví dụ code (Bash, JavaScript, PHP) cho mỗi endpoint. Có thể chọn ngôn ngữ bằng tab góc phải hoặc menu điều hướng trên mobile.</aside>
         INTRO,
