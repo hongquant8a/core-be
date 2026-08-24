@@ -13,7 +13,8 @@ use App\Modules\TaskAssignment\Models\TaskAssignmentItemNote;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItemReport;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItemType;
 use App\Modules\TaskAssignment\Models\TaskAssignmentType;
-use App\Modules\TaskAssignment\Models\TaskAssignmentUser;
+use App\Modules\TaskAssignment\Models\TaskAssignmentEmployee;
+use App\Modules\TaskAssignment\Models\TaskAssignmentEmployeeDepartment;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -172,7 +173,7 @@ class TaskAssignmentDataSeeder extends Seeder
         $orgId = getPermissionsTeamId() ?: (Organization::first()?->id ?? self::ORG_ID);
         $unitCodes = array_keys(self::UNITS);
 
-        // 1. Tài khoản đại diện đơn vị: is_primary + is_representative.
+        // 1. Tài khoản đại diện đơn vị: is_representative.
         foreach (self::UNIT_ACCOUNTS as $code => $userName) {
             $user = User::where('user_name', $userName)->first();
             if (! $user) {
@@ -180,7 +181,7 @@ class TaskAssignmentDataSeeder extends Seeder
             }
 
             $this->representatives[$code] = $user;
-            $this->upsertDepartmentMember($user, $this->deptIds[$code], $orgId, true, true);
+            $this->upsertDepartmentMember($user, $this->deptIds[$code], $orgId, true);
         }
 
         // 2. Các user còn lại chia đều làm thành viên 6 đơn vị.
@@ -188,8 +189,8 @@ class TaskAssignmentDataSeeder extends Seeder
         $others = User::whereNotIn('id', $representativeIds)->orderBy('id')->get();
 
         foreach ($others as $i => $user) {
-            $hasAssignment = TaskAssignmentUser::withoutGlobalScopes()
-                ->where('user_id', $user->id)
+            $hasAssignment = TaskAssignmentEmployeeDepartment::withoutGlobalScopes()
+                ->whereHas('employee', fn ($q) => $q->withoutGlobalScopes()->where('user_id', $user->id))
                 ->where('organization_id', $orgId)
                 ->exists();
             if ($hasAssignment) {
@@ -197,38 +198,46 @@ class TaskAssignmentDataSeeder extends Seeder
             }
 
             $code = $unitCodes[$i % count($unitCodes)];
-            $this->upsertDepartmentMember($user, $this->deptIds[$code], $orgId, false, false);
+            $this->upsertDepartmentMember($user, $this->deptIds[$code], $orgId, false);
         }
 
         // 3. Cache thành viên theo đơn vị (đại diện đứng đầu danh sách).
-        $membership = TaskAssignmentUser::withoutGlobalScopes()
-            ->with('user')
+        $membership = TaskAssignmentEmployeeDepartment::withoutGlobalScopes()
+            ->with(['employee' => fn ($q) => $q->withoutGlobalScopes()->with('user')])
             ->where('organization_id', $orgId)
             ->orderByDesc('is_representative')
-            ->orderBy('user_id')
+            ->orderBy('task_assignment_employee_id')
             ->get()
             ->groupBy('task_assignment_department_id');
 
         foreach ($this->deptIds as $code => $deptId) {
-            $this->membersByUnit[$code] = ($membership[$deptId] ?? collect())->pluck('user')->filter()->values();
+            $this->membersByUnit[$code] = ($membership[$deptId] ?? collect())
+                ->map(fn ($m) => $m->employee?->user)
+                ->filter()
+                ->values();
         }
 
         $this->typeIds = TaskAssignmentType::withoutGlobalScopes()->pluck('id', 'name')->all();
         $this->itemTypeIds = TaskAssignmentItemType::withoutGlobalScopes()->pluck('id', 'name')->all();
     }
 
-    private function upsertDepartmentMember(User $user, int $deptId, int $orgId, bool $isPrimary, bool $isRepresentative): void
+    private function upsertDepartmentMember(User $user, int $deptId, int $orgId, bool $isRepresentative): void
     {
-        TaskAssignmentUser::withoutGlobalScopes()->firstOrCreate(
+        // Hồ sơ nhân viên phải có trước: bảng nối có khoá ngoại ghép
+        // (user_id, organization_id) trỏ tới `task_assignment_employees`.
+        $employee = TaskAssignmentEmployee::withoutGlobalScopes()->firstOrCreate(
+            ['user_id' => $user->id, 'organization_id' => $orgId],
+            ['status' => 'active', 'created_by' => $user->id, 'updated_by' => $user->id]
+        );
+
+        TaskAssignmentEmployeeDepartment::withoutGlobalScopes()->firstOrCreate(
             [
-                'user_id' => $user->id,
+                'task_assignment_employee_id' => $employee->id,
                 'task_assignment_department_id' => $deptId,
-                'organization_id' => $orgId,
             ],
             [
-                'is_primary' => $isPrimary,
+                'organization_id' => $orgId,
                 'is_representative' => $isRepresentative,
-                'status' => 'active',
                 'created_by' => $user->id,
                 'updated_by' => $user->id,
             ]

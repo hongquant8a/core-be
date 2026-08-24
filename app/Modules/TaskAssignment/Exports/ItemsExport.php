@@ -18,14 +18,14 @@ class ItemsExport extends AbstractExcelExport implements FromCollection
 
     public function collection()
     {
-        $items = TaskAssignmentItem::with(['document', 'itemType', 'users.taskAssignmentUser.department', 'creator', 'editor', 'reporter', 'approver'])
+        $items = TaskAssignmentItem::with(['document', 'itemType', 'creator', 'editor', 'reporter', 'approver'])
             ->filter($this->filters)
             ->orderByDesc('id')
             ->get();
 
         $deptIds = $items->flatMap(function ($item) {
             return $item->users->map(function ($user) {
-                return $user->pivot->department_id ?? $user->taskAssignmentUser?->task_assignment_department_id;
+                return $user->pivot->department_id;
             });
         })->filter()->unique();
 
@@ -51,7 +51,7 @@ class ItemsExport extends AbstractExcelExport implements FromCollection
                 'departments' => $item->users
                     ->filter(fn ($u) => $u->pivot->assignment_status !== 'transferred')
                     ->map(function ($user) use ($depts) {
-                        $deptId = $user->pivot->department_id ?? $user->taskAssignmentUser?->task_assignment_department_id;
+                        $deptId = $user->pivot->department_id;
 
                         return $deptId ? ($depts->get((int) $deptId) ?? $depts->get((string) $deptId)) : null;
                     })

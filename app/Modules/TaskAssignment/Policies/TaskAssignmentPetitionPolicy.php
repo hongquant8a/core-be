@@ -4,7 +4,7 @@ namespace App\Modules\TaskAssignment\Policies;
 
 use App\Modules\Core\Models\User;
 use App\Modules\TaskAssignment\Models\TaskAssignmentPetition;
-use App\Modules\TaskAssignment\Models\TaskAssignmentUser;
+use App\Modules\TaskAssignment\Models\TaskAssignmentEmployeeDepartment;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class TaskAssignmentPetitionPolicy
@@ -47,7 +47,7 @@ class TaskAssignmentPetitionPolicy
 
         // Người trong phòng ban được giao của đơn thư cũng có quyền xem.
         if ($petition->department_id) {
-            return TaskAssignmentUser::where('user_id', $user->id)
+            return TaskAssignmentEmployeeDepartment::forUser($user->id)
                 ->where('task_assignment_department_id', $petition->department_id)
                 ->exists();
         }
@@ -83,7 +83,7 @@ class TaskAssignmentPetitionPolicy
 
         // Người trong phòng ban được giao của đơn thư cũng có quyền cập nhật.
         if ($petition->department_id) {
-            return TaskAssignmentUser::where('user_id', $user->id)
+            return TaskAssignmentEmployeeDepartment::forUser($user->id)
                 ->where('task_assignment_department_id', $petition->department_id)
                 ->exists();
         }
@@ -150,7 +150,7 @@ class TaskAssignmentPetitionPolicy
 
         // Người trong phòng ban được giao mới có quyền đổi trạng thái.
         if ($petition->department_id) {
-            return TaskAssignmentUser::where('user_id', $user->id)
+            return TaskAssignmentEmployeeDepartment::forUser($user->id)
                 ->where('task_assignment_department_id', $petition->department_id)
                 ->exists();
         }
@@ -173,8 +173,8 @@ class TaskAssignmentPetitionPolicy
 
     private function isUserInOverviewDepartment(User $user): bool
     {
-        $deptIds = TaskAssignmentUser::where('user_id', $user->id)
-            ->where('status', 'active')
+        $deptIds = TaskAssignmentEmployeeDepartment::forUser($user->id)
+            ->activeEmployee()
             ->pluck('task_assignment_department_id')
             ->toArray();
 

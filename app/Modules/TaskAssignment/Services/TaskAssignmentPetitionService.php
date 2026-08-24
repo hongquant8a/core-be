@@ -6,6 +6,7 @@ use App\Modules\Core\Services\MediaService;
 use App\Modules\Core\Support\ExportFilename;
 use App\Modules\TaskAssignment\Enums\PetitionStatusEnum;
 use App\Modules\TaskAssignment\Exports\PetitionsExport;
+use App\Modules\TaskAssignment\Models\TaskAssignmentEmployeeDepartment;
 use App\Modules\TaskAssignment\Models\TaskAssignmentPetition;
 use App\Modules\TaskAssignment\Models\TaskAssignmentPetitionAttachment;
 use Illuminate\Http\UploadedFile;
@@ -188,8 +189,8 @@ class TaskAssignmentPetitionService
 
     private function getUserDepartmentIds(): array
     {
-        return auth()->user()->taskAssignmentUsers()
-            ->where('status', 'active')
+        return TaskAssignmentEmployeeDepartment::forUser(auth()->id())
+            ->activeEmployee()
             ->pluck('task_assignment_department_id')
             ->toArray();
     }

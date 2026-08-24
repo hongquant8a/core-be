@@ -4,9 +4,9 @@ namespace App\Modules\TaskAssignment\Services;
 
 use App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum;
 use App\Modules\TaskAssignment\Enums\TaskUserAssignmentStatusEnum;
+use App\Modules\TaskAssignment\Models\TaskAssignmentEmployeeDepartment;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItemUserTransfer;
-use App\Modules\TaskAssignment\Models\TaskAssignmentUser;
 use Illuminate\Support\Facades\DB;
 
 class TaskAssignmentTransferService
@@ -75,13 +75,15 @@ class TaskAssignmentTransferService
             throw new \RuntimeException('Người nhận đã được giao công việc này.');
         }
 
-        // Xác định department_id cho to_user
-        $toUserDept = TaskAssignmentUser::where('user_id', $toUserId)
-            ->where('status', 'active')
-            ->orderByDesc('is_primary')
-            ->first();
-
-        $toDepartmentId = $toUserDept?->task_assignment_department_id ?? $fromPivot->department_id;
+        // Phòng ban ghi vào dòng phân công mới:
+        //  - FE gửi `to_department_id` khi người nhận thuộc nhiều phòng (request bắt buộc lúc đó);
+        //  - không gửi thì lấy phòng duy nhất của người nhận;
+        //  - người nhận chưa thuộc phòng nào thì giữ phòng của dòng phân công cũ.
+        $toDepartmentId = $validated['to_department_id']
+            ?? TaskAssignmentEmployeeDepartment::forUser($toUserId)
+                ->activeEmployee()
+                ->value('task_assignment_department_id')
+            ?? $fromPivot->department_id;
 
         return DB::transaction(function () use ($item, $fromPivot, $fromUserId, $toUserId, $toDepartmentId, $note, $currentUserId) {
             // 1. Xóa record cũ (không giữ lại record mang status transferred trong bảng pivot)

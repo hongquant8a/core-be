@@ -8,6 +8,7 @@ use App\Modules\TaskAssignment\Enums\TaskDeadlineTypeEnum;
 use App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum;
 use App\Modules\TaskAssignment\Exports\ItemsExport;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDepartment;
+use App\Modules\TaskAssignment\Models\TaskAssignmentEmployeeDepartment;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItemAttachment;
 use App\Services\Notification\Services\ReminderScheduler;
@@ -553,10 +554,16 @@ class TaskAssignmentItemService
     private function applyDepartmentRestriction(array $filters): array
     {
         $user = auth()->user();
-        if (! $user->hasAnyRole(self::ADMIN_ROLES)) {
-            $taskAssignmentUser = $user->taskAssignmentUser;
-            $filters['department_id'] = $taskAssignmentUser?->task_assignment_department_id;
+        if ($user->hasAnyRole(self::ADMIN_ROLES)) {
+            return $filters;
         }
+
+        // Truy vấn qua model của phân hệ, không mượn quan hệ trên Core\User.
+        // Không thuộc phòng nào → 0 để không khớp bản ghi nào; trước đây gán null khiến
+        // `when()` bỏ qua điều kiện và người dùng nhìn thấy dữ liệu của cả tổ chức.
+        $filters['department_id'] = TaskAssignmentEmployeeDepartment::forUser($user->id)
+            ->activeEmployee()
+            ->value('task_assignment_department_id') ?? 0;
 
         return $filters;
     }

@@ -49,10 +49,10 @@ abstract class BaseRequest extends FormRequest
                 continue;
             }
 
-            $representative = \App\Modules\TaskAssignment\Models\TaskAssignmentUser::where('task_assignment_department_id', $deptId)
+            $representative = \App\Modules\TaskAssignment\Models\TaskAssignmentEmployeeDepartment::where('task_assignment_department_id', $deptId)
                 ->where('organization_id', $orgId)
                 ->where('is_representative', true)
-                ->where('status', 'active')
+                ->activeEmployee()
                 ->first();
 
             if (! $representative) {

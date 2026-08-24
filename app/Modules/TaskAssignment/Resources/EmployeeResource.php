@@ -23,7 +23,6 @@ class EmployeeResource extends JsonResource
                     'id' => $m->task_assignment_department_id,
                     'name' => $m->department?->name,
 
-                    'is_primary' => (bool) $m->is_primary,
                     'is_representative' => (bool) $m->is_representative,
                 ])
                 ->values(),

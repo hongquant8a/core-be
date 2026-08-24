@@ -40,9 +40,21 @@ class TaskAssignmentDepartment extends TenantModel
         return $this->belongsTo(User::class, 'updated_by');
     }
 
-    public function taskAssignmentUsers()
+    /** Các bản ghi thành viên (bảng nối) của phòng ban. */
+    public function employeeMemberships()
     {
-        return $this->hasMany(TaskAssignmentUser::class, 'task_assignment_department_id');
+        return $this->hasMany(TaskAssignmentEmployeeDepartment::class, 'task_assignment_department_id');
+    }
+
+    /** Nhân viên thuộc phòng ban, dạng n-n. */
+    public function employees()
+    {
+        return $this->belongsToMany(
+            TaskAssignmentEmployee::class,
+            'task_assignment_employee_department',
+            'task_assignment_department_id',
+            'task_assignment_employee_id'
+        )->withPivot('is_representative')->withTimestamps();
     }
 
     public function scopeFilter($query, array $filters)

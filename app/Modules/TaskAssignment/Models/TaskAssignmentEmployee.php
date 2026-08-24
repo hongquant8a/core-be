@@ -47,15 +47,21 @@ class TaskAssignmentEmployee extends TenantModel
         return $this->belongsTo(User::class, 'updated_by');
     }
 
-    /**
-     * Các bản ghi dept của nhân viên này trong module Task — join qua user_id (không qua employee_id để giữ BC).
-     *
-     * `TaskAssignmentUser` extends `TenantModel` nên global scope tự lọc `organization_id = team_id` khi
-     * có ngữ cảnh tổ chức. Không cần whereColumn cross-table (gây lỗi SQL khi eager load).
-     */
+    /** Các phòng ban mà nhân viên này thuộc về (bảng nối khoá theo employee_id). */
     public function departmentMemberships()
     {
-        return $this->hasMany(TaskAssignmentUser::class, 'user_id', 'user_id');
+        return $this->hasMany(TaskAssignmentEmployeeDepartment::class, 'task_assignment_employee_id');
+    }
+
+    /** Phòng ban dạng quan hệ n-n, dùng khi chỉ cần danh sách phòng. */
+    public function departments()
+    {
+        return $this->belongsToMany(
+            TaskAssignmentDepartment::class,
+            'task_assignment_employee_department',
+            'task_assignment_employee_id',
+            'task_assignment_department_id'
+        )->withPivot('is_representative')->withTimestamps();
     }
 
     public function scopeFilter($query, array $filters)

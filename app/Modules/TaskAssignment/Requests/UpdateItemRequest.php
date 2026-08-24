@@ -52,11 +52,11 @@ class UpdateItemRequest extends BaseRequest
                     return;
                 }
                 $orgId = getPermissionsTeamId();
-                $hasRep = \Illuminate\Support\Facades\DB::table('task_assignment_users')
+                $hasRep = \App\Modules\TaskAssignment\Models\TaskAssignmentEmployeeDepartment::query()
                     ->where('task_assignment_department_id', $value['department_id'])
                     ->where('organization_id', $orgId)
                     ->where('is_representative', true)
-                    ->where('status', 'active')
+                    ->activeEmployee()
                     ->exists();
                 if (! $hasRep) {
                     $fail("Phòng ban ID {$value['department_id']} chưa có người đại diện.");
@@ -84,11 +84,10 @@ class UpdateItemRequest extends BaseRequest
                 }
 
                 // Gate 2: phải thuộc đúng dept đang gán.
-                $inDept = \Illuminate\Support\Facades\DB::table('task_assignment_users')
-                    ->where('user_id', $value['user_id'])
+                $inDept = \App\Modules\TaskAssignment\Models\TaskAssignmentEmployeeDepartment::query()
+                    ->forUser($value['user_id'])
                     ->where('task_assignment_department_id', $value['department_id'])
                     ->where('organization_id', $orgId)
-                    ->where('status', 'active')
                     ->exists();
                 if (! $inDept) {
                     $fail("User ID {$value['user_id']} không thuộc phòng ban ID {$value['department_id']} trong tổ chức này.");

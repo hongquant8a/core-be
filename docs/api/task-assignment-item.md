@@ -113,13 +113,13 @@ Quản lý công việc trong hệ thống giao việc liên phòng ban: thống
   ]
 }
 ```
-> Mỗi phòng ban trong `departments[]` phải đã có người đại diện active (`task_assignment_users.is_representative = true`, `status = active`), nếu không sẽ 422 `"Phòng ban ID {id} chưa có người đại diện."`. Nếu request gửi cả `users` lẫn `departments`, BE **ưu tiên `users`** và bỏ qua `departments`.
+> Mỗi phòng ban trong `departments[]` phải đã có người đại diện active (`task_assignment_employee_department.is_representative = true`, `status = active`), nếu không sẽ 422 `"Phòng ban ID {id} chưa có người đại diện."`. Nếu request gửi cả `users` lẫn `departments`, BE **ưu tiên `users`** và bỏ qua `departments`.
 
 **Required**: `task_assignment_document_id`, `name`, `deadline_type`, `assigned_by`, và **một trong** `users` (mảng tối thiểu 1 phần tử) hoặc `departments` (mảng tối thiểu 1 phần tử).
 
 **Field detail**:
 - `assigned_by` (int, **required**) — ID người giao việc, phải là nhân viên module Task active (`task_assignment_employees.status = active`) trong tổ chức hiện tại.
-- `users[].user_id` (int, required) — ID user trong `users` tổng. **Phải là nhân viên module Task active** **VÀ phải thuộc đúng `department_id`** đang gán (`task_assignment_users` row tồn tại, active).
+- `users[].user_id` (int, required) — ID user trong `users` tổng. **Phải là nhân viên module Task active** **VÀ phải thuộc đúng `department_id`** đang gán (có bản ghi trong `task_assignment_employee_department`, hồ sơ nhân viên active).
 - `users[].department_id` (int, required) — ID phòng ban đang gán user vào.
 - `users[].department_role` (string, required) — `main` (chủ trì) \| `cooperate` (phối hợp). Vai trò của PHÒNG BAN trong công việc.
 - `users[].assignment_role` (string, required) — `main` (chủ trì) \| `support` (hỗ trợ). Vai trò của RIÊNG user trong scope phòng ban đó.

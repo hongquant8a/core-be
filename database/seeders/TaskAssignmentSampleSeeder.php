@@ -6,7 +6,8 @@ use App\Modules\Core\Models\User;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDepartment;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDocument;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
-use App\Modules\TaskAssignment\Models\TaskAssignmentUser;
+use App\Modules\TaskAssignment\Models\TaskAssignmentEmployee;
+use App\Modules\TaskAssignment\Models\TaskAssignmentEmployeeDepartment;
 use App\Modules\TaskAssignment\Models\TaskAssignmentType;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItemType;
 use Illuminate\Database\Seeder;
@@ -53,15 +54,21 @@ class TaskAssignmentSampleSeeder extends Seeder
         );
 
         // 3. Gán User vào module TaskAssignment
-        TaskAssignmentUser::firstOrCreate(
-            ['user_id' => $admin->id, 'organization_id' => 1],
-            ['task_assignment_department_id' => $dept->id, 'status' => 'active']
-        );
+        foreach ([$admin, $staff] as $u) {
+            // Hồ sơ nhân viên phải có trước — bảng nối khoá theo employee_id.
+            $employee = TaskAssignmentEmployee::firstOrCreate(
+                ['user_id' => $u->id, 'organization_id' => 1],
+                ['status' => 'active']
+            );
 
-        TaskAssignmentUser::firstOrCreate(
-            ['user_id' => $staff->id, 'organization_id' => 1],
-            ['task_assignment_department_id' => $dept->id, 'status' => 'active']
-        );
+            TaskAssignmentEmployeeDepartment::firstOrCreate(
+                [
+                    'task_assignment_employee_id' => $employee->id,
+                    'task_assignment_department_id' => $dept->id,
+                ],
+                ['organization_id' => 1]
+            );
+        }
 
         // 4. Tạo dữ liệu công việc mẫu (Dùng firstOrCreate để không bị trùng khi chạy lại)
         $type = TaskAssignmentType::firstOrCreate(['name' => 'Thường trực Thành ủy giao'], ['organization_id' => 1]);
