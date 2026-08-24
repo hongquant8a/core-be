@@ -110,26 +110,6 @@ class OrganizationService
             // 2. NotificationSchedule — schedule mặc định cho từng event config
             $this->seedNotificationSchedules($org->id);
 
-            // 3. OrgSchedulingSettings + SchedulingSetting
-            $workingSessions = [
-                'MORNING'   => ['start' => '07:30', 'end' => '11:30'],
-                'AFTERNOON' => ['start' => '13:30', 'end' => '17:00'],
-                'EVENING'   => ['start' => '19:00', 'end' => '21:00'],
-            ];
-            \App\Modules\Scheduling\Models\OrgSchedulingSettings::updateOrCreate(
-                ['organization_id' => $org->id],
-                [
-                    'executive_requires_approval' => false,
-                    'office_requires_approval'    => false,
-                    'executive_working_sessions'  => $workingSessions,
-                    'office_working_sessions'     => $workingSessions,
-                ]
-            );
-            \App\Modules\Scheduling\Models\SchedulingSetting::updateOrCreate(
-                ['organization_id' => $org->id],
-                ['default_channels' => ['inapp']]
-            );
-
             return $org;
         });
     }
@@ -206,17 +186,6 @@ class OrganizationService
             }
         }
 
-        // ── Scheduling ──
-        $moduleKey = \App\Services\Notification\Enums\NotificationModuleEnum::Scheduling->value;
-
-        foreach (['schedule_published' => 'Gửi thông báo ngay khi ban hành', 'schedule_updated' => 'Gửi thông báo ngay khi cập nhật', 'schedule_cancelled' => 'Gửi thông báo ngay khi hủy'] as $ek => $label) {
-            $c = $configs->get($ek);
-            if (! $c) continue;
-            $s = \App\Modules\Core\Models\NotificationSchedule::firstOrNew([
-                'notification_event_config_id' => $c->id, 'moment' => null, 'offset_minutes' => null,
-            ]);
-            $s->label = $label; $s->sort_order = 0; $s->save();
-        }
     }
 
     public function update(Organization $organization, array $data): array

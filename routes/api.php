@@ -72,9 +72,6 @@ Route::prefix('public')->middleware(['log.activity', 'set.public.permissions.tea
     Route::get('/meeting-documents/{meetingDocument}', [\App\Modules\Meeting\Controllers\MeetingDocumentController::class, 'publicShow'])->middleware('count.meeting.view');
     Route::get('/meeting-documents/{meetingDocument}/download', [\App\Modules\Meeting\Controllers\MeetingDocumentController::class, 'publicDownload']);
 
-    // Scheduling — dropdown options cho grid lịch công tác (chủ trì, thành phần, lái xe)
-    Route::get('/scheduling-employees/options', [\App\Modules\Scheduling\Controllers\SchedulingEmployeeController::class, 'options']);
-
 });
 
 // Route yêu cầu đăng nhập (Bearer token) và đặt ngữ cảnh team cho Spatie Permission
@@ -156,12 +153,7 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
         require base_path('app/Modules/Meeting/Routes/notification_config.php');
     });
 
-    // Notification config scoped cho module Scheduling (Lịch công tác)
-    Route::prefix('schedules/notification-config')->group(function () {
-        require base_path('app/Modules/Scheduling/Routes/notification_config.php');
-    });
-
-    // Notification Templates — ZNS template per module (query param: ?module=meeting|scheduling|task_assignment)
+    // Notification Templates — ZNS template per module (query param: ?module=meeting|task_assignment)
     Route::prefix('notification-templates')->group(function () {
         Route::get('/variables', [\App\Modules\Core\NotificationTemplateController::class, 'variables'])
             ->middleware('permission:notifications.templates.variables,web');
@@ -229,17 +221,4 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
         require base_path('app/Modules/Core/Routes/meeting_chat_conversation.php');
     });
 
-    // Scheduling module
-    Route::prefix('schedules')->middleware('ensure.route.org')->group(function () {
-        require base_path('app/Modules/Scheduling/Routes/schedule.php');
-    });
-    Route::prefix('scheduling-employees')->middleware('ensure.route.org')->group(function () {
-        require base_path('app/Modules/Scheduling/Routes/scheduling_employee.php');
-    });
-    Route::prefix('scheduling-employee-groups')->middleware('ensure.route.org')->group(function () {
-        require base_path('app/Modules/Scheduling/Routes/scheduling_employee_group.php');
-    });
-    Route::prefix('scheduling-settings')->group(function () {
-        require base_path('app/Modules/Scheduling/Routes/scheduling_setting.php');
-    });
 });

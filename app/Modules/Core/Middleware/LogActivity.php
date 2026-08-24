@@ -238,9 +238,6 @@ class LogActivity
             ?? $params['taskAssignmentDocument']
             ?? $params['taskAssignmentItem']
             ?? $params['taskAssignmentItemReport']
-            ?? $params['schedule']
-            ?? $params['schedulingEmployee']
-            ?? $params['schedulingEmployeeGroup']
             ?? $params['id']
             ?? null;
         $suffix = $id ? ' #'.(is_object($id) ? $id->getKey() : $id) : '';
@@ -274,13 +271,6 @@ class LogActivity
             'task-assignment-documents' => 'Văn bản giao việc',
             'task-assignment-items' => 'Công việc',
             'task-assignment-item-reports' => 'Báo cáo công việc',
-            'schedules' => 'lịch công tác',
-            'schedules-executive' => 'lịch công tác - Thường trực',
-            'schedules-office'    => 'lịch công tác - Lãnh đạo',
-            'scheduling-employees' => 'nhân sự lịch công tác',
-            'scheduling-employee-groups' => 'nhóm nhân sự',
-            'scheduling-settings' => 'cấu hình lịch công tác',
-            'scheduling-filter-presets' => 'bộ lọc cá nhân',
         ];
 
         return $labels[$resource] ?? str_replace('-', ' ', $resource);

@@ -17,13 +17,6 @@ enum NotificationEventEnum: string
     case MeetingReminderBefore = 'meeting_reminder_before';
     case MeetingReminderOn = 'meeting_reminder_on';
     case MeetingReminderAfter = 'meeting_reminder_after';
-    case SchedulePublished = 'schedule_published';
-    case ScheduleUpdated = 'schedule_updated';
-    case ScheduleCancelled = 'schedule_cancelled';
-    case ScheduleReminder       = 'schedule_reminder';        // legacy — giữ backward compat
-    case ScheduleReminderBefore = 'schedule_reminder_before';
-    case ScheduleReminderOn     = 'schedule_reminder_on';
-    case ScheduleReminderAfter  = 'schedule_reminder_after';
 
     public static function values(): array
     {
@@ -54,13 +47,6 @@ enum NotificationEventEnum: string
             self::MeetingReminderBefore,
             self::MeetingReminderOn,
             self::MeetingReminderAfter => NotificationModuleEnum::Meeting,
-            self::SchedulePublished,
-            self::ScheduleUpdated,
-            self::ScheduleCancelled,
-            self::ScheduleReminder,
-            self::ScheduleReminderBefore,
-            self::ScheduleReminderOn,
-            self::ScheduleReminderAfter => NotificationModuleEnum::Scheduling,
         };
     }
 
@@ -80,13 +66,6 @@ enum NotificationEventEnum: string
             self::MeetingReminderBefore => 'Nhắc trước cuộc họp',
             self::MeetingReminderOn => 'Nhắc đến giờ họp',
             self::MeetingReminderAfter => 'Nhắc sau cuộc họp',
-            self::SchedulePublished  => 'Lịch công tác được ban hành',
-            self::ScheduleUpdated    => 'Lịch công tác cập nhật thông tin',
-            self::ScheduleCancelled  => 'Lịch công tác bị hủy',
-            self::ScheduleReminder       => 'Nhắc lịch công tác (legacy)',
-            self::ScheduleReminderBefore => 'Nhắc trước giờ lịch',
-            self::ScheduleReminderOn     => 'Nhắc đến giờ lịch',
-            self::ScheduleReminderAfter  => 'Nhắc sau giờ lịch',
         };
     }
 }

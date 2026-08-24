@@ -24,13 +24,6 @@ use App\Modules\Meeting\Policies\MeetingPersonalNotePolicy;
 use App\Modules\Meeting\Policies\MeetingPolicy;
 use App\Modules\Meeting\Policies\MeetingVoteResponsePolicy;
 use App\Modules\Meeting\Policies\MeetingVoteTopicPolicy;
-use App\Modules\Scheduling\Models\Schedule;
-use App\Modules\Scheduling\Observers\ScheduleObserver;
-use App\Modules\Scheduling\Policies\SchedulePolicy;
-use App\Modules\Scheduling\Models\SchedulingEmployee;
-use App\Modules\Scheduling\Policies\SchedulingEmployeePolicy;
-use App\Modules\Scheduling\Models\SchedulingEmployeeGroup;
-use App\Modules\Scheduling\Policies\SchedulingEmployeeGroupPolicy;
 use App\Modules\TaskAssignment\Listeners\BlockUserDeletionWithActiveTasks;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Modules\TaskAssignment\Policies\TaskAssignmentItemPolicy;
@@ -79,8 +72,6 @@ class AppServiceProvider extends ServiceProvider
             'meeting_invitation_template'   => \App\Modules\Meeting\Models\MeetingInvitationTemplate::class,
             'meeting_minutes_template'      => \App\Modules\Meeting\Models\MeetingMinutesTemplate::class,
 
-            // Scheduling
-            'schedule'                      => \App\Modules\Scheduling\Models\Schedule::class,
 
             // TaskAssignment
             'task_assignment_item'          => \App\Modules\TaskAssignment\Models\TaskAssignmentItem::class,
@@ -91,9 +82,6 @@ class AppServiceProvider extends ServiceProvider
 
         // Auto-create UserProfile mỗi khi tạo User.
         User::observe(UserObserver::class);
-
-        // Track Schedule changes for notifications
-        Schedule::observe(ScheduleObserver::class);
 
         // Register policies cho in-meeting control + public/participant view actions.
         // Spatie permission vẫn giữ cho admin catalog/CRUD setup; Policy gate cho mọi action gắn meeting cụ thể.
@@ -109,19 +97,12 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(MeetingPersonalNote::class, MeetingPersonalNotePolicy::class);
         Gate::policy(MeetingPersonalNoteAttachment::class, MeetingPersonalNoteAttachmentPolicy::class);
 
-        // Register Scheduling Policies
-        Gate::policy(Schedule::class, SchedulePolicy::class);
-        Gate::policy(SchedulingEmployee::class, SchedulingEmployeePolicy::class);
-        Gate::policy(SchedulingEmployeeGroup::class, SchedulingEmployeeGroupPolicy::class);
-
         // Register TaskAssignment Policies
         Gate::policy(TaskAssignmentItem::class, TaskAssignmentItemPolicy::class);
         Gate::policy(TaskAssignmentPetition::class, TaskAssignmentPetitionPolicy::class);
 
         // Phân hệ tự đăng ký luật chặn xóa user của mình — Core không biết bảng của phân hệ.
         Event::listen(UsersDeleting::class, BlockUserDeletionWithActiveTasks::class);
-
-        $this->loadViewsFrom(resource_path('views/scheduling'), 'scheduling');
 
         // Giữ nguyên header Excel khi import (không lowercase/snake_case).
         // Cho phép import dùng header tiếng Việt giống hệt template export.
