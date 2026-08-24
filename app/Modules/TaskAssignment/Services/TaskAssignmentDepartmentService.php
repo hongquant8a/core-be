@@ -7,7 +7,8 @@ use App\Modules\Core\Support\ExportFilename;
 use App\Modules\TaskAssignment\Exports\DepartmentExport;
 use App\Modules\TaskAssignment\Imports\DepartmentImport;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDepartment;
-use App\Modules\TaskAssignment\Models\TaskAssignmentUser;
+use App\Modules\TaskAssignment\Models\TaskAssignmentEmployeeDepartment;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -52,40 +53,142 @@ class TaskAssignmentDepartmentService
     public function index(array $filters, int $limit)
     {
         return TaskAssignmentDepartment::with(['creator.media', 'editor.media'])
-            ->withCount('taskAssignmentUsers')
+            ->withCount('employeeMemberships')
             ->filter($filters)
             ->paginate($limit);
     }
 
     public function show(TaskAssignmentDepartment $department): TaskAssignmentDepartment
     {
-        return $department->load(['creator.media', 'editor.media'])
-            ->loadCount('taskAssignmentUsers');
+        return $department->load(['creator.media', 'editor.media', 'employeeMemberships.employee.user'])
+            ->loadCount('employeeMemberships');
     }
 
+    /**
+     * Tạo phòng ban, kèm luôn danh sách nhân viên nếu form gửi lên.
+     * Không có endpoint quan hệ riêng — thành viên là một trường của phòng ban.
+     */
     public function store(array $validated): TaskAssignmentDepartment
     {
-        return TaskAssignmentDepartment::create($validated)
-            ->load(['creator.media', 'editor.media'])
-            ->loadCount('taskAssignmentUsers');
+        return DB::transaction(function () use ($validated) {
+            $employeeIds = $validated['employee_ids'] ?? null;
+            $representativeId = $validated['representative_employee_id'] ?? null;
+
+            $department = TaskAssignmentDepartment::create(
+                collect($validated)->except(['employee_ids', 'representative_employee_id'])->all()
+            );
+
+            if ($employeeIds !== null) {
+                $this->syncEmployees($department, $employeeIds, $representativeId);
+            }
+
+            return $this->freshWithRelations($department);
+        });
     }
 
     public function update(TaskAssignmentDepartment $department, array $validated): TaskAssignmentDepartment
     {
-        $department->update($validated);
+        return DB::transaction(function () use ($department, $validated) {
+            $employeeIds = $validated['employee_ids'] ?? null;
+            $representativeId = $validated['representative_employee_id'] ?? null;
 
-        return $department->load(['creator.media', 'editor.media'])
-            ->loadCount('taskAssignmentUsers');
+            $department->update(
+                collect($validated)->except(['employee_ids', 'representative_employee_id'])->all()
+            );
+
+            // Chỉ đụng tới thành viên khi form thực sự gửi `employee_ids`,
+            // để PATCH một trường lẻ không xoá sạch thành viên.
+            if ($employeeIds !== null) {
+                $this->syncEmployees($department, $employeeIds, $representativeId);
+            }
+
+            return $this->freshWithRelations($department);
+        });
+    }
+
+    /**
+     * Đặt lại toàn bộ thành viên của phòng ban theo danh sách employee id.
+     *
+     * @param  array<int>  $employeeIds
+     */
+    private function syncEmployees(TaskAssignmentDepartment $department, array $employeeIds, ?int $representativeId = null): void
+    {
+        $current = $department->employeeMemberships()->pluck('task_assignment_employee_id')->all();
+
+        $toRemove = array_diff($current, $employeeIds);
+        $toAdd = array_diff($employeeIds, $current);
+
+        if ($toRemove) {
+            $department->employeeMemberships()
+                ->whereIn('task_assignment_employee_id', $toRemove)
+                ->delete();
+        }
+
+        foreach ($toAdd as $employeeId) {
+            TaskAssignmentEmployeeDepartment::create([
+                'task_assignment_employee_id' => $employeeId,
+                'task_assignment_department_id' => $department->id,
+                'organization_id' => getPermissionsTeamId(),
+            ]);
+        }
+
+        $this->setRepresentative($department, $representativeId);
+    }
+
+    private function freshWithRelations(TaskAssignmentDepartment $department): TaskAssignmentDepartment
+    {
+        return $department->load(['creator.media', 'editor.media', 'employeeMemberships.employee.user'])
+            ->loadCount('employeeMemberships');
     }
 
     public function destroy(TaskAssignmentDepartment $department): void
     {
+        $this->guardAgainstDeletion([$department->id]);
+
         $department->delete();
     }
 
     public function bulkDestroy(array $ids): void
     {
+        $this->guardAgainstDeletion($ids);
+
         TaskAssignmentDepartment::whereIn('id', $ids)->delete();
+    }
+
+    /**
+     * Chặn xoá phòng ban còn thành viên hoặc còn dòng phân công công việc.
+     *
+     * Khoá ngoại đã là RESTRICT nên DB cũng chặn, nhưng chặn ở đây để trả về
+     * thông báo tiếng Việt thay vì lỗi SQL.
+     *
+     * @param  array<int>  $ids
+     */
+    private function guardAgainstDeletion(array $ids): void
+    {
+        if (empty($ids)) {
+            return;
+        }
+
+        $withEmployees = TaskAssignmentEmployeeDepartment::whereIn('task_assignment_department_id', $ids)
+            ->distinct()
+            ->pluck('task_assignment_department_id');
+
+        $withTasks = DB::table('task_assignment_item_user')
+            ->whereIn('department_id', $ids)
+            ->distinct()
+            ->pluck('department_id');
+
+        $blockedIds = $withEmployees->merge($withTasks)->unique();
+
+        if ($blockedIds->isEmpty()) {
+            return;
+        }
+
+        $names = TaskAssignmentDepartment::whereIn('id', $blockedIds)->pluck('name')->implode(', ');
+
+        throw ValidationException::withMessages([
+            'id' => ["Không thể xóa phòng ban còn nhân viên hoặc còn công việc đã giao: {$names}. Hãy chuyển hết nhân viên và công việc trước."],
+        ]);
     }
 
     public function bulkUpdateStatus(array $ids, string $status): void
@@ -98,7 +201,7 @@ class TaskAssignmentDepartmentService
         $department->update(['status' => $status]);
 
         return $department->load(['creator.media', 'editor.media'])
-            ->loadCount('taskAssignmentUsers');
+            ->loadCount('employeeMemberships');
     }
 
     public function export(array $filters): BinaryFileResponse
@@ -111,123 +214,25 @@ class TaskAssignmentDepartmentService
         Excel::import(new DepartmentImport, $file);
     }
 
-    public function getUsers(TaskAssignmentDepartment $department)
+    /** Đặt người đại diện phòng ban; `null` nghĩa là bỏ trống. */
+    private function setRepresentative(TaskAssignmentDepartment $department, ?int $employeeId): void
     {
-        return $department->taskAssignmentUsers()
-            ->with('user.media')
-            ->where('status', 'active')
-            ->get();
-    }
+        $membership = null;
 
-    public function syncUsers(TaskAssignmentDepartment $department, array $userIds, ?int $representativeUserId = null): void
-    {
-        $orgId = getPermissionsTeamId();
-
-        \Illuminate\Support\Facades\DB::transaction(function () use ($department, $userIds, $representativeUserId, $orgId) {
-            $currentUserIds = TaskAssignmentUser::where('task_assignment_department_id', $department->id)
-                ->where('organization_id', $orgId)
-                ->pluck('user_id')
-                ->all();
-
-            $toRemove = array_diff($currentUserIds, $userIds);
-            $toAdd = array_diff($userIds, $currentUserIds);
-
-            if ($toRemove) {
-                TaskAssignmentUser::where('task_assignment_department_id', $department->id)
-                    ->where('organization_id', $orgId)
-                    ->whereIn('user_id', $toRemove)
-                    ->delete();
-            }
-
-            foreach ($toAdd as $userId) {
-                $hasPrimary = TaskAssignmentUser::where('user_id', $userId)
-                    ->where('organization_id', $orgId)
-                    ->where('is_primary', true)
-                    ->exists();
-
-                TaskAssignmentUser::create([
-                    'user_id' => $userId,
-                    'task_assignment_department_id' => $department->id,
-                    'organization_id' => $orgId,
-                    'status' => 'active',
-                    'is_primary' => ! $hasPrimary,
-                ]);
-            }
-
-            if ($representativeUserId !== null) {
-                $this->setRepresentative($department, $representativeUserId);
-            }
-        });
-    }
-
-    private function setRepresentative(TaskAssignmentDepartment $department, ?int $userId): void
-    {
-        $orgId = getPermissionsTeamId();
-
-        if ($userId !== null) {
-            $exists = TaskAssignmentUser::where('task_assignment_department_id', $department->id)
-                ->where('user_id', $userId)
-                ->where('organization_id', $orgId)
-                ->exists();
-            if (! $exists) {
-                throw ValidationException::withMessages([
-                    'representative_user_id' => 'Người đại diện phải thuộc danh sách thành viên.',
-                ]);
-            }
-        }
-
-        TaskAssignmentUser::where('task_assignment_department_id', $department->id)
-            ->where('organization_id', $orgId)
-            ->update(['is_representative' => false]);
-
-        if ($userId !== null) {
-            TaskAssignmentUser::where('task_assignment_department_id', $department->id)
-                ->where('user_id', $userId)
-                ->where('organization_id', $orgId)
-                ->update(['is_representative' => true]);
-        }
-    }
-
-    public function setPrimary(int $userId, int $departmentId): void
-    {
-        $orgId = getPermissionsTeamId();
-
-        $target = TaskAssignmentUser::where('user_id', $userId)
-            ->where('task_assignment_department_id', $departmentId)
-            ->where('organization_id', $orgId)
-            ->firstOrFail();
-
-        \Illuminate\Support\Facades\DB::transaction(function () use ($userId, $target, $orgId) {
-            TaskAssignmentUser::where('user_id', $userId)
-                ->where('organization_id', $orgId)
-                ->update(['is_primary' => false]);
-
-            $target->update(['is_primary' => true]);
-        });
-    }
-
-    public function removeUser(TaskAssignmentDepartment $department, int $userId): void
-    {
-        $orgId = getPermissionsTeamId();
-
-        \Illuminate\Support\Facades\DB::transaction(function () use ($department, $userId, $orgId) {
-            $removed = TaskAssignmentUser::where('task_assignment_department_id', $department->id)
-                ->where('user_id', $userId)
+        if ($employeeId !== null) {
+            $membership = $department->employeeMemberships()
+                ->where('task_assignment_employee_id', $employeeId)
                 ->first();
 
-            if (! $removed) {
-                return;
+            if (! $membership) {
+                throw ValidationException::withMessages([
+                    'representative_employee_id' => 'Người đại diện phải thuộc danh sách nhân viên của phòng ban.',
+                ]);
             }
+        }
 
-            $wasPrimary = (bool) $removed->is_primary;
-            $removed->delete();
+        $department->employeeMemberships()->update(['is_representative' => false]);
 
-            if ($wasPrimary) {
-                TaskAssignmentUser::where('user_id', $userId)
-                    ->where('organization_id', $orgId)
-                    ->limit(1)
-                    ->update(['is_primary' => true]);
-            }
-        });
+        $membership?->update(['is_representative' => true]);
     }
 }

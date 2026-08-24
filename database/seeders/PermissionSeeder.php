@@ -126,12 +126,12 @@ class PermissionSeeder extends Seeder
                 'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
             ],
             'task-assignment-departments' => [
-                'index', 'store', 'update', 'destroy', 'export', 'import',
-                'users', 'syncUsers', 'removeUser',
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
             ],
             'task-assignment-employees' => [
-                'index', 'stats', 'store', 'update', 'destroy', 'export', 'import',
-                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus',
+                'stats', 'index', 'show', 'store', 'update', 'destroy',
+                'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'import',
             ],
         ],
         'Meeting' => [
@@ -224,8 +224,9 @@ class PermissionSeeder extends Seeder
             'statsByItemType', 'statsByDocument', 'exportMonthlyReport',
         ],
         'task-assignment-documents' => ['stats', 'statsByTime', 'show', 'changeStatus'],
-        'task-assignment-departments' => ['stats', 'show', 'bulkDestroy', 'bulkUpdateStatus', 'changeStatus'],
-        'task-assignment-employees' => ['show'],
+        // Quan hệ nhân viên ↔ phòng ban nay là một trường của hai form (employee_ids /
+        // department_ids), không còn endpoint riêng nên 3 quyền này bị bỏ.
+        'task-assignment-departments' => ['users', 'syncUsers', 'removeUser'],
         // task-assignment-types và task-assignment-item-types KHÔNG còn gộp: hai danh mục này
         // tách đủ 11 quyền (kể cả changeStatus 1 bản ghi và bulkUpdateStatus hàng loạt)
         // theo yêu cầu nghiệp vụ.
@@ -365,9 +366,6 @@ class PermissionSeeder extends Seeder
         'updateItem' => 'Sửa công việc',
         'destroyItem' => 'Xóa công việc',
         'exportReports' => 'Xuất báo cáo tổng hợp cuộc họp',
-        'users' => 'Danh sách người dùng',
-        'syncUsers' => 'Đồng bộ người dùng',
-        'removeUser' => 'Xóa người dùng',
         'confirm' => 'Xác nhận',
         'test' => 'Kiểm thử',
         'complete' => 'Đánh dấu hoàn thành',

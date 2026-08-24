@@ -14,7 +14,7 @@ Route::get('/stats', [TaskAssignmentEmployeeController::class, 'stats'])->middle
 // route /task-assignment-departments/{id}/users.
 Route::get('/options', [TaskAssignmentEmployeeController::class, 'options']);
 Route::get('/', [TaskAssignmentEmployeeController::class, 'index'])->middleware('permission:task-assignment-employees.index,web');
-Route::get('/{taskAssignmentEmployee}', [TaskAssignmentEmployeeController::class, 'show'])->middleware('permission:task-assignment-employees.index,web');
+Route::get('/{taskAssignmentEmployee}', [TaskAssignmentEmployeeController::class, 'show'])->middleware('permission:task-assignment-employees.show,web');
 Route::post('/', [TaskAssignmentEmployeeController::class, 'store'])->middleware('permission:task-assignment-employees.store,web');
 Route::put('/{taskAssignmentEmployee}', [TaskAssignmentEmployeeController::class, 'update'])->middleware('permission:task-assignment-employees.update,web');
 Route::patch('/{taskAssignmentEmployee}', [TaskAssignmentEmployeeController::class, 'update'])->middleware('permission:task-assignment-employees.update,web');

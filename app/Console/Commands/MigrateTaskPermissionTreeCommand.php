@@ -56,24 +56,18 @@ class MigrateTaskPermissionTreeCommand extends Command
 
         // .show gộp vào .index
         'task-assignment-documents.show' => ['task-assignment-documents.index'],
-        'task-assignment-departments.show' => ['task-assignment-departments.index'],
-        'task-assignment-employees.show' => ['task-assignment-employees.index'],
         'my-assigned-tasks.show' => ['my-assigned-tasks.index'],
         'my-received-tasks.show' => ['my-received-tasks.index'],
 
         // .stats gộp vào .index
-        'task-assignment-departments.stats' => ['task-assignment-departments.index'],
         'task-assignment-petitions.stats' => ['task-assignment-petitions.index'],
 
         // .bulkDestroy gộp vào .destroy
         'task-assignment-items.bulkDestroy' => ['task-assignment-documents.destroyItem'],
-        'task-assignment-departments.bulkDestroy' => ['task-assignment-departments.destroy'],
 
         // .bulkUpdateStatus / .changeStatus gộp vào .update
         'task-assignment-items.bulkUpdateStatus' => ['task-assignment-documents.updateItem'],
         'task-assignment-documents.changeStatus' => ['task-assignment-documents.update'],
-        'task-assignment-departments.bulkUpdateStatus' => ['task-assignment-departments.update'],
-        'task-assignment-departments.changeStatus' => ['task-assignment-departments.update'],
     ];
 
     public function handle(): int

@@ -1,6 +1,8 @@
 # API Nhân viên giao việc (Task Assignment Employee)
 
-Quản lý danh sách **nhân viên module Task** — lớp trung gian giữa `users` tổng và pivot phòng ban (`task_assignment_users`). Chỉ user đã đăng ký làm nhân viên (active) mới có thể được gán vào phòng ban hoặc nhận task.
+> Cập nhật lần cuối: 24/08/2026 — bảng nối đổi tên thành `task_assignment_employee_department` và khoá theo `task_assignment_employee_id`; form nhân viên nhận thêm `department_ids`.
+
+Quản lý danh sách **nhân viên module Task** — lớp trung gian giữa `users` tổng và bảng nối phòng ban (`task_assignment_employee_department`). Chỉ user đã đăng ký làm nhân viên (active) mới có thể được gán vào phòng ban hoặc nhận task.
 
 **Header bắt buộc:** `Authorization: Bearer {token}` và `X-Organization-Id: {organization_id}`.
 
@@ -36,9 +38,9 @@ task_assignment_employees   ◄── BẢNG MỚI (lớp gate)
    │
    │ gán vào phòng ban
    ▼
-task_assignment_users (pivot user × dept)
+task_assignment_employee_department (bảng nối employee × dept)
    │   - user_id, task_assignment_department_id
-   │   - is_primary, is_representative
+   │   - is_representative
    │
    │ giao việc
    ▼
@@ -189,14 +191,12 @@ Toàn dự án dùng trait `RespondsWithJson`:
       "id": 3,
       "name": "Phòng Kế hoạch",
       "code": "PB-KH",
-      "is_primary": true,
       "is_representative": false
     },
     {
       "id": 5,
       "name": "Phòng Tổng hợp",
       "code": "PB-TH",
-      "is_primary": false,
       "is_representative": false
     }
   ],
@@ -209,7 +209,7 @@ Toàn dự án dùng trait `RespondsWithJson`:
 
 **Lưu ý field**:
 - `user`: chỉ load khi eager load (`with('user')`) — luôn có ở index/show/store/update.
-- `departments[]`: chỉ có ở index/show. Là pivot record trong `task_assignment_users`, KHÔNG phải bảng `task_assignment_departments`. `is_primary`, `is_representative` là flag của pivot.
+- `departments[]`: chỉ có ở index/show. Là bản ghi trong bảng nối `task_assignment_employee_department`, KHÔNG phải bảng `task_assignment_departments`. `is_representative` là flag của bảng nối (`is_primary` đã bị bỏ).
 - `created_at`, `updated_at`: format `H:i:s d/m/Y` (chuẩn dự án).
 
 ---
@@ -298,6 +298,7 @@ Toàn dự án dùng trait `RespondsWithJson`:
 ```json
 {
   "user_id": 5,
+  "department_ids": [1, 4],
   "status": "active",
   "note": "Bổ sung nhân sự phòng nghiệp vụ."
 }
@@ -555,7 +556,7 @@ FE cần biết để integrate màn "Quản lý nhân viên":
 
 ## Changelog
 
-- **2026-05-19** — Khởi tạo module + 14 endpoint chuẩn. Backfill 26 nhân viên từ `task_assignment_users` hiện có. Validate cross-check `task_assignment_employees` áp dụng cho 2 endpoint:
+- **2026-05-19** — Khởi tạo module + 14 endpoint chuẩn. Backfill 26 nhân viên từ bảng nối phòng ban hiện có. Validate cross-check `task_assignment_employees` áp dụng cho 2 endpoint:
   - `POST /api/task-assignment-departments/{id}/users` — user_ids phải là employee active.
   - `POST/PUT /api/task-assignment-items` — `users.*.user_id` phải là employee active + thuộc đúng dept.
 - **2026-05-19** — Thêm endpoint dropdown department authenticated: `GET /api/task-assignment-departments/options` (no Spatie). Dành riêng cho form admin (giao task, gán nhân viên). Cặp với `GET /api/task-assignment-employees/options` tạo flow dropdown đôi (dept → user).
