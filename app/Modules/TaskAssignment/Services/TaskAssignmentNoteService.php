@@ -21,13 +21,14 @@ class TaskAssignmentNoteService
     /**
      * Thêm ghi chú cho công việc (append-only).
      *
-     * author_role: user có role Quản trị/Super Admin/Admin → 'manager', ngược lại → 'assignee'.
+     * author_role: người có quyền giao việc (`task-assignment-documents.storeItem`)
+     * → 'manager', ngược lại → 'assignee'.
      */
     public function store(TaskAssignmentItem $item, array $validated): TaskAssignmentItemNote
     {
         $user = auth()->user();
 
-        $authorRole = $user->hasAnyRole(['Quản trị', 'Super Admin', 'Admin', 'Trưởng phòng'])
+        $authorRole = $user->can('task-assignment-documents.storeItem')
             ? 'manager'
             : 'assignee';
 

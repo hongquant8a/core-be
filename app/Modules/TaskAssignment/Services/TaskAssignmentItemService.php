@@ -209,7 +209,7 @@ class TaskAssignmentItemService
         }
 
         $user = auth()->user();
-        if ($user && ! $user->hasAnyRole(['Super Admin'])) {
+        if ($user && ! $user->can('task-overview.manageAll')) {
             $invalidCount = TaskAssignmentItem::withoutGlobalScope('issuedDocument')
                 ->whereIn('id', $ids)
                 ->where('assigned_by', '!=', $user->id)
@@ -230,7 +230,7 @@ class TaskAssignmentItemService
 
         $user = auth()->user();
         if (in_array($status, [\App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Paused->value, \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Cancelled->value], true)) {
-            if ($user && ! $user->hasAnyRole(['Super Admin'])) {
+            if ($user && ! $user->can('task-overview.manageAll')) {
                 $invalidCount = TaskAssignmentItem::withoutGlobalScope('issuedDocument')
                     ->whereIn('id', $ids)
                     ->where('assigned_by', '!=', $user->id)
@@ -549,12 +549,11 @@ class TaskAssignmentItemService
         }
     }
 
-    private const ADMIN_ROLES = ['Quản trị', 'Super Admin', 'Admin'];
-
     private function applyDepartmentRestriction(array $filters): array
     {
         $user = auth()->user();
-        if ($user->hasAnyRole(self::ADMIN_ROLES)) {
+        // Ai có `task-overview.viewAll` thì xem được toàn tổ chức.
+        if ($user->can('task-overview.viewAll')) {
             return $filters;
         }
 

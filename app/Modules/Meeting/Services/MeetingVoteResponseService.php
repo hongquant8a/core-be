@@ -75,7 +75,7 @@ class MeetingVoteResponseService
         } else {
             // Không có filter topic → chỉ admin org-wide đọc chéo phiếu, đại biểu/chair của 1 cuộc họp riêng không có usecase.
             $user = auth()->user();
-            if (! ($user && method_exists($user, 'hasAnyRole') && $user->hasAnyRole(['Super Admin', 'Admin']))) {
+            if (! ($user && $user->can('meetings.viewAll'))) {
                 throw new AuthorizationException('Cần truyền meeting_vote_topic_id để xem phiếu chi tiết.');
             }
         }

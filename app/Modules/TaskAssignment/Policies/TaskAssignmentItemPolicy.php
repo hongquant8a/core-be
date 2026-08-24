@@ -11,13 +11,15 @@ class TaskAssignmentItemPolicy
     use HandlesAuthorization;
 
     /**
-     * Super Admin / Admin / Quản trị bypass mọi check ownership.
+     * Ai có quyền `task-overview.manageAll` thì bypass mọi check ownership.
+     * Kiểm theo QUYỀN, không theo tên vai trò — vai trò là dữ liệu, đổi tên được.
      */
     public function before(User $user, string $ability): ?bool
     {
-        if ($user->hasAnyRole(['Super Admin'])) {
+        if ($user->can('task-overview.manageAll')) {
             return true;
         }
+
         return null;
     }
 
@@ -73,7 +75,7 @@ class TaskAssignmentItemPolicy
      *   - Người giao (assigned_by)
      *   - Người được giao (pivot task_assignment_item_user)
      *
-     * Trường hợp đặc biệt: Trưởng phòng (có quyền update) không cần check ownership
+     * Trường hợp đặc biệt: Quản lý công việc (có quyền update) không cần check ownership
      * nếu đang quản lý phòng ban — nhưng check đó nằm ở service-level department scope.
      */
     public function update(User $user, TaskAssignmentItem $item): bool

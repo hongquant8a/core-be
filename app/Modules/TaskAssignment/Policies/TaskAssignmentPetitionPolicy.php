@@ -12,13 +12,15 @@ class TaskAssignmentPetitionPolicy
     use HandlesAuthorization;
 
     /**
-     * Super Admin / Admin / Quản trị bypass mọi check ownership.
+     * Ai có quyền `task-overview.manageAll` thì bypass mọi check ownership.
+     * Kiểm theo QUYỀN, không theo tên vai trò.
      */
     public function before(User $user, string $ability): ?bool
     {
-        if ($user->hasAnyRole(['Super Admin'])) {
+        if ($user->can('task-overview.manageAll')) {
             return true;
         }
+
         return null;
     }
 
