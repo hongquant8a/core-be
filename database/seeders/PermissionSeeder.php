@@ -555,8 +555,16 @@ class PermissionSeeder extends Seeder
 
         foreach (['task-assignment-documents', 'task-overview', 'my-assigned-tasks', 'my-received-tasks'] as $resource) {
             foreach ($flat[$resource] as $action) {
-                // `manageAll` (bỏ kiểm tra sở hữu) chỉ dành cho quản trị hệ thống.
-                if ($resource === 'task-overview' && $action === 'manageAll') {
+                // Hai quyền của task-overview KHÔNG seed cho vai trò nghiệp vụ:
+                //
+                //  manageAll          : bỏ kiểm tra sở hữu — chỉ dành cho quản trị hệ thống.
+                //  exportMonthlyReport: báo cáo giao ban gộp số liệu mọi phòng ban, là
+                //                       việc của cấp điều hành. Quản trị tự cấp ở màn Vai
+                //                       trò cho đúng người khi cần, không mặc định.
+                //
+                // Ai được cấp mà không có viewAll/viewDepartment sẽ nhận 403 — xem
+                // TaskAssignmentItemService::exportMonthlyReport().
+                if ($resource === 'task-overview' && in_array($action, ['manageAll', 'exportMonthlyReport'], true)) {
                     continue;
                 }
 
