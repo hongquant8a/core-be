@@ -2,6 +2,7 @@
 
 namespace App\Modules\TaskAssignment\Services;
 
+use App\Modules\Core\Enums\StatusEnum;
 use App\Modules\Core\Services\MediaService;
 use App\Modules\Core\Support\ExportFilename;
 use App\Modules\TaskAssignment\Enums\TaskDeadlineTypeEnum;
@@ -9,6 +10,7 @@ use App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum;
 use App\Modules\TaskAssignment\Enums\TaskUserAssignmentStatusEnum;
 use App\Modules\TaskAssignment\Exports\ItemsExport;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDepartment;
+use App\Modules\TaskAssignment\Models\TaskAssignmentEmployee;
 use App\Modules\TaskAssignment\Models\TaskAssignmentEmployeeDepartment;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItemAttachment;
@@ -652,6 +654,69 @@ class TaskAssignmentItemService
      *
      * `$alias` là bí danh bảng task_assignment_items trong truy vấn gọi tới.
      */
+    /**
+     * Lựa chọn cho bộ lọc màn Tổng quan — phòng ban và nhân viên NGƯỜI DÙNG ĐƯỢC
+     * PHÉP THẤY, theo đúng ba bậc của applyScopeRestriction().
+     *
+     * Vì sao cần endpoint riêng: hai dropdown đó trước lấy từ
+     * `/public/task-assignment-departments/options` (public, không đăng nhập nên
+     * không biết ai hỏi) và `/task-assignment-employees/options` (có đăng nhập
+     * nhưng cố ý không qua Spatie để form giao việc chọn được mọi phòng). Cả hai
+     * đúng cho mục đích gốc của chúng, nhưng dùng cho bộ lọc thì lộ tên phòng ban
+     * và nhân viên ngoài phạm vi. Siết hai endpoint đó sẽ hỏng form điều chuyển
+     * — nơi buộc phải chọn được phòng ban khác.
+     *
+     * Trả kèm `department_ids` của từng nhân viên để FE lọc lại theo phòng ban
+     * đang chọn mà không phải gọi thêm lượt nữa.
+     */
+    public function filterOptions(): array
+    {
+        $user = auth()->user();
+        $canViewAll = $user->can('task-overview.viewAll');
+        $canViewDepartment = $user->can('task-overview.viewDepartment');
+
+        $myDepartmentIds = TaskAssignmentEmployeeDepartment::forUser($user->id)
+            ->activeEmployee()
+            ->pluck('task_assignment_department_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        $departments = TaskAssignmentDepartment::where('status', StatusEnum::Active->value)
+            ->when(! $canViewAll, fn ($q) => $q->whereIn('id', $myDepartmentIds ?: [0]))
+            ->orderBy('sort_order')
+            ->get(['id', 'name']);
+
+        // Bậc 3 chỉ được xem việc của chính mình nên danh sách nhân viên cũng chỉ
+        // có mình — liệt kê đồng nghiệp là lộ nhân sự phòng ban mà họ không có
+        // quyền xem dữ liệu.
+        $employees = TaskAssignmentEmployee::with(['user:id,name,user_name', 'departmentMemberships'])
+            ->where('status', StatusEnum::Active->value)
+            ->when(! $canViewAll && ! $canViewDepartment, fn ($q) => $q->where('user_id', $user->id))
+            ->when(! $canViewAll && $canViewDepartment, fn ($q) => $q->whereHas(
+                'departmentMemberships',
+                fn ($m) => $m->whereIn('task_assignment_department_id', $myDepartmentIds ?: [0])
+            ))
+            ->get();
+
+        return [
+            'departments' => $departments->map(fn ($d) => ['id' => $d->id, 'name' => $d->name])->values()->all(),
+            'assignees' => $employees
+                ->filter(fn ($e) => $e->user_id)
+                ->map(fn ($e) => [
+                    'user_id' => $e->user_id,
+                    'name' => $e->user?->name ?: $e->user?->user_name,
+                    'department_ids' => $e->departmentMemberships
+                        ->pluck('task_assignment_department_id')
+                        ->map(fn ($id) => (int) $id)
+                        ->values()
+                        ->all(),
+                ])
+                ->sortBy('name', SORT_LOCALE_STRING)
+                ->values()
+                ->all(),
+        ];
+    }
+
     private function applyScopeToRawQuery($query, array $filters, string $alias = 'ti'): void
     {
         if (! empty($filters['related_to_user_id'])) {

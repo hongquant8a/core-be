@@ -32,6 +32,24 @@ class TaskAssignmentItemController extends Controller
     public function __construct(private TaskAssignmentItemService $itemService) {}
 
     /**
+     * Lựa chọn cho bộ lọc màn Tổng quan
+     *
+     * Trả phòng ban và nhân viên mà người gọi ĐƯỢC PHÉP thấy, theo ba bậc phạm vi
+     * (`task-overview.viewAll` / `viewDepartment` / không có gì). Dùng cho hai
+     * dropdown lọc — KHÔNG dùng `/public/task-assignment-departments/options` hay
+     * `/task-assignment-employees/options` vì hai endpoint đó cố ý không giới hạn
+     * để phục vụ form giao việc và điều chuyển.
+     *
+     * @header X-Organization-Id integer required ID tổ chức. Example: 1
+     *
+     * @response 200 {"success": true, "data": {"departments": [{"id": 1, "name": "Phòng Hành chính - Tổng hợp"}], "assignees": [{"user_id": 3, "name": "Nhân viên 1", "department_ids": [1]}]}}
+     */
+    public function filterOptions()
+    {
+        return $this->success($this->itemService->filterOptions());
+    }
+
+    /**
      * Thống kê công việc
      *
      * @queryParam search string Từ khóa tìm kiếm theo tên.

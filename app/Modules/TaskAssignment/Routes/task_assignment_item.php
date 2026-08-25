@@ -7,6 +7,8 @@ Route::get('/export', [TaskAssignmentItemController::class, 'export'])->middlewa
 Route::get('/export-monthly-report', [TaskAssignmentItemController::class, 'exportMonthlyReport'])->middleware('permission:task-overview.exportMonthlyReport,web');
 Route::patch('/bulk-status', [TaskAssignmentItemController::class, 'bulkUpdateStatus'])->middleware('can:bulkUpdateStatus,\App\Modules\TaskAssignment\Models\TaskAssignmentItem');
 Route::delete('/bulk-delete', [TaskAssignmentItemController::class, 'bulkDestroy'])->middleware('can:bulkDestroy,\App\Modules\TaskAssignment\Models\TaskAssignmentItem');
+// Đặt TRƯỚC route `/{taskAssignmentItem}` — nếu không sẽ bị nuốt thành id.
+Route::get('/filter-options', [TaskAssignmentItemController::class, 'filterOptions'])->middleware('can:viewAny,\App\Modules\TaskAssignment\Models\TaskAssignmentItem');
 Route::get('/stats', [TaskAssignmentItemController::class, 'stats'])->middleware('can:viewAny,\App\Modules\TaskAssignment\Models\TaskAssignmentItem');
 Route::get('/stats-by-department', [TaskAssignmentItemController::class, 'statsByDepartment'])->middleware('permission:task-overview.index|presentation.index,web');
 Route::get('/stats-by-user', [TaskAssignmentItemController::class, 'statsByUser'])->middleware('permission:task-overview.index,web');
