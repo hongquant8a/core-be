@@ -52,13 +52,29 @@ class TaskAssignmentDemoSeeder extends Seeder
         ['name' => 'Phòng Kỹ thuật - Công nghệ', 'description' => 'Vận hành hệ thống và hạ tầng kỹ thuật.'],
     ];
 
-    /** user_name => [tên hiển thị, chỉ số phòng ban trong DEPARTMENTS] */
+    /**
+     * user_name => [tên hiển thị, chỉ số phòng ban trong DEPARTMENTS]
+     *
+     * Tên đặt theo số thứ tự thay vì tên người thật để khi kiểm thử nhìn là biết
+     * ngay ai là ai. Mỗi phòng ban có ít nhất 2 nhân viên — dưới 2 thì không thử
+     * được các luồng cần nhiều người trong cùng phòng (điều chuyển nội bộ, phạm
+     * vi xem đơn thư theo phòng ban).
+     *
+     * Phân bổ: phòng 0 có 4, phòng 1 có 3, phòng 2 có 3.
+     * Năm người đầu giữ nguyên phòng ban cũ vì seedDocumentsAndItems() giao việc
+     * theo tên họ — đổi phòng của họ là công việc mẫu dồn hết về một phòng.
+     */
     protected const STAFF = [
-        'nhanvien1' => ['Nguyễn Văn An', 0],
-        'nhanvien2' => ['Trần Thị Bình', 0],
-        'nhanvien3' => ['Lê Hoàng Cường', 1],
-        'nhanvien4' => ['Phạm Thị Dung', 1],
-        'nhanvien5' => ['Võ Minh Đức', 2],
+        'nhanvien1' => ['Nhân viên 1', 0],
+        'nhanvien2' => ['Nhân viên 2', 0],
+        'nhanvien3' => ['Nhân viên 3', 1],
+        'nhanvien4' => ['Nhân viên 4', 1],
+        'nhanvien5' => ['Nhân viên 5', 2],
+        'nhanvien6' => ['Nhân viên 6', 2],
+        'nhanvien7' => ['Nhân viên 7', 0],
+        'nhanvien8' => ['Nhân viên 8', 0],
+        'nhanvien9' => ['Nhân viên 9', 1],
+        'nhanvien10' => ['Nhân viên 10', 2],
     ];
 
     /** @var array<string, User> */
@@ -102,7 +118,7 @@ class TaskAssignmentDemoSeeder extends Seeder
         $this->users['admin'] = $this->upsertUser('admin', 'Quản trị hệ thống', 'admin@example.com', 'quandcore**11', $superAdmin);
 
         // Quản lý công việc.
-        $this->users['quanly1'] = $this->upsertUser('quanly1', 'Đặng Quốc Quản', 'quanly1@example.com', self::DEMO_PASSWORD, $manager);
+        $this->users['quanly1'] = $this->upsertUser('quanly1', 'Quản lý 1', 'quanly1@example.com', self::DEMO_PASSWORD, $manager);
 
         // Nhân viên thực hiện.
         foreach (self::STAFF as $userName => [$fullName]) {
