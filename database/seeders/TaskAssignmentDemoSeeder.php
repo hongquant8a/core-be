@@ -198,6 +198,15 @@ class TaskAssignmentDemoSeeder extends Seeder
                 ->where('task_assignment_employee_id', $this->employees[$userName]->id)
                 ->where('task_assignment_department_id', $this->departments[$deptIndex]->id)
                 ->update(['is_representative' => true]);
+
+            // Người đại diện là trưởng phòng trên thực tế, nên cấp thêm quyền xem
+            // dữ liệu cấp phòng. Không có quyền này thì họ chỉ thấy công việc của
+            // chính mình — đúng như mọi nhân viên khác.
+            //
+            // Cấp thẳng cho người dùng chứ không gắn vào vai trò `Nhân viên`: gắn
+            // vào vai trò là MỌI nhân viên đều thấy cả phòng, khác hẳn ý đồ.
+            // quanly1 (đại diện phòng 0) không cần vì đã có `task-overview.viewAll`.
+            $this->users[$userName]->givePermissionTo('task-overview.viewDepartment');
         }
     }
 
