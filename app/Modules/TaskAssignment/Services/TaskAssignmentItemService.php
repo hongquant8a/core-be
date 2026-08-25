@@ -6,6 +6,7 @@ use App\Modules\Core\Services\MediaService;
 use App\Modules\Core\Support\ExportFilename;
 use App\Modules\TaskAssignment\Enums\TaskDeadlineTypeEnum;
 use App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum;
+use App\Modules\TaskAssignment\Enums\TaskUserAssignmentStatusEnum;
 use App\Modules\TaskAssignment\Exports\ItemsExport;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDepartment;
 use App\Modules\TaskAssignment\Models\TaskAssignmentEmployeeDepartment;
@@ -668,6 +669,32 @@ class TaskAssignmentItemService
         }
     }
 
+    /**
+     * Bộ lọc "nhân viên" trên truy vấn SQL THÔ.
+     *
+     * Cùng lý do với applyScopeToRawQuery(): bốn hàm thống kê không đi qua
+     * scopeFilter của model nên không tự nhận `assignee_id`. Thiếu bước này thì
+     * người dùng chọn một nhân viên ở màn Tổng quan mà biểu đồ vẫn đếm cả tổ chức.
+     *
+     * Bỏ qua dòng phân công đã `transferred` cho khớp scopeFilter — việc đã
+     * chuyển đi thì không còn tính cho người cũ.
+     */
+    private function applyAssigneeFilterToRawQuery($query, array $filters, string $alias = 'ti'): void
+    {
+        $userId = $filters['assignee_id'] ?? $filters['user_id'] ?? null;
+
+        if (! $userId) {
+            return;
+        }
+
+        $query->whereExists(fn ($sub) => $sub->select(DB::raw(1))
+            ->from('task_assignment_item_user as assignee_u')
+            ->whereColumn('assignee_u.task_assignment_item_id', $alias.'.id')
+            ->where('assignee_u.user_id', (int) $userId)
+            ->where('assignee_u.assignment_status', '!=', TaskUserAssignmentStatusEnum::Transferred->value)
+        );
+    }
+
     public function statsByItemType(array $filters): array
     {
         $filters = $this->applyScopeRestriction($filters);
@@ -717,6 +744,7 @@ class TaskAssignmentItemService
 
         // Phạm vi bậc 3 (chỉ việc của mình) không đi qua scopeFilter được vì đây là SQL thô.
         $this->applyScopeToRawQuery($query, $filters, 'ti');
+        $this->applyAssigneeFilterToRawQuery($query, $filters, 'ti');
 
         $rows = $query->get()->keyBy('item_type_id');
 
@@ -801,6 +829,7 @@ class TaskAssignmentItemService
 
         // Phạm vi bậc 3 (chỉ việc của mình) không đi qua scopeFilter được vì đây là SQL thô.
         $this->applyScopeToRawQuery($query, $filters, 'ti');
+        $this->applyAssigneeFilterToRawQuery($query, $filters, 'ti');
 
         if ($fromDate && $toDate) {
             $query->selectRaw('SUM(CASE WHEN ti.created_at >= ? AND ti.created_at <= ? THEN 1 ELSE 0 END) as new_in_period', [$fromDate, $toDateEnd])
@@ -866,6 +895,13 @@ class TaskAssignmentItemService
 
         // Phạm vi bậc 3 (chỉ việc của mình) không đi qua scopeFilter được vì đây là SQL thô.
         $this->applyScopeToRawQuery($query, $filters, 'ti');
+
+        // Hàm này GROUP BY người thực hiện nên lọc thẳng trên dòng nhóm, không
+        // dùng applyAssigneeFilterToRawQuery: whereExists chỉ thu hẹp danh sách
+        // công việc, một việc có 2 người vẫn sinh đủ 2 dòng và biểu đồ lộ tên
+        // người không được chọn.
+        $query->when($filters['assignee_id'] ?? $filters['user_id'] ?? null,
+            fn ($q, $v) => $q->where('tiu.user_id', $v));
 
         if (! empty($filters['processing_status'])) {
             $query->where('ti.processing_status', $filters['processing_status']);
@@ -991,6 +1027,7 @@ class TaskAssignmentItemService
 
         // Phạm vi bậc 3 (chỉ việc của mình) không đi qua scopeFilter được vì đây là SQL thô.
         $this->applyScopeToRawQuery($query, $filters, 'ti');
+        $this->applyAssigneeFilterToRawQuery($query, $filters, 'ti');
 
         $results = $query->groupBy('td.id', 'td.name', 'td.issue_date')
             ->selectRaw('td.id as document_id, td.name as document_name, td.issue_date')
