@@ -293,9 +293,23 @@ class TaskAssignmentItem extends TenantModel implements HasMedia, Remindable
             ->when($filters['deadline_type'] ?? null, fn ($q, $type) => $q->where('deadline_type', $type))
             ->when($filters['task_assignment_document_id'] ?? null, fn ($q, $docId) => $q->where('task_assignment_document_id', $docId))
             ->when($filters['task_assignment_item_type_id'] ?? null, fn ($q, $typeId) => $q->where('task_assignment_item_type_id', $typeId))
+            // Nhận cả một id lẫn mảng id: bộ lọc của FE gửi một phòng ban, còn tầng
+            // phạm vi ở service gửi TẤT CẢ phòng ban của người dùng (một người có
+            // thể kiêm nhiệm nhiều phòng).
             ->when($filters['department_id'] ?? null, fn ($q, $deptId) => $q->whereHas('users', fn ($q2) => $q2
-                ->where('task_assignment_item_user.department_id', $deptId)
+                ->whereIn('task_assignment_item_user.department_id', (array) $deptId)
                 ->where('task_assignment_item_user.assignment_status', '!=', \App\Modules\TaskAssignment\Enums\TaskUserAssignmentStatusEnum::Transferred->value)
+            ))
+            // Phạm vi hẹp nhất: công việc mình GIAO hoặc ĐƯỢC GIAO. Phải là OR trong
+            // cùng một mệnh đề — dùng hai bộ lọc assignee_id + assigner_id rời nhau
+            // sẽ thành AND và trả về rỗng.
+            ->when($filters['related_to_user_id'] ?? null, fn ($q, $userId) => $q->where(fn ($q2) => $q2
+                ->whereHas('users', fn ($q3) => $q3
+                    ->where('users.id', $userId)
+                    ->where('task_assignment_item_user.assignment_status', '!=', \App\Modules\TaskAssignment\Enums\TaskUserAssignmentStatusEnum::Transferred->value)
+                )
+                ->orWhere('assigned_by', $userId)
+                ->orWhere('created_by', $userId)
             ))
             ->when($filters['user_id'] ?? $filters['assignee_id'] ?? null, fn ($q, $userId) => $q->whereHas('users', fn ($q2) => $q2
                 ->where('users.id', $userId)

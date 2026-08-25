@@ -79,10 +79,15 @@ class PermissionSeeder extends Seeder
         'TaskAssignment' => [
             'task-overview' => [
                 'index', 'exportMonthlyReport',
-                // Hai quyền "vượt phạm vi" — thay cho việc hardcode tên vai trò trong code:
-                //  viewAll   : xem dữ liệu toàn tổ chức, không bị giới hạn theo phòng ban.
-                //  manageAll : thao tác trên công việc của người khác (bỏ kiểm tra sở hữu).
-                'viewAll', 'manageAll',
+                // Ba quyền "vượt phạm vi" — thay cho việc hardcode tên vai trò trong code.
+                // Phạm vi xem công việc có ba bậc, xét theo đúng thứ tự này:
+                //  viewAll        : xem dữ liệu toàn tổ chức.
+                //  viewDepartment : xem mọi công việc của các phòng ban mình là thành viên
+                //                   (dành cho trưởng phòng / người theo dõi cấp phòng).
+                //  không có gì    : chỉ thấy công việc mình giao hoặc được giao.
+                // manageAll là trục khác — thao tác trên công việc của người khác
+                // (bỏ kiểm tra sở hữu), không phải phạm vi xem.
+                'viewAll', 'viewDepartment', 'manageAll',
             ],
             // Công việc chỉ được tạo/sửa/xóa trong màn Văn bản giao việc (core-fe chặn
             // giao đột xuất ngoài luồng) → 3 action *Item nằm cùng nhóm văn bản.
@@ -352,6 +357,7 @@ class PermissionSeeder extends Seeder
         'attendees' => 'Quản lý đại biểu trong nhóm',
         'systemOverview' => 'Tổng quan hệ thống',
         'viewAll' => 'Xem toàn tổ chức',
+        'viewDepartment' => 'Xem dữ liệu phòng ban mình',
         'manageAll' => 'Thao tác trên dữ liệu của người khác',
         'reorder' => 'Sắp xếp lại',
         'duplicate' => 'Sao chép',

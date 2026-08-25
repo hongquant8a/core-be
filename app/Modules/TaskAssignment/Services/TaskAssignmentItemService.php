@@ -27,6 +27,8 @@ class TaskAssignmentItemService
 
     public function stats(array $filters): array
     {
+        $filters = $this->applyScopeRestriction($filters);
+
         $base = TaskAssignmentItem::filter($filters);
 
         return [
@@ -106,6 +108,8 @@ class TaskAssignmentItemService
 
     public function index(array $filters, int $limit)
     {
+        $filters = $this->applyScopeRestriction($filters);
+
         return TaskAssignmentItem::with(['document.type', 'document.attachments.media', 'document.creator.media', 'document.editor.media', 'itemType', 'users', 'assigner', 'creator.media', 'editor.media', 'attachments.media', 'reminders', 'reporter', 'approver'])
             ->withCount('reports')
             ->filter($filters)
@@ -289,13 +293,43 @@ class TaskAssignmentItemService
 
     public function export(array $filters): BinaryFileResponse
     {
+        $filters = $this->applyScopeRestriction($filters);
+
         return Excel::download(new ItemsExport($filters), ExportFilename::make('cong-viec-giao'));
     }
 
+    /**
+     * Báo cáo giao ban — mỗi phòng ban một sheet, nên phạm vi ở đây là DANH SÁCH
+     * PHÒNG BAN chứ không phải bộ lọc công việc như applyScopeRestriction().
+     *
+     *  - `viewAll`        → null, tức mọi phòng ban.
+     *  - `viewDepartment` → chỉ phòng ban mình là thành viên đang hoạt động.
+     *  - không có gì      → 403. Đây là báo cáo cấp phòng trở lên; trả file rỗng
+     *    thì người dùng tưởng phòng mình không có việc nào.
+     *
+     * Trước đây hàm này không gác gì: ai có `task-overview.exportMonthlyReport`
+     * đều tải được báo cáo của TOÀN tổ chức. Đo thực tế lúc đó: một nhân viên chỉ
+     * thấy 1 công việc vẫn tải về file y hệt người có viewAll thấy 7 công việc.
+     */
     public function exportMonthlyReport(string $month): BinaryFileResponse
     {
+        $user = auth()->user();
+        $departmentIds = null;
+
+        if (! $user->can('task-overview.viewAll')) {
+            if (! $user->can('task-overview.viewDepartment')) {
+                abort(403, 'Báo cáo giao ban là báo cáo cấp phòng ban. Tài khoản của bạn chưa có quyền xem dữ liệu cấp phòng.');
+            }
+
+            $departmentIds = TaskAssignmentEmployeeDepartment::forUser($user->id)
+                ->activeEmployee()
+                ->pluck('task_assignment_department_id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+        }
+
         return Excel::download(
-            new \App\Modules\TaskAssignment\Exports\MonthlyReportExport($month),
+            new \App\Modules\TaskAssignment\Exports\MonthlyReportExport($month, $departmentIds),
             ExportFilename::make("bao-cao-giao-ban-{$month}"),
         );
     }
@@ -549,26 +583,95 @@ class TaskAssignmentItemService
         }
     }
 
-    private function applyDepartmentRestriction(array $filters): array
+    /**
+     * Giới hạn phạm vi dữ liệu công việc theo quyền. Ba bậc, xét đúng thứ tự:
+     *
+     *  1. `task-overview.viewAll`        → toàn tổ chức, không giới hạn.
+     *  2. `task-overview.viewDepartment` → mọi công việc của các phòng ban mình là
+     *     thành viên đang hoạt động. Dành cho trưởng phòng / người theo dõi cấp phòng.
+     *  3. không có quyền nào             → chỉ công việc mình giao hoặc được giao.
+     *
+     * Lấy `pluck` chứ không `value`: một người có thể kiêm nhiệm nhiều phòng ban.
+     * Bản trước dùng `value()` nên chỉ lấy phòng ban đầu tiên và người kiêm nhiệm
+     * mất sạch dữ liệu phòng thứ hai mà không có dấu hiệu gì.
+     *
+     * Không thuộc phòng nào → `[0]` để không khớp bản ghi nào. Gán `null` sẽ khiến
+     * `when()` bỏ qua điều kiện và người dùng nhìn thấy dữ liệu của cả tổ chức.
+     */
+    private function applyScopeRestriction(array $filters): array
     {
         $user = auth()->user();
-        // Ai có `task-overview.viewAll` thì xem được toàn tổ chức.
+
         if ($user->can('task-overview.viewAll')) {
             return $filters;
         }
 
-        // Truy vấn qua model của phân hệ, không mượn quan hệ trên Core\User.
-        // Không thuộc phòng nào → 0 để không khớp bản ghi nào; trước đây gán null khiến
-        // `when()` bỏ qua điều kiện và người dùng nhìn thấy dữ liệu của cả tổ chức.
-        $filters['department_id'] = TaskAssignmentEmployeeDepartment::forUser($user->id)
+        if ($user->can('task-overview.viewDepartment')) {
+            // Truy vấn qua model của phân hệ, không mượn quan hệ trên Core\User.
+            $allowed = TaskAssignmentEmployeeDepartment::forUser($user->id)
+                ->activeEmployee()
+                ->pluck('task_assignment_department_id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+            // FE có bộ lọc phòng ban riêng. Giao hai tập thay vì ghi đè: chọn phòng
+            // ban ngoài phạm vi thì ra rỗng, không phải âm thầm mở rộng ra cả phạm vi.
+            $requested = array_map('intval', (array) ($filters['department_id'] ?? []));
+            $scope = $requested ? array_values(array_intersect($requested, $allowed)) : $allowed;
+
+            $filters['department_id'] = $scope ?: [0];
+
+            return $filters;
+        }
+
+        $filters['related_to_user_id'] = $user->id;
+
+        // Chỉ để thu hẹp TRỤC biểu đồ phòng ban, KHÔNG dùng lọc dữ liệu — việc lọc
+        // đã do `related_to_user_id` đảm nhiệm. Tách riêng khoá vì nếu gán thẳng
+        // vào `department_id` thì nó sẽ AND với bộ lọc dữ liệu ở mọi hàm khác và
+        // giấu mất công việc được giao cho mình dưới danh nghĩa phòng ban khác.
+        $filters['axis_department_ids'] = TaskAssignmentEmployeeDepartment::forUser($user->id)
             ->activeEmployee()
-            ->value('task_assignment_department_id') ?? 0;
+            ->pluck('task_assignment_department_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
 
         return $filters;
     }
 
+    /**
+     * Áp phạm vi lên truy vấn SQL THÔ (DB::table).
+     *
+     * Bốn hàm thống kê statsByDepartment / statsByItemType / statsByUser /
+     * statsByDocument tự dựng SQL chứ không đi qua scopeFilter của model, nên
+     * chúng KHÔNG tự hiểu `department_id` dạng mảng lẫn `related_to_user_id`
+     * mà applyScopeRestriction() sinh ra. Thiếu bước này thì người ở bậc 3
+     * (chỉ được xem việc của mình) vẫn thấy đủ mọi phòng ban trên biểu đồ —
+     * đúng lỗi đã gặp ở màn Tổng quan.
+     *
+     * `$alias` là bí danh bảng task_assignment_items trong truy vấn gọi tới.
+     */
+    private function applyScopeToRawQuery($query, array $filters, string $alias = 'ti'): void
+    {
+        if (! empty($filters['related_to_user_id'])) {
+            $userId = (int) $filters['related_to_user_id'];
+
+            $query->where(fn ($q) => $q
+                ->whereExists(fn ($sub) => $sub->select(DB::raw(1))
+                    ->from('task_assignment_item_user as scope_u')
+                    ->whereColumn('scope_u.task_assignment_item_id', $alias.'.id')
+                    ->where('scope_u.user_id', $userId)
+                )
+                ->orWhere($alias.'.assigned_by', $userId)
+                ->orWhere($alias.'.created_by', $userId)
+            );
+        }
+    }
+
     public function statsByItemType(array $filters): array
     {
+        $filters = $this->applyScopeRestriction($filters);
+
         $itemTypes = \App\Modules\TaskAssignment\Models\TaskAssignmentItemType::where('status', 'active')->get(['id', 'name']);
 
         $done = TaskProgressStatusEnum::Done->value;
@@ -592,7 +695,7 @@ class TaskAssignmentItemService
                 $sub->select(DB::raw(1))
                     ->from('task_assignment_item_user')
                     ->whereColumn('task_assignment_item_user.task_assignment_item_id', 'ti.id')
-                    ->where('task_assignment_item_user.department_id', $v);
+                    ->whereIn('task_assignment_item_user.department_id', (array) $v);
             }))
             ->when($filters['priority'] ?? null, fn ($q, $v) => $q->where('ti.priority', $v))
             ->when($filters['from_date'] ?? null, fn ($q, $v) => $q->where('ti.created_at', '>=', $v))
@@ -611,6 +714,9 @@ class TaskAssignmentItemService
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' AND ti.deadline_type = '{$hasDeadline}' AND DATE(ti.completed_at) > DATE(ti.end_at) THEN 1 ELSE 0 END) as late")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' AND ti.deadline_type = '{$hasDeadline}' AND DATE(ti.completed_at) < DATE(ti.end_at) THEN 1 ELSE 0 END) as early")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' AND (ti.deadline_type != '{$hasDeadline}' OR ti.end_at IS NULL OR DATE(ti.completed_at) = DATE(ti.end_at)) THEN 1 ELSE 0 END) as on_time");
+
+        // Phạm vi bậc 3 (chỉ việc của mình) không đi qua scopeFilter được vì đây là SQL thô.
+        $this->applyScopeToRawQuery($query, $filters, 'ti');
 
         $rows = $query->get()->keyBy('item_type_id');
 
@@ -640,8 +746,13 @@ class TaskAssignmentItemService
 
     public function statsByDepartment(array $filters): array
     {
+        $filters = $this->applyScopeRestriction($filters);
+
         $departments = TaskAssignmentDepartment::query()
-            ->when($filters['department_id'] ?? null, fn ($q, $id) => $q->where('id', $id))
+            // Trục biểu đồ: bậc 1 hiện mọi phòng; bậc 2 hiện phòng trong phạm vi;
+            // bậc 3 hiện phòng ban của chính mình thay vì liệt kê cả tổ chức với số 0.
+            ->when($filters['department_id'] ?? (($filters['axis_department_ids'] ?? []) ?: null),
+                fn ($q, $id) => $q->whereIn('id', (array) $id))
             ->get(['id', 'name', 'status']);
 
         $done = TaskProgressStatusEnum::Done->value;
@@ -666,7 +777,7 @@ class TaskAssignmentItemService
                     ->whereColumn('task_assignment_documents.id', 'ti.task_assignment_document_id')
                     ->where('task_assignment_documents.status', 'issued');
             })
-            ->when($filters['department_id'] ?? null, fn ($q, $v) => $q->where('tiu.department_id', $v))
+            ->when($filters['department_id'] ?? null, fn ($q, $v) => $q->whereIn('tiu.department_id', (array) $v))
             ->when($filters['processing_status'] ?? null, fn ($q, $v) => $q->where('ti.processing_status', $v))
             ->when($filters['priority'] ?? null, fn ($q, $v) => $q->where('ti.priority', $v))
             ->when($filters['deadline_type'] ?? null, fn ($q, $v) => $q->where('ti.deadline_type', $v))
@@ -687,6 +798,9 @@ class TaskAssignmentItemService
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' AND ti.deadline_type = '{$hasDeadline}' AND DATE(ti.completed_at) > DATE(ti.end_at) THEN 1 ELSE 0 END) as late")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' AND ti.deadline_type = '{$hasDeadline}' AND DATE(ti.completed_at) < DATE(ti.end_at) THEN 1 ELSE 0 END) as early")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$done}' AND (ti.deadline_type != '{$hasDeadline}' OR ti.end_at IS NULL OR DATE(ti.completed_at) = DATE(ti.end_at)) THEN 1 ELSE 0 END) as on_time");
+
+        // Phạm vi bậc 3 (chỉ việc của mình) không đi qua scopeFilter được vì đây là SQL thô.
+        $this->applyScopeToRawQuery($query, $filters, 'ti');
 
         if ($fromDate && $toDate) {
             $query->selectRaw('SUM(CASE WHEN ti.created_at >= ? AND ti.created_at <= ? THEN 1 ELSE 0 END) as new_in_period', [$fromDate, $toDateEnd])
@@ -726,7 +840,7 @@ class TaskAssignmentItemService
 
     public function statsByUser(array $filters): array
     {
-        $filters = $this->applyDepartmentRestriction($filters);
+        $filters = $this->applyScopeRestriction($filters);
 
         $done = TaskProgressStatusEnum::Done->value;
         $cancelled = TaskProgressStatusEnum::Cancelled->value;
@@ -745,10 +859,13 @@ class TaskAssignmentItemService
                     ->whereColumn('task_assignment_documents.id', 'ti.task_assignment_document_id')
                     ->where('task_assignment_documents.status', 'issued');
             })
-            ->when($filters['department_id'] ?? null, fn ($q, $v) => $q->where('tiu.department_id', $v))
+            ->when($filters['department_id'] ?? null, fn ($q, $v) => $q->whereIn('tiu.department_id', (array) $v))
             ->when($filters['priority'] ?? null, fn ($q, $v) => $q->where('ti.priority', $v))
             ->when($fromDate, fn ($q, $v) => $q->where('ti.created_at', '>=', $v))
             ->when($toDate, fn ($q, $v) => $q->where('ti.created_at', '<=', Carbon::parse($v)->endOfDay()));
+
+        // Phạm vi bậc 3 (chỉ việc của mình) không đi qua scopeFilter được vì đây là SQL thô.
+        $this->applyScopeToRawQuery($query, $filters, 'ti');
 
         if (! empty($filters['processing_status'])) {
             $query->where('ti.processing_status', $filters['processing_status']);
@@ -796,7 +913,7 @@ class TaskAssignmentItemService
 
     public function statsByTime(array $filters): array
     {
-        $filters = $this->applyDepartmentRestriction($filters);
+        $filters = $this->applyScopeRestriction($filters);
 
         $from = Carbon::parse($filters['from_date'])->startOfMonth();
         $to = Carbon::parse($filters['to_date'])->endOfMonth();
@@ -852,7 +969,7 @@ class TaskAssignmentItemService
 
     public function statsByDocument(array $filters): array
     {
-        $filters = $this->applyDepartmentRestriction($filters);
+        $filters = $this->applyScopeRestriction($filters);
 
         $done = TaskProgressStatusEnum::Done->value;
         $cancelled = TaskProgressStatusEnum::Cancelled->value;
@@ -866,11 +983,14 @@ class TaskAssignmentItemService
                 $sub->select(DB::raw(1))
                     ->from('task_assignment_item_user')
                     ->whereColumn('task_assignment_item_user.task_assignment_item_id', 'ti.id')
-                    ->where('task_assignment_item_user.department_id', $v);
+                    ->whereIn('task_assignment_item_user.department_id', (array) $v);
             }))
             ->when($filters['task_assignment_type_id'] ?? null, fn ($q, $v) => $q->where('td.task_assignment_type_id', $v))
             ->when($filters['from_date'] ?? null, fn ($q, $v) => $q->where('td.issue_date', '>=', $v))
             ->when($filters['to_date'] ?? null, fn ($q, $v) => $q->where('td.issue_date', '<=', $v));
+
+        // Phạm vi bậc 3 (chỉ việc của mình) không đi qua scopeFilter được vì đây là SQL thô.
+        $this->applyScopeToRawQuery($query, $filters, 'ti');
 
         $results = $query->groupBy('td.id', 'td.name', 'td.issue_date')
             ->selectRaw('td.id as document_id, td.name as document_name, td.issue_date')
@@ -895,7 +1015,7 @@ class TaskAssignmentItemService
 
     public function overdue(array $filters, int $limit)
     {
-        $filters = $this->applyDepartmentRestriction($filters);
+        $filters = $this->applyScopeRestriction($filters);
 
         return TaskAssignmentItem::with(['document.type', 'document.attachments.media', 'document.creator.media', 'document.editor.media', 'itemType', 'users'])
             ->withCount('reports')
@@ -914,7 +1034,7 @@ class TaskAssignmentItemService
 
     public function upcomingDeadline(array $filters, int $limit)
     {
-        $filters = $this->applyDepartmentRestriction($filters);
+        $filters = $this->applyScopeRestriction($filters);
         $days = (int) ($filters['days'] ?? 3);
 
         return TaskAssignmentItem::with(['document.type', 'document.attachments.media', 'document.creator.media', 'document.editor.media', 'itemType', 'users'])

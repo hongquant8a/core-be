@@ -6,14 +6,19 @@ use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 
 class MonthlyReportExport implements WithMultipleSheets
 {
-    public function __construct(private string $month) {}
+    /**
+     * @param  array<int>|null  $departmentIds  null = mọi phòng ban (viewAll);
+     *                                          mảng = giới hạn theo phạm vi người dùng.
+     */
+    public function __construct(private string $month, private ?array $departmentIds = null) {}
 
     public function sheets(): array
     {
-        $sheets = [new MonthlyReportSummarySheet($this->month)];
+        $sheets = [new MonthlyReportSummarySheet($this->month, $this->departmentIds)];
         $usedTitles = ['Tổng hợp'];
 
         $departments = \App\Modules\TaskAssignment\Models\TaskAssignmentDepartment::where('status', 'active')
+            ->when($this->departmentIds !== null, fn ($q) => $q->whereIn('id', $this->departmentIds))
             ->orderBy('sort_order')
             ->get();
 

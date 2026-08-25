@@ -52,7 +52,7 @@ class MonthlyReportSummarySheet implements FromArray, WithTitle, WithStyles, Sho
         return 'in_flight';
     }
 
-    public function __construct(private string $month) {}
+    public function __construct(private string $month, private ?array $departmentIds = null) {}
 
     public function title(): string
     {
@@ -66,6 +66,7 @@ class MonthlyReportSummarySheet implements FromArray, WithTitle, WithStyles, Sho
         $now = Carbon::now();
 
         $departments = TaskAssignmentDepartment::where('status', 'active')
+            ->when($this->departmentIds !== null, fn ($q) => $q->whereIn('id', $this->departmentIds))
             ->orderBy('sort_order')
             ->get();
 
