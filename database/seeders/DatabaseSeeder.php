@@ -12,7 +12,8 @@ class DatabaseSeeder extends Seeder
      * Tài khoản mẫu do TaskAssignmentDemoSeeder tạo:
      *  - admin / quandcore**11 — Super Admin
      *  - quanly1 / 123123 — Quản lý công việc
-     *  - nhanvien1..nhanvien5 / 123123 — Nhân viên
+     *  - nhanvien1..nhanvien10 / 123123 — Nhân viên
+     *  - truongphong1..truongphong3 / 123123 — Trưởng phòng (mỗi phòng ban một người)
      */
     public function run(): void
     {

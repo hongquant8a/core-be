@@ -32,9 +32,10 @@ use Illuminate\Support\Facades\DB;
  * Trình tự: tài khoản → phòng ban → nhân viên → danh mục → văn bản giao việc
  * → công việc → báo cáo.
  *
- * Hai vai trò nghiệp vụ:
+ * Ba vai trò nghiệp vụ:
  *  - Nhân viên: nhận việc, cập nhật tiến độ, làm báo cáo.
  *  - Quản lý công việc: tạo văn bản, giao việc, theo dõi và xác nhận hoàn thành.
+ *  - Trưởng phòng: theo dõi công việc cấp phòng, xử lý đơn thư của phòng.
  */
 class TaskAssignmentDemoSeeder extends Seeder
 {
@@ -113,6 +114,7 @@ class TaskAssignmentDemoSeeder extends Seeder
         $superAdmin = Role::where('name', 'Super Admin')->where('guard_name', 'web')->first();
         $manager = Role::where('name', 'Quản lý công việc')->where('guard_name', 'web')->first();
         $staff = Role::where('name', 'Nhân viên')->where('guard_name', 'web')->first();
+        $departmentHead = Role::where('name', 'Trưởng phòng')->where('guard_name', 'web')->first();
 
         // Tài khoản quản trị mặc định.
         $this->users['admin'] = $this->upsertUser('admin', 'Quản trị hệ thống', 'admin@example.com', 'quandcore**11', $superAdmin);
@@ -124,6 +126,34 @@ class TaskAssignmentDemoSeeder extends Seeder
         foreach (self::STAFF as $userName => [$fullName]) {
             $this->users[$userName] = $this->upsertUser($userName, $fullName, "{$userName}@example.com", self::DEMO_PASSWORD, $staff);
         }
+
+        // Trưởng phòng: mỗi phòng ban một người.
+        if (! $departmentHead) {
+            $this->command?->warn('   → Không tìm thấy vai trò "Trưởng phòng" — tài khoản truongphong* sẽ không được gán vai trò.');
+        }
+
+        foreach ($this->departmentHeads() as $userName => [$fullName]) {
+            $this->users[$userName] = $this->upsertUser($userName, $fullName, "{$userName}@example.com", self::DEMO_PASSWORD, $departmentHead);
+        }
+    }
+
+    /**
+     * Trưởng phòng sinh theo số phòng ban: truongphong1..n khớp thứ tự DEPARTMENTS.
+     *
+     * Vai trò `Trưởng phòng` được tạo sẵn trong database (không nằm trong
+     * PermissionSeeder) nên chỉ tra cứu, không tự tạo.
+     *
+     * @return array<string, array{0: string, 1: int}> user_name => [tên hiển thị, chỉ số phòng ban]
+     */
+    protected function departmentHeads(): array
+    {
+        $heads = [];
+
+        foreach (array_keys(self::DEPARTMENTS) as $i) {
+            $heads['truongphong'.($i + 1)] = ['Trưởng phòng '.($i + 1), $i];
+        }
+
+        return $heads;
     }
 
     protected function upsertUser(string $userName, string $name, string $email, string $password, ?Role $role): User
@@ -189,6 +219,12 @@ class TaskAssignmentDemoSeeder extends Seeder
         $this->employees['quanly1'] = $this->upsertEmployee($this->users['quanly1'], 0, true);
 
         foreach (self::STAFF as $userName => [, $deptIndex]) {
+            $this->employees[$userName] = $this->upsertEmployee($this->users[$userName], $deptIndex, false);
+        }
+
+        // Trưởng phòng là nhân viên của phòng mình. Không đặt cờ đại diện: đại diện
+        // hiện có (quanly1, nhanvien3, nhanvien5) giữ nguyên, mỗi phòng một người.
+        foreach ($this->departmentHeads() as $userName => [, $deptIndex]) {
             $this->employees[$userName] = $this->upsertEmployee($this->users[$userName], $deptIndex, false);
         }
 
