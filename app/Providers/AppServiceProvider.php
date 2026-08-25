@@ -27,6 +27,8 @@ use App\Modules\Meeting\Policies\MeetingVoteTopicPolicy;
 use App\Modules\TaskAssignment\Listeners\BlockUserDeletionWithActiveTasks;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Modules\TaskAssignment\Policies\TaskAssignmentItemPolicy;
+use App\Modules\TaskAssignment\Models\TaskAssignmentItemReport;
+use App\Modules\TaskAssignment\Policies\TaskAssignmentItemReportPolicy;
 use App\Modules\TaskAssignment\Models\TaskAssignmentPetition;
 use App\Modules\TaskAssignment\Policies\TaskAssignmentPetitionPolicy;
 use Illuminate\Support\Facades\Event;
@@ -99,6 +101,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Register TaskAssignment Policies
         Gate::policy(TaskAssignmentItem::class, TaskAssignmentItemPolicy::class);
+        Gate::policy(TaskAssignmentItemReport::class, TaskAssignmentItemReportPolicy::class);
         Gate::policy(TaskAssignmentPetition::class, TaskAssignmentPetitionPolicy::class);
 
         // Phân hệ tự đăng ký luật chặn xóa user của mình — Core không biết bảng của phân hệ.

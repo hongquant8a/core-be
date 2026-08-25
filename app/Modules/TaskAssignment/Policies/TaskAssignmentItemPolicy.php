@@ -153,6 +153,75 @@ class TaskAssignmentItemPolicy
     }
 
     /**
+     * Điều chuyển công việc — cần quyền điều chuyển VÀ là người liên quan đến task.
+     *
+     * Trước đây route chỉ gác permission. Service có nhánh "manager chuyển hộ":
+     * user không nằm trong pivot thì nó lấy assignee `main` để chuyển — nghĩa là
+     * bất kỳ ai có quyền điều chuyển cũng chuyển được việc của người khác. Nhánh
+     * đó vẫn giữ (đúng cho người giao việc), nhưng nay chỉ người liên quan mới
+     * vào được tới đó.
+     */
+    public function transfer(User $user, TaskAssignmentItem $item): bool
+    {
+        // Dùng can() thay hasPermissionTo(): quyền chưa seed thì trả false thay vì ném.
+        $hasPermission = $user->can('my-assigned-tasks.transfer')
+            || $user->can('my-received-tasks.transfer');
+
+        return $hasPermission && $this->isOwnerOrAssigned($user, $item);
+    }
+
+    /**
+     * Ghi chú / trao đổi trên công việc — cần quyền ghi chú VÀ là người liên quan.
+     *
+     * `my-received-tasks.note` nằm trong bộ quyền mặc định của vai trò Nhân viên,
+     * nên khi route chỉ gác permission thì mọi nhân viên ghi chú được vào công
+     * việc bất kỳ, kể cả việc không liên quan tới mình.
+     */
+    public function note(User $user, TaskAssignmentItem $item): bool
+    {
+        $hasPermission = $user->can('my-assigned-tasks.note')
+            || $user->can('my-received-tasks.note');
+
+        return $hasPermission && $this->isOwnerOrAssigned($user, $item);
+    }
+
+    /**
+     * Nộp báo cáo cho công việc — chỉ người liên quan tới chính công việc đó.
+     * KHÔNG nới theo `task-overview.index` như quyền đọc bên dưới: quyền đó là
+     * quyền đọc dữ liệu tổng hợp, không hàm ý được GHI vào công việc của người
+     * khác.
+     */
+    public function report(User $user, TaskAssignmentItem $item): bool
+    {
+        return $user->can('my-received-tasks.report')
+            && $this->isOwnerOrAssigned($user, $item);
+    }
+
+    /**
+     * Đọc danh sách báo cáo của công việc.
+     *
+     * Rộng hơn `report()` một bậc, và căn cứ là ngữ nghĩa sẵn có của cây quyền:
+     * `task-overview.index` và `presentation.index` đã là quyền ĐỌC dữ liệu công
+     * việc toàn tổ chức — xem 7 route thống kê trong `task_assignment_item.php`
+     * (`stats-by-user`, `stats-by-department`, `overdue`, ...) đều gác đúng hai
+     * quyền này. Báo cáo là một mặt của cùng khối dữ liệu đó, nên ai đọc được
+     * thống kê thì đọc được báo cáo; siết hơn ở đây là mâu thuẫn với chính BE.
+     *
+     * Ghi để không tái diễn: căn cứ là cây quyền, KHÔNG phải "nếu siết thì màn
+     * Tổng quan gãy". Frontend theo backend, không phải chiều ngược lại.
+     */
+    public function viewReports(User $user, TaskAssignmentItem $item): bool
+    {
+        if (! $user->can('my-received-tasks.report')) {
+            return false;
+        }
+
+        return $this->isOwnerOrAssigned($user, $item)
+            || $user->can('task-overview.index')
+            || $user->can('presentation.index');
+    }
+
+    /**
      * Helper: kiểm tra user có liên quan đến task không.
      * - Người giao (assigned_by)
      * - Người được giao (users pivot)

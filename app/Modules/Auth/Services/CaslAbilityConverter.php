@@ -113,6 +113,13 @@ class CaslAbilityConverter
                 $aliases[] = ['action' => 'show', 'subject' => 'TaskAssignmentItemReports'];
                 $aliases[] = ['action' => 'store', 'subject' => 'TaskAssignmentItemReports'];
                 $aliases[] = ['action' => 'update', 'subject' => 'TaskAssignmentItemReports'];
+                // Bảng alias này công bố ra FE đúng những gì BE cho phép. Route
+                // DELETE của báo cáo gác bằng chính `my-received-tasks.report`,
+                // nên thiếu `destroy` ở đây là bảng alias khai THIẾU so với route
+                // của chính BE. Sửa cho khớp route, không phải sửa cho vừa FE.
+                // Phạm vi (xoá được báo cáo của ai) do
+                // TaskAssignmentItemReportPolicy gác, không phải do thiếu alias.
+                $aliases[] = ['action' => 'destroy', 'subject' => 'TaskAssignmentItemReports'];
                 break;
             case 'my-received-tasks.note':
                 $aliases[] = ['action' => 'store', 'subject' => 'TaskAssignmentItemNotes'];

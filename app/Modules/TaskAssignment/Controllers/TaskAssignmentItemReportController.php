@@ -11,6 +11,7 @@ use App\Modules\TaskAssignment\Requests\UpdateReportRequest;
 use App\Modules\TaskAssignment\Resources\ReportCollection;
 use App\Modules\TaskAssignment\Resources\ReportResource;
 use App\Modules\TaskAssignment\Services\TaskAssignmentReportService;
+use Illuminate\Support\Facades\Gate;
 
 /**
  * @group TaskAssignment - Báo cáo công việc
@@ -40,6 +41,14 @@ class TaskAssignmentItemReportController extends Controller
         $request->validate([
             'task_assignment_item_id' => 'required|integer|exists:task_assignment_items,id',
         ]);
+
+        // Không gác thì ai có quyền báo cáo cũng đọc được báo cáo của công việc
+        // bất kỳ, chỉ cần đoán id. Dùng withoutGlobalScope giống store: công việc
+        // thuộc văn bản chưa ban hành vẫn phải tra ra được để từ chối cho đúng.
+        $item = TaskAssignmentItem::withoutGlobalScope('issuedDocument')
+            ->findOrFail((int) $request->input('task_assignment_item_id'));
+
+        Gate::authorize('viewReports', $item);
 
         $reports = $this->reportService->index(
             (int) $request->input('task_assignment_item_id'),
@@ -89,6 +98,9 @@ class TaskAssignmentItemReportController extends Controller
     public function store(StoreReportRequest $request)
     {
         $item = TaskAssignmentItem::withoutGlobalScope('issuedDocument')->findOrFail($request->input('task_assignment_item_id'));
+
+        Gate::authorize('report', $item);
+
         $report = $this->reportService->store($item, $request->validated(), $request->file('attachments', []));
 
         return $this->successResource(new ReportResource($report), 'Báo cáo đã được tạo thành công!', 201);
