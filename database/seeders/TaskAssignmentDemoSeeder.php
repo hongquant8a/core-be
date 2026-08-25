@@ -228,21 +228,20 @@ class TaskAssignmentDemoSeeder extends Seeder
             $this->employees[$userName] = $this->upsertEmployee($this->users[$userName], $deptIndex, false);
         }
 
-        // Mỗi phòng còn lại cần một người đại diện thì mới giao việc cho cả phòng được.
+        // `is_representative` chỉ là gợi ý cho UI: chọn phòng ban thì điền sẵn người
+        // này. Không liên quan phân quyền hay phân cấp — quyền hoàn toàn do quản trị
+        // cấu hình trên vai trò.
         foreach ([1 => 'nhanvien3', 2 => 'nhanvien5'] as $deptIndex => $userName) {
             TaskAssignmentEmployeeDepartment::withoutGlobalScopes()
                 ->where('task_assignment_employee_id', $this->employees[$userName]->id)
                 ->where('task_assignment_department_id', $this->departments[$deptIndex]->id)
                 ->update(['is_representative' => true]);
+        }
 
-            // Người đại diện là trưởng phòng trên thực tế, nên cấp thêm quyền xem
-            // dữ liệu cấp phòng. Không có quyền này thì họ chỉ thấy công việc của
-            // chính mình — đúng như mọi nhân viên khác.
-            //
-            // Cấp thẳng cho người dùng chứ không gắn vào vai trò `Nhân viên`: gắn
-            // vào vai trò là MỌI nhân viên đều thấy cả phòng, khác hẳn ý đồ.
-            // quanly1 (đại diện phòng 0) không cần vì đã có `task-overview.viewAll`.
-            $this->users[$userName]->givePermissionTo('task-overview.viewDepartment');
+        // Dữ liệu mẫu không cấp quyền thẳng cho người dùng: mọi quyền phải đến từ
+        // vai trò do quản trị cấu hình. Gỡ phần cấp tay của các lần seed trước.
+        foreach ([$this->users['nhanvien3'], $this->users['nhanvien5']] as $user) {
+            $user->revokePermissionTo('task-overview.viewDepartment');
         }
     }
 
