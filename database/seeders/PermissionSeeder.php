@@ -485,7 +485,8 @@ class PermissionSeeder extends Seeder
 
     /**
      * Permission cho Nhân viên — người thực hiện: nhận việc, cập nhật tiến độ,
-     * làm báo cáo. KHÔNG có markDone; xác nhận hoàn thành thuộc Quản lý công việc.
+     * làm báo cáo. KHÔNG có markDone và KHÔNG có transfer; xác nhận hoàn thành và
+     * điều chuyển đều thuộc Quản lý công việc.
      */
     protected function getNhanVienPermissionNames(): array
     {
@@ -495,11 +496,15 @@ class PermissionSeeder extends Seeder
             'my-received-tasks.updateProgress',
             'my-received-tasks.report',
             'my-received-tasks.note',
-            'my-received-tasks.transfer',
+            // KHÔNG có `my-received-tasks.transfer`: điều chuyển công việc là thao
+            // tác của người giao việc. Đã bỏ khỏi vai trò này ngày 25/08/2026 —
+            // đừng thêm lại nếu không có yêu cầu nghiệp vụ mới.
 
             // Đơn thư: thêm, xem và xử lý đơn của phòng ban mình.
-            // Phạm vi dữ liệu do service + policy chặn theo phòng ban, không do quyền.
-            // Xóa / xóa hàng loạt / mở khóa dành riêng phòng ban tổng hợp.
+            // Phạm vi dữ liệu do policy quyết định: không có
+            // `task-assignment-petitions.viewAll` thì chỉ thấy đơn của phòng ban mình.
+            // Xóa / xóa hàng loạt / mở khóa cần `.destroy` / `.bulkDestroy` / `.manage`
+            // — vai trò này không có cả ba.
             'task-assignment-petitions.index',
             'task-assignment-petitions.show',
             'task-assignment-petitions.store',
@@ -553,13 +558,14 @@ class PermissionSeeder extends Seeder
             }
         }
 
-        // Đơn thư — toàn quyền (policy vẫn chặn xoá/mở khoá nếu không thuộc phòng tổng hợp).
+        // Đơn thư — toàn quyền, kể cả `viewAll` nên không bị giới hạn theo phòng ban.
         foreach ($flat['task-assignment-petitions'] as $action) {
             $names[] = "task-assignment-petitions.{$action}";
         }
 
         $names[] = 'presentation.index';
-        $names[] = 'dashboard.systemOverview';
+        // KHÔNG có `dashboard.systemOverview`: tổng quan hệ thống là màn quản trị,
+        // không thuộc phân hệ công việc. Đã bỏ khỏi vai trò này ngày 25/08/2026.
 
         return $names;
     }
