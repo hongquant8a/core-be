@@ -19,23 +19,29 @@ use App\Services\Notification\ContentBuilders\MeetingPublishedContentBuilder;
 use App\Services\Notification\ContentBuilders\MeetingReminderContentBuilder;
 use App\Services\Notification\ContentBuilders\MeetingUpdatedContentBuilder;
 use App\Services\Notification\ContentBuilders\ReminderContentBuilder;
+use App\Services\Notification\ContentBuilders\ReportSubmittedContentBuilder;
 use App\Services\Notification\ContentBuilders\TaskAssignedContentBuilder;
 use App\Services\Notification\ContentBuilders\TaskCompletedContentBuilder;
 use App\Services\Notification\ContentBuilders\TaskConfirmedContentBuilder;
+use App\Services\Notification\ContentBuilders\TaskRejectedContentBuilder;
 use App\Services\Notification\Events\DocumentIssued;
 use App\Services\Notification\Events\MeetingCancelled;
 use App\Services\Notification\Events\MeetingPublished;
 use App\Services\Notification\Events\MeetingUpdated;
+use App\Services\Notification\Events\ReportSubmitted;
 use App\Services\Notification\Events\TaskAssigned;
 use App\Services\Notification\Events\TaskCompleted;
 use App\Services\Notification\Events\TaskConfirmed;
+use App\Services\Notification\Events\TaskRejected;
 use App\Services\Notification\Listeners\SendDocumentIssuedNotifications;
 use App\Services\Notification\Listeners\SendMeetingCancelledNotifications;
 use App\Services\Notification\Listeners\SendMeetingPublishedNotifications;
 use App\Services\Notification\Listeners\SendMeetingUpdatedNotifications;
+use App\Services\Notification\Listeners\SendReportSubmittedNotifications;
 use App\Services\Notification\Listeners\SendTaskAssignedNotifications;
 use App\Services\Notification\Listeners\SendTaskCompletedNotifications;
 use App\Services\Notification\Listeners\SendTaskConfirmedNotifications;
+use App\Services\Notification\Listeners\SendTaskRejectedNotifications;
 use App\Services\Notification\NotificationService;
 use App\Services\Notification\Services\ContentBuilderRegistry;
 use App\Services\Notification\Services\NotificationTemplateService;
@@ -60,10 +66,10 @@ class NotificationServiceProvider extends ServiceProvider
                     'sms' => new SmsChannel($smsClient, $settings),
                     'mail' => new MailChannel($settings),
                     // Zalo OA Message (free-form text qua user_id, key: 'zalo') — ZaloChannel.php
-                    'zalo'     => new ZaloChannel($settings),
+                    'zalo' => new ZaloChannel($settings),
                     // Zalo ZNS template qua WorldSMS relay (key: 'zalo_zns') — ZaloZnsChannel.php
                     'zalo_zns' => new ZaloZnsChannel($settings),
-                    'fcm'      => new FcmChannel($settings),
+                    'fcm' => new FcmChannel($settings),
                     'telegram' => new TelegramChannel($settings),
                 ],
             );
@@ -78,6 +84,8 @@ class NotificationServiceProvider extends ServiceProvider
         $registry->register('task_assigned', $this->app->make(TaskAssignedContentBuilder::class));
         $registry->register('task_completed', $this->app->make(TaskCompletedContentBuilder::class));
         $registry->register('task_confirmed', $this->app->make(TaskConfirmedContentBuilder::class));
+        $registry->register('report_submitted', $this->app->make(ReportSubmittedContentBuilder::class));
+        $registry->register('task_rejected', $this->app->make(TaskRejectedContentBuilder::class));
         $registry->register('reminder_before', new ReminderContentBuilder('before'));
         $registry->register('reminder_on', new ReminderContentBuilder('on'));
         $registry->register('reminder_after', new ReminderContentBuilder('after'));
@@ -93,6 +101,8 @@ class NotificationServiceProvider extends ServiceProvider
         Event::listen(TaskAssigned::class, SendTaskAssignedNotifications::class);
         Event::listen(TaskCompleted::class, SendTaskCompletedNotifications::class);
         Event::listen(TaskConfirmed::class, SendTaskConfirmedNotifications::class);
+        Event::listen(ReportSubmitted::class, SendReportSubmittedNotifications::class);
+        Event::listen(TaskRejected::class, SendTaskRejectedNotifications::class);
         Event::listen(MeetingPublished::class, SendMeetingPublishedNotifications::class);
         Event::listen(MeetingUpdated::class, SendMeetingUpdatedNotifications::class);
         Event::listen(MeetingCancelled::class, SendMeetingCancelledNotifications::class);

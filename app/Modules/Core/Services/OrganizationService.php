@@ -73,7 +73,7 @@ class OrganizationService
         $userCounts = \Illuminate\Support\Facades\DB::table('model_has_roles')
             ->join('users', 'users.id', '=', 'model_has_roles.model_id')
             ->select('model_has_roles.organization_id', \Illuminate\Support\Facades\DB::raw('count(distinct model_has_roles.model_id) as count'))
-            ->where('model_has_roles.model_type', (new \App\Modules\Core\Models\User())->getMorphClass())
+            ->where('model_has_roles.model_type', (new \App\Modules\Core\Models\User)->getMorphClass())
             ->groupBy('model_has_roles.organization_id')
             ->pluck('count', 'organization_id');
 
@@ -99,8 +99,8 @@ class OrganizationService
             foreach (\App\Services\Notification\Enums\NotificationEventEnum::cases() as $event) {
                 \App\Modules\Core\Models\NotificationEventConfig::firstOrCreate(
                     [
-                        'module_key'      => $event->module()->value,
-                        'event_key'       => $event->value,
+                        'module_key' => $event->module()->value,
+                        'event_key' => $event->value,
                         'organization_id' => $org->id,
                     ],
                     ['enabled' => false]
@@ -123,31 +123,39 @@ class OrganizationService
         $isTaskAssignment = fn ($c) => $c && $c->module_key === $moduleKey;
 
         // Non-reminder instant
-        foreach (['document_issued', 'task_assigned', 'task_completed', 'task_confirmed'] as $ek) {
+        foreach (['document_issued', 'task_assigned', 'task_completed', 'task_confirmed', 'report_submitted', 'task_rejected'] as $ek) {
             $c = $configs->get($ek);
-            if (! $c) continue;
+            if (! $c) {
+                continue;
+            }
             $label = match ($ek) {
                 'document_issued' => 'Thông báo ngay khi ban hành',
-                'task_assigned'   => 'Thông báo ngay khi giao việc',
-                'task_completed'  => 'Thông báo ngay khi hoàn thành',
-                'task_confirmed'  => 'Thông báo ngay khi xác nhận',
-                default           => 'Gửi ngay lập tức',
+                'task_assigned' => 'Thông báo ngay khi giao việc',
+                'task_completed' => 'Thông báo ngay khi hoàn thành',
+                'task_confirmed' => 'Thông báo ngay khi xác nhận',
+                'report_submitted' => 'Thông báo ngay khi có báo cáo mới',
+                'task_rejected' => 'Thông báo ngay khi bị trả lại',
+                default => 'Gửi ngay lập tức',
             };
             $s = \App\Modules\Core\Models\NotificationSchedule::firstOrNew([
                 'notification_event_config_id' => $c->id, 'moment' => null, 'offset_minutes' => null,
             ]);
-            $s->label = $label; $s->sort_order = 0; $s->save();
+            $s->label = $label;
+            $s->sort_order = 0;
+            $s->save();
         }
 
         // Reminder
         $reminders = [
             'reminder_before' => [['before', 1440, 'Nhắc trước 1 ngày', 1], ['before', 120, 'Nhắc trước 2 giờ', 2]],
-            'reminder_on'     => [['on', null, 'Đến hạn', 1]],
-            'reminder_after'  => [['after', 1440, 'Trễ 1 ngày', 1]],
+            'reminder_on' => [['on', null, 'Đến hạn', 1]],
+            'reminder_after' => [['after', 1440, 'Trễ 1 ngày', 1]],
         ];
         foreach ($reminders as $ek => $schedules) {
             $c = $configs->get($ek);
-            if (! $c) continue;
+            if (! $c) {
+                continue;
+            }
             foreach ($schedules as [$moment, $offset, $label, $sort]) {
                 \App\Modules\Core\Models\NotificationSchedule::firstOrCreate(
                     ['notification_event_config_id' => $c->id, 'moment' => $moment, 'offset_minutes' => $offset],
@@ -162,22 +170,28 @@ class OrganizationService
         // Instant
         foreach (['meeting_published' => 'Gửi giấy mời ngay', 'meeting_updated' => 'Thông báo ngay khi cập nhật', 'meeting_cancelled' => 'Thông báo ngay khi hủy'] as $ek => $label) {
             $c = $configs->get($ek);
-            if (! $c) continue;
+            if (! $c) {
+                continue;
+            }
             $s = \App\Modules\Core\Models\NotificationSchedule::firstOrNew([
                 'notification_event_config_id' => $c->id, 'moment' => null, 'offset_minutes' => null,
             ]);
-            $s->label = $label; $s->sort_order = 0; $s->save();
+            $s->label = $label;
+            $s->sort_order = 0;
+            $s->save();
         }
 
         // Reminder
         $reminders = [
             'meeting_reminder_before' => [['before', 1440, 'Nhắc trước 1 ngày', 1], ['before', 30, 'Nhắc trước 30 phút', 2]],
-            'meeting_reminder_on'     => [['on', null, 'Đến giờ họp', 1]],
-            'meeting_reminder_after'  => [['after', 5, 'Sau 5 phút (nhắc kiểm tra biên bản)', 1]],
+            'meeting_reminder_on' => [['on', null, 'Đến giờ họp', 1]],
+            'meeting_reminder_after' => [['after', 5, 'Sau 5 phút (nhắc kiểm tra biên bản)', 1]],
         ];
         foreach ($reminders as $ek => $schedules) {
             $c = $configs->get($ek);
-            if (! $c) continue;
+            if (! $c) {
+                continue;
+            }
             foreach ($schedules as [$moment, $offset, $label, $sort]) {
                 \App\Modules\Core\Models\NotificationSchedule::firstOrCreate(
                     ['notification_event_config_id' => $c->id, 'moment' => $moment, 'offset_minutes' => $offset],

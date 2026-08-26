@@ -8,6 +8,8 @@ enum NotificationEventEnum: string
     case TaskAssigned = 'task_assigned';
     case TaskCompleted = 'task_completed';
     case TaskConfirmed = 'task_confirmed';
+    case ReportSubmitted = 'report_submitted';
+    case TaskRejected = 'task_rejected';
     case ReminderBefore = 'reminder_before';
     case ReminderOn = 'reminder_on';
     case ReminderAfter = 'reminder_after';
@@ -25,7 +27,7 @@ enum NotificationEventEnum: string
 
     public static function rule(): string
     {
-        return 'in:' . implode(',', self::values());
+        return 'in:'.implode(',', self::values());
     }
 
     /**
@@ -38,6 +40,8 @@ enum NotificationEventEnum: string
             self::TaskAssigned,
             self::TaskCompleted,
             self::TaskConfirmed,
+            self::ReportSubmitted,
+            self::TaskRejected,
             self::ReminderBefore,
             self::ReminderOn,
             self::ReminderAfter => NotificationModuleEnum::TaskAssignment,
@@ -55,8 +59,10 @@ enum NotificationEventEnum: string
         return match ($this) {
             self::DocumentIssued => 'Văn bản được ban hành',
             self::TaskAssigned => 'Được giao việc mới',
-            self::TaskCompleted => 'Công việc báo cáo hoàn thành',
+            self::TaskCompleted => 'Công việc hoàn thành 100% (chờ duyệt)',
             self::TaskConfirmed => 'Công việc được xác nhận',
+            self::ReportSubmitted => 'Có báo cáo công việc mới',
+            self::TaskRejected => 'Công việc bị trả lại',
             self::ReminderBefore => 'Nhắc trước hạn',
             self::ReminderOn => 'Nhắc đến hạn',
             self::ReminderAfter => 'Nhắc quá hạn',

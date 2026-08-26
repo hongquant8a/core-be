@@ -285,8 +285,8 @@ class TaskAssignmentItemService
 
         $status = match (true) {
             $percent >= 100 => TaskProgressStatusEnum::PendingApproval->value,
-            $percent > 0   => TaskProgressStatusEnum::InProgress->value,
-            default         => TaskProgressStatusEnum::Todo->value,
+            $percent > 0 => TaskProgressStatusEnum::InProgress->value,
+            default => TaskProgressStatusEnum::Todo->value,
         };
 
         $item->update($this->buildStatusUpdateData($status));
@@ -380,6 +380,9 @@ class TaskAssignmentItemService
             'completion_percent' => 0,
             'rejection_reason' => $reason,
         ]);
+
+        // Trả lại công việc → báo cho những người thực hiện biết để làm lại.
+        event(new \App\Services\Notification\Events\TaskRejected($item->fresh(), $reason));
 
         return $item->load(['document.type', 'document.attachments.media', 'document.creator.media', 'document.editor.media', 'itemType', 'users', 'creator.media', 'editor.media']);
     }
@@ -496,7 +499,7 @@ class TaskAssignmentItemService
     private function syncReminders(TaskAssignmentItem $item, array $reminders): void
     {
         $keptIds = [];
-        $orgId   = (int) $item->organization_id;
+        $orgId = (int) $item->organization_id;
 
         foreach ($reminders as $r) {
             $reminderType = $r['reminder_type'] ?? 'scheduled';
@@ -505,13 +508,13 @@ class TaskAssignmentItemService
             if ($reminderType === 'instant') {
                 $attributes = [
                     'organization_id' => $orgId,
-                    'reminder_type'   => 'instant',
-                    'moment'          => null,
-                    'offset_minutes'  => 0,
-                    'channels'        => $channels,
-                    'source'          => 'CUSTOM',
-                    'status'          => 'active',
-                    'remind_at'       => null,
+                    'reminder_type' => 'instant',
+                    'moment' => null,
+                    'offset_minutes' => 0,
+                    'channels' => $channels,
+                    'source' => 'CUSTOM',
+                    'status' => 'active',
+                    'remind_at' => null,
                 ];
             } else {
                 $moment = $r['moment'] ?? 'before';
@@ -520,21 +523,21 @@ class TaskAssignmentItemService
                 $remindAt = $item->end_at
                     ? match ($moment) {
                         'before' => $offset ? $item->end_at->copy()->subMinutes($offset) : null,
-                        'on'     => $item->end_at->copy(),
-                        'after'  => $offset ? $item->end_at->copy()->addMinutes($offset) : null,
-                        default  => null,
+                        'on' => $item->end_at->copy(),
+                        'after' => $offset ? $item->end_at->copy()->addMinutes($offset) : null,
+                        default => null,
                     }
-                    : null;
+                : null;
 
                 $attributes = [
                     'organization_id' => $orgId,
-                    'reminder_type'   => 'scheduled',
-                    'moment'          => $moment,
-                    'offset_minutes'  => $offset,
-                    'channels'        => $channels,
-                    'source'          => 'CUSTOM',
-                    'status'          => 'pending',
-                    'remind_at'       => $remindAt,
+                    'reminder_type' => 'scheduled',
+                    'moment' => $moment,
+                    'offset_minutes' => $offset,
+                    'channels' => $channels,
+                    'source' => 'CUSTOM',
+                    'status' => 'pending',
+                    'remind_at' => $remindAt,
                 ];
             }
 
@@ -815,6 +818,7 @@ class TaskAssignmentItemService
 
         return $itemTypes->map(function ($type) use ($rows) {
             $row = $rows->get($type->id);
+
             return [
                 'item_type_id' => $type->id,
                 'item_type_name' => $type->name,
@@ -907,6 +911,7 @@ class TaskAssignmentItemService
 
         return $departments->map(function ($dept) use ($rows, $fromDate, $toDate) {
             $row = $rows->get($dept->id);
+
             return [
                 'department_id' => $dept->id,
                 'department_name' => $dept->name,
@@ -980,7 +985,7 @@ class TaskAssignmentItemService
             ->selectRaw("SUM(CASE WHEN ti.processing_status = '{$pendingApproval}' THEN 1 ELSE 0 END) as pending_approval")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = 'done' THEN 1 ELSE 0 END) as done")
             ->selectRaw("SUM(CASE WHEN ti.processing_status = 'paused' THEN 1 ELSE 0 END) as paused")
-            ->selectRaw("SUM(CASE WHEN ti.processing_status = ? THEN 1 ELSE 0 END) as cancelled", [$cancelled])
+            ->selectRaw('SUM(CASE WHEN ti.processing_status = ? THEN 1 ELSE 0 END) as cancelled', [$cancelled])
             ->selectRaw("SUM(CASE WHEN tiu.assignment_status = 'assigned' THEN 1 ELSE 0 END) as assigned_count")
             ->selectRaw("SUM(CASE WHEN tiu.assignment_status = 'done' THEN 1 ELSE 0 END) as accepted_count");
 

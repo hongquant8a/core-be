@@ -7,7 +7,6 @@ use App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItemReport;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItemReportAttachment;
-use App\Services\Notification\Events\TaskCompleted;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 
@@ -70,6 +69,9 @@ class TaskAssignmentReportService
                 }
 
                 $loaded = $report->load(['reporter', 'assignee', 'creator', 'editor', 'attachments.media', 'item:id,end_at,task_assignment_document_id']);
+
+                // Nộp báo cáo → báo cho người giao việc biết có báo cáo mới cần xem.
+                event(new \App\Services\Notification\Events\ReportSubmitted($item, $report));
 
                 // Auto-mark reporter's assignment as done
                 $reporterId = $report->reporter_user_id;
