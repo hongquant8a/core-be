@@ -608,6 +608,26 @@ class TaskAssignmentItemService
     {
         $user = auth()->user();
 
+        // Màn "Công việc được giao" ở chế độ xem cả phòng: chỉ khi FE gửi cờ tường
+        // minh `received_scope=department` VÀ người dùng có quyền
+        // `my-received-tasks.viewDepartment`. Scope theo phòng ban mình là thành viên
+        // (giống task-overview.viewDepartment), không rơi vào nhánh
+        // related_to_user_id=self bên dưới và không đụng màn "Đang giao".
+        if (($filters['received_scope'] ?? null) === 'department' && $user->can('my-received-tasks.viewDepartment')) {
+            unset($filters['received_scope']);
+            $allowed = TaskAssignmentEmployeeDepartment::forUser($user->id)
+                ->activeEmployee()
+                ->pluck('task_assignment_department_id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+            $requested = array_map('intval', (array) ($filters['department_id'] ?? []));
+            $scope = $requested ? array_values(array_intersect($requested, $allowed)) : $allowed;
+            $filters['department_id'] = $scope ?: [0];
+
+            return $filters;
+        }
+        unset($filters['received_scope']);
+
         if ($user->can('task-overview.viewAll')) {
             return $filters;
         }

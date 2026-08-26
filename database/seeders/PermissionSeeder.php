@@ -101,6 +101,9 @@ class PermissionSeeder extends Seeder
             ],
             'my-received-tasks' => [
                 'index', 'export', 'updateProgress', 'report', 'note', 'transfer',
+                // Xem MỌI công việc được giao cho thành viên phòng ban mình (không chỉ
+                // của bản thân). Cấp cho vai trò theo dõi cấp phòng (vd Trưởng phòng).
+                'viewDepartment',
             ],
             'presentation' => [
                 'index',
@@ -243,6 +246,7 @@ class PermissionSeeder extends Seeder
                 $flat[$resource] = $actions;
             }
         }
+
         return $flat;
     }
 
@@ -279,9 +283,9 @@ class PermissionSeeder extends Seeder
 
     /** Nhãn tiếng Việt cho module. */
     protected static array $MODULE_LABELS = [
-        'Core'           => 'Hệ thống',
+        'Core' => 'Hệ thống',
         'TaskAssignment' => 'Quản lý công việc',
-        'Meeting'        => 'Phòng họp không giấy',
+        'Meeting' => 'Phòng họp không giấy',
     ];
 
     /** Nhãn nhóm permission theo resource (để description). */
@@ -488,7 +492,6 @@ class PermissionSeeder extends Seeder
         }
     }
 
-
     /**
      * Permission cho Nhân viên — người thực hiện: nhận việc, cập nhật tiến độ,
      * làm báo cáo. KHÔNG có markDone và KHÔNG có transfer; xác nhận hoàn thành và
@@ -583,5 +586,4 @@ class PermissionSeeder extends Seeder
 
         return $names;
     }
-
 }
