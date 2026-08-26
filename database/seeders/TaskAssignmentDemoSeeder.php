@@ -339,7 +339,15 @@ class TaskAssignmentDemoSeeder extends Seeder
                 $startAt = $issueDate->copy()->addDay();
                 $endAt = $issueDate->copy()->addDays($deadlineDays);
                 $isDone = $status === TaskProgressStatusEnum::Done;
-                $isReported = $percent >= 100;
+
+                // Tiến độ CHỈ đến từ báo cáo — mirror TaskAssignmentReportService::store:
+                // công việc có % > 0 thì phải có một báo cáo mang đúng % đó, còn item.
+                // completion_percent chính là % của báo cáo (không tự bịa). Công việc 0%
+                // (chưa thực hiện) không có báo cáo. Chỉ khi báo cáo đạt 100% mới set
+                // reported_by/at và chuyển sang chờ duyệt, đúng như service.
+                $hasReport = $percent > 0;
+                $isFullyReported = $percent >= 100;
+                $reportDate = $endAt->copy()->subDays(2);
 
                 $item = TaskAssignmentItem::withoutGlobalScopes()->updateOrCreate(
                     ['name' => $itemName, 'task_assignment_document_id' => $document->id],
@@ -349,11 +357,12 @@ class TaskAssignmentDemoSeeder extends Seeder
                         'start_at' => $startAt,
                         'end_at' => $endAt,
                         'processing_status' => $status->value,
+                        // = % của báo cáo tạo bên dưới (0 khi chưa có báo cáo nào).
                         'completion_percent' => $percent,
                         'priority' => [TaskPriorityEnum::High, TaskPriorityEnum::Medium, TaskPriorityEnum::Low][$i % 3]->value,
                         'assigned_by' => $assigner->id,
-                        'reported_by' => $isReported ? $performer->id : null,
-                        'reported_at' => $isReported ? $endAt->copy()->subDays(2) : null,
+                        'reported_by' => $isFullyReported ? $performer->id : null,
+                        'reported_at' => $isFullyReported ? $reportDate : null,
                         'approved_by' => $isDone ? $assigner->id : null,
                         'completed_at' => $isDone ? $endAt->copy()->subDay() : null,
                         'organization_id' => self::ORG_ID,
@@ -369,7 +378,7 @@ class TaskAssignmentDemoSeeder extends Seeder
                         'department_id' => $membership->task_assignment_department_id,
                         'department_role' => 'main',
                         'assignment_role' => 'main',
-                        'assignment_status' => $isReported
+                        'assignment_status' => $isFullyReported
                             ? TaskUserAssignmentStatusEnum::Done->value
                             : TaskUserAssignmentStatusEnum::Assigned->value,
                         'assigned_at' => $startAt,
@@ -379,18 +388,22 @@ class TaskAssignmentDemoSeeder extends Seeder
                     ]
                 );
 
-                // Báo cáo mẫu: chỉ những công việc đã báo cáo (100%) mới có.
-                if ($isReported) {
+                // Báo cáo mẫu: mọi công việc có tiến độ (% > 0) đều phải có báo cáo
+                // mang đúng % ấy — nguồn duy nhất sinh ra completion_percent của item.
+                if ($hasReport) {
                     TaskAssignmentItemReport::withoutGlobalScopes()->updateOrCreate(
                         ['task_assignment_item_id' => $item->id, 'reporter_user_id' => $performer->id],
                         [
                             'assignee_user_id' => $performer->id,
-                            'completion_percent' => 100,
-                            'completed_at' => $endAt->copy()->subDays(2),
+                            'completion_percent' => $percent,
+                            'completed_at' => $reportDate,
                             'report_document_number' => sprintf('BC-%02d/%02d', $d + 1, $i + 1),
-                            'report_document_excerpt' => "Báo cáo kết quả thực hiện: {$itemName}.",
-                            'report_document_content' => "Đã hoàn thành nội dung được giao tại văn bản \"{$entry['doc']}\". "
-                                .'Kết quả đạt yêu cầu về tiến độ và chất lượng, không phát sinh vướng mắc.',
+                            'report_document_excerpt' => "Báo cáo tiến độ thực hiện: {$itemName}.",
+                            'report_document_content' => $isFullyReported
+                                ? "Đã hoàn thành nội dung được giao tại văn bản \"{$entry['doc']}\". "
+                                    .'Kết quả đạt yêu cầu về tiến độ và chất lượng, không phát sinh vướng mắc.'
+                                : "Đã thực hiện {$percent}% nội dung được giao tại văn bản \"{$entry['doc']}\". "
+                                    .'Công việc đang tiếp tục triển khai theo kế hoạch.',
                             'organization_id' => self::ORG_ID,
                             'created_by' => $performer->id,
                             'updated_by' => $performer->id,
