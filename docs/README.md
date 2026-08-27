@@ -1,7 +1,7 @@
 # Docs — QLCV Backend
 
 > Ngày tạo: 00:00:00 28/06/2026  
-> Cập nhật lần cuối: 00:00:00 28/06/2026
+> Cập nhật lần cuối: 16:50:31 25/08/2026
 
 Tổng quan toàn bộ tài liệu dự án. Đọc file này trước để biết nên đọc tiếp gì.
 
@@ -65,6 +65,7 @@ docs/
 | BE vừa đổi API, cần migrate FE | `changelogs/` — tìm file `YYYY-MM-DD-topic-fe` |
 | Luồng notification | [guides/notification-flow-behavior.md](guides/notification-flow-behavior.md) |
 | Ghi lại quyết định kiến trúc | [decisions/_TEMPLATE.md](decisions/_TEMPLATE.md) |
+| Hướng dẫn người dùng thao tác phân hệ Quản lý công việc | [answer/huong-dan-qlcv-chung_165031_25082026.md](answer/huong-dan-qlcv-chung_165031_25082026.md) |
 
 ---
 
