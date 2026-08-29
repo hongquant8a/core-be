@@ -148,6 +148,18 @@ Route::prefix('{meeting}/participants')->group(function () {
     Route::patch('/{meetingParticipant}/respond', [MeetingParticipantController::class, 'respondInMeeting'])->middleware('can:respond,meetingParticipant');
 });
 
+// Sơ đồ chỗ ngồi — đọc cho participant+, ghi cho chair/op/admin (manageSeatMap).
+Route::get('/{meeting}/seat-map', [\App\Modules\Meeting\Controllers\MeetingSeatMapController::class, 'showInMeeting'])
+    ->middleware('can:viewParticipant,meeting');
+Route::prefix('{meeting}/seat-map')->group(function () {
+    Route::put('/', [\App\Modules\Meeting\Controllers\MeetingSeatMapController::class, 'saveInMeeting'])
+        ->middleware('can:manageSeatMap,meeting');
+    Route::patch('/assign', [\App\Modules\Meeting\Controllers\MeetingSeatMapController::class, 'assignInMeeting'])
+        ->middleware('can:manageSeatMap,meeting');
+    Route::post('/auto-arrange', [\App\Modules\Meeting\Controllers\MeetingSeatMapController::class, 'autoArrangeInMeeting'])
+        ->middleware('can:manageSeatMap,meeting');
+});
+
 // Tab 6 Ghi chú cá nhân — đại biểu/chair/op CRUD note của chính mình. Service auto-filter
 // theo user_id; Policy owner-only cho show/update/delete (chair/op KHÔNG xem note người khác).
 Route::prefix('{meeting}/personal-notes')->group(function () {
