@@ -66,6 +66,7 @@ class UpdateMeetingRequest extends FormRequest
             'allow_host_management' => 'nullable|boolean',
             'auto_confirm_attendance' => 'nullable|boolean',
             'internal_chat_enabled' => 'nullable|boolean',
+            'seat_map_enabled' => 'nullable|boolean',
         ];
     }
 
@@ -138,6 +139,7 @@ class UpdateMeetingRequest extends FormRequest
             'allow_host_management' => 'Chủ trì có thể quản lý cuộc họp',
             'auto_confirm_attendance' => 'Tự động xác nhận điểm danh',
             'internal_chat_enabled' => 'Bật trao đổi nội bộ',
+            'seat_map_enabled' => 'Bật sơ đồ chỗ ngồi',
         ];
     }
     public function bodyParameters(): array
@@ -218,6 +220,10 @@ class UpdateMeetingRequest extends FormRequest
             ],
             'internal_chat_enabled' => [
                 'description' => 'Khi true, hiện tab "Trao đổi" cho phép chủ trì/thư ký/đại biểu nhắn tin nhóm trong cuộc họp.',
+                'example' => false,
+            ],
+            'seat_map_enabled' => [
+                'description' => 'Khi true, hiện tab "Sơ đồ chỗ ngồi" ở trang chi tiết cuộc họp để đại biểu xem vị trí của mình.',
                 'example' => false,
             ],
         ];

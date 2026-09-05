@@ -100,6 +100,16 @@ class MeetingPolicy
     }
 
     /**
+     * Quản lý sơ đồ chỗ ngồi (lưu cấu hình, gán/gỡ đại biểu, tự động xếp) —
+     * chair/operator của meeting HOẶC admin có quyền sửa cuộc họp (sửa từ form tạo/sửa họp).
+     */
+    public function manageSeatMap(User $user, Meeting $meeting): bool
+    {
+        return $this->operate($user, $meeting)
+            || $user->can('meetings.update');
+    }
+
+    /**
      * Xuất 4 báo cáo tổng hợp 1 cuộc họp (biên bản .docx, thảo luận/chất vấn .xlsx,
      * biểu quyết .xlsx tổng hợp, điểm danh .xlsx).
      *

@@ -58,6 +58,8 @@ class MeetingResource extends JsonResource
             'auto_confirm_attendance' => (bool) $this->auto_confirm_attendance,
             // Khi true, hiện tab "Trao đổi" (chat nhóm nội bộ) cho cuộc họp.
             'internal_chat_enabled' => (bool) $this->internal_chat_enabled,
+            // Khi true, hiện tab "Sơ đồ chỗ ngồi" ở trang chi tiết cuộc họp.
+            'seat_map_enabled' => (bool) $this->seat_map_enabled,
             // FE dùng field này để show/hide button điều hành (end-early, lock-attendance, highlight, vote open/close).
             // Vai trò CHÍNH ưu tiên: FK chair > FK operator > participant entry. Chair có participant entry vẫn trả 'chairperson'.
             // Dùng Auth::guard('sanctum') fallback cho public route không có middleware auth:sanctum.
