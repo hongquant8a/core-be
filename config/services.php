@@ -35,6 +35,14 @@ return [
         ],
     ],
 
+    // DeepSeek — phân tích văn bản giao việc bằng AI. Bảng `settings`
+    // (api_deepseek_url / api_deepseek_token) ghi đè các giá trị này.
+    'deepseek' => [
+        'url' => env('DEEPSEEK_BASE_URL', 'https://api.deepseek.com'),
+        'token' => env('DEEPSEEK_API_KEY'),
+        'model' => env('DEEPSEEK_MODEL', 'deepseek-chat'),
+    ],
+
     'deploy' => [
         'webhook_secret' => env('DEPLOY_WEBHOOK_SECRET'),
     ],

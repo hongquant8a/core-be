@@ -95,6 +95,9 @@ class PermissionSeeder extends Seeder
                 'index', 'store', 'update', 'destroy',
                 'bulkDestroy', 'bulkUpdateStatus', 'export',
                 'storeItem', 'updateItem', 'destroyItem',
+                // Phân tích văn bản bằng AI để sinh đầu việc nháp — tốn phí theo
+                // token nên tách quyền riêng, không gộp vào `store`.
+                'analyze',
             ],
             'my-assigned-tasks' => [
                 'index', 'export', 'pause', 'cancel', 'transfer', 'markDone', 'changeStatus', 'note',

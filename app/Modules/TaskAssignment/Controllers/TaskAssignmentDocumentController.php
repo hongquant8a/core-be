@@ -5,6 +5,7 @@ namespace App\Modules\TaskAssignment\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDocument;
+use App\Modules\TaskAssignment\Requests\AnalyzeDocumentRequest;
 use App\Modules\TaskAssignment\Requests\BulkDestroyDocumentRequest;
 use App\Modules\TaskAssignment\Requests\BulkUpdateStatusDocumentRequest;
 use App\Modules\TaskAssignment\Requests\ChangeDocumentStatusRequest;
@@ -13,10 +14,13 @@ use App\Modules\TaskAssignment\Requests\StoreDocumentRequest;
 use App\Modules\TaskAssignment\Requests\UpdateDocumentRequest;
 use App\Modules\TaskAssignment\Resources\DocumentCollection;
 use App\Modules\TaskAssignment\Resources\DocumentResource;
+use App\Modules\TaskAssignment\Services\AiDocumentAnalysisService;
 use App\Modules\TaskAssignment\Services\TaskAssignmentDocumentService;
+use RuntimeException;
 
 /**
  * @group TaskAssignment - Văn bản giao việc
+ *
  * @header X-Organization-Id ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1
  *
  * Quản lý văn bản giao việc: thống kê, danh sách, chi tiết, tạo, cập nhật, xóa, thao tác hàng loạt, xuất/nhập và đổi trạng thái.
@@ -99,6 +103,38 @@ class TaskAssignmentDocumentController extends Controller
         $doc = $this->documentService->show($taskAssignmentDocument);
 
         return $this->successResource(new DocumentResource($doc));
+    }
+
+    /**
+     * Phân tích văn bản bằng AI
+     *
+     * Gửi nội dung văn bản thô sang DeepSeek và nhận về metadata văn bản + danh
+     * sách đầu việc nháp để điền sẵn vào form. API key nằm ở server (Cài đặt
+     * chung → DeepSeek), client không bao giờ chạm tới.
+     *
+     * Giới hạn 10 lần/phút mỗi người dùng — mỗi lần gọi tốn 5-35 giây và tính phí theo token.
+     *
+     * @bodyParam content string required Nội dung văn bản thô (20-50.000 ký tự). Example: THÔNG BÁO Kết luận của đồng chí Bí thư tại cuộc họp giao ban tháng 9 năm 2026...
+     *
+     * @response 200 {"success": true, "message": "Phân tích văn bản thành công!", "data": {"title": "THÔNG BÁO Kết luận cuộc họp giao ban tháng 9", "date": "05/09/2026", "document_type": "THÔNG BÁO", "summary": "Bí thư Đảng ủy kết luận giao nhiệm vụ cho các đơn vị.", "tasks": [{"assignee": "Văn phòng Đảng ủy", "coordinators": ["Ban Xây dựng Đảng"], "content": "Tổng hợp báo cáo kết quả công tác quý III", "priority": "high", "deadline": "20/09/2026", "has_deadline": true}]}}
+     * @response 502 {"success": false, "message": "Dịch vụ AI trả về lỗi (401). Vui lòng thử lại sau."}
+     * @response 503 {"success": false, "message": "Chưa cấu hình DeepSeek (URL/Token) trong Cài đặt chung."}
+     *
+     * @responseField title string Tiêu đề văn bản trích được.
+     * @responseField date string Ngày ban hành dạng dd/mm/yyyy, null nếu văn bản không ghi ngày.
+     * @responseField document_type string Loại văn bản (THÔNG BÁO, KẾT LUẬN, CÔNG VĂN, QUYẾT ĐỊNH, KẾ HOẠCH, BÁO CÁO), null nếu không xác định được.
+     * @responseField summary string Tóm tắt 1-2 câu.
+     * @responseField tasks object[] Danh sách đầu việc: assignee, coordinators, content, priority, deadline, has_deadline.
+     */
+    public function analyze(AnalyzeDocumentRequest $request, AiDocumentAnalysisService $aiService)
+    {
+        try {
+            return $this->success($aiService->analyze($request->input('content')), 'Phân tích văn bản thành công!');
+        } catch (RuntimeException $e) {
+            // Service ném kèm mã HTTP: 503 thiếu cấu hình, 502 lỗi phía DeepSeek,
+            // 422 văn bản quá dài. Nguyên nhân chi tiết đã vào log, không trả ra client.
+            return $this->error($e->getMessage(), $e->getCode() ?: 500);
+        }
     }
 
     /**
@@ -237,5 +273,4 @@ class TaskAssignmentDocumentController extends Controller
     {
         return $this->documentService->export($request->all());
     }
-
 }

@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Route;
 Route::get('/export', [TaskAssignmentDocumentController::class, 'export'])->middleware('permission:task-assignment-documents.export,web');
 Route::patch('/bulk-status', [TaskAssignmentDocumentController::class, 'bulkUpdateStatus'])->middleware('permission:task-assignment-documents.bulkUpdateStatus,web');
 Route::delete('/bulk-delete', [TaskAssignmentDocumentController::class, 'bulkDestroy'])->middleware('permission:task-assignment-documents.bulkDestroy,web');
+// AI: 10 lần/phút — mỗi lần gọi tốn 5-35 giây và tính phí theo token.
+Route::post('/analyze', [TaskAssignmentDocumentController::class, 'analyze'])->middleware(['permission:task-assignment-documents.analyze,web', 'throttle:10,1']);
 Route::get('/stats', [TaskAssignmentDocumentController::class, 'stats'])->middleware('permission:task-overview.index|presentation.index,web');
 Route::get('/stats-by-time', [TaskAssignmentDocumentController::class, 'statsByTime'])->middleware('permission:task-overview.index,web');
 Route::get('/', [TaskAssignmentDocumentController::class, 'index'])->middleware('permission:task-assignment-documents.index,web');

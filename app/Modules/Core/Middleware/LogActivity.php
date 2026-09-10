@@ -135,6 +135,7 @@ class LogActivity
         $pathActions = [
             'export' => 'Xuất dữ liệu',
             'import' => 'Nhập dữ liệu',
+            'analyze' => 'Phân tích bằng AI',
             'stats' => 'Xem thống kê',
             'public' => 'Xem dữ liệu công khai',
             'public-options' => 'Xem dữ liệu dropdown công khai',
@@ -214,6 +215,7 @@ class LogActivity
             'reject' => 'Từ chối',
             'duplicate' => 'Sao chép',
             'reorder' => 'Sắp xếp lại',
+            'analyze' => 'Phân tích bằng AI',
         ];
 
         $actionLabel = $actionLabels[$action] ?? $action;
