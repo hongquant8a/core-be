@@ -58,7 +58,7 @@ class TaskAssignmentPetitionController extends Controller
      * @queryParam deadline_date_to date Hạn xử lý đến.
      * @queryParam sort_by string Sắp xếp theo cột. Example: submission_date
      * @queryParam sort_order string Thứ tự sắp xếp (asc/desc). Example: desc
-     * @queryParam limit int Số bản ghi/trang. Example: 20 
+     * @queryParam limit int Số bản ghi/trang. Example: 20
      */
     public function index(Request $request): JsonResponse
     {
@@ -138,9 +138,17 @@ class TaskAssignmentPetitionController extends Controller
     public function bulkDestroy(BulkDestroyPetitionRequest $request): JsonResponse
     {
         $ids = $request->input('ids');
-        $this->service->bulkDestroy($ids);
+        $deleted = $this->service->bulkDestroy($ids);
+        $skipped = count($ids) - $deleted;
 
-        return $this->success(null, "Đã xóa thành công " . count($ids) . " đơn thư!");
+        // Báo đúng số đã xoá, không báo số đã chọn: đơn đã hoàn thành bị khoá nên
+        // service bỏ qua, nói "đã xoá N đơn" theo số chọn là nói sai.
+        $message = "Đã xóa thành công {$deleted} đơn thư!";
+        if ($skipped > 0) {
+            $message .= " Bỏ qua {$skipped} đơn đã hoàn thành — mở khóa trước nếu muốn xóa.";
+        }
+
+        return $this->success(null, $message);
     }
 
     /**
@@ -160,6 +168,7 @@ class TaskAssignmentPetitionController extends Controller
      * Đổi trạng thái đơn thư
      *
      * @urlParam petition int required ID đơn thư. Example: 1
+     *
      * @bodyParam processing_status string required Trạng thái mới. Example: processing
      */
     public function changeStatus(ChangeStatusPetitionRequest $request, TaskAssignmentPetition $petition): JsonResponse
@@ -185,6 +194,7 @@ class TaskAssignmentPetitionController extends Controller
      * Cập nhật tiến độ xử lý đơn thư
      *
      * @urlParam petition int required ID đơn thư. Example: 1
+     *
      * @bodyParam completed_at datetime Ngày hoàn thành xử lý.
      * @bodyParam document_number string Số ký hiệu văn bản trả lời.
      * @bodyParam document_excerpt string Trích yếu văn bản.

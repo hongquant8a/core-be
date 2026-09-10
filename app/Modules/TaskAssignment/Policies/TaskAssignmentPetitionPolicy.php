@@ -55,13 +55,23 @@ class TaskAssignmentPetitionPolicy
             && $this->inScope($user, $petition);
     }
 
+    /**
+     * Đơn đã hoàn thành cũng khoá xoá, cùng một khoá với sửa và đổi trạng thái.
+     *
+     * Trước đây chỉ `update`/`changeStatus` xét khoá, còn xoá thì không — nên
+     * sửa một chữ trong đơn đã chốt thì bị chặn, mà xoá sạch cả đơn lại được.
+     * Bảng `task_assignment_petitions` không có `deleted_at`: xoá là xoá vĩnh
+     * viễn, hồ sơ kiến nghị của người dân biến mất không khôi phục được.
+     * Muốn xoá thật thì mở khoá trước (`unlock`, cần quyền `manage`).
+     */
     public function delete(User $user, TaskAssignmentPetition $petition): bool
     {
-        return $user->can('task-assignment-petitions.destroy')
+        return ! $this->isCompleted($petition)
+            && $user->can('task-assignment-petitions.destroy')
             && $this->inScope($user, $petition);
     }
 
-    /** Bulk: kiểm quyền ở đây, phạm vi từng dòng do service lọc theo phòng ban. */
+    /** Bulk: kiểm quyền ở đây, phạm vi và khoá từng dòng do service lọc. */
     public function bulkDestroy(User $user): bool
     {
         return $user->can('task-assignment-petitions.bulkDestroy');

@@ -26,12 +26,12 @@ class TaskAssignmentPetitionService
         $this->applyFilters($base, $filters);
 
         return [
-            'total'      => (clone $base)->count(),
-            'new'        => (clone $base)->where('processing_status', PetitionStatusEnum::New->value)->count(),
+            'total' => (clone $base)->count(),
+            'new' => (clone $base)->where('processing_status', PetitionStatusEnum::New->value)->count(),
             'processing' => (clone $base)->where('processing_status', PetitionStatusEnum::Processing->value)->count(),
-            'completed'  => (clone $base)->where('processing_status', PetitionStatusEnum::Completed->value)->count(),
-            'paused'     => (clone $base)->where('processing_status', PetitionStatusEnum::Paused->value)->count(),
-            'cancelled'  => (clone $base)->where('processing_status', PetitionStatusEnum::Cancelled->value)->count(),
+            'completed' => (clone $base)->where('processing_status', PetitionStatusEnum::Completed->value)->count(),
+            'paused' => (clone $base)->where('processing_status', PetitionStatusEnum::Paused->value)->count(),
+            'cancelled' => (clone $base)->where('processing_status', PetitionStatusEnum::Cancelled->value)->count(),
         ];
     }
 
@@ -107,10 +107,21 @@ class TaskAssignmentPetitionService
         $petition->delete();
     }
 
-    /** Chỉ xóa được đơn nằm trong phạm vi của user (policy đã kiểm quyền). */
-    public function bulkDestroy(array $ids): void
+    /**
+     * Chỉ xóa được đơn nằm trong phạm vi của user (policy đã kiểm quyền), và bỏ
+     * qua đơn đã hoàn thành — giống hệt `bulkUpdateStatus` bên dưới. Policy chỉ
+     * kiểm được quyền chứ không kiểm được từng dòng, nên khoá phải chặn ở đây;
+     * không có nó thì chọn cả trang rồi bấm xoá là cuốn theo cả đơn đã chốt.
+     *
+     * @return int Số đơn thực sự bị xoá — controller cần để báo đúng, không báo
+     *             theo số đơn người dùng đã chọn.
+     */
+    public function bulkDestroy(array $ids): int
     {
-        $this->scopedQuery()->whereIn('id', $ids)->delete();
+        return $this->scopedQuery()
+            ->whereIn('id', $ids)
+            ->where('processing_status', '!=', PetitionStatusEnum::Completed->value)
+            ->delete();
     }
 
     public function bulkUpdateStatus(array $ids, string $status): int
