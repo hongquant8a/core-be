@@ -453,6 +453,13 @@ class PermissionSeeder extends Seeder
             ['name' => 'Nhân viên', 'guard_name' => self::GUARD],
             ['organization_id' => null]
         );
+        // Trưởng phòng: theo dõi công việc cấp phòng. Trước 05/09/2026 vai trò này chỉ
+        // tồn tại do quản trị tạo tay nên môi trường dựng mới không có nó, kéo theo
+        // truongphong* của TaskAssignmentDemoSeeder không có quyền gì.
+        Role::firstOrCreate(
+            ['name' => 'Trưởng phòng', 'guard_name' => self::GUARD],
+            ['organization_id' => null]
+        );
 
         // Chuẩn hóa dữ liệu cũ nếu còn role theo organization.
         Role::query()->update(['organization_id' => null]);
@@ -490,6 +497,11 @@ class PermissionSeeder extends Seeder
         if ($nhanVienRole) {
             $nhanVienRole->syncPermissions($this->getNhanVienPermissionNames());
         }
+
+        $truongPhongRole = Role::where('name', 'Trưởng phòng')->where('guard_name', self::GUARD)->first();
+        if ($truongPhongRole) {
+            $truongPhongRole->syncPermissions($this->getTruongPhongPermissionNames());
+        }
     }
 
     /**
@@ -514,6 +526,43 @@ class PermissionSeeder extends Seeder
             // `task-assignment-petitions.viewAll` thì chỉ thấy đơn của phòng ban mình.
             // Xóa / xóa hàng loạt / mở khóa cần `.destroy` / `.bulkDestroy` / `.manage`
             // — vai trò này không có cả ba.
+            'task-assignment-petitions.index',
+            'task-assignment-petitions.show',
+            'task-assignment-petitions.store',
+            'task-assignment-petitions.update',
+            'task-assignment-petitions.changeStatus',
+        ];
+    }
+
+    /**
+     * Permission cho Trưởng phòng — người theo dõi cấp phòng, KHÔNG phải người giao việc.
+     *
+     * Phạm vi xem là `viewDepartment` (mọi công việc của phòng mình), không phải
+     * `viewAll`; đơn thư cũng không có `viewAll` nên chỉ thấy đơn của phòng mình.
+     * KHÔNG có `transfer` (điều chuyển là việc của người giao), KHÔNG có
+     * `destroy`/`bulkDestroy`/`manage` trên đơn thư.
+     *
+     * `task-overview.exportMonthlyReport` để ở đây vì báo cáo giao ban tháng là việc
+     * của cấp theo dõi phòng ban — đây là vai trò duy nhất được seed quyền này
+     * (Quản lý công việc cố ý không có, xem getQuanLyCongViecPermissionNames()).
+     */
+    protected function getTruongPhongPermissionNames(): array
+    {
+        return [
+            // Công việc được giao: xem cả phòng, cập nhật tiến độ và báo cáo phần mình.
+            'my-received-tasks.index',
+            'my-received-tasks.export',
+            'my-received-tasks.updateProgress',
+            'my-received-tasks.report',
+            'my-received-tasks.note',
+            'my-received-tasks.viewDepartment',
+
+            // Tổng quan: số liệu phòng mình + xuất báo cáo giao ban tháng.
+            'task-overview.index',
+            'task-overview.viewDepartment',
+            'task-overview.exportMonthlyReport',
+
+            // Đơn thư của phòng mình: thêm, sửa, đổi trạng thái — không xóa, không mở khóa.
             'task-assignment-petitions.index',
             'task-assignment-petitions.show',
             'task-assignment-petitions.store',

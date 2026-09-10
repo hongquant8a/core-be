@@ -129,7 +129,7 @@ class TaskAssignmentDemoSeeder extends Seeder
 
         // Trưởng phòng: mỗi phòng ban một người.
         if (! $departmentHead) {
-            $this->command?->warn('   → Không tìm thấy vai trò "Trưởng phòng" — tài khoản truongphong* sẽ không được gán vai trò.');
+            $this->command?->warn('   → Không tìm thấy vai trò "Trưởng phòng" — chạy PermissionSeeder trước, nếu không tài khoản truongphong* sẽ không được gán vai trò.');
         }
 
         foreach ($this->departmentHeads() as $userName => [$fullName]) {
@@ -140,8 +140,8 @@ class TaskAssignmentDemoSeeder extends Seeder
     /**
      * Trưởng phòng sinh theo số phòng ban: truongphong1..n khớp thứ tự DEPARTMENTS.
      *
-     * Vai trò `Trưởng phòng` được tạo sẵn trong database (không nằm trong
-     * PermissionSeeder) nên chỉ tra cứu, không tự tạo.
+     * Vai trò `Trưởng phòng` do PermissionSeeder tạo (từ 05/09/2026) nên ở đây chỉ
+     * tra cứu — chạy PermissionSeeder trước seeder này.
      *
      * @return array<string, array{0: string, 1: int}> user_name => [tên hiển thị, chỉ số phòng ban]
      */
