@@ -460,6 +460,12 @@ class PermissionSeeder extends Seeder
             ['name' => 'Trưởng phòng', 'guard_name' => self::GUARD],
             ['organization_id' => null]
         );
+        // Lãnh đạo: giống Trưởng phòng nhưng phạm vi xem là toàn cơ quan (viewAll)
+        // thay vì chỉ phòng ban mình.
+        Role::firstOrCreate(
+            ['name' => 'Lãnh đạo', 'guard_name' => self::GUARD],
+            ['organization_id' => null]
+        );
 
         // Chuẩn hóa dữ liệu cũ nếu còn role theo organization.
         Role::query()->update(['organization_id' => null]);
@@ -501,6 +507,11 @@ class PermissionSeeder extends Seeder
         $truongPhongRole = Role::where('name', 'Trưởng phòng')->where('guard_name', self::GUARD)->first();
         if ($truongPhongRole) {
             $truongPhongRole->syncPermissions($this->getTruongPhongPermissionNames());
+        }
+
+        $lanhDaoRole = Role::where('name', 'Lãnh đạo')->where('guard_name', self::GUARD)->first();
+        if ($lanhDaoRole) {
+            $lanhDaoRole->syncPermissions($this->getLanhDaoPermissionNames());
         }
     }
 
@@ -569,6 +580,30 @@ class PermissionSeeder extends Seeder
             'task-assignment-petitions.update',
             'task-assignment-petitions.changeStatus',
         ];
+    }
+
+    /**
+     * Permission cho Lãnh đạo — giống Trưởng phòng nhưng nhìn được toàn cơ quan.
+     *
+     * Khác Trưởng phòng đúng hai điểm:
+     *  - `task-overview.viewAll` thay cho `task-overview.viewDepartment` (viewAll đứng
+     *    trên trong thứ tự xét phạm vi nên cũng mở rộng luôn màn Công việc được giao).
+     *  - Thêm `task-assignment-petitions.viewAll` để thấy đơn thư của mọi phòng ban.
+     *
+     * Vẫn KHÔNG phải vai trò giao việc: không có `transfer`, không có
+     * `destroy`/`bulkDestroy`/`manage` trên đơn thư, không có `task-overview.manageAll`.
+     */
+    protected function getLanhDaoPermissionNames(): array
+    {
+        $names = array_values(array_diff(
+            $this->getTruongPhongPermissionNames(),
+            ['task-overview.viewDepartment']
+        ));
+
+        $names[] = 'task-overview.viewAll';
+        $names[] = 'task-assignment-petitions.viewAll';
+
+        return $names;
     }
 
     /** Toàn bộ tên permission dạng phẳng — dùng cho Super Admin. */

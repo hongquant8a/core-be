@@ -14,6 +14,9 @@ class DatabaseSeeder extends Seeder
      *  - quanly1 / 123123 — Quản lý công việc
      *  - nhanvien1..nhanvien10 / 123123 — Nhân viên
      *  - truongphong1..truongphong3 / 123123 — Trưởng phòng (mỗi phòng ban một người)
+     *
+     * Tài khoản cán bộ cơ quan do CanBoCoQuanSeeder tạo: user_name = tên + họ viết
+     * tắt + tên lót viết tắt (vd `quandh`), mật khẩu 123123.
      */
     public function run(): void
     {
@@ -27,5 +30,8 @@ class DatabaseSeeder extends Seeder
 
         // Dữ liệu mẫu phân hệ Quản lý công việc.
         $this->call(TaskAssignmentDemoSeeder::class);
+
+        // Đơn vị + tài khoản cán bộ cơ quan (dữ liệu thật, không phải dữ liệu mẫu).
+        $this->call(CanBoCoQuanSeeder::class);
     }
 }
