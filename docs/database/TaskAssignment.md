@@ -1,7 +1,7 @@
 # DATABASE DESIGN — Module TaskAssignment
 
 > Ngày tạo: 00:00:00 16/06/2026  
-> Cập nhật lần cuối: 00:00:00 29/06/2026
+> Cập nhật lần cuối: 15:20:00 10/09/2026
 
 Giao việc liên phòng ban.
 
@@ -69,7 +69,7 @@ Văn bản giao việc.
 | Cột | Kiểu | Nullable | Mặc định | Ràng buộc / Ghi chú |
 |-----|------|----------|----------|---------------------|
 | id | bigint unsigned | No | — | PK |
-| name | varchar(255) | No | — | |
+| name | text | No | — | Đổi từ varchar(255) ngày 10/09/2026: tiêu đề văn bản hành chính gói cả số hiệu, ngày và cơ quan ban hành nên thường vượt 255 |
 | summary | text | Yes | null | |
 | issue_date | date | Yes | null | INDEX |
 | task_assignment_type_id | bigint unsigned | Yes | null | FK → task_assignment_types.id, INDEX |

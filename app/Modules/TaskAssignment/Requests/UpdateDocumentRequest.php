@@ -9,7 +9,9 @@ class UpdateDocumentRequest extends BaseRequest
     public function rules(): array
     {
         return [
-            'name' => 'sometimes|string|max:255',
+            // Xem chú thích ở StoreDocumentRequest: cột `name` là TEXT, 20000 ký
+            // tự là trần an toàn khi mỗi ký tự tiếng Việt tốn tới 3 byte.
+            'name' => 'sometimes|string|max:20000',
             'summary' => 'sometimes|nullable|string|max:65535',
             'issue_date' => 'sometimes|nullable|date',
             'task_assignment_type_id' => 'nullable|integer|exists:task_assignment_types,id',
