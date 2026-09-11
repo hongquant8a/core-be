@@ -236,8 +236,22 @@ class TaskAssignmentItemService
         }
 
         $user = auth()->user();
-        if (in_array($status, [\App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Paused->value, \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Cancelled->value], true)) {
+        $paused = \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Paused->value;
+        $cancelled = \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Cancelled->value;
+
+        if (in_array($status, [$paused, $cancelled], true)) {
             if ($user && ! $user->can('task-overview.manageAll')) {
+                // Đường hàng loạt phải đòi ĐÚNG quyền của thao tác, không được
+                // mượn `task-assignment-documents.updateItem` của route. Nếu không
+                // thì tạm dừng / huỷ từng việc bị chặn vì thiếu quyền, mà chọn cả
+                // trang rồi đổi hàng loạt lại lọt.
+                $needed = $status === $paused ? 'my-assigned-tasks.pause' : 'my-assigned-tasks.cancel';
+                if (! $user->can($needed)) {
+                    throw new \RuntimeException($status === $paused
+                        ? 'Bạn không có quyền tạm dừng công việc.'
+                        : 'Bạn không có quyền hủy công việc.');
+                }
+
                 $invalidCount = TaskAssignmentItem::withoutGlobalScope('issuedDocument')
                     ->whereIn('id', $ids)
                     ->where('assigned_by', '!=', $user->id)

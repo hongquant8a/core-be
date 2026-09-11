@@ -72,7 +72,7 @@ class CaslAbilityConverter
                 $aliases[] = ['action' => 'bulkDestroy', 'subject' => 'TaskAssignmentItems'];
                 break;
 
-            // 2 màn công việc cá nhân dùng chung subject TaskAssignmentItems
+                // 2 màn công việc cá nhân dùng chung subject TaskAssignmentItems
             case 'my-assigned-tasks.index':
             case 'my-received-tasks.index':
                 $aliases[] = ['action' => 'index', 'subject' => 'TaskAssignmentItems'];
@@ -93,7 +93,15 @@ class CaslAbilityConverter
                 break;
             case 'my-assigned-tasks.changeStatus':
                 $aliases[] = ['action' => 'changeStatus', 'subject' => 'TaskAssignmentItems'];
-                // Nút "Mở lại" (reopen) ở màn Đang giao được FE gác bằng can('update')
+                break;
+                // Trả lại báo cáo và mở lại công việc tách khỏi `changeStatus` từ
+                // 11/09/2026: mỗi cái một quyền, một endpoint, một policy.
+            case 'my-assigned-tasks.reject':
+                $aliases[] = ['action' => 'reject', 'subject' => 'TaskAssignmentItems'];
+                break;
+            case 'my-assigned-tasks.reopen':
+                $aliases[] = ['action' => 'reopen', 'subject' => 'TaskAssignmentItems'];
+                // Nút "Mở lại" ở màn Đang giao từng được FE gác bằng can('update').
                 $aliases[] = ['action' => 'update', 'subject' => 'TaskAssignmentItems'];
                 break;
             case 'my-assigned-tasks.transfer':

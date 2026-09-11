@@ -4,13 +4,14 @@ namespace App\Modules\TaskAssignment\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Requests\FilterRequest;
+use App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Modules\TaskAssignment\Requests\BulkDestroyItemRequest;
 use App\Modules\TaskAssignment\Requests\BulkUpdateStatusItemRequest;
 use App\Modules\TaskAssignment\Requests\ChangeStatusItemRequest;
 use App\Modules\TaskAssignment\Requests\ExportMonthlyReportRequest;
-use App\Modules\TaskAssignment\Requests\StatsFilterRequest;
 use App\Modules\TaskAssignment\Requests\StatsByTimeRequest;
+use App\Modules\TaskAssignment\Requests\StatsFilterRequest;
 use App\Modules\TaskAssignment\Requests\StoreItemRequest;
 use App\Modules\TaskAssignment\Requests\UpcomingDeadlineRequest;
 use App\Modules\TaskAssignment\Requests\UpdateItemProgressRequest;
@@ -23,6 +24,7 @@ use App\Modules\TaskAssignment\Services\TaskAssignmentTimelineService;
 
 /**
  * @group TaskAssignment - Công việc
+ *
  * @header X-Organization-Id ID tổ chức cần làm việc (bắt buộc với endpoint yêu cầu auth). Example: 1
  *
  * Quản lý công việc: thống kê, danh sách, chi tiết, tạo, cập nhật, xóa, xóa hàng loạt và cập nhật tiến độ.
@@ -271,7 +273,9 @@ class TaskAssignmentItemController extends Controller
      * @urlParam taskAssignmentItem integer required ID công việc. Example: 1
      *
      * @apiResource App\Modules\TaskAssignment\Resources\ItemResource
+     *
      * @apiResourceModel App\Modules\TaskAssignment\Models\TaskAssignmentItem
+     *
      * @apiResourceAdditional success=true message="Đã mở lại công việc!"
      */
     public function reopen(TaskAssignmentItem $taskAssignmentItem)
@@ -279,6 +283,48 @@ class TaskAssignmentItemController extends Controller
         $item = $this->itemService->reopen($taskAssignmentItem);
 
         return $this->successResource(new ItemResource($item), 'Đã mở lại công việc!');
+    }
+
+    /**
+     * Tạm dừng công việc
+     *
+     * Người thực hiện không cập nhật tiến độ được trong lúc tạm dừng.
+     * Quyền riêng `my-assigned-tasks.pause`, và chỉ người đã giao việc.
+     *
+     * @urlParam taskAssignmentItem integer required ID công việc. Example: 1
+     *
+     * @apiResource App\Modules\TaskAssignment\Resources\ItemResource
+     *
+     * @apiResourceModel App\Modules\TaskAssignment\Models\TaskAssignmentItem
+     *
+     * @header X-Organization-Id required ID tổ chức. Example: 1
+     */
+    public function pause(TaskAssignmentItem $taskAssignmentItem)
+    {
+        $item = $this->itemService->changeStatus($taskAssignmentItem, TaskProgressStatusEnum::Paused->value);
+
+        return $this->successResource(new ItemResource($item), 'Đã tạm dừng công việc!');
+    }
+
+    /**
+     * Huỷ công việc
+     *
+     * Bản ghi vẫn giữ để tra cứu, không biến mất khỏi thống kê.
+     * Quyền riêng `my-assigned-tasks.cancel`, và chỉ người đã giao việc.
+     *
+     * @urlParam taskAssignmentItem integer required ID công việc. Example: 1
+     *
+     * @apiResource App\Modules\TaskAssignment\Resources\ItemResource
+     *
+     * @apiResourceModel App\Modules\TaskAssignment\Models\TaskAssignmentItem
+     *
+     * @header X-Organization-Id required ID tổ chức. Example: 1
+     */
+    public function cancel(TaskAssignmentItem $taskAssignmentItem)
+    {
+        $item = $this->itemService->changeStatus($taskAssignmentItem, TaskProgressStatusEnum::Cancelled->value);
+
+        return $this->successResource(new ItemResource($item), 'Đã hủy công việc!');
     }
 
     /**
@@ -318,7 +364,9 @@ class TaskAssignmentItemController extends Controller
      * @bodyParam rejection_reason string required Lý do từ chối duyệt. Example: Báo cáo chưa đầy đủ, cần bổ sung tài liệu đính kèm.
      *
      * @apiResource App\Modules\TaskAssignment\Resources\ItemResource
+     *
      * @apiResourceModel App\Modules\TaskAssignment\Models\TaskAssignmentItem
+     *
      * @apiResourceAdditional success=true message="Đã từ chối duyệt."
      *
      * @response 422 {"success": false, "message": "Công việc đang ở trạng thái \"Đang thực hiện\" — chỉ có thể từ chối khi đang chờ duyệt."}
@@ -478,7 +526,9 @@ class TaskAssignmentItemController extends Controller
      * @queryParam limit integer Số bản ghi mỗi trang. Example: 10
      *
      * @apiResourceCollection App\Modules\TaskAssignment\Resources\ItemCollection
+     *
      * @apiResourceModel App\Modules\TaskAssignment\Models\TaskAssignmentItem paginate=10
+     *
      * @apiResourceAdditional success=true
      */
     public function overdue(StatsFilterRequest $request)
@@ -500,7 +550,9 @@ class TaskAssignmentItemController extends Controller
      * @queryParam limit integer Số bản ghi mỗi trang. Example: 10
      *
      * @apiResourceCollection App\Modules\TaskAssignment\Resources\ItemCollection
+     *
      * @apiResourceModel App\Modules\TaskAssignment\Models\TaskAssignmentItem paginate=10
+     *
      * @apiResourceAdditional success=true
      */
     public function upcomingDeadline(UpcomingDeadlineRequest $request)
@@ -517,6 +569,7 @@ class TaskAssignmentItemController extends Controller
      * Sắp xếp theo thời gian tăng dần (cũ nhất trước).
      *
      * @urlParam taskAssignmentItem integer required ID công việc. Example: 1
+     *
      * @queryParam limit integer Số bản ghi mỗi trang (1-100). Example: 20
      * @queryParam page integer Trang hiện tại. Example: 1
      *

@@ -26,7 +26,15 @@ class UpdateItemRequest extends BaseRequest
             'deadline_type' => ['sometimes', TaskDeadlineTypeEnum::rule()],
             'start_at' => 'nullable|date',
             'end_at' => 'nullable|date|after_or_equal:start_at',
-            'processing_status' => ['sometimes', TaskProgressStatusEnum::rule()],
+            // Màn sửa công việc KHÔNG được dùng làm cửa sau để đổi sang trạng
+            // thái có quyền riêng. Trước đây rule này nhận mọi giá trị kể cả
+            // `done`, nên chỉ cần quyền sửa công việc là duyệt được việc bằng
+            // `PUT /{id}` — bỏ qua điều kiện phải đang chờ duyệt, bỏ qua ghi
+            // `approved_by`/`completed_at`, bỏ qua sự kiện thông báo. Miniapp
+            // đang duyệt/tạm dừng/huỷ theo đúng đường đó.
+            // Hoàn thành → `/mark-done`; tạm dừng → `/pause`; huỷ → `/cancel`;
+            // trả lại → `/reject`; mở lại → `/reopen`.
+            'processing_status' => ['sometimes', 'in:'.TaskProgressStatusEnum::Todo->value.','.TaskProgressStatusEnum::InProgress->value],
             'completion_percent' => 'nullable|integer|min:0|max:100',
             'priority' => ['sometimes', TaskPriorityEnum::rule()],
             'assigned_by' => ['sometimes', 'integer', function ($attribute, $value, $fail) {
@@ -80,6 +88,7 @@ class UpdateItemRequest extends BaseRequest
                     ->exists();
                 if (! $isEmployee) {
                     $fail("User ID {$value['user_id']} không phải nhân viên module Task hoặc đã bị vô hiệu hóa. Vui lòng đăng ký nhân viên trước.");
+
                     return;
                 }
 
@@ -128,7 +137,7 @@ class UpdateItemRequest extends BaseRequest
                 'example' => '2026-04-30 17:00:00',
             ],
             'processing_status' => [
-                'description' => 'Trạng thái xử lý (todo, in_progress, paused, cancelled, done).',
+                'description' => 'Trạng thái xử lý. Chỉ nhận `todo` hoặc `in_progress` — tạm dừng dùng `/pause`, huỷ dùng `/cancel`, hoàn thành dùng `/mark-done`.',
                 'example' => 'in_progress',
             ],
             'completion_percent' => [
@@ -213,6 +222,7 @@ class UpdateItemRequest extends BaseRequest
     public function messages(): array
     {
         return [
+            'processing_status.in' => 'Trạng thái này có thao tác riêng: hoàn thành dùng Xác nhận hoàn thành, tạm dừng dùng Tạm dừng, huỷ dùng Huỷ công việc.',
             'users.required' => 'Phải phân công ít nhất 1 người thực hiện.',
             'users.array' => 'Danh sách người thực hiện không hợp lệ.',
             'users.min' => 'Phải phân công ít nhất 1 người thực hiện.',

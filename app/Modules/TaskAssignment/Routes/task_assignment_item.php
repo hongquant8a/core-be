@@ -25,7 +25,14 @@ Route::put('/{taskAssignmentItem}', [TaskAssignmentItemController::class, 'updat
 Route::patch('/{taskAssignmentItem}', [TaskAssignmentItemController::class, 'update'])->middleware('can:update,taskAssignmentItem');
 Route::delete('/{taskAssignmentItem}', [TaskAssignmentItemController::class, 'destroy'])->middleware('can:delete,taskAssignmentItem');
 Route::patch('/{taskAssignmentItem}/progress', [TaskAssignmentItemController::class, 'updateProgress'])->middleware('can:updateProgress,taskAssignmentItem');
+// Bốn thao tác can thiệp = bốn endpoint, mỗi cái một quyền riêng. Trước đây tạm
+// dừng và huỷ dồn vào `/status`, policy OR ba quyền rồi thò tay đọc
+// `processing_status` trong request để đoán — nên `pause`/`cancel` là quyền chết:
+// có một trong ba là làm được cả ba.
+// `/status` nay chỉ còn dùng để chuyển giữa Chưa thực hiện ↔ Đang thực hiện.
 Route::patch('/{taskAssignmentItem}/status', [TaskAssignmentItemController::class, 'changeStatus'])->middleware('can:changeStatus,taskAssignmentItem');
+Route::patch('/{taskAssignmentItem}/pause', [TaskAssignmentItemController::class, 'pause'])->middleware('can:pause,taskAssignmentItem');
+Route::patch('/{taskAssignmentItem}/cancel', [TaskAssignmentItemController::class, 'cancel'])->middleware('can:cancel,taskAssignmentItem');
 Route::patch('/{taskAssignmentItem}/mark-done', [TaskAssignmentItemController::class, 'markDone'])->middleware('can:markDone,taskAssignmentItem');
 // Trả lại báo cáo và mở lại công việc là nghiệp vụ riêng, không phải đổi trạng
 // thái chung: chúng là mặt còn lại của việc duyệt nên gác bằng policy riêng,

@@ -100,7 +100,16 @@ class PermissionSeeder extends Seeder
                 'analyze',
             ],
             'my-assigned-tasks' => [
-                'index', 'export', 'pause', 'cancel', 'transfer', 'markDone', 'changeStatus', 'note',
+                // Bốn thao tác can thiệp vào công việc là bốn nghiệp vụ riêng, mỗi
+                // cái một quyền: duyệt (markDone), trả lại báo cáo (reject), mở lại
+                // (reopen), tạm dừng (pause), huỷ (cancel).
+                //
+                // `changeStatus` nay chỉ còn dùng cho việc chuyển qua lại giữa
+                // "Chưa thực hiện" và "Đang thực hiện". Trước đây nó là cửa chung
+                // cho cả năm, nên `pause` và `cancel` tuy có mặt trong bảng quyền
+                // mà bật/tắt không có tác dụng gì.
+                'index', 'export', 'transfer', 'note',
+                'markDone', 'reject', 'reopen', 'pause', 'cancel', 'changeStatus',
             ],
             'my-received-tasks' => [
                 'index', 'export', 'updateProgress', 'report', 'note', 'transfer',

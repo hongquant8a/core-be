@@ -84,10 +84,6 @@ class TaskAssignmentItemPolicy
             return false;
         }
 
-        if (! $this->checkPauseCancelRestriction($user, $item)) {
-            return false;
-        }
-
         return $this->isOwnerOrAssigned($user, $item);
     }
 
@@ -104,23 +100,48 @@ class TaskAssignmentItemPolicy
     }
 
     /**
-     * Đổi trạng thái (pause/cancel/changeStatus) — người liên quan đến task.
+     * Chuyển qua lại giữa "Chưa thực hiện" và "Đang thực hiện".
+     *
+     * Tạm dừng và huỷ ĐÃ TÁCH sang `pause()` / `cancel()` với quyền riêng, nên ở
+     * đây không còn OR ba quyền như trước. Cái OR đó biến `pause` và `cancel`
+     * thành quyền chết: có một trong ba là làm được cả ba, quản trị bật/tắt trên
+     * màn Vai trò không đổi gì.
+     *
+     * Vẫn là "người liên quan" chứ không riêng người giao: đẩy việc của mình từ
+     * Chưa thực hiện sang Đang thực hiện là thao tác chính đáng của người làm.
      */
     public function changeStatus(User $user, TaskAssignmentItem $item): bool
     {
-        $hasPermission = $user->hasPermissionTo('my-assigned-tasks.changeStatus')
-            || $user->hasPermissionTo('my-assigned-tasks.pause')
-            || $user->hasPermissionTo('my-assigned-tasks.cancel');
-
-        if (! $hasPermission) {
-            return false;
-        }
-
-        if (! $this->checkPauseCancelRestriction($user, $item)) {
+        if (! $user->can('my-assigned-tasks.changeStatus')) {
             return false;
         }
 
         return $this->isOwnerOrAssigned($user, $item);
+    }
+
+    /**
+     * Tạm dừng — quyền riêng, và chỉ người đã giao việc.
+     *
+     * Tạm dừng khoá người thực hiện không cập nhật tiến độ được nữa, nên đây là
+     * quyết định của người giao chứ không phải của người đang làm.
+     */
+    public function pause(User $user, TaskAssignmentItem $item): bool
+    {
+        if (! $user->can('my-assigned-tasks.pause')) {
+            return false;
+        }
+
+        return (int) $item->assigned_by === $user->id;
+    }
+
+    /** Huỷ công việc — quyền riêng, và chỉ người đã giao việc. */
+    public function cancel(User $user, TaskAssignmentItem $item): bool
+    {
+        if (! $user->can('my-assigned-tasks.cancel')) {
+            return false;
+        }
+
+        return (int) $item->assigned_by === $user->id;
     }
 
     /**
@@ -133,7 +154,7 @@ class TaskAssignmentItemPolicy
      */
     public function reject(User $user, TaskAssignmentItem $item): bool
     {
-        if (! $user->can('my-assigned-tasks.changeStatus')) {
+        if (! $user->can('my-assigned-tasks.reject')) {
             return false;
         }
 
@@ -148,7 +169,7 @@ class TaskAssignmentItemPolicy
      */
     public function reopen(User $user, TaskAssignmentItem $item): bool
     {
-        if (! $user->can('my-assigned-tasks.changeStatus')) {
+        if (! $user->can('my-assigned-tasks.reopen')) {
             return false;
         }
 
@@ -161,10 +182,6 @@ class TaskAssignmentItemPolicy
     public function updateProgress(User $user, TaskAssignmentItem $item): bool
     {
         if (! $user->hasPermissionTo('my-received-tasks.updateProgress') && ! $user->hasPermissionTo('task-assignment-documents.updateItem')) {
-            return false;
-        }
-
-        if (! $this->checkPauseCancelRestriction($user, $item)) {
             return false;
         }
 
@@ -270,17 +287,10 @@ class TaskAssignmentItemPolicy
         return $item->users->contains('id', $user->id);
     }
 
-    /**
-     * Tạm dừng và hủy chỉ cho phép người giao việc (assigner) thực hiện.
-     */
-    private function checkPauseCancelRestriction(User $user, TaskAssignmentItem $item): bool
-    {
-        $status = request('processing_status');
-
-        if (in_array($status, [\App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Paused->value, \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Cancelled->value], true)) {
-            return (int) $item->assigned_by === $user->id;
-        }
-
-        return true;
-    }
+    // Đã bỏ `checkPauseCancelRestriction()`: nó thò tay đọc
+    // `request('processing_status')` từ trong policy để đoán người dùng định làm
+    // gì, rồi mới quyết định có siết quyền sở hữu hay không. Kiểu viết đó gắn
+    // policy vào hình dạng HTTP request — đổi tên trường hoặc gọi policy từ chỗ
+    // không có request (job, command, test) là nó âm thầm cho qua. Tạm dừng và
+    // huỷ nay có `pause()` / `cancel()` riêng, luật nằm ngay trong luật.
 }
