@@ -15,6 +15,10 @@ class StoreDocumentRequest extends BaseRequest
             // MySQL strict mode ném SQLSTATE 22001 thành lỗi 500.
             'name' => 'required|string|max:20000',
             'summary' => 'nullable|string|max:65535',
+            // Nguyên văn đã dán vào ô phân tích AI. Trần 50.000 khớp
+            // AnalyzeDocumentRequest: dài hơn thì AI đã từ chối phân tích rồi,
+            // không có đường nào tạo ra chuỗi hợp lệ dài hơn thế.
+            'ai_source_content' => 'nullable|string|max:50000',
             'issue_date' => 'nullable|date',
             'task_assignment_type_id' => 'nullable|integer|exists:task_assignment_types,id',
             'status' => ['required', TaskAssignmentDocumentStatusEnum::rule()],
@@ -28,6 +32,7 @@ class StoreDocumentRequest extends BaseRequest
         return [
             'name.required' => 'Vui lòng nhập tên văn bản.',
             'name.max' => 'Tên văn bản không được vượt quá 255 ký tự.',
+            'ai_source_content.max' => 'Nội dung văn bản gốc không được vượt quá :max ký tự.',
             'issue_date.date' => 'Ngày ban hành không đúng định dạng.',
             'task_assignment_type_id.required' => 'Vui lòng chọn loại văn bản.',
             'task_assignment_type_id.exists' => 'Loại văn bản không tồn tại.',
@@ -47,6 +52,10 @@ class StoreDocumentRequest extends BaseRequest
             'summary' => [
                 'description' => 'Tóm tắt nội dung văn bản.',
                 'example' => 'Văn bản triển khai công việc quý II.',
+            ],
+            'ai_source_content' => [
+                'description' => 'Nguyên văn đã dán vào ô phân tích AI (nếu có).',
+                'example' => 'THÔNG BÁO Kết luận của đồng chí Bí thư tại cuộc họp giao ban tháng 9...',
             ],
             'issue_date' => [
                 'description' => 'Ngày ban hành (Y-m-d).',
@@ -72,6 +81,7 @@ class StoreDocumentRequest extends BaseRequest
         return [
             'name' => 'Tên',
             'summary' => 'Summary',
+            'ai_source_content' => 'Nội dung văn bản gốc',
             'issue_date' => 'Ngày ban hành',
             'task_assignment_type_id' => 'Task assignment type',
             'status' => 'Trạng thái',

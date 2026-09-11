@@ -71,6 +71,7 @@ Văn bản giao việc.
 | id | bigint unsigned | No | — | PK |
 | name | text | No | — | Đổi từ varchar(255) ngày 10/09/2026: tiêu đề văn bản hành chính gói cả số hiệu, ngày và cơ quan ban hành nên thường vượt 255 |
 | summary | text | Yes | null | |
+| ai_source_content | longtext | Yes | null | Thêm 11/09/2026: nguyên văn dán vào ô phân tích AI. LONGTEXT vì trần 50.000 ký tự của AnalyzeDocumentRequest có thể chạm 150KB khi tiếng Việt tốn 3 byte/ký tự. Không select ở màn danh sách (xem `TaskAssignmentDocument::LIST_COLUMNS`) |
 | issue_date | date | Yes | null | INDEX |
 | task_assignment_type_id | bigint unsigned | Yes | null | FK → task_assignment_types.id, INDEX |
 | status | varchar(255) | No | 'draft' | draft, issued. INDEX |

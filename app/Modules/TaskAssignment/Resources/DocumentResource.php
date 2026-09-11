@@ -9,12 +9,17 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class DocumentResource extends JsonResource
 {
     use FormatsUserSummary;
+
     public function toArray(Request $request): array
     {
         return [
             'id' => $this->id,
             'name' => $this->name,
             'summary' => $this->summary,
+            // Chỉ có mặt ở chi tiết: danh sách cố tình không select cột này (xem
+            // TaskAssignmentDocumentService::index) vì nguyên văn lên tới 150KB
+            // mỗi bản ghi, nhân với một trang 20 dòng là phình vô ích.
+            'ai_source_content' => $this->whenHas('ai_source_content'),
             'issue_date' => $this->issue_date?->format('d/m/Y'),
             'type' => new LookupResource($this->whenLoaded('type')),
             'status' => $this->status,
@@ -23,7 +28,7 @@ class DocumentResource extends JsonResource
             'completed_items_count' => $this->whenCounted('completed_items_count'),
             'completion_percent' => $this->when(
                 $this->items_count !== null && $this->completed_items_count !== null,
-                fn() => $this->items_count > 0 ? (int) round(($this->completed_items_count / $this->items_count) * 100) : 0
+                fn () => $this->items_count > 0 ? (int) round(($this->completed_items_count / $this->items_count) * 100) : 0
             ),
             'attachments' => $this->whenLoaded('attachments', function () {
                 return $this->attachments->map(function ($attachment) {

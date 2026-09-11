@@ -71,7 +71,13 @@ class TaskAssignmentDocumentService
 
     public function index(array $filters, int $limit)
     {
-        return TaskAssignmentDocument::with(['type', 'creator.media', 'editor.media'])
+        // Bỏ `ai_source_content` khỏi danh sách: nguyên văn dán vào ô AI có thể
+        // tới 150KB mỗi bản ghi, kéo cả trang về chỉ để hiện tên và trạng thái là
+        // phí băng thông lẫn bộ nhớ. Chi tiết (show) vẫn lấy đủ cột.
+        // select() phải đứng TRƯỚC withCount: withCount nối subquery vào danh
+        // sách cột đang có, gọi sau sẽ xoá mất mấy cột count đó.
+        return TaskAssignmentDocument::select(TaskAssignmentDocument::LIST_COLUMNS)
+            ->with(['type', 'creator.media', 'editor.media'])
             ->withCount([
                 'items',
                 'items as completed_items_count' => function ($query) {
@@ -207,7 +213,7 @@ class TaskAssignmentDocumentService
             return;
         }
 
-        $notificationIds = Notification::where('notifiable_type', (new TaskAssignmentItem())->getMorphClass())
+        $notificationIds = Notification::where('notifiable_type', (new TaskAssignmentItem)->getMorphClass())
             ->whereIn('notifiable_id', $itemIds)
             ->pluck('id')
             ->all();
@@ -294,7 +300,7 @@ class TaskAssignmentDocumentService
         }
 
         // 2. Cancel Notification + Delivery pending của items này
-        $notificationIds = Notification::where('notifiable_type', (new TaskAssignmentItem())->getMorphClass())
+        $notificationIds = Notification::where('notifiable_type', (new TaskAssignmentItem)->getMorphClass())
             ->whereIn('notifiable_id', $itemIds)
             ->pluck('id')
             ->all();

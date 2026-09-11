@@ -23,6 +23,7 @@ class TaskAssignmentDocument extends TenantModel implements HasMedia
     protected $fillable = [
         'name',
         'summary',
+        'ai_source_content',
         'issue_date',
         'task_assignment_type_id',
         'status',
@@ -32,9 +33,29 @@ class TaskAssignmentDocument extends TenantModel implements HasMedia
         'updated_by',
     ];
 
+    /**
+     * Cột lấy cho màn danh sách — cố tình KHÔNG có `ai_source_content`, xem
+     * TaskAssignmentDocumentService::index. Thêm cột mới mà muốn nó hiện ở danh
+     * sách thì phải khai thêm ở đây, y như với $fillable.
+     */
+    public const LIST_COLUMNS = [
+        'id',
+        'name',
+        'summary',
+        'issue_date',
+        'task_assignment_type_id',
+        'status',
+        'issued_at',
+        'organization_id',
+        'created_by',
+        'updated_by',
+        'created_at',
+        'updated_at',
+    ];
+
     protected $casts = [
         'issue_date' => 'date',
-        'issued_at'  => 'datetime',
+        'issued_at' => 'datetime',
     ];
 
     protected static function booted()

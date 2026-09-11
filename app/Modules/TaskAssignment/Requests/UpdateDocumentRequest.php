@@ -13,6 +13,8 @@ class UpdateDocumentRequest extends BaseRequest
             // tự là trần an toàn khi mỗi ký tự tiếng Việt tốn tới 3 byte.
             'name' => 'sometimes|string|max:20000',
             'summary' => 'sometimes|nullable|string|max:65535',
+            // Xem chú thích ở StoreDocumentRequest.
+            'ai_source_content' => 'sometimes|nullable|string|max:50000',
             'issue_date' => 'sometimes|nullable|date',
             'task_assignment_type_id' => 'nullable|integer|exists:task_assignment_types,id',
             'status' => ['sometimes', TaskAssignmentDocumentStatusEnum::rule()],
@@ -27,6 +29,7 @@ class UpdateDocumentRequest extends BaseRequest
     {
         return [
             'name.max' => 'Tên văn bản không được vượt quá 255 ký tự.',
+            'ai_source_content.max' => 'Nội dung văn bản gốc không được vượt quá :max ký tự.',
             'issue_date.date' => 'Ngày ban hành không đúng định dạng.',
             'task_assignment_type_id.exists' => 'Loại văn bản không tồn tại.',
             'status.in' => 'Trạng thái không hợp lệ.',
@@ -45,6 +48,10 @@ class UpdateDocumentRequest extends BaseRequest
             'summary' => [
                 'description' => 'Tóm tắt nội dung văn bản.',
                 'example' => 'Văn bản triển khai công việc quý II.',
+            ],
+            'ai_source_content' => [
+                'description' => 'Nguyên văn đã dán vào ô phân tích AI (nếu có).',
+                'example' => 'THÔNG BÁO Kết luận của đồng chí Bí thư tại cuộc họp giao ban tháng 9...',
             ],
             'issue_date' => [
                 'description' => 'Ngày ban hành (Y-m-d).',
@@ -74,6 +81,7 @@ class UpdateDocumentRequest extends BaseRequest
         return [
             'name' => 'Tên',
             'summary' => 'Summary',
+            'ai_source_content' => 'Nội dung văn bản gốc',
             'issue_date' => 'Ngày ban hành',
             'task_assignment_type_id' => 'Task assignment type',
             'status' => 'Trạng thái',
