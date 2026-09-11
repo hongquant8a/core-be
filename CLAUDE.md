@@ -294,6 +294,202 @@ Thêm endpoint mới thay vì đổi format endpoint cũ (giữ backward compati
 - [ ] Observer chỉ xử lý data integrity (kể cả chuẩn bị/ghi reminder rows), không **gửi** Notification.
 - [ ] Cross-tenant Job/Command có `withoutGlobalScope('organization')` khi loop toàn bộ tenant.
 
+
+## 12. Thao tác nghiệp vụ, phân quyền & trạng thái
+
+> Rút từ đợt rà soát phân hệ Quản lý công việc 10–11/09/2026. Mỗi quy tắc dưới đây
+> đến từ một lỗ hổng có thật, không phải nguyên tắc lý thuyết.
+
+### 12.1. Một thao tác nghiệp vụ = một quyền + một route + một policy method
+
+Thao tác có **người quyết định khác**, **điều kiện tiền đề khác**, hoặc **hệ quả
+khác** thì là nghiệp vụ riêng. Phải có đủ ba thứ, không dùng ké:
+
+```
+permission  my-assigned-tasks.reject
+route       PATCH /{id}/reject  →  ->can('reject', 'item')
+policy      TaskAssignmentItemPolicy::reject()
+```
+
+**Phép thử trước khi gộp:** tắt quyền đó trên màn Vai trò — có **đúng một** thao tác
+biến mất khỏi UI và trả 403 không? Không đổi gì nghĩa là quyền chết.
+
+| Lỗi | Đúng |
+|---|---|
+| `can('a') \|\| can('b') \|\| can('c')` trong một policy method | Mỗi quyền một method |
+| Policy đọc `request(...)` để đoán người dùng định làm gì | Luật nằm trong chính tên method |
+| Nhân bản điều kiện "quản lý được vượt cấp" ở từng method | Một quyền bao trùm tường minh, kiểm ở `before()` |
+
+*Đã xảy ra:* `reject`/`reopen`/`pause`/`cancel` dùng chung `changeStatus` → `pause`
+và `cancel` thành **quyền chết** (policy OR ba quyền, có một là làm được cả ba);
+`reject` chỉ đòi "người liên quan" nên **người thực hiện tự trả lại báo cáo của
+mình được**.
+
+Quyền vẫn cấp **qua vai trò**, không cấp thẳng cho user. Cờ kiểu `is_representative`
+là gợi ý UI, không phải phân cấp quyền.
+
+### 12.2. Không có cửa sau
+
+Khi một trạng thái đã có thao tác riêng, mọi endpoint chung phải **từ chối** giá trị
+đó, trả 422 kèm thông báo tiếng Việt **chỉ đúng nút cần bấm**:
+
+```php
+'processing_status' => ['sometimes', 'in:todo,in_progress'],
+// messages()
+'processing_status.in' => 'Trạng thái này có thao tác riêng: hoàn thành dùng Xác nhận hoàn thành, tạm dừng dùng Tạm dừng, huỷ dùng Huỷ công việc.',
+```
+
+**Phép thử:** với mỗi thao tác có điều kiện, hỏi *còn đường nào khác đạt cùng kết quả
+trong DB mà bỏ qua điều kiện không?* Rà `update`, `changeStatus`, `bulkUpdateStatus`,
+`import`.
+
+*Đã xảy ra:* `PUT /task-assignment-items/{id}` nhận cả `done` — chỉ cần quyền **sửa**
+là duyệt được việc, bỏ qua điều kiện chờ duyệt, bỏ qua ghi `approved_by`/`completed_at`,
+bỏ qua sự kiện thông báo.
+
+### 12.3. Trạng thái kết thúc phải khoá đủ ba lớp
+
+| Lớp | Việc phải làm |
+|---|---|
+| Backend | Policy chặn `update`, `updateProgress`, **và `delete`** |
+| Web | Ẩn nút **và** chặn chọn dòng ở bảng |
+| Miniapp | Ẩn nút — không để bấm xong mới báo lỗi |
+
+*Đã xảy ra:* đơn thư hoàn thành đã khoá sửa nhưng **quên khoá xoá**.
+
+### 12.4. Thao tác hàng loạt dùng lại đúng policy của thao tác đơn
+
+1. Service **gọi lại policy đơn cho từng dòng**, không viết lại điều kiện.
+2. **Toàn có hoặc toàn không** — thông báo nêu số dòng vướng và cách xử lý.
+3. Ghi bằng **Eloquent từng dòng**, không `->update()` / `->delete()` hàng loạt.
+
+```php
+private function pullAuthorized(array $ids, string $ability, string $refusal)
+{
+    $items = Model::whereIn('id', $ids)->with('users')->get();
+    [$allowed, $denied] = $items->partition(fn ($i) => (bool) auth()->user()?->can($ability, $i));
+
+    if ($denied->isNotEmpty()) {
+        throw new \RuntimeException(sprintf(
+            '%s — %d/%d bản ghi được chọn không đạt điều kiện. Bỏ chọn những dòng đó rồi thử lại.',
+            $refusal, $denied->count(), count($ids)));
+    }
+
+    return $allowed;
+}
+
+$allowed->each(fn ($item) => $item->update($data)); // từng dòng → observer chạy
+```
+
+Endpoint bulk phục vụ nhiều thao tác thì **ánh xạ trạng thái → quyền**:
+
+```php
+[$ability, $refusal] = match ($status) {
+    Status::Paused->value    => ['pause', '...'],
+    Status::Cancelled->value => ['cancel', '...'],
+    default                  => ['changeStatus', '...'],
+};
+```
+
+*Vì sao:* điều kiện nằm ở Service sẽ **trôi khỏi** policy — sửa policy mà quên service
+là thủng. Mass `update()` **không kích hoạt observer** → lịch nhắc (`ReminderScheduler`)
+không được ghi lại, để lại nhắc mồ côi.
+
+### 12.5. Đổi hợp đồng API là đổi cả ba repo, trong cùng một đợt
+
+Sửa `core-fe` **và** `core-miniapp` cùng đợt, kèm `docs/changelogs/YYYY-MM-DD-topic-fe.md`
+có **bảng thao tác → endpoint → quyền → policy**, kèm rà **tích hợp ngoài** (n8n,
+script, webhook).
+
+Chiều sửa luôn là **FE theo BE**. Nếu buộc phải nới luật BE, căn cứ phải là **cây
+quyền**, không phải "siết thì màn hình gãy" — và ghi căn cứ đó vào comment của policy.
+
+### 12.6. Kiểu cột theo dữ liệu thật
+
+Trước khi chọn `varchar(n)`, **đo dữ liệu thật**:
+
+```sql
+SELECT MAX(CHAR_LENGTH(name)), SUM(CHAR_LENGTH(name) > 255) FROM ...;
+```
+
+Trường người dùng nhập tự do và có thể dài (tên văn bản, tên công việc, tiêu đề) dùng
+`TEXT`. FormRequest vẫn phải có chốt chặn để tràn trả 422 thay vì 500:
+
+```php
+// max ĐẾM KÝ TỰ, tiếng Việt tới 3 byte/ký tự → chừa biên so với 65535 byte của TEXT
+'name' => 'required|string|max:20000',
+```
+
+Kèm theo **mọi** migration: cập nhật `docs/database/{Module}.md`, kể cả khi phát hiện
+tài liệu cũ đã ghi sai từ trước.
+
+### 12.7. Xoá mềm cho dữ liệu nghiệp vụ
+
+Bản ghi có giá trị pháp lý hoặc lịch sử (đơn thư, công việc, báo cáo, quyết định
+duyệt) dùng `SoftDeletes` + cast `'deleted_at' => 'datetime'`. Xoá cứng chỉ dành cho
+danh mục và dữ liệu kỹ thuật.
+
+### 12.8. Nhãn tiếng Việt phải phủ hết action
+
+`PermissionSeeder` sinh mô tả theo `$ACTION_LABELS[$action] ?? $action` — thiếu nhãn là
+**rơi thẳng ra tên action tiếng Anh** trên màn Vai trò. Thêm action mới thì bổ sung nhãn
+**trong cùng commit**, và nhãn phải đúng nghiệp vụ của module dùng nó (`reject` trong
+module công việc là *Trả lại báo cáo*, không phải *Từ chối*).
+
+**Phép thử sau khi seed:** quét toàn bộ action, liệt kê cái nào không có trong
+`$ACTION_LABELS`.
+
+### 12.9. Dữ liệu, môi trường, sao lưu
+
+**Không chạm dữ liệu thật.** Mọi thử nghiệm **có ghi** chạy trên DB clone, trỏ `.env`
+tạm rồi trả lại. *Đã xảy ra:* một request test sửa nhầm trạng thái bản ghi thật.
+
+**Sao lưu phải kiểm chứng** bằng phục hồi vào schema nháp rồi đếm lại migration / quyền
+/ bản ghi; kèm `CHECKSUM.md5` và hướng dẫn nêu rõ có cần `migrate`/`seed` hay không.
+Dump cũ **cách ly sang thư mục riêng** kèm ghi chú cảnh báo — để cạnh nhau là sẽ có
+ngày phục hồi nhầm.
+
+| Chuyển dữ liệu từ hệ thống cũ | Quy tắc |
+|---|---|
+| Tên đăng nhập | tên + họ viết tắt + tên lót viết tắt (Đặng Hồng Quân → `quandh`); chuẩn hoá xong phải **bắt đầu bằng chữ cái**, nếu không thì lùi về tên đầy đủ |
+| Trùng người | Đối chiếu tên đã chuẩn hoá với người đã có **trước khi** tạo mới |
+| Rollback | Chỉ xoá bản ghi **do chính lệnh tạo ra** |
+| Tệp đính kèm | Qua `Core\Services\MediaService`, **không** gọi `addMedia()` thẳng |
+| Nghiệm thu | Đối chiếu **số lượng từng bảng** + **MD5 từng tệp**, không chỉ đếm tổng |
+
+**Mã dùng một lần** (command import, bảng ánh xạ, schema tạm) **xoá sau khi xong**; giữ
+lại thay đổi schema vì đó là thay đổi vĩnh viễn.
+
+### 12.10. Kiểm chứng trước khi khẳng định
+
+- **Không kẻ bảng khi chưa kiểm từng ô.** Bảng trông có thẩm quyền hơn câu văn, nên sai
+  trong bảng gây hại hơn.
+- **Phân biệt quyết định nghiệp vụ với lỗi của mình.** Chỉ đẩy sang người dùng những gì
+  thật sự là lựa chọn nghiệp vụ; lỗi trong code của mình thì tự sửa.
+- **Chứng minh lỗi có sẵn.** `git stash` rồi chạy lại để so trước/sau. Không có bước này
+  thì hoặc đi sửa nhầm nợ cũ, hoặc bỏ qua lỗi mình vừa gây.
+- **Không dùng regex nhiều dòng để sửa mã nguồn.** `(?:.*\n)*?` đã từng nuốt mất phần
+  còn lại của một Policy, chỉ chừa 13 dòng. Dùng thay thế chuỗi chính xác.
+- Cuối mỗi đợt, ghi việc còn treo ra **tài liệu trong repo** — hội thoại không sống qua
+  phiên làm việc.
+
+### 12.11. Checklist khi thêm một thao tác nghiệp vụ mới
+
+- [ ] Có người quyết định / điều kiện / hệ quả riêng → tách quyền riêng, **không** dùng ké quyền sẵn có
+- [ ] `PermissionSeeder`: thêm action **và** nhãn tiếng Việt trong `$ACTION_LABELS`
+- [ ] Route riêng, gác `->can('<ability>', '<model>')`
+- [ ] Policy method riêng — không OR nhiều quyền, không đọc `request()`
+- [ ] Endpoint chung (`update`, `/status`, bulk, import) **từ chối** trạng thái này, kèm `messages()` chỉ đúng nút cần bấm
+- [ ] Bulk dùng lại policy đơn, ghi từng dòng bằng Eloquent
+- [ ] Trạng thái cuối: khoá `update` + `updateProgress` + **`delete`**
+- [ ] `CaslAbilityConverter`: ánh xạ quyền mới sang `{action, subject}` cho FE
+- [ ] `LogActivity`: cập nhật `resourceLabel()`, `actionLabels`, `pathActions`
+- [ ] Web và miniapp sửa cùng đợt (xem CLAUDE.md của hai repo đó)
+- [ ] `docs/changelogs/YYYY-MM-DD-topic-fe.md` có bảng thao tác → endpoint → quyền → policy
+- [ ] `docs/database/{Module}.md` cập nhật nếu có migration
+- [ ] Rà tích hợp ngoài (n8n, script) nếu hợp đồng API đổi
+- [ ] `sail artisan scribe:generate`
+
 ---
 
 # Event-Driven Architecture — Danatec
