@@ -108,34 +108,72 @@ class TaskAssignmentPetitionService
     }
 
     /**
-     * Chỉ xóa được đơn nằm trong phạm vi của user (policy đã kiểm quyền), và bỏ
-     * qua đơn đã hoàn thành — giống hệt `bulkUpdateStatus` bên dưới. Policy chỉ
-     * kiểm được quyền chứ không kiểm được từng dòng, nên khoá phải chặn ở đây;
-     * không có nó thì chọn cả trang rồi bấm xoá là cuốn theo cả đơn đã chốt.
+     * Lọc danh sách id qua ĐÚNG policy của thao tác đơn lẻ.
      *
-     * @return int Số đơn thực sự bị xoá — controller cần để báo đúng, không báo
-     *             theo số đơn người dùng đã chọn.
+     * Policy hàng loạt nhận tên lớp chứ không nhận bản ghi nên không soi được
+     * từng dòng. Trước đây service tự chép lại luật (phạm vi phòng ban + khoá đơn
+     * đã hoàn thành), tức hai bản luật sống hai nơi và sẽ trôi khỏi nhau. Nay gọi
+     * lại chính policy đơn lẻ — `inScope()` và `isCompleted()` chỉ còn một bản.
+     *
+     * Hoặc làm hết hoặc không làm gì, giống bên công việc: bỏ qua âm thầm rồi báo
+     * "đã xoá N đơn" khiến người dùng tưởng xong việc.
+     *
+     * @return \Illuminate\Support\Collection<int, TaskAssignmentPetition>
      */
+    private function pullAuthorized(array $ids, string $ability, string $refusal)
+    {
+        $petitions = TaskAssignmentPetition::whereIn('id', $ids)->get();
+
+        $user = auth()->user();
+        [$allowed, $denied] = $petitions->partition(fn (TaskAssignmentPetition $p) => (bool) $user?->can($ability, $p));
+
+        if ($denied->isNotEmpty()) {
+            throw new \RuntimeException(sprintf(
+                '%s — %d/%d đơn được chọn không đạt điều kiện. Bỏ chọn những dòng đó rồi thử lại.',
+                $refusal, $denied->count(), count($ids)
+            ));
+        }
+
+        return $allowed;
+    }
+
     public function bulkDestroy(array $ids): int
     {
-        return $this->scopedQuery()
-            ->whereIn('id', $ids)
-            ->where('processing_status', '!=', PetitionStatusEnum::Completed->value)
-            ->delete();
+        if (empty($ids)) {
+            return 0;
+        }
+
+        $allowed = $this->pullAuthorized(
+            $ids,
+            'delete',
+            'Đơn đã hoàn thành bị khóa, và chỉ thao tác được trên đơn thuộc phòng ban của bạn'
+        );
+
+        $allowed->each->delete();
+
+        return $allowed->count();
     }
 
     public function bulkUpdateStatus(array $ids, string $status): int
     {
-        $data = ['processing_status' => $status];
+        if (empty($ids)) {
+            return 0;
+        }
 
+        $allowed = $this->pullAuthorized(
+            $ids,
+            'changeStatus',
+            'Đơn đã hoàn thành bị khóa, và chỉ thao tác được trên đơn thuộc phòng ban của bạn'
+        );
+
+        $data = ['processing_status' => $status];
         if ($status === PetitionStatusEnum::Completed->value) {
             $data['completed_at'] = now();
         }
 
-        return $this->scopedQuery()
-            ->whereIn('id', $ids)
-            ->where('processing_status', '!=', PetitionStatusEnum::Completed->value)
-            ->update($data);
+        $allowed->each(fn (TaskAssignmentPetition $p) => $p->update($data));
+
+        return $allowed->count();
     }
 
     public function updateProgress(TaskAssignmentPetition $petition, array $validated, array $files = [], array $removeAttachmentIds = []): TaskAssignmentPetition
@@ -208,20 +246,9 @@ class TaskAssignmentPetitionService
             ->toArray();
     }
 
-    /**
-     * Query đơn thư đã giới hạn theo phạm vi của user — dùng cho thao tác hàng loạt,
-     * nơi policy chỉ kiểm được quyền chứ không kiểm được từng dòng.
-     */
-    private function scopedQuery()
-    {
-        $query = TaskAssignmentPetition::where('organization_id', getPermissionsTeamId());
-
-        if (! $this->canViewAll()) {
-            $query->whereIn('department_id', $this->getUserDepartmentIds() ?: [0]);
-        }
-
-        return $query;
-    }
+    // Đã bỏ `scopedQuery()`: nó là bản chép lại của `inScope()` trong policy, dựng
+    // riêng cho thao tác hàng loạt. Nay hàng loạt gọi thẳng policy từng dòng nên
+    // không còn ai gọi tới, và phạm vi phòng ban chỉ còn một bản luật duy nhất.
 
     /** Có được xem/thao tác đơn thư của mọi phòng ban không. */
     private function canViewAll(): bool

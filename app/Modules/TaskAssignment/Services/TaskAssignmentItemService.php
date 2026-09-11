@@ -209,60 +209,81 @@ class TaskAssignmentItemService
         $item->delete();
     }
 
-    public function bulkDestroy(array $ids): void
+    /**
+     * Lọc danh sách id qua ĐÚNG policy của thao tác đơn lẻ.
+     *
+     * Trước đây hai method hàng loạt chép lại luật sở hữu sang service, vì policy
+     * hàng loạt nhận tên lớp chứ không nhận bản ghi nên không soi được từng dòng.
+     * Chép lại thì hai bản luật trôi khỏi nhau: `bulkUpdateStatus` từng quên đòi
+     * quyền `pause`/`cancel` mà bản đơn lẻ có, nên làm từng việc thì bị chặn mà
+     * chọn cả trang lại lọt. Nay gọi lại chính policy đơn lẻ — một bản luật duy nhất.
+     *
+     * Nạp sẵn `users`: policy phải soi pivot để biết ai là người thực hiện, không
+     * nạp thì mỗi dòng một truy vấn.
+     *
+     * Hoặc làm hết hoặc không làm gì: công việc bị xoá cứng (bảng không có
+     * `deleted_at`), làm nửa vời rồi mới báo là không sửa lại được.
+     *
+     * @return \Illuminate\Support\Collection<int, TaskAssignmentItem>
+     */
+    private function pullAuthorized(array $ids, string $ability, string $refusal)
     {
-        if (empty($ids)) {
-            return;
-        }
+        $items = TaskAssignmentItem::withoutGlobalScope('issuedDocument')
+            ->with('users')
+            ->whereIn('id', $ids)
+            ->get();
 
         $user = auth()->user();
-        if ($user && ! $user->can('task-overview.manageAll')) {
-            $invalidCount = TaskAssignmentItem::withoutGlobalScope('issuedDocument')
-                ->whereIn('id', $ids)
-                ->where('assigned_by', '!=', $user->id)
-                ->count();
-            if ($invalidCount > 0) {
-                throw new \RuntimeException('Bạn chỉ được xóa công việc do chính bạn giao.');
-            }
+        [$allowed, $denied] = $items->partition(fn (TaskAssignmentItem $item) => (bool) $user?->can($ability, $item));
+
+        if ($denied->isNotEmpty()) {
+            throw new \RuntimeException(sprintf(
+                '%s — %d/%d công việc được chọn không đạt điều kiện. Bỏ chọn những dòng đó rồi thử lại.',
+                $refusal, $denied->count(), count($ids)
+            ));
         }
 
-        TaskAssignmentItem::withoutGlobalScope('issuedDocument')->where('organization_id', getPermissionsTeamId())->whereIn('id', $ids)->delete();
+        return $allowed;
     }
 
-    public function bulkUpdateStatus(array $ids, string $status): void
+    public function bulkDestroy(array $ids): int
     {
         if (empty($ids)) {
-            return;
+            return 0;
         }
 
-        $user = auth()->user();
-        $paused = \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Paused->value;
-        $cancelled = \App\Modules\TaskAssignment\Enums\TaskProgressStatusEnum::Cancelled->value;
+        $allowed = $this->pullAuthorized($ids, 'delete', 'Bạn chỉ được xóa công việc do chính bạn giao');
 
-        if (in_array($status, [$paused, $cancelled], true)) {
-            if ($user && ! $user->can('task-overview.manageAll')) {
-                // Đường hàng loạt phải đòi ĐÚNG quyền của thao tác, không được
-                // mượn `task-assignment-documents.updateItem` của route. Nếu không
-                // thì tạm dừng / huỷ từng việc bị chặn vì thiếu quyền, mà chọn cả
-                // trang rồi đổi hàng loạt lại lọt.
-                $needed = $status === $paused ? 'my-assigned-tasks.pause' : 'my-assigned-tasks.cancel';
-                if (! $user->can($needed)) {
-                    throw new \RuntimeException($status === $paused
-                        ? 'Bạn không có quyền tạm dừng công việc.'
-                        : 'Bạn không có quyền hủy công việc.');
-                }
+        // Xoá từng bản ghi qua Eloquent chứ không mass delete: observer mới chạy để
+        // huỷ lịch nhắc đang chờ. Mass delete để lại lịch nhắc mồ côi, đến hạn vẫn
+        // gửi thông báo cho công việc không còn tồn tại.
+        $allowed->each->delete();
 
-                $invalidCount = TaskAssignmentItem::withoutGlobalScope('issuedDocument')
-                    ->whereIn('id', $ids)
-                    ->where('assigned_by', '!=', $user->id)
-                    ->count();
-                if ($invalidCount > 0) {
-                    throw new \RuntimeException('Bạn chỉ được tạm dừng hoặc hủy công việc do chính bạn giao.');
-                }
-            }
+        return $allowed->count();
+    }
+
+    public function bulkUpdateStatus(array $ids, string $status): int
+    {
+        if (empty($ids)) {
+            return 0;
         }
 
-        TaskAssignmentItem::withoutGlobalScope('issuedDocument')->where('organization_id', getPermissionsTeamId())->whereIn('id', $ids)->update($this->buildStatusUpdateData($status));
+        // Mỗi trạng thái đích là một nghiệp vụ riêng với quyền riêng — dùng đúng
+        // ability đó thay vì gác chung bằng quyền sửa công việc của route.
+        [$ability, $refusal] = match ($status) {
+            TaskProgressStatusEnum::Paused->value => ['pause', 'Bạn chỉ được tạm dừng công việc do chính bạn giao'],
+            TaskProgressStatusEnum::Cancelled->value => ['cancel', 'Bạn chỉ được hủy công việc do chính bạn giao'],
+            default => ['changeStatus', 'Bạn không đổi được trạng thái của công việc không liên quan'],
+        };
+
+        $allowed = $this->pullAuthorized($ids, $ability, $refusal);
+        $data = $this->buildStatusUpdateData($status);
+
+        // Cũng phải đi qua Eloquent: observer tính lại lịch nhắc theo trạng thái mới,
+        // và huỷ lịch đang chờ khi công việc đóng lại.
+        $allowed->each(fn (TaskAssignmentItem $item) => $item->update($data));
+
+        return $allowed->count();
     }
 
     public function changeStatus(TaskAssignmentItem $item, string $status): TaskAssignmentItem

@@ -137,18 +137,15 @@ class TaskAssignmentPetitionController extends Controller
      */
     public function bulkDestroy(BulkDestroyPetitionRequest $request): JsonResponse
     {
-        $ids = $request->input('ids');
-        $deleted = $this->service->bulkDestroy($ids);
-        $skipped = count($ids) - $deleted;
-
-        // Báo đúng số đã xoá, không báo số đã chọn: đơn đã hoàn thành bị khoá nên
-        // service bỏ qua, nói "đã xoá N đơn" theo số chọn là nói sai.
-        $message = "Đã xóa thành công {$deleted} đơn thư!";
-        if ($skipped > 0) {
-            $message .= " Bỏ qua {$skipped} đơn đã hoàn thành — mở khóa trước nếu muốn xóa.";
+        try {
+            $deleted = $this->service->bulkDestroy($request->input('ids'));
+        } catch (\RuntimeException $e) {
+            // Cả lô bị từ chối vì có dòng không đạt điều kiện. Không xoá một phần
+            // rồi báo con số cụt — người dùng tưởng xong việc.
+            return $this->error($e->getMessage(), 422);
         }
 
-        return $this->success(null, $message);
+        return $this->success(null, "Đã xóa thành công {$deleted} đơn thư!");
     }
 
     /**
@@ -159,9 +156,13 @@ class TaskAssignmentPetitionController extends Controller
      */
     public function bulkUpdateStatus(BulkUpdateStatusPetitionRequest $request): JsonResponse
     {
-        $count = $this->service->bulkUpdateStatus($request->input('ids'), $request->input('processing_status'));
+        try {
+            $count = $this->service->bulkUpdateStatus($request->input('ids'), $request->input('processing_status'));
+        } catch (\RuntimeException $e) {
+            return $this->error($e->getMessage(), 422);
+        }
 
-        return $this->success(null, "Đã cập nhật trạng thái $count đơn thư!");
+        return $this->success(null, "Đã cập nhật trạng thái {$count} đơn thư!");
     }
 
     /**

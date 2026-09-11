@@ -220,9 +220,15 @@ class TaskAssignmentItemController extends Controller
      */
     public function bulkDestroy(BulkDestroyItemRequest $request)
     {
-        $this->itemService->bulkDestroy($request->ids);
+        try {
+            $count = $this->itemService->bulkDestroy($request->ids);
+        } catch (\RuntimeException $e) {
+            // Cả lô bị từ chối vì có dòng không đạt điều kiện — nói rõ số dòng
+            // vướng thay vì im lặng xoá một phần.
+            return $this->error($e->getMessage(), 422);
+        }
 
-        return $this->success(null, 'Đã xóa thành công các công việc được chọn!');
+        return $this->success(null, "Đã xóa thành công {$count} công việc!");
     }
 
     /**
@@ -235,9 +241,13 @@ class TaskAssignmentItemController extends Controller
      */
     public function bulkUpdateStatus(BulkUpdateStatusItemRequest $request)
     {
-        $this->itemService->bulkUpdateStatus($request->ids, $request->processing_status);
+        try {
+            $count = $this->itemService->bulkUpdateStatus($request->ids, $request->processing_status);
+        } catch (\RuntimeException $e) {
+            return $this->error($e->getMessage(), 422);
+        }
 
-        return $this->success(null, 'Cập nhật trạng thái hàng loạt thành công!');
+        return $this->success(null, "Đã cập nhật trạng thái {$count} công việc!");
     }
 
     /**
