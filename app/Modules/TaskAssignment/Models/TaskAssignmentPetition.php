@@ -4,6 +4,7 @@ namespace App\Modules\TaskAssignment\Models;
 
 use App\Modules\Core\Models\TenantModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
@@ -11,6 +12,11 @@ class TaskAssignmentPetition extends TenantModel implements HasMedia
 {
     use HasFactory;
     use InteractsWithMedia;
+
+    // Xoá mềm: hồ sơ kiến nghị của người dân không được biến mất vì một cú bấm
+    // nhầm. Mọi truy vấn thường đã tự loại bản ghi đã xoá, muốn tra lại thì
+    // dùng withTrashed().
+    use SoftDeletes;
 
     protected $table = 'task_assignment_petitions';
 
@@ -34,8 +40,9 @@ class TaskAssignmentPetition extends TenantModel implements HasMedia
 
     protected $casts = [
         'submission_date' => 'date',
-        'deadline_date'   => 'date',
-        'completed_at'    => 'datetime',
+        'deadline_date' => 'date',
+        'completed_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 
     protected $appends = [
@@ -73,7 +80,7 @@ class TaskAssignmentPetition extends TenantModel implements HasMedia
 
     public function timingStatus(): string
     {
-        $done      = \App\Modules\TaskAssignment\Enums\PetitionStatusEnum::Completed->value;
+        $done = \App\Modules\TaskAssignment\Enums\PetitionStatusEnum::Completed->value;
         $cancelled = \App\Modules\TaskAssignment\Enums\PetitionStatusEnum::Cancelled->value;
 
         if ($this->processing_status === $cancelled) {
@@ -85,12 +92,12 @@ class TaskAssignmentPetition extends TenantModel implements HasMedia
                 return 'on_time';
             }
             $completedDate = $this->completed_at?->toDateString();
-            $endDate       = $this->deadline_date->toDateString();
+            $endDate = $this->deadline_date->toDateString();
 
             return match (true) {
                 $completedDate < $endDate => 'early',
                 $completedDate > $endDate => 'late',
-                default                   => 'on_time',
+                default => 'on_time',
             };
         }
 
@@ -100,6 +107,4 @@ class TaskAssignmentPetition extends TenantModel implements HasMedia
 
         return 'upcoming';
     }
-
-
 }
