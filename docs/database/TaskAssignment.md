@@ -1,7 +1,7 @@
 # DATABASE DESIGN — Module TaskAssignment
 
 > Ngày tạo: 00:00:00 16/06/2026  
-> Cập nhật lần cuối: 15:20:00 10/09/2026
+> Cập nhật lần cuối: 09:05:00 11/09/2026
 
 Giao việc liên phòng ban.
 
@@ -105,7 +105,7 @@ Công việc thuộc văn bản.
 |-----|------|----------|----------|---------------------|
 | id | bigint unsigned | No | — | PK |
 | task_assignment_document_id | bigint unsigned | No | — | FK CASCADE, INDEX |
-| name | varchar(255) | No | — | |
+| name | text | No | — | Đổi từ varchar(255) ngày 19/08/2026: tên công việc do AI trích từ văn bản chỉ đạo thường là cả một câu, dài nhất trong dữ liệu thật là 1.960 ký tự |
 | description | text | Yes | null | |
 | task_assignment_item_type_id | bigint unsigned | Yes | null | FK nullOnDelete, INDEX |
 | deadline_type | varchar(255) | No | 'no_deadline' | has_deadline, no_deadline |
@@ -222,7 +222,7 @@ Xem schema chi tiết tại [docs/database/Core.md](Core.md) — Mục 9.6 `remi
 | sender_phone | varchar(30) | Yes | null | SĐT |
 | sender_email | varchar(255) | Yes | null | Email |
 | content | text | Yes | null | Nội dung đơn |
-| processing_status | varchar(30) | No | 'new' | new, processing, done |
+| processing_status | varchar(30) | No | 'new' | new, processing, completed, paused, cancelled. Đơn `completed` bị KHOÁ: không sửa / không đổi trạng thái / không xoá, phải `unlock` (quyền `task-assignment-petitions.manage`) trước |
 | completed_at | datetime | Yes | null | |
 | document_number | varchar(255) | Yes | null | Số hiệu văn bản trả lời |
 | document_excerpt | text | Yes | null | Trích yếu |
@@ -232,6 +232,7 @@ Xem schema chi tiết tại [docs/database/Core.md](Core.md) — Mục 9.6 `remi
 | updated_by | bigint unsigned | Yes | null | FK → users.id |
 | created_at | timestamp | Yes | null | |
 | updated_at | timestamp | Yes | null | |
+| deleted_at | timestamp | Yes | null | **Xoá mềm** từ 11/09/2026 — hồ sơ kiến nghị của người dân không biến mất vì một cú bấm nhầm; truy vấn thường tự loại, tra lại bằng `withTrashed()` |
 
 INDEX: department_id, processing_status, submission_date, organization_id.
 

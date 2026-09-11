@@ -1,7 +1,7 @@
 # Xin gia hạn thời hạn công việc — phân tích và thiết kế
 
 > Ngày tạo: 18:05:47 10/09/2026  
-> Cập nhật lần cuối: 18:05:47 10/09/2026
+> Cập nhật lần cuối: 09:10:00 11/09/2026
 
 Yêu cầu: người thực hiện xin gia hạn thời hạn công việc kèm lý do; chỉ người có
 quyền hoặc người quản lý công việc duyệt thì hạn mới đổi; lưu lại lịch sử xin
@@ -141,11 +141,15 @@ private function isAssignee(User $user, TaskAssignmentItem $item): bool
 `before()` sẵn có cho `task-overview.manageAll` tự động cho quản trị hệ thống
 duyệt hộ — đúng lối thoát mà sổ tay đã ghi cho trường hợp người giao nghỉ dài ngày.
 
-> **Cạm bẫy phải tránh.** Module đang có một bất đối xứng: `markDone` chỉ người
-> giao làm được, nhưng `reject` và `reopen` gác bằng `changeStatus` nên **người
-> thực hiện cũng làm được**. Nếu bê `changeStatus` sang dùng cho duyệt gia hạn
-> thì người thực hiện tự duyệt yêu cầu của chính mình. Bắt buộc dùng quyền riêng
-> + đối chiếu `assigned_by`.
+> **Cạm bẫy — đã vá ngày 11/09/2026.** Module từng có một bất đối xứng: `markDone`
+> chỉ người giao làm được, nhưng `reject` và `reopen` gác bằng `changeStatus` nên
+> **người thực hiện cũng làm được**. Nay `reject` và `reopen` đã có policy riêng
+> theo đúng khuôn `markDone` (quyền + đối chiếu `assigned_by`), và chính hai
+> method đó là hình mẫu gần nhất để viết `approveExtension`.
+>
+> Vẫn giữ nguyên cảnh báo cũ: **không** gác duyệt gia hạn bằng `changeStatus` —
+> policy đó (dùng cho `PATCH /{item}/status`, tức tạm dừng / huỷ) chỉ đòi "người
+> liên quan", nên người thực hiện sẽ tự duyệt yêu cầu của chính mình.
 
 ## 6. API
 
