@@ -361,6 +361,7 @@ class PermissionSeeder extends Seeder
         'updateProgress' => 'Cập nhật tiến độ',
         'markDone' => 'Đánh dấu hoàn thành',
         'exportMonthlyReport' => 'Xuất báo cáo giao ban tháng',
+        'analyze' => 'Phân tích văn bản bằng AI',
         'storeItem' => 'Thêm công việc',
         'updateItem' => 'Sửa công việc',
         'destroyItem' => 'Xóa công việc',
@@ -369,7 +370,7 @@ class PermissionSeeder extends Seeder
         'test' => 'Kiểm thử',
         'complete' => 'Đánh dấu hoàn thành',
         'approve' => 'Duyệt',
-        'reject' => 'Từ chối',
+        'reject' => 'Trả lại báo cáo',
         'attendees' => 'Quản lý đại biểu trong nhóm',
         'systemOverview' => 'Tổng quan hệ thống',
         'viewAll' => 'Xem toàn tổ chức',
@@ -378,12 +379,14 @@ class PermissionSeeder extends Seeder
         'reorder' => 'Sắp xếp lại',
         'duplicate' => 'Sao chép',
         'driver-view' => 'Xem lịch phân công lái xe',
+        'reopen' => 'Mở lại công việc',
         'pause' => 'Tạm dừng',
         'cancel' => 'Hủy',
         'manage' => 'Quản lý (Mở khóa)',
         'transfer' => 'Điều chuyển công việc',
         'report' => 'Báo cáo công việc',
         'note' => 'Ghi chú công việc',
+        'variables' => 'Biến trong mẫu thông báo',
     ];
 
     /** Tạo đầy đủ permission từ danh sách PERMISSIONS (kèm description, sort_order, parent_id).
