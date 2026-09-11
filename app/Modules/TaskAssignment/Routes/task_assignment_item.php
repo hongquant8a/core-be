@@ -27,5 +27,8 @@ Route::delete('/{taskAssignmentItem}', [TaskAssignmentItemController::class, 'de
 Route::patch('/{taskAssignmentItem}/progress', [TaskAssignmentItemController::class, 'updateProgress'])->middleware('can:updateProgress,taskAssignmentItem');
 Route::patch('/{taskAssignmentItem}/status', [TaskAssignmentItemController::class, 'changeStatus'])->middleware('can:changeStatus,taskAssignmentItem');
 Route::patch('/{taskAssignmentItem}/mark-done', [TaskAssignmentItemController::class, 'markDone'])->middleware('can:markDone,taskAssignmentItem');
-Route::patch('/{taskAssignmentItem}/reopen', [TaskAssignmentItemController::class, 'reopen'])->middleware('can:changeStatus,taskAssignmentItem');
-Route::patch('/{taskAssignmentItem}/reject', [TaskAssignmentItemController::class, 'reject'])->middleware('can:changeStatus,taskAssignmentItem');
+// Trả lại báo cáo và mở lại công việc là nghiệp vụ riêng, không phải đổi trạng
+// thái chung: chúng là mặt còn lại của việc duyệt nên gác bằng policy riêng,
+// chỉ người đã giao việc mới làm được — giống `mark-done`.
+Route::patch('/{taskAssignmentItem}/reopen', [TaskAssignmentItemController::class, 'reopen'])->middleware('can:reopen,taskAssignmentItem');
+Route::patch('/{taskAssignmentItem}/reject', [TaskAssignmentItemController::class, 'reject'])->middleware('can:reject,taskAssignmentItem');

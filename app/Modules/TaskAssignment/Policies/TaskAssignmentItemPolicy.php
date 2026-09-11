@@ -124,6 +124,38 @@ class TaskAssignmentItemPolicy
     }
 
     /**
+     * Trả lại báo cáo (reject) — nghiệp vụ riêng, KHÔNG dùng chung `changeStatus`.
+     *
+     * Đây là mặt còn lại của việc duyệt: `markDone` là chấp nhận, `reject` là từ
+     * chối. Nên nó phải cùng một luật với `markDone` — chỉ người đã giao việc.
+     * Trước đây route gác bằng `can:changeStatus`, mà policy đó chỉ đòi "người
+     * liên quan", nên chính người thực hiện tự trả lại báo cáo của mình được.
+     */
+    public function reject(User $user, TaskAssignmentItem $item): bool
+    {
+        if (! $user->can('my-assigned-tasks.changeStatus')) {
+            return false;
+        }
+
+        return (int) $item->assigned_by === $user->id;
+    }
+
+    /**
+     * Mở lại công việc đã đóng — nghiệp vụ riêng, cùng luật với `reject`.
+     *
+     * Mở lại việc đã hoàn thành là đảo ngược quyết định duyệt, nên quyền phải
+     * nằm đúng ở người đã ra quyết định đó.
+     */
+    public function reopen(User $user, TaskAssignmentItem $item): bool
+    {
+        if (! $user->can('my-assigned-tasks.changeStatus')) {
+            return false;
+        }
+
+        return (int) $item->assigned_by === $user->id;
+    }
+
+    /**
      * Cập nhật tiến độ — chỉ người được giao hoặc người giao.
      */
     public function updateProgress(User $user, TaskAssignmentItem $item): bool
@@ -234,6 +266,7 @@ class TaskAssignmentItemPolicy
 
         // Kiểm tra trong pivot (tránh N+1: load nếu chưa có)
         $item->loadMissing('users');
+
         return $item->users->contains('id', $user->id);
     }
 
