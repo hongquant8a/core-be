@@ -123,7 +123,7 @@ class OrganizationService
         $isTaskAssignment = fn ($c) => $c && $c->module_key === $moduleKey;
 
         // Non-reminder instant
-        foreach (['document_issued', 'task_assigned', 'task_completed', 'task_confirmed', 'report_submitted', 'task_rejected'] as $ek) {
+        foreach (['document_issued', 'task_assigned', 'task_completed', 'task_confirmed', 'report_submitted', 'task_rejected', 'deadline_extension_requested', 'deadline_extension_reviewed'] as $ek) {
             $c = $configs->get($ek);
             if (! $c) {
                 continue;
@@ -135,6 +135,8 @@ class OrganizationService
                 'task_confirmed' => 'Thông báo ngay khi xác nhận',
                 'report_submitted' => 'Thông báo ngay khi có báo cáo mới',
                 'task_rejected' => 'Thông báo ngay khi bị trả lại',
+                'deadline_extension_requested' => 'Thông báo ngay khi có yêu cầu gia hạn',
+                'deadline_extension_reviewed' => 'Thông báo ngay khi yêu cầu gia hạn được xử lý',
                 default => 'Gửi ngay lập tức',
             };
             $s = \App\Modules\Core\Models\NotificationSchedule::firstOrNew([

@@ -10,6 +10,8 @@ enum NotificationEventEnum: string
     case TaskConfirmed = 'task_confirmed';
     case ReportSubmitted = 'report_submitted';
     case TaskRejected = 'task_rejected';
+    case DeadlineExtensionRequested = 'deadline_extension_requested';
+    case DeadlineExtensionReviewed = 'deadline_extension_reviewed';
     case ReminderBefore = 'reminder_before';
     case ReminderOn = 'reminder_on';
     case ReminderAfter = 'reminder_after';
@@ -42,6 +44,8 @@ enum NotificationEventEnum: string
             self::TaskConfirmed,
             self::ReportSubmitted,
             self::TaskRejected,
+            self::DeadlineExtensionRequested,
+            self::DeadlineExtensionReviewed,
             self::ReminderBefore,
             self::ReminderOn,
             self::ReminderAfter => NotificationModuleEnum::TaskAssignment,
@@ -63,6 +67,8 @@ enum NotificationEventEnum: string
             self::TaskConfirmed => 'Công việc được xác nhận',
             self::ReportSubmitted => 'Có báo cáo công việc mới',
             self::TaskRejected => 'Công việc bị trả lại',
+            self::DeadlineExtensionRequested => 'Có yêu cầu gia hạn thời hạn',
+            self::DeadlineExtensionReviewed => 'Yêu cầu gia hạn đã được duyệt hoặc từ chối',
             self::ReminderBefore => 'Nhắc trước hạn',
             self::ReminderOn => 'Nhắc đến hạn',
             self::ReminderAfter => 'Nhắc quá hạn',

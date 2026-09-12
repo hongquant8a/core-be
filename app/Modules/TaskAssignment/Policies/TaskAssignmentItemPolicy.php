@@ -177,6 +177,38 @@ class TaskAssignmentItemPolicy
     }
 
     /**
+     * Xin gia hạn thời hạn — chỉ NGƯỜI THỰC HIỆN.
+     *
+     * Cố ý dùng `isAssignee()` chứ không phải `isOwnerOrAssigned()`: helper kia
+     * cho cả người giao việc lọt vào, mà họ sửa thẳng `end_at` qua màn sửa công
+     * việc được rồi, không phải xin ai.
+     */
+    public function requestExtension(User $user, TaskAssignmentItem $item): bool
+    {
+        if (! $user->can('my-received-tasks.requestExtension')) {
+            return false;
+        }
+
+        return $this->isAssignee($user, $item);
+    }
+
+    /**
+     * Duyệt / từ chối gia hạn — cùng luật với `markDone`: chỉ người đã giao việc.
+     *
+     * KHÔNG gác bằng `changeStatus`: policy đó chỉ đòi "người liên quan", nên
+     * người thực hiện sẽ tự duyệt yêu cầu của chính mình. Đây đúng là lỗ hổng
+     * `reject`/`reopen` từng mắc trước ngày 11/09/2026.
+     */
+    public function approveExtension(User $user, TaskAssignmentItem $item): bool
+    {
+        if (! $user->can('my-assigned-tasks.approveExtension')) {
+            return false;
+        }
+
+        return (int) $item->assigned_by === $user->id;
+    }
+
+    /**
      * Cập nhật tiến độ — chỉ người được giao hoặc người giao.
      */
     public function updateProgress(User $user, TaskAssignmentItem $item): bool
@@ -275,6 +307,17 @@ class TaskAssignmentItemPolicy
      * - Người giao (assigned_by)
      * - Người được giao (users pivot)
      */
+    /**
+     * Helper: CHỈ người thực hiện — người giao việc KHÔNG tính.
+     * Dùng cho thao tác mà người giao việc vốn đã có đường khác để làm.
+     */
+    private function isAssignee(User $user, TaskAssignmentItem $item): bool
+    {
+        $item->loadMissing('users');
+
+        return $item->users->contains('id', $user->id);
+    }
+
     private function isOwnerOrAssigned(User $user, TaskAssignmentItem $item): bool
     {
         if ((int) $item->assigned_by === $user->id) {

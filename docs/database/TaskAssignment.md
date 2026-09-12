@@ -199,6 +199,39 @@ Tệp đính kèm báo cáo.
 
 Ràng buộc: UNIQUE(task_assignment_item_report_id, media_id)
 
+### `task_assignment_item_extensions`
+Yêu cầu gia hạn thời hạn công việc — người thực hiện xin, người giao việc duyệt.
+
+| Cột | Kiểu | Nullable | Mặc định | Ràng buộc / Ghi chú |
+|-----|------|----------|----------|---------------------|
+| id | bigint unsigned | No | — | PK |
+| task_assignment_item_id | bigint unsigned | No | — | FK CASCADE (`fk_ta_extensions_item`) |
+| requested_by_user_id | bigint unsigned | Yes | null | FK SET NULL — người xin |
+| current_end_at | datetime | Yes | null | **Hạn tại thời điểm xin** — chụp lại để dòng lịch sử không mất nghĩa sau khi `items.end_at` đổi |
+| requested_end_at | datetime | No | — | Hạn xin dời tới. **Không ràng buộc** phải sau hạn cũ hay sau hiện tại |
+| reason | text | No | — | Lý do xin — bắt buộc, tối thiểu 10 ký tự |
+| status | varchar(20) | No | pending | `pending` · `approved` · `rejected` · `cancelled` |
+| reviewed_by_user_id | bigint unsigned | Yes | null | FK SET NULL — người duyệt |
+| reviewed_at | datetime | Yes | null | |
+| review_note | text | Yes | null | Ghi chú khi duyệt / lý do khi từ chối (bắt buộc với từ chối) |
+| organization_id | bigint unsigned | Yes | null | FK SET NULL |
+| created_at | timestamp | Yes | null | |
+| updated_at | timestamp | Yes | null | |
+
+Index: `(task_assignment_item_id, status)`, `(status, created_at)`
+
+Tên khoá ngoại đặt thủ công (`fk_ta_extensions_*`): tên Laravel tự sinh cho bảng này vượt giới hạn 64 ký tự của MySQL.
+
+**Quy tắc nghiệp vụ:**
+
+- Mỗi công việc chỉ có tối đa **1 yêu cầu `pending`**. MySQL không có unique index có điều kiện nên kiểm ở service kèm `lockForUpdate()`.
+- Chỉ xin được khi `deadline_type = has_deadline` và `processing_status` không thuộc `done` / `cancelled` / `pending_approval`.
+- **`items.end_at` chỉ đổi khi yêu cầu được DUYỆT.** Trong lúc chờ duyệt, công việc quá hạn vẫn tính là quá hạn và lịch nhắc vẫn chạy theo hạn cũ — gửi yêu cầu không phải là cách tạm hoãn.
+- Khi duyệt, `items.end_at` phải được ghi bằng **Eloquent** để `TaskAssignmentItemObserver` chạy và `ReminderScheduler` dựng lại lịch nhắc theo hạn mới.
+- Morph alias: `task_assignment_item_extension` (dùng cho bảng `notifications`).
+
+> Migration: `2026_09_12_000000_create_task_assignment_item_extensions_table.php`
+
 ### ~~`task_assignment_reminders`~~ — **ĐÃ XÓA ngày 28/06/2026**
 
 > Migration drop: `2026_06_28_000003_drop_old_reminder_tables.php`
@@ -266,6 +299,7 @@ task_assignment_types ──1-n──► task_assignment_documents
                                                     └── 1-n ──► reminders [Core] (remindable_type = TaskAssignmentItem)
 
 task_assignment_item_types ──1-n──► task_assignment_items
+task_assignment_items ──1-n──► task_assignment_item_extensions ──► users (người xin, người duyệt)
 
 task_assignment_departments
     ├── 1-n ──► task_assignment_employees ◄── users

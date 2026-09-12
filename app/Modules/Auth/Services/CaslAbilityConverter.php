@@ -104,6 +104,9 @@ class CaslAbilityConverter
                 // Nút "Mở lại" ở màn Đang giao từng được FE gác bằng can('update').
                 $aliases[] = ['action' => 'update', 'subject' => 'TaskAssignmentItems'];
                 break;
+            case 'my-assigned-tasks.approveExtension':
+                $aliases[] = ['action' => 'approveExtension', 'subject' => 'TaskAssignmentItems'];
+                break;
             case 'my-assigned-tasks.transfer':
                 $aliases[] = ['action' => 'store', 'subject' => 'TaskAssignmentItemTransfers'];
                 break;
@@ -115,6 +118,9 @@ class CaslAbilityConverter
                 $aliases[] = ['action' => 'updateProgress', 'subject' => 'TaskAssignmentItems'];
                 // Nút mở drawer cập nhật ở màn Được giao được FE gác bằng can('update')
                 $aliases[] = ['action' => 'update', 'subject' => 'TaskAssignmentItems'];
+                break;
+            case 'my-received-tasks.requestExtension':
+                $aliases[] = ['action' => 'requestExtension', 'subject' => 'TaskAssignmentItems'];
                 break;
             case 'my-received-tasks.report':
                 $aliases[] = ['action' => 'index', 'subject' => 'TaskAssignmentItemReports'];

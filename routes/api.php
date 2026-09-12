@@ -137,6 +137,11 @@ Route::middleware(['auth:sanctum', 'set.permissions.team', 'sync.fcm.token', 'lo
     Route::prefix('task-assignment-items/{taskAssignmentItem}/notes')->group(function () {
         require base_path('app/Modules/TaskAssignment/Routes/task_assignment_note.php');
     });
+    // scopeBindings: {extension} phải thuộc đúng {taskAssignmentItem} trong URL,
+    // không thì 404 — chặn việc duyệt yêu cầu của công việc khác qua URL ghép tay.
+    Route::prefix('task-assignment-items/{taskAssignmentItem}/extensions')->scopeBindings()->group(function () {
+        require base_path('app/Modules/TaskAssignment/Routes/task_assignment_item_extension.php');
+    });
 
     // Notification config scoped cho module TaskAssignment
     Route::prefix('task-assignment/notification-config')->group(function () {

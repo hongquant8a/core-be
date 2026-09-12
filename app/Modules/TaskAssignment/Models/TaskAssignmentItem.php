@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Collection;
 use Carbon\Carbon;
 use App\Modules\TaskAssignment\Enums\TaskAssignmentDocumentStatusEnum;
+use App\Modules\TaskAssignment\Enums\TaskExtensionStatusEnum;
 
 class TaskAssignmentItem extends TenantModel implements HasMedia, Remindable
 {
@@ -208,6 +209,21 @@ class TaskAssignmentItem extends TenantModel implements HasMedia, Remindable
     public function notes()
     {
         return $this->hasMany(TaskAssignmentItemNote::class, 'task_assignment_item_id');
+    }
+
+    public function extensions()
+    {
+        return $this->hasMany(TaskAssignmentItemExtension::class, 'task_assignment_item_id');
+    }
+
+    /**
+     * Yêu cầu gia hạn đang chờ duyệt — nhiều nhất một cái (ràng buộc ở service).
+     * Dùng cho FE: hiện nút Duyệt/Từ chối và chặn gửi yêu cầu thứ hai.
+     */
+    public function pendingExtension()
+    {
+        return $this->hasOne(TaskAssignmentItemExtension::class, 'task_assignment_item_id')
+            ->where('status', TaskExtensionStatusEnum::Pending->value);
     }
 
     public function assigner()

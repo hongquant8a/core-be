@@ -18,6 +18,8 @@ class NotificationEventConfigSeeder extends Seeder
     private const INSTANT_SCHEDULE_LABELS = [
         'report_submitted' => 'Thông báo ngay khi có báo cáo mới',
         'task_rejected' => 'Thông báo ngay khi bị trả lại',
+        'deadline_extension_requested' => 'Thông báo ngay khi có yêu cầu gia hạn',
+        'deadline_extension_reviewed' => 'Thông báo ngay khi yêu cầu gia hạn được xử lý',
     ];
 
     public function run(): void

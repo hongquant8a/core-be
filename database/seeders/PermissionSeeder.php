@@ -110,9 +110,14 @@ class PermissionSeeder extends Seeder
                 // mà bật/tắt không có tác dụng gì.
                 'index', 'export', 'transfer', 'note',
                 'markDone', 'reject', 'reopen', 'pause', 'cancel', 'changeStatus',
+                // Duyệt/từ chối yêu cầu gia hạn — cùng luật với markDone (chỉ
+                // người đã giao việc), nên là quyền riêng chứ không dùng ké.
+                'approveExtension',
             ],
             'my-received-tasks' => [
                 'index', 'export', 'updateProgress', 'report', 'note', 'transfer',
+                // Xin gia hạn thời hạn kèm lý do. Hạn chỉ dời khi được duyệt.
+                'requestExtension',
                 // Xem MỌI công việc được giao cho thành viên phòng ban mình (không chỉ
                 // của bản thân). Cấp cho vai trò theo dõi cấp phòng (vd Trưởng phòng).
                 'viewDepartment',
@@ -359,6 +364,8 @@ class PermissionSeeder extends Seeder
         'destroyByDate' => 'Xóa theo khoảng thời gian',
         'destroyAll' => 'Xóa toàn bộ',
         'updateProgress' => 'Cập nhật tiến độ',
+        'requestExtension' => 'Xin gia hạn thời hạn',
+        'approveExtension' => 'Duyệt gia hạn thời hạn',
         'markDone' => 'Đánh dấu hoàn thành',
         'exportMonthlyReport' => 'Xuất báo cáo giao ban tháng',
         'analyze' => 'Phân tích văn bản bằng AI',
@@ -543,6 +550,7 @@ class PermissionSeeder extends Seeder
             'my-received-tasks.updateProgress',
             'my-received-tasks.report',
             'my-received-tasks.note',
+            'my-received-tasks.requestExtension',
             // KHÔNG có `my-received-tasks.transfer`: điều chuyển công việc là thao
             // tác của người giao việc. Đã bỏ khỏi vai trò này ngày 25/08/2026 —
             // đừng thêm lại nếu không có yêu cầu nghiệp vụ mới.
@@ -581,6 +589,7 @@ class PermissionSeeder extends Seeder
             'my-received-tasks.updateProgress',
             'my-received-tasks.report',
             'my-received-tasks.note',
+            'my-received-tasks.requestExtension',
             'my-received-tasks.viewDepartment',
 
             // Tổng quan: số liệu phòng mình + xuất báo cáo giao ban tháng.
