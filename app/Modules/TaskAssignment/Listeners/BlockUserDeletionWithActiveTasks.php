@@ -26,6 +26,9 @@ class BlockUserDeletionWithActiveTasks
 
         $blocked = DB::table('task_assignment_item_user as tiu')
             ->join('task_assignment_items as ti', 'ti.id', '=', 'tiu.task_assignment_item_id')
+            // Công việc trong thùng rác không được chặn xoá người dùng: `DB::table`
+            // bỏ qua global scope của SoftDeletes nên phải tự loại.
+            ->whereNull('ti.deleted_at')
             ->whereIn('tiu.user_id', $event->userIds)
             ->whereIn('tiu.assignment_status', ['assigned', 'done'])
             ->whereNotIn('ti.processing_status', ['done', 'cancelled'])

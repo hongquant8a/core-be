@@ -91,6 +91,8 @@ class ItemResource extends JsonResource
             'assigned_by' => $this->whenLoaded('assigner', fn () => $this->formatUserSummary($this->assigner), null),
             'created_by' => $this->whenLoaded('creator', fn () => $this->formatUserSummary($this->creator), null),
             'updated_by' => $this->whenLoaded('editor', fn () => $this->formatUserSummary($this->editor), null),
+            // Chỉ có giá trị với bản ghi trong thùng rác — màn thùng rác cần biết xoá lúc nào.
+            'deleted_at' => $this->deleted_at?->format('H:i:s d/m/Y'),
             'created_at' => $this->created_at?->format('H:i:s d/m/Y'),
             'updated_at' => $this->updated_at?->format('H:i:s d/m/Y'),
 

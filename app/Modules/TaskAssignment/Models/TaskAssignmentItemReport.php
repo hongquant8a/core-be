@@ -5,6 +5,7 @@ namespace App\Modules\TaskAssignment\Models;
 use App\Modules\Core\Models\TenantModel;
 use App\Modules\Core\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
@@ -12,6 +13,7 @@ class TaskAssignmentItemReport extends TenantModel implements HasMedia
 {
     use HasFactory;
     use InteractsWithMedia;
+    use SoftDeletes;
 
     protected static function newFactory()
     {
@@ -35,6 +37,7 @@ class TaskAssignmentItemReport extends TenantModel implements HasMedia
     ];
 
     protected $casts = [
+        'deleted_at' => 'datetime',
         'completion_percent' => 'integer',
         'completed_at' => 'datetime',
     ];

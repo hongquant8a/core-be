@@ -153,19 +153,39 @@ class TaskAssignmentReportService
         }
     }
 
+    /**
+     * Xoá mềm báo cáo. Tệp đính kèm GIỮ NGUYÊN.
+     *
+     * Trước đây hàm này xoá cứng từng attachment và cả file media trên đĩa rồi
+     * mới xoá báo cáo. Với xoá mềm thì làm vậy là hỏng: khôi phục xong ra một
+     * báo cáo rỗng, còn file thì mất vĩnh viễn. Attachment chỉ nên bị dọn khi có
+     * đường xoá vĩnh viễn thật sự — hiện chưa có.
+     */
     public function destroy(TaskAssignmentItemReport $report): void
     {
+        $report->delete();
+    }
 
-        $attachments = $report->attachments()->with('media')->get();
+    /** Khôi phục báo cáo đã xoá mềm. Tệp đính kèm còn nguyên nên về theo. */
+    public function restore(TaskAssignmentItemReport $report): TaskAssignmentItemReport
+    {
+        $report->restore();
 
-        foreach ($attachments as $attachment) {
-            if ($attachment->media) {
-                $attachment->media->delete();
-            }
-            $attachment->delete();
+        return $report->load(['reporter', 'assignee', 'creator', 'editor', 'attachments.media']);
+    }
+
+    /** Thùng rác báo cáo. */
+    public function trash(array $filters, int $limit)
+    {
+        $query = TaskAssignmentItemReport::onlyTrashed()
+            ->with(['reporter', 'assignee', 'item:id,name'])
+            ->orderByDesc('deleted_at');
+
+        if (! empty($filters['task_assignment_item_id'])) {
+            $query->where('task_assignment_item_id', $filters['task_assignment_item_id']);
         }
 
-        $report->delete();
+        return $query->paginate($limit);
     }
 
     private function removeAttachments(TaskAssignmentItemReport $report, array $attachmentIds): void

@@ -38,4 +38,15 @@ class TaskAssignmentItemObserver
     {
         $this->scheduler->cancelPending($item);
     }
+
+    /**
+     * Khôi phục công việc từ thùng rác → dựng lại lịch nhắc theo thời hạn hiện có.
+     *
+     * `deleted()` đã huỷ hết lịch nhắc đang chờ lúc xoá, nên không dựng lại thì
+     * công việc sống lại mà không còn ai nhắc — im lặng, không có gì báo.
+     */
+    public function restored(TaskAssignmentItem $item): void
+    {
+        $this->scheduler->scheduleFor($item);
+    }
 }

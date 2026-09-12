@@ -209,6 +209,29 @@ class TaskAssignmentItemPolicy
     }
 
     /**
+     * Xem thùng rác công việc — quyền riêng, tách khỏi khôi phục.
+     *
+     * Tách để cấp được vai trò chỉ NHÌN thấy công việc đã xoá mà không tự lấy
+     * lại. Gộp một quyền thì hễ thấy là khôi phục được.
+     */
+    public function viewTrash(User $user): bool
+    {
+        return $user->can('task-assignment-documents.viewTrashItem');
+    }
+
+    /**
+     * Khôi phục công việc từ thùng rác — kéo theo báo cáo bị xoá cùng lần.
+     *
+     * Không đòi `isOwnerOrAssigned`: công việc trong thùng rác đã biến mất khỏi
+     * mọi màn, người liên quan không còn thấy để mà đòi. Đây là thao tác dọn dẹp
+     * của người quản lý, gác bằng quyền riêng là đủ.
+     */
+    public function restore(User $user, TaskAssignmentItem $item): bool
+    {
+        return $user->can('task-assignment-documents.restoreItem');
+    }
+
+    /**
      * Cập nhật tiến độ — chỉ người được giao hoặc người giao.
      */
     public function updateProgress(User $user, TaskAssignmentItem $item): bool

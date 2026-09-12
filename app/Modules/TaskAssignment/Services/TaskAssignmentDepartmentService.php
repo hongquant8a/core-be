@@ -173,10 +173,15 @@ class TaskAssignmentDepartmentService
             ->distinct()
             ->pluck('task_assignment_department_id');
 
-        $withTasks = DB::table('task_assignment_item_user')
-            ->whereIn('department_id', $ids)
+        // Chỉ công việc còn sống mới chặn xoá phòng ban. Pivot không có
+        // `deleted_at` nên phải join sang bảng công việc; `DB::table` cũng không
+        // có global scope của SoftDeletes.
+        $withTasks = DB::table('task_assignment_item_user as tiu')
+            ->join('task_assignment_items as ti', 'ti.id', '=', 'tiu.task_assignment_item_id')
+            ->whereNull('ti.deleted_at')
+            ->whereIn('tiu.department_id', $ids)
             ->distinct()
-            ->pluck('department_id');
+            ->pluck('tiu.department_id');
 
         $blockedIds = $withEmployees->merge($withTasks)->unique();
 

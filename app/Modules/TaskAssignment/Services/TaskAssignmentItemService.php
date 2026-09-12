@@ -14,6 +14,7 @@ use App\Modules\TaskAssignment\Models\TaskAssignmentEmployee;
 use App\Modules\TaskAssignment\Models\TaskAssignmentEmployeeDepartment;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItemAttachment;
+use App\Modules\TaskAssignment\Models\TaskAssignmentItemReport;
 use App\Services\Notification\Services\ReminderScheduler;
 use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
@@ -216,7 +217,85 @@ class TaskAssignmentItemService
 
     public function destroy(TaskAssignmentItem $item): void
     {
-        $item->delete();
+        $this->softDeleteMany(collect([$item]));
+    }
+
+    /**
+     * Xoá mềm công việc kèm báo cáo bên trong.
+     *
+     * Khoá ngoại cascade chỉ kích hoạt khi xoá CỨNG, nên báo cáo phải xoá tường
+     * minh ở đây. Dùng CHUNG một mốc `deleted_at` với công việc để lúc khôi phục
+     * lấy lại đúng bộ, không moi lên báo cáo đã bị xoá lẻ từ trước.
+     *
+     * Ghi từng dòng qua Eloquent, không mass delete: observer mới chạy để huỷ
+     * lịch nhắc đang chờ, không thì đến hạn vẫn nhắc về việc đã xoá.
+     *
+     * @param  \Illuminate\Support\Collection<int, TaskAssignmentItem>  $items
+     */
+    private function softDeleteMany($items): void
+    {
+        if ($items->isEmpty()) {
+            return;
+        }
+
+        DB::transaction(function () use ($items) {
+            $deletedAt = now();
+
+            // Xoá chuẩn để sự kiện `deleted` chạy (observer huỷ lịch nhắc), rồi
+            // ép `deleted_at` về mốc chung của cả lô bằng `saveQuietly` để không
+            // phát lại sự kiện. Mốc chung là thứ cho phép khôi phục đúng bộ.
+            $stamp = function ($model) use ($deletedAt) {
+                $model->delete();
+                $model->deleted_at = $deletedAt;
+                $model->saveQuietly();
+            };
+
+            TaskAssignmentItemReport::whereIn('task_assignment_item_id', $items->pluck('id'))
+                ->get()
+                ->each($stamp);
+
+            $items->each($stamp);
+        });
+    }
+
+    /** Khôi phục công việc kèm đúng bộ báo cáo đã xoá cùng lần. */
+    public function restore(TaskAssignmentItem $item): TaskAssignmentItem
+    {
+        DB::transaction(function () use ($item) {
+            $deletedAt = $item->deleted_at;
+
+            TaskAssignmentItemReport::onlyTrashed()
+                ->where('task_assignment_item_id', $item->id)
+                ->when($deletedAt, fn ($q) => $q->where('deleted_at', $deletedAt))
+                ->get()
+                ->each->restore();
+
+            // `restore()` phát sự kiện `restored` — observer dựng lại lịch nhắc.
+            $item->restore();
+        });
+
+        return $item->load(['document.type', 'itemType', 'users', 'assigner']);
+    }
+
+    /**
+     * Thùng rác công việc.
+     *
+     * Bỏ global scope `issuedDocument`: công việc bị xoá cùng văn bản thì văn bản
+     * cũng đang trong thùng rác, `whereHas('document')` sẽ loại hết và thùng rác
+     * trống trơn dù có dữ liệu.
+     */
+    public function trash(array $filters, int $limit)
+    {
+        $query = TaskAssignmentItem::onlyTrashed()
+            ->withoutGlobalScope('issuedDocument')
+            ->with(['itemType', 'users', 'assigner'])
+            ->orderByDesc('deleted_at');
+
+        if (! empty($filters['search'])) {
+            $query->where('name', 'like', '%'.$filters['search'].'%');
+        }
+
+        return $query->paginate($limit);
     }
 
     /**
@@ -264,10 +343,8 @@ class TaskAssignmentItemService
 
         $allowed = $this->pullAuthorized($ids, 'delete', 'Bạn chỉ được xóa công việc do chính bạn giao');
 
-        // Xoá từng bản ghi qua Eloquent chứ không mass delete: observer mới chạy để
-        // huỷ lịch nhắc đang chờ. Mass delete để lại lịch nhắc mồ côi, đến hạn vẫn
-        // gửi thông báo cho công việc không còn tồn tại.
-        $allowed->each->delete();
+        // Xoá mềm kèm báo cáo bên trong, từng dòng qua Eloquent để observer chạy.
+        $this->softDeleteMany($allowed);
 
         return $allowed->count();
     }
@@ -857,7 +934,10 @@ class TaskAssignmentItemService
         $paused = TaskProgressStatusEnum::Paused->value;
         $hasDeadline = TaskDeadlineTypeEnum::HasDeadline->value;
 
+        // `DB::table` bỏ qua global scope của SoftDeletes — phải tự loại bản ghi
+        // đã xoá mềm, không thì thống kê đếm cả công việc trong thùng rác.
         $query = DB::table('task_assignment_items as ti')
+            ->whereNull('ti.deleted_at')
             ->join('task_assignment_item_types as tit', 'tit.id', '=', 'ti.task_assignment_item_type_id')
             ->where('tit.status', 'active')
             ->whereExists(function ($sub) {
@@ -944,7 +1024,9 @@ class TaskAssignmentItemService
         $toDate = $filters['to_date'] ?? null;
         $toDateEnd = $toDate ? Carbon::parse($toDate)->endOfDay() : null;
 
+        // Xem chú thích ở statsByItemType: `DB::table` không có scope xoá mềm.
         $query = DB::table('task_assignment_items as ti')
+            ->whereNull('ti.deleted_at')
             ->join(DB::raw('(SELECT DISTINCT task_assignment_item_id, department_id FROM task_assignment_item_user) as tiu'),
                 'tiu.task_assignment_item_id', '=', 'ti.id')
             ->join('task_assignment_departments as td', 'td.id', '=', 'tiu.department_id')
@@ -1029,8 +1111,11 @@ class TaskAssignmentItemService
         $fromDate = $filters['from_date'] ?? null;
         $toDate = $filters['to_date'] ?? null;
 
+        // Pivot không có `deleted_at`; công việc thì có. Không loại thì thống kê
+        // theo người dùng đếm cả công việc đã nằm trong thùng rác.
         $query = DB::table('task_assignment_item_user as tiu')
             ->join('task_assignment_items as ti', 'ti.id', '=', 'tiu.task_assignment_item_id')
+            ->whereNull('ti.deleted_at')
             ->join('users as u', 'u.id', '=', 'tiu.user_id')
             ->whereExists(function ($sub) {
                 $sub->select(DB::raw(1))
@@ -1162,8 +1247,12 @@ class TaskAssignmentItemService
         $pendingApproval = TaskProgressStatusEnum::PendingApproval->value;
         $hasDeadline = TaskDeadlineTypeEnum::HasDeadline->value;
 
+        // Xem chú thích ở statsByItemType: `DB::table` không có scope xoá mềm —
+        // loại cả công việc lẫn văn bản đang nằm trong thùng rác.
         $query = DB::table('task_assignment_items as ti')
+            ->whereNull('ti.deleted_at')
             ->join('task_assignment_documents as td', 'td.id', '=', 'ti.task_assignment_document_id')
+            ->whereNull('td.deleted_at')
             ->where('td.status', 'issued')
             ->when($filters['department_id'] ?? null, fn ($q, $v) => $q->whereExists(function ($sub) use ($v) {
                 $sub->select(DB::raw(1))

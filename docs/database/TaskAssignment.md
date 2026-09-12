@@ -199,6 +199,29 @@ Tệp đính kèm báo cáo.
 
 Ràng buộc: UNIQUE(task_assignment_item_report_id, media_id)
 
+### Xoá mềm — bốn bảng
+
+| Bảng | Xoá mềm từ | Thùng rác |
+|------|-----------|-----------|
+| `task_assignment_petitions` | 11/09/2026 | có, kèm khôi phục |
+| `task_assignment_documents` | 12/09/2026 | có, kèm khôi phục |
+| `task_assignment_items` | 12/09/2026 | có, kèm khôi phục |
+| `task_assignment_item_reports` | 12/09/2026 | có, kèm khôi phục |
+
+Các bảng còn lại của module vẫn xoá cứng.
+
+**Khoá ngoại cascade chỉ kích hoạt khi xoá CỨNG.** Xoá mềm một văn bản không tự kéo theo công việc bên trong, nên service làm tường minh: xoá văn bản → xoá mềm công việc → xoá mềm báo cáo, cả ba tầng dùng **chung một mốc `deleted_at`**.
+
+Mốc chung là thứ cho phép khôi phục đúng bộ: khôi phục văn bản chỉ lấy lại những công việc và báo cáo bị xoá **cùng lần đó**. Công việc bị xoá lẻ trước đó (mốc khác) vẫn ở nguyên trong thùng rác của nó.
+
+Ghi từng dòng bằng Eloquent chứ không mass update, để `TaskAssignmentItemObserver` chạy:
+- `deleted` → huỷ lịch nhắc đang chờ (không thì đến hạn vẫn nhắc về việc đã xoá).
+- `restored` → dựng lại lịch nhắc theo thời hạn hiện có.
+
+**Truy vấn `DB::table()` không có global scope của SoftDeletes.** Mọi thống kê thô đã được thêm `whereNull('deleted_at')` — thiếu là đếm cả bản ghi trong thùng rác. Cùng lý do, ba chỗ chặn xoá (phòng ban, nhân viên, người dùng) cũng phải loại công việc đã xoá, không thì bị chặn vì việc đã nằm trong thùng rác.
+
+**Tệp đính kèm của báo cáo được giữ nguyên khi xoá mềm** — trước đây `destroy` xoá cứng cả attachment lẫn file trên đĩa, nếu giữ nguyên thì khôi phục ra báo cáo rỗng và file mất vĩnh viễn.
+
 ### `task_assignment_item_extensions`
 Yêu cầu gia hạn thời hạn công việc — người thực hiện xin, người giao việc duyệt.
 

@@ -70,6 +70,18 @@ class TaskAssignmentItemReportPolicy
             && $this->inScope($user, $report);
     }
 
+    /** Xem thùng rác báo cáo — quyền riêng, tách khỏi khôi phục. */
+    public function viewTrash(User $user): bool
+    {
+        return $user->can('my-received-tasks.viewTrashReport');
+    }
+
+    /** Khôi phục báo cáo đã xoá. Tệp đính kèm còn nguyên nên về theo. */
+    public function restore(User $user, TaskAssignmentItemReport $report): bool
+    {
+        return $user->can('my-received-tasks.restoreReport');
+    }
+
     public function delete(User $user, TaskAssignmentItemReport $report): bool
     {
         return $user->can('my-received-tasks.report')

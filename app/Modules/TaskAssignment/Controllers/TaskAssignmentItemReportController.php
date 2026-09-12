@@ -11,6 +11,7 @@ use App\Modules\TaskAssignment\Requests\UpdateReportRequest;
 use App\Modules\TaskAssignment\Resources\ReportCollection;
 use App\Modules\TaskAssignment\Resources\ReportResource;
 use App\Modules\TaskAssignment\Services\TaskAssignmentReportService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 /**
@@ -151,5 +152,39 @@ class TaskAssignmentItemReportController extends Controller
         $this->reportService->destroy($taskAssignmentItemReport);
 
         return $this->success(null, 'Báo cáo đã được xóa thành công!');
+    }
+
+    /**
+     * Thùng rác báo cáo công việc
+     *
+     * Danh sách bản ghi đã xoá mềm, mới xoá trước.
+     *
+     * @queryParam limit int Số bản ghi mỗi trang. Example: 20
+     * @queryParam search string Tìm theo tên. Example: báo cáo
+     *
+     * @response 200 {"success": true, "data": [{"id": 5, "deleted_at": "09:12:00 12/09/2026"}]}
+     */
+    public function trash(Request $request)
+    {
+        $limit = (int) $request->input('limit', 20);
+
+        return $this->successCollection(new ReportCollection($this->reportService->trash($request->all(), $limit)));
+    }
+
+    /**
+     * Khôi phục báo cáo công việc đã xoá
+     *
+     * Tệp đính kèm của báo cáo được giữ nguyên lúc xoá nên về theo.
+     *
+     * @urlParam taskAssignmentItemReport int required ID bản ghi trong thùng rác. Example: 5
+     *
+     * @response 200 {"success": true, "message": "Đã khôi phục báo cáo!"}
+     */
+    public function restore(TaskAssignmentItemReport $taskAssignmentItemReport)
+    {
+        return $this->successResource(
+            new ReportResource($this->reportService->restore($taskAssignmentItemReport)),
+            'Đã khôi phục báo cáo!'
+        );
     }
 }

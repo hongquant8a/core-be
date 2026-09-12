@@ -16,6 +16,7 @@ use App\Modules\TaskAssignment\Resources\DocumentCollection;
 use App\Modules\TaskAssignment\Resources\DocumentResource;
 use App\Modules\TaskAssignment\Services\AiDocumentAnalysisService;
 use App\Modules\TaskAssignment\Services\TaskAssignmentDocumentService;
+use Illuminate\Http\Request;
 use RuntimeException;
 
 /**
@@ -272,5 +273,39 @@ class TaskAssignmentDocumentController extends Controller
     public function export(FilterRequest $request)
     {
         return $this->documentService->export($request->all());
+    }
+
+    /**
+     * Thùng rác văn bản giao việc
+     *
+     * Danh sách bản ghi đã xoá mềm, mới xoá trước.
+     *
+     * @queryParam limit int Số bản ghi mỗi trang. Example: 20
+     * @queryParam search string Tìm theo tên. Example: báo cáo
+     *
+     * @response 200 {"success": true, "data": [{"id": 5, "deleted_at": "09:12:00 12/09/2026"}]}
+     */
+    public function trash(Request $request)
+    {
+        $limit = (int) $request->input('limit', 20);
+
+        return $this->successCollection(new DocumentCollection($this->documentService->trash($request->all(), $limit)));
+    }
+
+    /**
+     * Khôi phục văn bản giao việc đã xoá
+     *
+     * Khôi phục kéo theo đúng bộ công việc và báo cáo đã xoá cùng lần. Công việc bị xoá lẻ trước đó (mốc thời gian khác) vẫn ở lại thùng rác của nó.
+     *
+     * @urlParam taskAssignmentDocument int required ID bản ghi trong thùng rác. Example: 5
+     *
+     * @response 200 {"success": true, "message": "Đã khôi phục văn bản giao việc kèm công việc và báo cáo bên trong!"}
+     */
+    public function restore(TaskAssignmentDocument $taskAssignmentDocument)
+    {
+        return $this->successResource(
+            new DocumentResource($this->documentService->restore($taskAssignmentDocument)),
+            'Đã khôi phục văn bản giao việc kèm công việc và báo cáo bên trong!'
+        );
     }
 }

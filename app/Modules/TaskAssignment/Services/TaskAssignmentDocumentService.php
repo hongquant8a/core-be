@@ -11,6 +11,7 @@ use App\Modules\TaskAssignment\Exports\DocumentsExport;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDocument;
 use App\Modules\TaskAssignment\Models\TaskAssignmentDocumentAttachment;
 use App\Modules\TaskAssignment\Models\TaskAssignmentItem;
+use App\Modules\TaskAssignment\Models\TaskAssignmentItemReport;
 use App\Services\Notification\Events\DocumentIssued;
 use App\Services\Notification\Services\ReminderScheduler;
 use Illuminate\Http\UploadedFile;
@@ -190,47 +191,116 @@ class TaskAssignmentDocumentService
 
     public function destroy(TaskAssignmentDocument $document): void
     {
-        DB::transaction(function () use ($document) {
-            $this->cleanupOrphanNotifications($document->items()->withoutGlobalScope('issuedDocument')->pluck('id')->all());
-            $document->delete();
-        });
+        $this->softDeleteMany([$document->id]);
     }
 
     public function bulkDestroy(array $ids): void
     {
+        $this->softDeleteMany($ids);
+    }
+
+    /**
+     * Xoá mềm văn bản kèm công việc và báo cáo bên trong.
+     *
+     * Khoá ngoại cascade chỉ kích hoạt khi xoá CỨNG, nên phải làm tường minh ở
+     * đây. Cả ba tầng dùng CHUNG một mốc `deleted_at`: lúc khôi phục chỉ lấy lại
+     * đúng những bản ghi bị xoá cùng lần đó, không vô tình moi lên công việc đã
+     * bị xoá lẻ từ trước vì lý do khác.
+     *
+     * Ghi từng dòng bằng Eloquent chứ không mass update để observer chạy —
+     * `TaskAssignmentItemObserver::deleted` huỷ lịch nhắc đang chờ, không thì
+     * người thực hiện vẫn bị nhắc về việc đã xoá.
+     *
+     * @param  array<int>  $ids
+     */
+    private function softDeleteMany(array $ids): void
+    {
+        if (empty($ids)) {
+            return;
+        }
+
         DB::transaction(function () use ($ids) {
-            $itemIds = TaskAssignmentItem::withoutGlobalScope('issuedDocument')->whereIn('task_assignment_document_id', $ids)->pluck('id')->all();
-            $this->cleanupOrphanNotifications($itemIds);
-            TaskAssignmentDocument::whereIn('id', $ids)->delete();
+            $documents = TaskAssignmentDocument::whereIn('id', $ids)->get();
+            if ($documents->isEmpty()) {
+                return;
+            }
+
+            $items = TaskAssignmentItem::withoutGlobalScope('issuedDocument')
+                ->whereIn('task_assignment_document_id', $documents->pluck('id'))
+                ->get();
+
+            $reports = TaskAssignmentItemReport::whereIn('task_assignment_item_id', $items->pluck('id'))->get();
+
+            $deletedAt = now();
+
+            // Xoá chuẩn để sự kiện `deleted` chạy (observer huỷ lịch nhắc), rồi
+            // ép `deleted_at` về mốc chung của cả lô bằng `saveQuietly` để không
+            // phát lại sự kiện. Mốc chung là thứ cho phép khôi phục đúng bộ.
+            $stamp = function ($model) use ($deletedAt) {
+                $model->delete();
+                $model->deleted_at = $deletedAt;
+                $model->saveQuietly();
+            };
+
+            $reports->each($stamp);
+            $items->each($stamp);
+            $documents->each($stamp);
         });
     }
 
     /**
-     * Xóa Notification + NotificationDelivery liên quan đến items trước khi document bị xóa.
-     * FK của notifications là polymorphic (notifiable_type + notifiable_id) → không cascade
-     * theo FK schema. Nếu không xóa, in-app notification còn lại trỏ đến item không tồn tại
-     * (404 khi user click), worker xử lý job sẽ mark delivery 'failed' với message "Notifiable
-     * no longer exists".
+     * Khôi phục văn bản kèm đúng bộ công việc và báo cáo đã xoá cùng lần.
      *
-     * @param  array<int>  $itemIds
+     * Lọc theo `deleted_at` bằng mốc của văn bản: công việc bị xoá lẻ trước đó
+     * (mốc khác) phải ở nguyên trong thùng rác của nó, không theo lên.
      */
-    private function cleanupOrphanNotifications(array $itemIds): void
+    public function restore(TaskAssignmentDocument $document): TaskAssignmentDocument
     {
-        if (empty($itemIds)) {
-            return;
-        }
+        DB::transaction(function () use ($document) {
+            $deletedAt = $document->deleted_at;
 
-        $notificationIds = Notification::where('notifiable_type', (new TaskAssignmentItem)->getMorphClass())
-            ->whereIn('notifiable_id', $itemIds)
-            ->pluck('id')
-            ->all();
-        if (empty($notificationIds)) {
-            return;
-        }
+            $items = TaskAssignmentItem::onlyTrashed()
+                ->withoutGlobalScope('issuedDocument')
+                ->where('task_assignment_document_id', $document->id)
+                ->when($deletedAt, fn ($q) => $q->where('deleted_at', $deletedAt))
+                ->get();
 
-        // Delivery FK has cascadeOnDelete on notification_id → tự xóa cùng Notification
-        Notification::whereIn('id', $notificationIds)->delete();
+            TaskAssignmentItemReport::onlyTrashed()
+                ->whereIn('task_assignment_item_id', $items->pluck('id'))
+                ->when($deletedAt, fn ($q) => $q->where('deleted_at', $deletedAt))
+                ->get()
+                ->each->restore();
+
+            // `restore()` phát sự kiện `restored` — observer dựng lại lịch nhắc.
+            $items->each->restore();
+
+            $document->restore();
+        });
+
+        return $document->load(['type', 'creator.media', 'editor.media']);
     }
+
+    /** Thùng rác văn bản — dùng lại đúng bộ lọc và phạm vi của `index`. */
+    public function trash(array $filters, int $limit)
+    {
+        $query = TaskAssignmentDocument::onlyTrashed()
+            ->with(['type', 'creator.media', 'editor.media'])
+            ->withCount(['items' => fn ($q) => $q->onlyTrashed()->withoutGlobalScope('issuedDocument')])
+            ->orderByDesc('deleted_at');
+
+        if (! empty($filters['search'])) {
+            $query->where('name', 'like', '%'.$filters['search'].'%');
+        }
+
+        return $query->paginate($limit);
+    }
+
+    // Đã bỏ `cleanupOrphanNotifications()`: nó xoá vĩnh viễn Notification và
+    // NotificationDelivery trỏ tới công việc, để tránh thông báo mồ côi khi công
+    // việc bị xoá CỨNG. Nay xoá là xoá mềm — bản ghi vẫn còn, khôi phục được, nên
+    // xoá vĩnh viễn thông báo cho một thao tác đảo ngược được là sai. Bấm vào
+    // thông báo của công việc đang trong thùng rác sẽ nhận 404 cho tới khi khôi
+    // phục; đó là cái giá đúng so với mất hẳn thông báo.
 
     public function bulkUpdateStatus(array $ids, string $status): void
     {

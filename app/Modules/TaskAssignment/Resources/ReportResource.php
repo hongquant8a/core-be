@@ -37,6 +37,8 @@ class ReportResource extends JsonResource
                     ];
                 });
             }),
+            // Chỉ có giá trị với bản ghi trong thùng rác — màn thùng rác cần biết xoá lúc nào.
+            'deleted_at' => $this->deleted_at?->format('H:i:s d/m/Y'),
             'created_at' => $this->created_at?->format('H:i:s d/m/Y'),
             'updated_at' => $this->updated_at?->format('H:i:s d/m/Y'),
         ];

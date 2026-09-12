@@ -16,9 +16,12 @@ use Illuminate\Support\Collection;
 use Carbon\Carbon;
 use App\Modules\TaskAssignment\Enums\TaskAssignmentDocumentStatusEnum;
 use App\Modules\TaskAssignment\Enums\TaskExtensionStatusEnum;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class TaskAssignmentItem extends TenantModel implements HasMedia, Remindable
 {
+    use SoftDeletes;
+
     use HasFactory;
     use InteractsWithMedia;
 
@@ -52,6 +55,7 @@ class TaskAssignmentItem extends TenantModel implements HasMedia, Remindable
     ];
 
     protected $casts = [
+        'deleted_at' => 'datetime',
         'start_at'           => 'datetime',
         'end_at'             => 'datetime',
         'reported_at'        => 'datetime',

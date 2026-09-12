@@ -95,6 +95,11 @@ class PermissionSeeder extends Seeder
                 'index', 'store', 'update', 'destroy',
                 'bulkDestroy', 'bulkUpdateStatus', 'export',
                 'storeItem', 'updateItem', 'destroyItem',
+                // Thùng rác văn bản và thùng rác công việc — hai màn riêng, mỗi
+                // màn một cặp xem/khôi phục. Tách xem khỏi khôi phục để cấp được
+                // vai trò chỉ nhìn thấy mà không tự lấy lại.
+                'viewTrash', 'restore',
+                'viewTrashItem', 'restoreItem',
                 // Phân tích văn bản bằng AI để sinh đầu việc nháp — tốn phí theo
                 // token nên tách quyền riêng, không gộp vào `store`.
                 'analyze',
@@ -118,6 +123,8 @@ class PermissionSeeder extends Seeder
                 'index', 'export', 'updateProgress', 'report', 'note', 'transfer',
                 // Xin gia hạn thời hạn kèm lý do. Hạn chỉ dời khi được duyệt.
                 'requestExtension',
+                // Thùng rác báo cáo: báo cáo xoá mềm từ 12/09/2026.
+                'viewTrashReport', 'restoreReport',
                 // Xem MỌI công việc được giao cho thành viên phòng ban mình (không chỉ
                 // của bản thân). Cấp cho vai trò theo dõi cấp phòng (vd Trưởng phòng).
                 'viewDepartment',
@@ -386,6 +393,10 @@ class PermissionSeeder extends Seeder
         'viewAll' => 'Xem toàn tổ chức',
         'viewTrash' => 'Xem thùng rác',
         'restore' => 'Khôi phục từ thùng rác',
+        'viewTrashItem' => 'Xem thùng rác công việc',
+        'restoreItem' => 'Khôi phục công việc đã xoá',
+        'viewTrashReport' => 'Xem thùng rác báo cáo',
+        'restoreReport' => 'Khôi phục báo cáo đã xoá',
         'viewDepartment' => 'Xem dữ liệu phòng ban mình',
         'manageAll' => 'Thao tác trên dữ liệu của người khác',
         'reorder' => 'Sắp xếp lại',

@@ -188,11 +188,16 @@ class TaskAssignmentEmployeeService
             ->groupBy('e.user_id')
             ->pluck('cnt', 'user_id');
 
-        $taskUsages = \Illuminate\Support\Facades\DB::table('task_assignment_item_user')
-            ->whereIn('user_id', $userIds)
-            ->select('user_id')
+        // Chỉ đếm công việc còn sống: `DB::table` bỏ qua global scope của
+        // SoftDeletes, không loại thì nhân viên bị chặn xoá vì việc đã trong
+        // thùng rác.
+        $taskUsages = \Illuminate\Support\Facades\DB::table('task_assignment_item_user as tiu')
+            ->join('task_assignment_items as ti', 'ti.id', '=', 'tiu.task_assignment_item_id')
+            ->whereNull('ti.deleted_at')
+            ->whereIn('tiu.user_id', $userIds)
+            ->select('tiu.user_id')
             ->selectRaw('COUNT(*) as cnt')
-            ->groupBy('user_id')
+            ->groupBy('tiu.user_id')
             ->pluck('cnt', 'user_id');
 
         $blocking = [];

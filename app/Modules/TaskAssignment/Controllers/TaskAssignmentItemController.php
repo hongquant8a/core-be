@@ -21,6 +21,7 @@ use App\Modules\TaskAssignment\Resources\ItemResource;
 use App\Modules\TaskAssignment\Resources\TimelineCollection;
 use App\Modules\TaskAssignment\Services\TaskAssignmentItemService;
 use App\Modules\TaskAssignment\Services\TaskAssignmentTimelineService;
+use Illuminate\Http\Request;
 
 /**
  * @group TaskAssignment - Công việc
@@ -594,5 +595,39 @@ class TaskAssignmentItemController extends Controller
         );
 
         return $this->successCollection(new TimelineCollection($paginator));
+    }
+
+    /**
+     * Thùng rác công việc
+     *
+     * Danh sách bản ghi đã xoá mềm, mới xoá trước.
+     *
+     * @queryParam limit int Số bản ghi mỗi trang. Example: 20
+     * @queryParam search string Tìm theo tên. Example: báo cáo
+     *
+     * @response 200 {"success": true, "data": [{"id": 5, "deleted_at": "09:12:00 12/09/2026"}]}
+     */
+    public function trash(Request $request)
+    {
+        $limit = (int) $request->input('limit', 20);
+
+        return $this->successCollection(new ItemCollection($this->itemService->trash($request->all(), $limit)));
+    }
+
+    /**
+     * Khôi phục công việc đã xoá
+     *
+     * Khôi phục kéo theo báo cáo đã xoá cùng lần và dựng lại lịch nhắc theo thời hạn hiện có.
+     *
+     * @urlParam taskAssignmentItem int required ID bản ghi trong thùng rác. Example: 5
+     *
+     * @response 200 {"success": true, "message": "Đã khôi phục công việc kèm báo cáo bên trong!"}
+     */
+    public function restore(TaskAssignmentItem $taskAssignmentItem)
+    {
+        return $this->successResource(
+            new ItemResource($this->itemService->restore($taskAssignmentItem)),
+            'Đã khôi phục công việc kèm báo cáo bên trong!'
+        );
     }
 }
