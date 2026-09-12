@@ -104,6 +104,23 @@ class CaslAbilityConverter
                 // Nút "Mở lại" ở màn Đang giao từng được FE gác bằng can('update').
                 $aliases[] = ['action' => 'update', 'subject' => 'TaskAssignmentItems'];
                 break;
+            // Thùng rác công việc nằm trong nhóm quyền `task-assignment-documents`
+            // (công việc là tài nguyên con của văn bản), nhưng FE dùng subject
+            // `TaskAssignmentItems` cho mọi thao tác trên công việc. Không có
+            // alias thì nút thùng rác ở màn công việc không bao giờ hiện.
+            case 'task-assignment-documents.viewTrashItem':
+                $aliases[] = ['action' => 'viewTrash', 'subject' => 'TaskAssignmentItems'];
+                break;
+            case 'task-assignment-documents.restoreItem':
+                $aliases[] = ['action' => 'restore', 'subject' => 'TaskAssignmentItems'];
+                break;
+            case 'my-received-tasks.viewTrashReport':
+                $aliases[] = ['action' => 'viewTrash', 'subject' => 'TaskAssignmentItemReports'];
+                break;
+            case 'my-received-tasks.restoreReport':
+                $aliases[] = ['action' => 'restore', 'subject' => 'TaskAssignmentItemReports'];
+                break;
+
             case 'my-assigned-tasks.approveExtension':
                 $aliases[] = ['action' => 'approveExtension', 'subject' => 'TaskAssignmentItems'];
                 break;
