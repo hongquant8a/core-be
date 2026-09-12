@@ -131,14 +131,16 @@ class ChangePasswordTest extends TestCase
 
     public function test_update_me_cannot_change_password(): void
     {
+        // Gửi kèm 'phone' (field self-edit hợp lệ) để chắc chắn request có đi qua service
+        // chứ không phải bị chặn từ validation — 'name' nay đã bị khoá, xem UserSelfUpdateIdentityTest.
         $this->putJson('/api/users/me', [
-            'name' => 'Tên mới',
+            'phone' => '0901234567',
             'password' => 'hacked123',
             'password_confirmation' => 'hacked123',
         ], $this->auth())->assertOk();
 
         $fresh = $this->user->fresh();
-        $this->assertSame('Tên mới', $fresh->name);
+        $this->assertSame('0901234567', $fresh->phone);
         $this->assertTrue(Hash::check('oldpassword', $fresh->password), 'PUT /users/me không được phép đổi mật khẩu.');
     }
 

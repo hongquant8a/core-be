@@ -122,7 +122,7 @@ class UserController extends Controller
      * Cập nhật self profile — tài khoản đang đăng nhập.
      *
      * Auth-only, dùng cùng UpdateUserRequest. Service đảm bảo không cho phép đổi role/quyền (assignments)
-     * — non-admin chỉ sửa được name/email/phone/avatar/profile basic fields.
+     * — non-admin chỉ sửa được phone/avatar/profile basic fields.
      *
      * Đổi mật khẩu KHÔNG đi qua endpoint này (xem `PUT /users/me/password`): ở đây không có
      * cách nào xác minh mật khẩu hiện tại nên field `password` bị loại khỏi payload.
@@ -132,7 +132,18 @@ class UserController extends Controller
         $payload = $request->validated();
         // Self-update tuyệt đối không động vào assignments/status — chặn ở payload trước khi gọi service.
         // 'password' cũng bị chặn: đổi mật khẩu bắt buộc qua changeMyPassword() để check mật khẩu cũ.
-        unset($payload['assignments'], $payload['status'], $payload['password']);
+        // 'name'/'email'/'user_name' là định danh tài khoản — chỉ admin sửa được qua PUT /users/{user}.
+        // Riêng email/user_name là thông tin đăng nhập: cho tự đổi mà không xác minh mật khẩu hiện tại
+        // lẫn email mới thì ai cầm được token là chiếm luôn tài khoản + kênh khôi phục. FE web và
+        // miniapp đã khoá 3 field này ở UI; đây là chốt chặn thật ở BE.
+        unset(
+            $payload['assignments'],
+            $payload['status'],
+            $payload['password'],
+            $payload['name'],
+            $payload['email'],
+            $payload['user_name'],
+        );
 
         $user = $this->userService->update(auth()->user(), $payload);
 
