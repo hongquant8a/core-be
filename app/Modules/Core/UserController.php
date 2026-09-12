@@ -136,6 +136,9 @@ class UserController extends Controller
         // Riêng email/user_name là thông tin đăng nhập: cho tự đổi mà không xác minh mật khẩu hiện tại
         // lẫn email mới thì ai cầm được token là chiếm luôn tài khoản + kênh khôi phục. FE web và
         // miniapp đã khoá 3 field này ở UI; đây là chốt chặn thật ở BE.
+        // 'telegram_chat_id' chỉ đến từ chính Telegram (webhook sau khi người dùng bấm START).
+        // Cho tự nhập ở đây thì gõ nhầm một chữ số là thông báo nội bộ chạy sang máy người lạ,
+        // mà người gõ không có cách nào biết. Liên kết đi qua POST /users/me/telegram/link.
         unset(
             $payload['assignments'],
             $payload['status'],
@@ -143,6 +146,7 @@ class UserController extends Controller
             $payload['name'],
             $payload['email'],
             $payload['user_name'],
+            $payload['telegram_chat_id'],
         );
 
         $user = $this->userService->update(auth()->user(), $payload);

@@ -7,6 +7,9 @@ use Illuminate\Support\Facades\Route;
 // Deploy webhook - public, xác thực bằng HMAC sha256 trong controller
 Route::post('/deploy/webhook', [DeployController::class, 'handle']);
 
+// Telegram webhook - public, xác thực bằng header bí mật của Telegram trong controller
+Route::post('/telegram/webhook', [\App\Modules\Core\TelegramController::class, 'webhook']);
+
 // Auth module - public routes (đăng nhập, quên mật khẩu, đặt lại mật khẩu)
 Route::prefix('auth')->middleware('log.activity')->group(function () {
     require base_path('app/Modules/Auth/Routes/auth.php');

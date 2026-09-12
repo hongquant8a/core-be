@@ -96,6 +96,12 @@ class SettingSeeder extends Seeder
         // Telegram
         ['key' => 'tg_enabled', 'value' => '0', 'group' => 'telegram', 'is_public' => false, 'type' => 'boolean', 'label' => 'Bật Telegram', 'sort_order' => 0],
         ['key' => 'tg_bot_token', 'value' => null, 'group' => 'telegram', 'is_public' => false, 'type' => 'string', 'label' => 'Bot Token', 'sort_order' => 1],
+        // Username bot dùng để dựng deep link t.me/<username>?start=... — bỏ trống thì hệ thống tự hỏi Telegram (getMe) rồi điền.
+        ['key' => 'tg_bot_username', 'value' => null, 'group' => 'telegram', 'is_public' => false, 'type' => 'string', 'label' => 'Username Bot (tự điền nếu để trống)', 'sort_order' => 2],
+        // Chuỗi bí mật Telegram gửi kèm mỗi webhook — lệnh telegram:set-webhook tự sinh nếu trống.
+        ['key' => 'tg_webhook_secret', 'value' => null, 'group' => 'telegram', 'is_public' => false, 'type' => 'string', 'label' => 'Khóa bí mật Webhook', 'sort_order' => 3],
+        // Domain HTTPS công khai của backend. Bỏ trống thì dùng APP_URL trong .env.
+        ['key' => 'tg_webhook_url', 'value' => null, 'group' => 'telegram', 'is_public' => false, 'type' => 'string', 'label' => 'Domain Webhook (mặc định lấy APP_URL)', 'sort_order' => 4],
         // Chat
         ['key' => 'chat_enabled', 'value' => '0', 'group' => 'chat', 'is_public' => false, 'type' => 'boolean', 'label' => 'Bật Chat', 'sort_order' => 0],
         ['key' => 'chat_server', 'value' => null, 'group' => 'chat', 'is_public' => false, 'type' => 'string', 'label' => 'Máy chủ Chat', 'sort_order' => 1],
@@ -129,12 +135,12 @@ class SettingSeeder extends Seeder
     {
         foreach (self::$items as $item) {
             $setting = Setting::firstOrNew(['key' => $item['key']]);
-            
+
             // Chỉ gán value nếu record chưa tồn tại (chưa được tạo/người dùng chưa sửa)
             if (! $setting->exists) {
                 $setting->value = $item['value'];
             }
-            
+
             $setting->group = $item['group'];
             $setting->is_public = $item['is_public'];
             $setting->type = $item['type'];

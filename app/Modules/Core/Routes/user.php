@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Core\TelegramController;
 use App\Modules\Core\UserController;
 use App\Modules\Core\UserProfileController;
 use Illuminate\Support\Facades\Route;
@@ -20,6 +21,12 @@ Route::patch('/me', [UserController::class, 'updateMe']);
 Route::put('/me/password', [UserController::class, 'changeMyPassword'])->middleware('throttle:5,10');
 Route::get('/me/profile', [UserProfileController::class, 'showMe']);
 Route::put('/me/profile', [UserProfileController::class, 'updateMe']);
+// Liên kết Telegram — self endpoints, auth-only. Throttle ở tạo link và gửi thử vì cả hai
+// đều gọi ra Telegram; bấm liên tục là tự làm phiền chính mình và đụng trần tần suất của bot.
+Route::get('/me/telegram', [TelegramController::class, 'status']);
+Route::post('/me/telegram/link', [TelegramController::class, 'link'])->middleware('throttle:5,10');
+Route::post('/me/telegram/test', [TelegramController::class, 'test'])->middleware('throttle:5,10');
+Route::delete('/me/telegram', [TelegramController::class, 'unlink']);
 
 Route::get('/{user}', [UserController::class, 'show'])->middleware('permission:users.show,web');
 Route::post('/', [UserController::class, 'store'])->middleware('permission:users.store,web');

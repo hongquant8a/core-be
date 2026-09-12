@@ -5,6 +5,7 @@ namespace Tests\Feature\Notification;
 use App\Modules\Core\Models\Notification;
 use App\Modules\Core\Models\NotificationDelivery;
 use App\Modules\Core\Models\User;
+use App\Modules\Core\Models\UserProfile;
 use App\Services\Notification\Contracts\ContentBuilder;
 use App\Services\Notification\DTOs\NotificationPayload;
 use App\Services\Notification\DTOs\Recipient;
@@ -91,6 +92,57 @@ class SendDeliveryJobTest extends TestCase
         $this->assertSame('msg-42', $d->message_id);
         $this->assertNotNull($d->sent_at);
         $this->assertNull($d->error_message);
+    }
+
+    public function test_permanent_telegram_error_unlinks_chat_id(): void
+    {
+        $delivery = $this->makeDelivery(channel: 'telegram');
+        $user = $delivery->notification->user;
+        UserProfile::firstOrCreate(['user_id' => $user->id])->update([
+            'telegram_chat_id' => '123456',
+            'telegram_linked_at' => now(),
+        ]);
+
+        $builder = Mockery::mock(ContentBuilder::class);
+        $builder->shouldReceive('build')->andReturn(
+            new NotificationPayload(['telegram'], new Recipient(telegramChatId: '123456'), 'hi')
+        );
+        $registry = new ContentBuilderRegistry;
+        $registry->register('test_event', $builder);
+
+        $svc = Mockery::mock(NotificationService::class);
+        $svc->shouldReceive('send')->once()->andReturn([
+            new SendResult('telegram', false, error: 'Forbidden: bot was blocked by the user', permanent: true),
+        ]);
+
+        (new SendDeliveryJob($delivery->id))->handle($registry, $svc);
+
+        $this->assertSame('failed', $delivery->fresh()->status);
+        $this->assertNull(UserProfile::where('user_id', $user->id)->value('telegram_chat_id'));
+    }
+
+    public function test_temporary_telegram_error_keeps_chat_id(): void
+    {
+        $delivery = $this->makeDelivery(channel: 'telegram');
+        $user = $delivery->notification->user;
+        UserProfile::firstOrCreate(['user_id' => $user->id])->update(['telegram_chat_id' => '123456']);
+
+        $builder = Mockery::mock(ContentBuilder::class);
+        $builder->shouldReceive('build')->andReturn(
+            new NotificationPayload(['telegram'], new Recipient(telegramChatId: '123456'), 'hi')
+        );
+        $registry = new ContentBuilderRegistry;
+        $registry->register('test_event', $builder);
+
+        $svc = Mockery::mock(NotificationService::class);
+        $svc->shouldReceive('send')->once()->andReturn([
+            new SendResult('telegram', false, error: "Bad Request: can't parse entities"),
+        ]);
+
+        (new SendDeliveryJob($delivery->id))->handle($registry, $svc);
+
+        // Tin nhắn dựng hỏng không được phép làm mất liên kết của người dùng.
+        $this->assertSame('123456', UserProfile::where('user_id', $user->id)->value('telegram_chat_id'));
     }
 
     public function test_marks_failed_on_provider_error(): void
