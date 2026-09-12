@@ -51,6 +51,9 @@ class PetitionResource extends JsonResource
             }),
             'created_by' => $this->whenLoaded('creator', fn () => $this->formatUserSummary($this->creator), null),
             'updated_by' => $this->whenLoaded('editor', fn () => $this->formatUserSummary($this->editor), null),
+            // Chỉ có giá trị với đơn trong thùng rác — màn thùng rác cần biết
+            // xoá lúc nào để sắp xếp và đối chiếu.
+            'deleted_at' => $this->deleted_at?->format('H:i:s d/m/Y'),
             'created_at' => $this->created_at?->format('H:i:s d/m/Y'),
             'updated_at' => $this->updated_at?->format('H:i:s d/m/Y'),
         ];

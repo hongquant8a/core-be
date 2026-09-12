@@ -68,6 +68,41 @@ class TaskAssignmentPetitionController extends Controller
     }
 
     /**
+     * Thùng rác đơn thư
+     *
+     * Danh sách đơn đã xoá mềm, mới xoá trước. Phạm vi dữ liệu giống danh sách
+     * chính: không có `viewAll` thì chỉ thấy đơn của phòng ban mình.
+     *
+     * @queryParam limit int Số bản ghi mỗi trang. Example: 20
+     * @queryParam search string Tìm theo người gửi, số văn bản, nội dung. Example: Nguyễn
+     *
+     * @response 200 {"success": true, "data": [{"id": 5, "sender_name": "Nguyễn Văn A", "deleted_at": "09:12:00 12/09/2026"}]}
+     */
+    public function trash(Request $request): JsonResponse
+    {
+        $limit = (int) $request->input('limit', 20);
+
+        return $this->successCollection(new PetitionCollection($this->service->trash($request->all(), $limit)));
+    }
+
+    /**
+     * Khôi phục đơn thư đã xoá
+     *
+     * Đưa đơn từ thùng rác trở lại danh sách. Tệp đính kèm còn nguyên nên về theo.
+     *
+     * @urlParam petition int required ID đơn thư trong thùng rác. Example: 5
+     *
+     * @response 200 {"success": true, "message": "Đã khôi phục đơn thư!"}
+     */
+    public function restore(TaskAssignmentPetition $petition): JsonResponse
+    {
+        return $this->successResource(
+            new PetitionResource($this->service->restore($petition)),
+            'Đã khôi phục đơn thư!'
+        );
+    }
+
+    /**
      * Chi tiết đơn thư
      *
      * @urlParam petition int required ID đơn thư. Example: 1

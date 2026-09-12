@@ -11,6 +11,15 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('can:viewAny,\App\Modules\TaskAssignment\Models\TaskAssignmentPetition');
     Route::get('/export', [TaskAssignmentPetitionController::class, 'export'])
         ->middleware('permission:task-assignment-petitions.export,web'); // Export không cần model instance
+    // Thùng rác phải đứng TRƯỚC `/{petition}`, nếu không "trash" bị nuốt làm id.
+    Route::get('/trash', [TaskAssignmentPetitionController::class, 'trash'])
+        ->middleware('can:viewTrash,\App\Modules\TaskAssignment\Models\TaskAssignmentPetition');
+    // `withTrashed()`: route binding mặc định bỏ qua bản ghi đã xoá mềm, nên
+    // không có nó thì khôi phục luôn trả 404.
+    Route::patch('/{petition}/restore', [TaskAssignmentPetitionController::class, 'restore'])
+        ->whereNumber('petition')
+        ->withTrashed()
+        ->middleware('can:restore,petition');
     Route::get('/{petition}', [TaskAssignmentPetitionController::class, 'show'])
         ->whereNumber('petition')
         ->middleware('can:view,petition');

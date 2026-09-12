@@ -46,6 +46,33 @@ class TaskAssignmentPetitionService
         return $query->paginate($limit);
     }
 
+    /**
+     * Thùng rác — đơn đã xoá mềm.
+     *
+     * Dùng lại `applyDepartmentRestriction` y như `index`: không có `viewAll`
+     * thì chỉ thấy đơn đã xoá của phòng ban mình. Thùng rác không được là cửa
+     * sau để đọc đơn của phòng khác.
+     */
+    public function trash(array $filters, int $limit)
+    {
+        $filters = $this->applyDepartmentRestriction($filters);
+        $query = TaskAssignmentPetition::onlyTrashed()
+            ->with(['department', 'creator', 'editor'])
+            ->orderByDesc('deleted_at');
+
+        $this->applyFilters($query, $filters);
+
+        return $query->paginate($limit);
+    }
+
+    /** Khôi phục đơn đã xoá mềm. Tệp đính kèm còn nguyên nên về theo. */
+    public function restore(TaskAssignmentPetition $petition): TaskAssignmentPetition
+    {
+        $petition->restore();
+
+        return $petition->load(['department', 'attachments.media', 'creator', 'editor']);
+    }
+
     public function show(TaskAssignmentPetition $petition): TaskAssignmentPetition
     {
         return $petition->load(['department', 'attachments.media', 'creator', 'editor']);

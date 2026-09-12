@@ -60,14 +60,43 @@ class TaskAssignmentPetitionPolicy
      *
      * Trước đây chỉ `update`/`changeStatus` xét khoá, còn xoá thì không — nên
      * sửa một chữ trong đơn đã chốt thì bị chặn, mà xoá sạch cả đơn lại được.
-     * Bảng `task_assignment_petitions` không có `deleted_at`: xoá là xoá vĩnh
-     * viễn, hồ sơ kiến nghị của người dân biến mất không khôi phục được.
+     * Xoá nay là XOÁ MỀM (`deleted_at`, từ 11/09/2026) và có thùng rác để khôi
+     * phục, nhưng đơn đã hoàn thành vẫn khoá: hồ sơ kiến nghị đã chốt không nên
+     * biến mất khỏi danh sách chỉ vì một cú bấm nhầm.
      * Muốn xoá thật thì mở khoá trước (`unlock`, cần quyền `manage`).
      */
     public function delete(User $user, TaskAssignmentPetition $petition): bool
     {
         return ! $this->isCompleted($petition)
             && $user->can('task-assignment-petitions.destroy')
+            && $this->inScope($user, $petition);
+    }
+
+    /**
+     * Xem thùng rác — quyền riêng, tách khỏi `restore`.
+     *
+     * Tách hai quyền để cấp được vai trò chỉ NHÌN thấy đơn đã xoá mà không tự
+     * khôi phục được (ví dụ văn thư theo dõi, thanh tra). Gộp một quyền thì hễ
+     * thấy là khôi phục được, không còn nấc trung gian.
+     *
+     * Phạm vi dữ liệu do service lọc (`applyDepartmentRestriction`), giống index.
+     */
+    public function viewTrash(User $user): bool
+    {
+        return $user->can('task-assignment-petitions.viewTrash');
+    }
+
+    /**
+     * Khôi phục đơn đã xoá mềm — cần quyền riêng VÀ đơn phải thuộc phạm vi.
+     *
+     * Không xét `isCompleted`: đơn đã hoàn thành vốn không xoá được, nên đơn nằm
+     * trong thùng rác chắc chắn chưa hoàn thành lúc bị xoá. Chặn thêm ở đây chỉ
+     * khoá cứng những đơn lọt vào thùng rác bằng đường khác (import, lệnh
+     * console) mà không có cách nào lấy ra.
+     */
+    public function restore(User $user, TaskAssignmentPetition $petition): bool
+    {
+        return $user->can('task-assignment-petitions.restore')
             && $this->inScope($user, $petition);
     }
 

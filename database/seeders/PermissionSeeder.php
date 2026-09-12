@@ -128,6 +128,9 @@ class PermissionSeeder extends Seeder
             'task-assignment-petitions' => [
                 'index', 'show', 'store', 'update', 'destroy',
                 'bulkDestroy', 'bulkUpdateStatus', 'changeStatus', 'export', 'manage',
+                // Đơn thư xoá mềm từ 11/09/2026. Tách hai quyền để cấp được vai
+                // trò chỉ NHÌN thấy thùng rác mà không tự khôi phục.
+                'viewTrash', 'restore',
                 // Xem/thao tác đơn thư của MỌI phòng ban. Không có quyền này thì chỉ
                 // thấy đơn thư của phòng ban mình thuộc về.
                 'viewAll',
@@ -381,6 +384,8 @@ class PermissionSeeder extends Seeder
         'attendees' => 'Quản lý đại biểu trong nhóm',
         'systemOverview' => 'Tổng quan hệ thống',
         'viewAll' => 'Xem toàn tổ chức',
+        'viewTrash' => 'Xem thùng rác',
+        'restore' => 'Khôi phục từ thùng rác',
         'viewDepartment' => 'Xem dữ liệu phòng ban mình',
         'manageAll' => 'Thao tác trên dữ liệu của người khác',
         'reorder' => 'Sắp xếp lại',
