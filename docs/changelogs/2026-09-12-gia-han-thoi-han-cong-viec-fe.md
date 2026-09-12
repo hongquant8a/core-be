@@ -149,10 +149,18 @@ theo trạng thái mới — quản trị chỉ cần một công tắc thay vì
 Chạy `sail artisan db:seed --class=NotificationEventConfigSeeder` sau khi kéo
 code để tạo cấu hình cho các tổ chức đã có.
 
-**Ghi nhận để xử lý sau:** `task_assignment_petitions.created_by` luôn NULL —
-hệ thống không có chỗ nào ghi người lập đơn (kể cả đơn nhập từ hệ thống cũ). Vì
-vậy `petition_status_changed` báo cho đại diện phòng ban chứ không phải người
-lập đơn. Khi nào ghi được người lập thì mở rộng thêm.
+**Đã sửa kèm:** `task_assignment_petitions.created_by` / `updated_by` trước đây
+**luôn NULL** — model `TaskAssignmentPetition` thiếu hẳn `booted()` mà
+`TaskAssignmentItem` và `TaskAssignmentDocument` đều có. Cột có sẵn trong bảng,
+model có quan hệ `creator()`/`editor()`, `PetitionResource` vẫn công bố hai
+trường đó ra API, nên màn hình luôn hiện trống người tạo / người cập nhật.
+
+Nay đã ghi đúng. `petition_status_changed` báo cho **người lập đơn và đại diện
+phòng ban**, trừ người vừa đổi trạng thái.
+
+> Đơn thư tạo **trước 12/09/2026** vẫn có `created_by` NULL và không truy ngược
+> được — những đơn đó chỉ báo cho đại diện phòng ban. Màn hình sẽ hiện trống ô
+> Người tạo với các đơn cũ.
 
 ## 6. Miniapp
 

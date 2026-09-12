@@ -23,7 +23,7 @@ class SendPetitionStatusChangedNotifications implements ShouldQueue
 
     public function handle(PetitionStatusChanged $event): void
     {
-        $petition = $event->petition->load('department');
+        $petition = $event->petition->load(['department', 'creator']);
         $organizationId = (int) $petition->organization_id;
         if (! $organizationId) {
             return;
@@ -34,13 +34,11 @@ class SendPetitionStatusChangedNotifications implements ShouldQueue
             return;
         }
 
-        // Báo cho người đại diện phòng ban tiếp nhận, TRỪ người vừa đổi trạng
-        // thái — họ tự làm nên không cần báo lại.
+        // Báo cho người lập đơn VÀ người đại diện phòng ban tiếp nhận, TRỪ người
+        // vừa đổi trạng thái — họ tự làm nên không cần báo lại.
         //
-        // Cố ý KHÔNG báo cho `creator`: bảng `task_assignment_petitions` không
-        // có chỗ nào ghi người tạo (`created_by` luôn NULL, kể cả đơn nhập từ hệ
-        // thống cũ), nên nhánh đó sẽ không bao giờ gửi được cho ai. Khi nào hệ
-        // thống ghi được người lập đơn thì mở rộng thêm ở đây.
+        // `creator` có thể NULL với đơn tạo trước ngày 12/09/2026: model khi đó
+        // chưa ghi `created_by`. Đơn cũ vẫn báo được cho đại diện phòng ban.
         //
         // Bảng `task_assignment_employee_department` không có cột `user_id` — nó
         // nối qua `task_assignment_employees` (xem chú thích đầu model).
@@ -57,6 +55,10 @@ class SendPetitionStatusChangedNotifications implements ShouldQueue
             ->filter()
             ->unique()
             ->reject(fn ($id) => (int) $id === $actorId);
+
+        if ($petition->created_by) {
+            $userIds = $userIds->push($petition->created_by)->unique()->reject(fn ($id) => (int) $id === $actorId);
+        }
 
         $recipients = User::whereIn('id', $userIds)->get();
 

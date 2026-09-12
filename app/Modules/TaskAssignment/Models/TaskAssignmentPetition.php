@@ -48,6 +48,22 @@ class TaskAssignmentPetition extends TenantModel implements HasMedia
     protected $appends = [
     ];
 
+    /**
+     * Ghi người tạo / người sửa — giống hệt TaskAssignmentItem và
+     * TaskAssignmentDocument.
+     *
+     * Model này trước đây KHÔNG có `booted()`, nên `created_by` và `updated_by`
+     * luôn NULL dù cột có sẵn trong bảng, model có quan hệ `creator()`/`editor()`
+     * và PetitionResource vẫn công bố hai trường đó ra API — màn hình luôn hiện
+     * trống. Hai cột cố ý KHÔNG nằm trong `$fillable`: gán ở đây để client không
+     * mạo danh người tạo được.
+     */
+    protected static function booted()
+    {
+        static::creating(fn (TaskAssignmentPetition $model) => $model->created_by = $model->updated_by = auth()->id());
+        static::updating(fn (TaskAssignmentPetition $model) => $model->updated_by = auth()->id());
+    }
+
     public function department()
     {
         return $this->belongsTo(TaskAssignmentDepartment::class, 'department_id');
