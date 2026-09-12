@@ -1,7 +1,7 @@
 # Bàn giao — các việc còn treo của phân hệ Quản lý công việc
 
 > Ngày tạo: 13:00:33 11/09/2026  
-> Cập nhật lần cuối: 13:00:33 11/09/2026
+> Cập nhật lần cuối: 09:25:00 12/09/2026
 
 Tài liệu này để **phiên làm việc khác (hoặc người khác) đọc là làm tiếp được ngay**,
 không cần đọc lại hội thoại cũ. Mỗi mục ghi đủ: đang ở đâu, vướng gì, ai quyết,
@@ -45,25 +45,23 @@ hoặc BE+FE khoảng nửa ngày (hướng 3).
 
 ---
 
-## 2. Xin gia hạn thời hạn công việc — thiết kế xong, CHỜ CHỐT 6 ĐIỂM
+## 2. Xin gia hạn thời hạn công việc — ĐÃ CHỐT, SẴN SÀNG VIẾT CODE
 
 **Thiết kế đầy đủ:** [`docs/answer/gia-han-thoi-han-cong-viec_180547_10092026.md`](gia-han-thoi-han-cong-viec_180547_10092026.md)
-— 11 mục, có ERD bảng mới, luồng trạng thái, policy, endpoint, ảnh hưởng FE/miniapp.
 
-**Mục 10 của tài liệu đó là 6 điểm cần người dùng chốt trước khi viết code:**
+Sáu điểm mở đã được chốt ngày 12/09/2026 (mục 10 của tài liệu đó):
 
-1. Giới hạn số lần gia hạn cho một công việc (không giới hạn / n lần).
-2. Gia hạn thành công thì có xoá dấu "trễ hạn" đã phát sinh hay không.
-3. Có chặn người quản lý sửa thẳng `end_at` (buộc đi qua luồng gia hạn) hay không.
-4. Có cho xin gia hạn khi việc đang `pending_approval` hay không.
-5. Kiểu endpoint: `PATCH /{id}/status` theo CLAUDE.md, hay `/approve` + `/reject`
-   theo tiền lệ đang có trong module.
-6. Miniapp ra cùng đợt hay ra sau.
+| # | Chốt |
+|---|---|
+| 1 | Không giới hạn số lần gia hạn; hiển thị "Đã gia hạn N lần" |
+| 2 | Dời hạn **chỉ có hiệu lực khi đã duyệt**; chờ duyệt thì vẫn tính trễ theo hạn cũ; không thêm cột `original_end_at` |
+| 3 | Quản lý vẫn sửa `end_at` trực tiếp được, giữ nguyên hiện trạng |
+| 4 | Không cho xin gia hạn khi việc đang `pending_approval` |
+| 5 | `/approve` + `/reject` theo tiền lệ module; quy ước chung ở CLAUDE.md mục 3 **đã cập nhật** theo hướng này |
+| 6 | Miniapp làm cùng đợt với web |
 
-**Sau khi chốt:** ước lượng khoảng 4 ngày (BE bảng + policy + endpoint + thông báo,
-FE màn xin và màn duyệt, miniapp nếu vào cùng đợt).
-
----
+**Còn lại:** viết code, ước lượng ~4 ngày (BE 1,5–2 · web 1–1,5 · miniapp 0,5 ·
+tài liệu và kiểm thử 0,5).
 
 ## 3. `core-fe/_shot.mjs` — script chụp màn hình, đang hỏng
 
@@ -145,8 +143,8 @@ vừa rồi gây ra (đã kiểm bằng cách `git stash` rồi chạy lại):
 
 ## 7. Cách tiếp tục ở phiên khác
 
-1. Mở tài liệu này. Mục 1, 2, 3 cần **người dùng quyết**, không phải việc lập trình
-   — hỏi trước khi làm.
+1. Mở tài liệu này. Mục 1 và 3 cần **người dùng quyết**, không phải việc lập trình
+   — hỏi trước khi làm. Mục 2 đã chốt xong, viết code được ngay.
 2. Mục 4 làm được ngay: rà các tích hợp ngoài.
 3. Mục 5 làm được ngay nếu muốn.
 4. Mục 6 chỉ để tra khi thấy test đỏ hay Pint đỏ — đừng gom vào cùng commit với

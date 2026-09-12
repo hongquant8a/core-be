@@ -1,14 +1,14 @@
 # Xin gia hạn thời hạn công việc — phân tích và thiết kế
 
 > Ngày tạo: 18:05:47 10/09/2026  
-> Cập nhật lần cuối: 09:10:00 11/09/2026
+> Cập nhật lần cuối: 09:20:00 12/09/2026
 
 Yêu cầu: người thực hiện xin gia hạn thời hạn công việc kèm lý do; chỉ người có
 quyền hoặc người quản lý công việc duyệt thì hạn mới đổi; lưu lại lịch sử xin
 gia hạn và lý do.
 
-Tài liệu này là **thiết kế, chưa triển khai**. Mục 10 liệt kê những chỗ cần chốt
-trước khi viết code.
+Tài liệu này là **thiết kế, chưa triển khai**. Sáu điểm mở đã được chốt ngày
+12/09/2026 — xem mục 10.
 
 ---
 
@@ -81,8 +81,8 @@ này vượt giới hạn 64 ký tự của MySQL, đúng vấn đề bảng đi
 |---|---|
 | Chỉ 1 yêu cầu `pending` mỗi công việc | Tránh hàng đợi yêu cầu chồng nhau, người duyệt không biết duyệt cái nào |
 | `deadline_type` phải là `has_deadline` | Việc không thời hạn thì gia hạn vô nghĩa |
-| `processing_status` không thuộc `done` / `cancelled` | Việc đã đóng thì không gia hạn |
-| `requested_end_at` > `end_at` hiện tại | Đây là **gia hạn**, không phải sửa hạn; rút ngắn hạn là việc của quản lý qua màn sửa công việc |
+| `processing_status` không thuộc `done` / `cancelled` / `pending_approval` | Việc đã đóng thì không gia hạn; việc đang chờ duyệt hoàn thành là chờ duyệt, không phải chờ hạn (chốt điểm 4) |
+| `requested_end_at` chỉ cần là ngày hợp lệ — **không ràng buộc gì thêm** | Người xin tự biết mình cần hạn nào; **người duyệt là cửa chặn, không phải form**. Chốt ngày 12/09/2026 |
 | Người xin phải nằm trong danh sách thực hiện | Người ngoài không xin hộ |
 | `reason` bắt buộc, tối thiểu ~10 ký tự | Yêu cầu gốc là "có lý do"; để trống thì lịch sử vô dụng |
 
@@ -157,16 +157,17 @@ duyệt hộ — đúng lối thoát mà sổ tay đã ghi cho trường hợp n
 |---|---|---|
 | `GET` | `/api/task-assignment-items/{item}/extensions` | `permission:my-received-tasks.requestExtension\|my-assigned-tasks.approveExtension` |
 | `POST` | `/api/task-assignment-items/{item}/extensions` | `can:requestExtension,taskAssignmentItem` |
-| `PATCH` | `/api/task-assignment-items/{item}/extensions/{extension}/status` | `can:approveExtension,taskAssignmentItem` |
+| `PATCH` | `/api/task-assignment-items/{item}/extensions/{extension}/approve` | `can:approveExtension,taskAssignmentItem` |
+| `PATCH` | `/api/task-assignment-items/{item}/extensions/{extension}/reject` | `can:approveExtension,taskAssignmentItem` |
 | `DELETE` | `/api/task-assignment-items/{item}/extensions/{extension}` | người xin thu hồi khi còn `pending` |
 
-`PATCH .../status` nhận `{ status: approved\|rejected, review_note }` — theo quy
-ước HTTP trong CLAUDE.md ("đổi trạng thái đơn → PATCH `/{id}/status`").
+Cả hai nhận `{ review_note }` (bắt buộc khi từ chối, tuỳ chọn khi duyệt).
 
-> Lưu ý: chính module này lại đang dùng endpoint riêng cho hành động —
-> `PATCH /{item}/mark-done`, `/reject`, `/reopen`. Nếu ưu tiên nhất quán nội bộ
-> module hơn quy ước chung thì đổi thành `/approve` và `/reject` (kebab-case).
-> Cần chốt — xem mục 10.
+**Chốt điểm 5:** dùng endpoint riêng theo tên nghiệp vụ, bám tiền lệ của chính
+module (`/mark-done`, `/reject`, `/reopen`, `/pause`, `/cancel` — tách ngày
+11/09/2026), **không** dùng `PATCH /{id}/status`. Duyệt và từ chối là hai nghiệp
+vụ, không phải hai giá trị của một trường trạng thái. Quy ước chung trong
+CLAUDE.md mục 3 đã được cập nhật theo hướng này.
 
 ## 7. Khi duyệt thì chuyện gì xảy ra
 
@@ -221,34 +222,51 @@ Gộp duyệt và từ chối vào một sự kiện `reviewed`, phân nhánh n�
 ContentBuilder theo `status` — ít file hơn ba sự kiện tách rời, và người dùng
 cũng chỉ cần một công tắc bật/tắt thay vì hai.
 
-## 10. Sáu điểm cần chốt trước khi viết code
+## 10. Sáu điểm đã chốt (12/09/2026)
 
-1. **Số lần gia hạn tối đa.** Đề xuất không giới hạn cứng, nhưng hiển thị "Đã gia
-   hạn N lần" cạnh thời hạn để người duyệt cân nhắc. Nếu nghiệp vụ đòi chặn (ví
-   dụ tối đa 2 lần) thì thêm kiểm tra ở service.
+| # | Điểm | Chốt |
+|---|---|---|
+| 1 | Số lần gia hạn tối đa | **Không giới hạn.** Hiển thị "Đã gia hạn N lần" cạnh thời hạn để người duyệt tự cân nhắc |
+| 2 | Mốc tính thời hạn | **Dời hạn chỉ có hiệu lực khi đã duyệt** — chi tiết ở 10.1 |
+| 3 | Quản lý sửa `end_at` trực tiếp | **Vẫn cho**, giữ nguyên hiện trạng |
+| 4 | Xin gia hạn khi đang `pending_approval` | **Không** |
+| 5 | Kiểu endpoint duyệt | **`/approve` + `/reject`** theo tiền lệ module, đồng thời **cập nhật lại quy ước chung** — chi tiết ở 10.2 |
+| 6 | Miniapp | **Cùng đợt** với web |
 
-2. **Gia hạn có xoá dấu "trễ hạn" không.** Trễ hạn là cờ tính từ `end_at`, nên
-   dời hạn xong việc đang trễ thành đúng hạn và thống kê "Trễ hạn" giảm. Đây có
-   thể là điều mong muốn, cũng có thể là kẽ hở. Ba lựa chọn: (a) chấp nhận, dấu
-   vết nằm ở lịch sử gia hạn; (b) thêm cột `original_end_at` trên công việc để
-   thống kê so với hạn gốc; (c) đánh dấu công việc "đã gia hạn" và tách thành
-   nhóm riêng trong thống kê. Đề xuất (a) cho đợt đầu.
+### 10.1. Điểm 2 — "dời hạn phải được duyệt thì mới tính từ mốc dời hạn"
 
-3. **Có chặn quản lý sửa `end_at` trực tiếp không.** Hiện Quản lý công việc vẫn
-   sửa hạn thẳng qua màn sửa công việc, không qua quy trình. Giữ nguyên thì lập
-   kế hoạch vẫn thoải mái, nhưng thay đổi kiểu đó không nằm trong lịch sử gia
-   hạn. Đề xuất giữ nguyên và ghi rõ trong sổ tay.
+Kéo theo bốn hệ quả, phải làm đúng cả bốn:
 
-4. **Người thực hiện có được xin gia hạn khi việc đang `pending_approval` không.**
-   Đề xuất không — đã báo cáo xong 100% rồi thì chờ duyệt, không phải chờ hạn.
+- **Trong lúc chờ duyệt, `end_at` KHÔNG đổi.** Việc đang trễ vẫn là trễ, vẫn nằm
+  trong thống kê Trễ hạn, lịch nhắc vẫn chạy theo hạn cũ. Gửi yêu cầu gia hạn
+  **không phải** là cách tạm hoãn — đây là điểm dễ hiểu nhầm nhất khi triển khai.
+- **Duyệt xong mới đổi `end_at`**, từ đó trễ hạn và lịch nhắc tính theo hạn mới.
+  Việc đang trễ trở thành đúng hạn — hệ quả cố ý, dấu vết nằm ở bảng lịch sử.
+- **Không thêm cột `original_end_at`.** Muốn biết hạn gốc thì đọc `current_end_at`
+  của lần gia hạn đầu tiên; bảng lịch sử đã chụp đủ.
+- **Từ chối thì không đổi gì** — `end_at` giữ nguyên, lịch nhắc giữ nguyên.
 
-5. **Kiểu endpoint đổi trạng thái** — `/status` theo quy ước chung, hay
-   `/approve` + `/reject` theo tiền lệ trong module. Xem mục 6.
+**Không ràng buộc `requested_end_at`.** Bản thiết kế đầu định chặn hạn xin phải lớn
+hơn hạn cũ và lớn hơn hiện tại; chốt ngày 12/09/2026 là **bỏ cả hai**. Người xin tự
+biết mình cần hạn nào, và mọi yêu cầu đều phải qua người duyệt — thêm luật ở form chỉ
+chặn nhầm trường hợp hợp lệ (việc đã trễ, việc cần dời gấp trong vài ngày). Bảng lịch
+sử vẫn chụp `current_end_at` → `requested_end_at` nên hạn có bị rút ngắn cũng nhìn ra.
 
-6. **Miniapp làm cùng đợt hay đợt sau.** Miniapp Zalo có màn duyệt
-   (`TaskAssignedApprovalActions.jsx`) nên trưởng phòng duyệt trên điện thoại
-   được. Nếu để đợt sau thì yêu cầu gia hạn gửi lúc đi công tác sẽ không duyệt
-   được từ điện thoại.
+### 10.2. Điểm 5 — sửa cả quy ước chung, không chỉ chọn cho tính năng này
+
+Quy ước trong CLAUDE.md mục 3 vốn ghi *"Đổi trạng thái đơn → `PATCH /{id}/status`"*.
+Từ đợt 11/09/2026, module đã tách `/mark-done`, `/reject`, `/reopen`, `/pause`,
+`/cancel` thành endpoint riêng vì mỗi cái là **một nghiệp vụ có quyền riêng** —
+gộp chung `/status` thì không gác quyền riêng cho từng thao tác được.
+
+Nên quy ước chung được cập nhật lại cho khớp thực tế:
+
+- `PATCH /{id}/status` — dành cho đổi trạng thái **không** có nghiệp vụ riêng
+  (bật/tắt `active`–`inactive`, chuyển qua lại giữa hai trạng thái tiến độ).
+- Thao tác có **quyền riêng** thì có **endpoint riêng đặt theo tên nghiệp vụ**
+  (`/approve`, `/reject`, `/mark-done`, `/pause`, …), kebab-case.
+
+Duyệt và từ chối gia hạn là hai nghiệp vụ, không phải hai giá trị của một trường.
 
 ## 11. Khối lượng
 

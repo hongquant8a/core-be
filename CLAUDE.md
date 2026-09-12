@@ -126,10 +126,18 @@ enum MeetingStatusEnum: string
 |---|---|---|
 | Xóa hàng loạt | `DELETE` | `/bulk-delete` — body `{"ids":[...]}` |
 | Cập nhật trạng thái hàng loạt | `PATCH` | `/bulk-status` |
-| Đổi trạng thái đơn | `PATCH` | `/{id}/status` |
+| Đổi trạng thái đơn (không có nghiệp vụ riêng) | `PATCH` | `/{id}/status` |
+| Thao tác nghiệp vụ có quyền riêng | `PATCH` | `/{id}/{ten-nghiep-vu}` — vd `/mark-done`, `/approve`, `/reject`, `/pause` |
 | Sắp xếp lại | `PATCH` | `/reorder` |
 
 > Laravel tự parse JSON body cho DELETE — không dùng POST thay thế.
+
+**Khi nào `/status`, khi nào endpoint riêng.** `/{id}/status` dành cho đổi trạng thái
+**không** có nghiệp vụ riêng — bật/tắt `active`–`inactive`, chuyển qua lại giữa hai
+trạng thái tiến độ. Thao tác có **quyền riêng** thì phải có **endpoint riêng đặt theo
+tên nghiệp vụ** (kebab-case), vì gộp vào `/status` thì không gác được quyền riêng cho
+từng thao tác — xem mục 12.1. Đây là lý do module TaskAssignment tách `/mark-done`,
+`/reject`, `/reopen`, `/pause`, `/cancel` ngày 11/09/2026.
 
 ## 4. Controller & Service Layer
 
