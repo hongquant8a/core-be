@@ -60,14 +60,14 @@ class TelegramChannel implements NotificationChannel
                     CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
                 ]])
                 ->post("https://api.telegram.org/bot{$cfg['bot_token']}/sendMessage", [
-                    'chat_id'    => $chatId,
-                    'text'       => $text,
+                    'chat_id' => $chatId,
+                    'text' => $text,
                     'parse_mode' => 'HTML',
                 ]);
 
             $data = $response->json() ?? [];
         } catch (Throwable $e) {
-            return $this->fail('HTTP error: ' . $e->getMessage());
+            return $this->fail('HTTP error: '.$e->getMessage());
         }
 
         if (($data['ok'] ?? false) === true) {
@@ -80,19 +80,42 @@ class TelegramChannel implements NotificationChannel
 
         $error = $data['description'] ?? 'Telegram gửi thất bại';
 
-        return $this->fail($error);
+        return $this->fail($error, $this->isPermanentError((int) ($data['error_code'] ?? 0), $error));
+    }
+
+    /**
+     * Lỗi vĩnh viễn = chat_id không còn dùng được, gửi lại bao nhiêu lần cũng hỏng.
+     *
+     * Chỉ bắt đúng nhóm này. Lỗi 400 khác (nội dung sai HTML, tin quá dài) là lỗi nội dung —
+     * coi là vĩnh viễn thì mất liên kết của người dùng chỉ vì một tin nhắn dựng hỏng.
+     */
+    private function isPermanentError(int $code, string $description): bool
+    {
+        if ($code === 403) {
+            return true; // bot bị chặn, bị kick, hoặc tài khoản Telegram đã xoá
+        }
+
+        $normalized = strtolower($description);
+
+        foreach (['chat not found', 'user is deactivated', 'peer_id_invalid', 'chat_id is empty'] as $needle) {
+            if (str_contains($normalized, $needle)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function loadConfig(): array
     {
         return [
-            'enabled'   => (bool) ($this->settings->getByKey('tg_enabled')['value'] ?? false),
+            'enabled' => (bool) ($this->settings->getByKey('tg_enabled')['value'] ?? false),
             'bot_token' => $this->settings->getByKey('tg_bot_token')['value'] ?? null,
         ];
     }
 
-    private function fail(string $error): SendResult
+    private function fail(string $error, bool $permanent = false): SendResult
     {
-        return new SendResult(channel: 'telegram', success: false, error: $error);
+        return new SendResult(channel: 'telegram', success: false, error: $error, permanent: $permanent);
     }
 }

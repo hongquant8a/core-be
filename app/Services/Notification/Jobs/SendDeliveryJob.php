@@ -3,6 +3,8 @@
 namespace App\Services\Notification\Jobs;
 
 use App\Modules\Core\Models\NotificationDelivery;
+use App\Modules\Core\Models\User;
+use App\Modules\Core\Models\UserProfile;
 use App\Services\Notification\DTOs\NotificationPayload;
 use App\Services\Notification\Enums\NotificationEventEnum;
 use App\Services\Notification\NotificationService;
@@ -13,6 +15,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class SendDeliveryJob implements ShouldQueue
 {
@@ -69,6 +72,34 @@ class SendDeliveryJob implements ShouldQueue
             'message_id' => $result->messageId,
             'error_message' => $result->error,
             'sent_at' => $result->success ? now() : null,
+        ]);
+
+        if ($result->permanent && $channel === 'telegram' && $recipient) {
+            $this->unlinkTelegram($recipient, $result->error);
+        }
+    }
+
+    /**
+     * Người dùng chặn bot hoặc xoá tài khoản Telegram → chat_id chết. Xoá luôn để lần sau
+     * channel bỏ qua thay vì gọi API hỏng mãi, và để giao diện cá nhân quay về trạng thái
+     * chưa liên kết cho người dùng biết mà nối lại.
+     */
+    private function unlinkTelegram(User $recipient, ?string $reason): void
+    {
+        $profile = UserProfile::where('user_id', $recipient->id)->first();
+
+        if (! $profile || ! $profile->telegram_chat_id) {
+            return;
+        }
+
+        $profile->update([
+            'telegram_chat_id' => null,
+            'telegram_linked_at' => null,
+        ]);
+
+        Log::warning('Telegram: gỡ liên kết do lỗi vĩnh viễn.', [
+            'user_id' => $recipient->id,
+            'reason' => $reason,
         ]);
     }
 

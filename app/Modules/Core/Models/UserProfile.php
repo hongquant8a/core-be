@@ -18,10 +18,15 @@ class UserProfile extends Model
         'permanent_address',
         'temporary_address',
         'telegram_chat_id',
+        'telegram_link_token',
+        'telegram_token_expires_at',
+        'telegram_linked_at',
     ];
 
     protected $casts = [
         'birth_date' => 'date',
+        'telegram_token_expires_at' => 'datetime',
+        'telegram_linked_at' => 'datetime',
     ];
 
     public function user(): BelongsTo
