@@ -174,7 +174,10 @@ Hồ sơ mở rộng của user (tách khỏi users để giảm clutter).
 | `id` | bigint PK | No | |
 | `user_id` | bigint FK | No | → users.id |
 | `phone` | varchar(20) | Yes | Số điện thoại chính |
-| `telegram_chat_id` | varchar(255) | Yes | Chat ID Telegram (dùng cho thông báo Telegram) |
+| `telegram_chat_id` | varchar(255) | Yes | Chat ID Telegram (dùng cho thông báo Telegram). **Có index** — webhook chỉ gửi chat_id, phải tra ngược ra user |
+| `telegram_link_token` | varchar(64) | Yes | Token dùng một lần cho deep link `t.me/<bot>?start=<token>`. **Unique**, xoá sau khi liên kết xong |
+| `telegram_token_expires_at` | datetime | Yes | Hạn của token liên kết (24 giờ kể từ lúc tạo) |
+| `telegram_linked_at` | datetime | Yes | Thời điểm liên kết thành công |
 | `position_name` | varchar(255) | Yes | Chức vụ |
 | `department_name` | varchar(255) | Yes | Phòng ban |
 | `avatar_media_id` | bigint | Yes | FK → media.id |
