@@ -20,6 +20,12 @@ class NotificationEventConfigSeeder extends Seeder
         'task_rejected' => 'Thông báo ngay khi bị trả lại',
         'deadline_extension_requested' => 'Thông báo ngay khi có yêu cầu gia hạn',
         'deadline_extension_reviewed' => 'Thông báo ngay khi yêu cầu gia hạn được xử lý',
+        'task_deadline_changed' => 'Thông báo ngay khi thời hạn thay đổi',
+        'task_status_changed' => 'Thông báo ngay khi tạm dừng, huỷ hoặc mở lại',
+        'note_added' => 'Thông báo ngay khi có trao đổi mới',
+        'petition_created' => 'Thông báo ngay khi có đơn thư mới',
+        'petition_status_changed' => 'Thông báo ngay khi đơn thư đổi trạng thái',
+        'document_updated' => 'Thông báo ngay khi văn bản được cập nhật',
     ];
 
     public function run(): void

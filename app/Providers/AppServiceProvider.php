@@ -79,6 +79,7 @@ class AppServiceProvider extends ServiceProvider
             'task_assignment_item'          => \App\Modules\TaskAssignment\Models\TaskAssignmentItem::class,
             'task_assignment_item_report'   => \App\Modules\TaskAssignment\Models\TaskAssignmentItemReport::class,
             'task_assignment_item_extension' => \App\Modules\TaskAssignment\Models\TaskAssignmentItemExtension::class,
+            'task_assignment_item_note'     => \App\Modules\TaskAssignment\Models\TaskAssignmentItemNote::class,
             'task_assignment_petition'      => \App\Modules\TaskAssignment\Models\TaskAssignmentPetition::class,
             'task_assignment_document'      => \App\Modules\TaskAssignment\Models\TaskAssignmentDocument::class,
         ]);

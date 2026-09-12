@@ -66,6 +66,10 @@ class TaskAssignmentPetitionService
                 $petition = TaskAssignmentPetition::create($data);
                 $this->uploadAttachments($petition, $files, $storedFiles, 'petition');
 
+                // Phân hệ đơn thư trước đây không có sự kiện thông báo nào: đơn
+                // mới về mà phòng ban tiếp nhận không ai biết.
+                event(new \App\Services\Notification\Events\PetitionCreated($petition));
+
                 return $petition->load(['department', 'attachments.media', 'creator', 'editor']);
             });
         } catch (\Throwable $exception) {
@@ -219,6 +223,7 @@ class TaskAssignmentPetitionService
 
     public function changeStatus(TaskAssignmentPetition $petition, string $status): TaskAssignmentPetition
     {
+        $previousStatus = $petition->processing_status;
         $data = ['processing_status' => $status];
 
         if ($status === PetitionStatusEnum::Completed->value) {
@@ -228,6 +233,10 @@ class TaskAssignmentPetitionService
         }
 
         $petition->update($data);
+
+        if ($previousStatus !== $status) {
+            event(new \App\Services\Notification\Events\PetitionStatusChanged($petition->fresh(), $previousStatus));
+        }
 
         return $petition->load(['department', 'attachments.media', 'creator', 'editor']);
     }

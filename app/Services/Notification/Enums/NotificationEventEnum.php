@@ -12,6 +12,12 @@ enum NotificationEventEnum: string
     case TaskRejected = 'task_rejected';
     case DeadlineExtensionRequested = 'deadline_extension_requested';
     case DeadlineExtensionReviewed = 'deadline_extension_reviewed';
+    case TaskDeadlineChanged = 'task_deadline_changed';
+    case TaskStatusChanged = 'task_status_changed';
+    case NoteAdded = 'note_added';
+    case PetitionCreated = 'petition_created';
+    case PetitionStatusChanged = 'petition_status_changed';
+    case DocumentUpdated = 'document_updated';
     case ReminderBefore = 'reminder_before';
     case ReminderOn = 'reminder_on';
     case ReminderAfter = 'reminder_after';
@@ -46,6 +52,12 @@ enum NotificationEventEnum: string
             self::TaskRejected,
             self::DeadlineExtensionRequested,
             self::DeadlineExtensionReviewed,
+            self::TaskDeadlineChanged,
+            self::TaskStatusChanged,
+            self::NoteAdded,
+            self::PetitionCreated,
+            self::PetitionStatusChanged,
+            self::DocumentUpdated,
             self::ReminderBefore,
             self::ReminderOn,
             self::ReminderAfter => NotificationModuleEnum::TaskAssignment,
@@ -69,6 +81,12 @@ enum NotificationEventEnum: string
             self::TaskRejected => 'Công việc bị trả lại',
             self::DeadlineExtensionRequested => 'Có yêu cầu gia hạn thời hạn',
             self::DeadlineExtensionReviewed => 'Yêu cầu gia hạn đã được duyệt hoặc từ chối',
+            self::TaskDeadlineChanged => 'Thời hạn công việc bị thay đổi',
+            self::TaskStatusChanged => 'Công việc bị tạm dừng, huỷ hoặc mở lại',
+            self::NoteAdded => 'Có trao đổi mới trên công việc',
+            self::PetitionCreated => 'Có đơn thư mới',
+            self::PetitionStatusChanged => 'Đơn thư đổi trạng thái',
+            self::DocumentUpdated => 'Văn bản giao việc được sửa sau khi ban hành',
             self::ReminderBefore => 'Nhắc trước hạn',
             self::ReminderOn => 'Nhắc đến hạn',
             self::ReminderAfter => 'Nhắc quá hạn',

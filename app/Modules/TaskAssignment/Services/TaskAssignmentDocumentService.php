@@ -173,6 +173,13 @@ class TaskAssignmentDocumentService
                     ]);
                 }
 
+                // Chỉ báo khi văn bản ĐÃ ban hành: sửa bản nháp là việc soạn thảo
+                // bình thường, không ai cần biết. Đã ban hành mà sửa thì người
+                // đang thực hiện công việc bên trong cần xem lại nội dung chỉ đạo.
+                if ($document->status === TaskAssignmentDocumentStatusEnum::Issued->value) {
+                    event(new \App\Services\Notification\Events\DocumentUpdated($document->fresh()));
+                }
+
                 return $document->load(['type', 'items', 'attachments.media', 'creator.media', 'editor.media']);
             });
         } catch (\Throwable $exception) {

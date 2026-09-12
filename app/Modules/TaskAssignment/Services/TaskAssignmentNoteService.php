@@ -40,6 +40,10 @@ class TaskAssignmentNoteService
             'organization_id' => $item->organization_id,
         ]);
 
+        // Kênh trao đổi chính trong công việc trước đây im lặng hoàn toàn: ai hỏi
+        // trong ghi chú thì người kia chỉ biết khi tự mở công việc ra xem.
+        event(new \App\Services\Notification\Events\NoteAdded($note));
+
         return $note->load('author');
     }
 }

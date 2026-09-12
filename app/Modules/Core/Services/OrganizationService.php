@@ -123,7 +123,7 @@ class OrganizationService
         $isTaskAssignment = fn ($c) => $c && $c->module_key === $moduleKey;
 
         // Non-reminder instant
-        foreach (['document_issued', 'task_assigned', 'task_completed', 'task_confirmed', 'report_submitted', 'task_rejected', 'deadline_extension_requested', 'deadline_extension_reviewed'] as $ek) {
+        foreach (['document_issued', 'task_assigned', 'task_completed', 'task_confirmed', 'report_submitted', 'task_rejected', 'deadline_extension_requested', 'deadline_extension_reviewed', 'task_deadline_changed', 'task_status_changed', 'note_added', 'petition_created', 'petition_status_changed', 'document_updated'] as $ek) {
             $c = $configs->get($ek);
             if (! $c) {
                 continue;
@@ -137,6 +137,12 @@ class OrganizationService
                 'task_rejected' => 'Thông báo ngay khi bị trả lại',
                 'deadline_extension_requested' => 'Thông báo ngay khi có yêu cầu gia hạn',
                 'deadline_extension_reviewed' => 'Thông báo ngay khi yêu cầu gia hạn được xử lý',
+                'task_deadline_changed' => 'Thông báo ngay khi thời hạn thay đổi',
+                'task_status_changed' => 'Thông báo ngay khi tạm dừng, huỷ hoặc mở lại',
+                'note_added' => 'Thông báo ngay khi có trao đổi mới',
+                'petition_created' => 'Thông báo ngay khi có đơn thư mới',
+                'petition_status_changed' => 'Thông báo ngay khi đơn thư đổi trạng thái',
+                'document_updated' => 'Thông báo ngay khi văn bản được cập nhật',
                 default => 'Gửi ngay lập tức',
             };
             $s = \App\Modules\Core\Models\NotificationSchedule::firstOrNew([

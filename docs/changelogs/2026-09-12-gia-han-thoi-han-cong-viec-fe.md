@@ -129,6 +129,31 @@ Hai sự kiện mới, **mặc định TẮT** — quản trị bật ở màn C
 Sau khi kéo code chạy `sail artisan db:seed --class=NotificationEventConfigSeeder`
 để tạo cấu hình cho các tổ chức đã có.
 
+## 5b. Sáu sự kiện thông báo khác vừa bổ sung cùng đợt
+
+Rà lại toàn module thấy nhiều thao tác quan trọng không báo cho ai. Sáu sự kiện
+dưới đây thêm cùng đợt, **tất cả mặc định TẮT**:
+
+| Event key | Báo cho | Vá lỗ hổng gì |
+|---|---|---|
+| `task_deadline_changed` | người thực hiện | quản lý sửa thẳng `end_at` thì hạn đổi sau lưng người thực hiện, trong khi đi đường xin gia hạn thì họ được báo đầy đủ |
+| `task_status_changed` | người thực hiện | tạm dừng / huỷ / mở lại trước đây câm lặng hoàn toàn — tạm dừng khoá cập nhật tiến độ mà người thực hiện chỉ phát hiện khi bấm vào thấy lỗi |
+| `note_added` | người liên quan, trừ tác giả | kênh trao đổi chính trong công việc không báo cho ai |
+| `petition_created` | đại diện phòng ban tiếp nhận | cả phân hệ đơn thư không có sự kiện nào |
+| `petition_status_changed` | đại diện phòng ban, trừ người vừa đổi | như trên |
+| `document_updated` | người thực hiện các việc trong văn bản | sửa văn bản **sau khi đã ban hành** — nội dung chỉ đạo đổi mà người làm không biết |
+
+`task_status_changed` gộp cả ba thao tác vào một sự kiện, phân nhánh nội dung
+theo trạng thái mới — quản trị chỉ cần một công tắc thay vì ba.
+
+Chạy `sail artisan db:seed --class=NotificationEventConfigSeeder` sau khi kéo
+code để tạo cấu hình cho các tổ chức đã có.
+
+**Ghi nhận để xử lý sau:** `task_assignment_petitions.created_by` luôn NULL —
+hệ thống không có chỗ nào ghi người lập đơn (kể cả đơn nhập từ hệ thống cũ). Vì
+vậy `petition_status_changed` báo cho đại diện phòng ban chứ không phải người
+lập đơn. Khi nào ghi được người lập thì mở rộng thêm.
+
 ## 6. Miniapp
 
 Làm **cùng đợt** với web: nút xin ở màn Được giao, nút duyệt cắm vào

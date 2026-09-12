@@ -172,8 +172,18 @@ class TaskAssignmentItemService
             $item = DB::transaction(function () use ($item, $validated, $files, $removeAttachmentIds, &$storedFiles) {
                 $users = $validated['users'] ?? null;
 
+                // Chụp hạn cũ TRƯỚC khi ghi. Quản lý được phép sửa thẳng `end_at`
+                // ở màn này (không bắt buộc đi qua luồng xin gia hạn), nên nếu
+                // không báo thì hạn đổi sau lưng người thực hiện — trong khi đi
+                // đường gia hạn thì họ được báo đầy đủ.
+                $previousEndAt = $item->end_at?->format('H:i d/m/Y');
+
                 $data = collect($validated)->except(['users', 'attachments', 'remove_attachment_ids'])->all();
                 $item->update($data);
+
+                if ($item->wasChanged('end_at')) {
+                    event(new \App\Services\Notification\Events\TaskDeadlineChanged($item->fresh(), $previousEndAt));
+                }
 
                 $addedUserIds = [];
                 if ($users !== null) {
@@ -304,6 +314,16 @@ class TaskAssignmentItemService
             event(new \App\Services\Notification\Events\TaskConfirmed($item->fresh()));
         }
 
+        // Tạm dừng và huỷ trước đây hoàn toàn câm lặng: người thực hiện bị khoá
+        // không cập nhật tiến độ được nữa mà chỉ phát hiện khi bấm vào và thấy
+        // lỗi, hoặc vẫn tưởng đang phải làm việc đã huỷ.
+        if ($prevStatus !== $status && in_array($status, [
+            TaskProgressStatusEnum::Paused->value,
+            TaskProgressStatusEnum::Cancelled->value,
+        ], true)) {
+            event(new \App\Services\Notification\Events\TaskStatusChanged($item->fresh(), $prevStatus));
+        }
+
         return $item->load(['document.type', 'document.attachments.media', 'document.creator.media', 'document.editor.media', 'itemType', 'users', 'creator.media', 'editor.media']);
     }
 
@@ -316,6 +336,7 @@ class TaskAssignmentItemService
      */
     public function reopen(TaskAssignmentItem $item): TaskAssignmentItem
     {
+        $previousStatus = $item->processing_status;
         $percent = (int) ($item->completion_percent ?? 0);
 
         $status = match (true) {
@@ -325,6 +346,10 @@ class TaskAssignmentItemService
         };
 
         $item->update($this->buildStatusUpdateData($status));
+
+        // Mở lại việc đã đóng nghĩa là người thực hiện phải làm tiếp — họ cần
+        // biết, không thể để tự phát hiện.
+        event(new \App\Services\Notification\Events\TaskStatusChanged($item->fresh(), $previousStatus));
 
         return $item->load(['document.type', 'document.attachments.media', 'document.creator.media', 'document.editor.media', 'itemType', 'users', 'creator.media', 'editor.media']);
     }
