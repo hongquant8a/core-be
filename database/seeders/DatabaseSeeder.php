@@ -15,8 +15,13 @@ class DatabaseSeeder extends Seeder
      *  - nhanvien1..nhanvien10 / 123123 — Nhân viên
      *  - truongphong1..truongphong3 / 123123 — Trưởng phòng (mỗi phòng ban một người)
      *
-     * Tài khoản cán bộ cơ quan do CanBoCoQuanSeeder tạo: user_name = tên + họ viết
-     * tắt + tên lót viết tắt (vd `quandh`), mật khẩu 123123.
+     * KHÔNG chạy mặc định — phải yêu cầu riêng:
+     *  - TaiKhoanDangUyHoaKhanhSeeder: 38 tài khoản cán bộ Đảng ủy phường Hòa
+     *    Khánh + 6 đơn vị. Là dữ liệu của một cơ quan cụ thể, không phải dữ
+     *    liệu mẫu dùng chung, và có thể ghi đè tài khoản trùng username trên
+     *    máy đã nhập dữ liệu từ hệ thống cũ.
+     *
+     *        sail artisan db:seed --class=TaiKhoanDangUyHoaKhanhSeeder
      */
     public function run(): void
     {
@@ -30,8 +35,5 @@ class DatabaseSeeder extends Seeder
 
         // Dữ liệu mẫu phân hệ Quản lý công việc.
         $this->call(TaskAssignmentDemoSeeder::class);
-
-        // Đơn vị + tài khoản cán bộ cơ quan (dữ liệu thật, không phải dữ liệu mẫu).
-        $this->call(CanBoCoQuanSeeder::class);
     }
 }

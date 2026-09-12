@@ -13,7 +13,19 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
 /**
- * Danh sách cán bộ cơ quan: đơn vị, tài khoản, nhân viên và vai trò.
+ * Tài khoản cán bộ Đảng ủy phường Hòa Khánh: đơn vị, tài khoản, nhân viên, vai trò.
+ *
+ * ⚠️ KHÔNG nằm trong `DatabaseSeeder` — chỉ chạy khi có yêu cầu rõ ràng:
+ *
+ *     sail artisan db:seed --class=TaiKhoanDangUyHoaKhanhSeeder
+ *
+ * Vì sao tách ra: đây là dữ liệu của MỘT cơ quan cụ thể, không phải dữ liệu mẫu
+ * dùng chung. Máy đã nhập dữ liệu từ hệ thống cũ sẽ có sẵn tài khoản và phòng
+ * ban thật; chạy thêm seeder này là chồng thêm 38 tài khoản và 6 đơn vị nữa.
+ *
+ * Hai username có thể ĐỤNG tài khoản đã có (`thinhp`, `phienmt`): seeder dùng
+ * `forceFill()->save()` nên sẽ ghi đè email, điện thoại, trạng thái và ĐẶT LẠI
+ * mật khẩu về `123123`. Kiểm tra trước khi chạy trên máy có dữ liệu thật.
  *
  * Chạy SAU PermissionSeeder (cần sẵn 3 vai trò Nhân viên / Trưởng phòng / Lãnh đạo).
  *
@@ -28,7 +40,7 @@ use Illuminate\Support\Str;
  *  - Trưởng phòng: người đứng đầu và cấp phó của đơn vị/ban/đoàn thể.
  *  - Nhân viên   : chuyên viên.
  */
-class CanBoCoQuanSeeder extends Seeder
+class TaiKhoanDangUyHoaKhanhSeeder extends Seeder
 {
     protected const ORG_ID = 1;
 
