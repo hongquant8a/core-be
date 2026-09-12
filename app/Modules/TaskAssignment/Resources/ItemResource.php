@@ -29,6 +29,14 @@ class ItemResource extends JsonResource
             'completed_at' => $this->completed_at?->format('H:i:s d/m/Y'),
             'approved_by' => $this->whenLoaded('approver', fn () => $this->formatUserSummary($this->approver), null),
             'is_overdue' => $this->resource->isOverdue(),
+            // Yêu cầu gia hạn đang chờ duyệt — FE dùng để hiện dấu hiệu ở danh
+            // sách và mở đúng nút Duyệt/Từ chối, không phải mở từng việc mới biết.
+            'pending_extension' => $this->whenLoaded('pendingExtension', fn () => $this->pendingExtension
+                ? [
+                    'id' => $this->pendingExtension->id,
+                    'requested_end_at' => $this->pendingExtension->requested_end_at?->format('H:i:s d/m/Y'),
+                ]
+                : null, null),
             'timing_status' => $this->resolveTimingStatus(),
             'departments' => $this->whenLoaded('users', function () {
                 $deptIds = $this->users->pluck('pivot.department_id')->unique();

@@ -113,7 +113,7 @@ class TaskAssignmentItemService
     {
         $filters = $this->applyScopeRestriction($filters);
 
-        return TaskAssignmentItem::with(['document.type', 'document.attachments.media', 'document.creator.media', 'document.editor.media', 'itemType', 'users', 'assigner', 'creator.media', 'editor.media', 'attachments.media', 'reminders', 'reporter', 'approver'])
+        return TaskAssignmentItem::with(['document.type', 'document.attachments.media', 'document.creator.media', 'document.editor.media', 'itemType', 'users', 'assigner', 'creator.media', 'editor.media', 'attachments.media', 'reminders', 'reporter', 'approver', 'pendingExtension'])
             ->withCount('reports')
             ->filter($filters)
             ->paginate($limit);
@@ -121,7 +121,7 @@ class TaskAssignmentItemService
 
     public function show(TaskAssignmentItem $item): TaskAssignmentItem
     {
-        $item->load(['document.type', 'document.attachments.media', 'document.creator.media', 'document.editor.media', 'itemType', 'users', 'reports', 'attachments.media', 'assigner', 'creator.media', 'editor.media', 'reminders', 'reporter', 'approver']);
+        $item->load(['document.type', 'document.attachments.media', 'document.creator.media', 'document.editor.media', 'itemType', 'users', 'reports', 'attachments.media', 'assigner', 'creator.media', 'editor.media', 'reminders', 'reporter', 'approver', 'pendingExtension']);
         $item->loadCount(['reports', 'transfers', 'notes']);
 
         return $item;
