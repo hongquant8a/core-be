@@ -63,6 +63,37 @@ class TaskAssignmentItem extends TenantModel implements HasMedia, Remindable
         'completion_percent' => 'integer',
     ];
 
+    /**
+     * Thời hạn là trường CHỈ CÓ NGÀY dù cột là `datetime` — chốt ngày 13/09/2026.
+     *
+     * Chuẩn hoá ngay tại model để mọi đường ghi (API web, miniapp, AI phân tích văn
+     * bản, seeder, duyệt gia hạn) cho ra cùng một giờ: bắt đầu 00:00:00, kết thúc
+     * 23:59:59. Trước đây mỗi luồng tự gắn một giờ (00:00, 08:00, 17:00, 23:59:00,
+     * giờ lúc bấm) nên lịch nhắc — vốn lấy đúng giờ của `end_at` rồi cộng/trừ phút —
+     * chạy lệch giờ giữa các công việc cùng hạn.
+     */
+    public function setStartAtAttribute($value): void
+    {
+        $this->attributes['start_at'] = self::normalizeDay($value, false);
+    }
+
+    public function setEndAtAttribute($value): void
+    {
+        $this->attributes['end_at'] = self::normalizeDay($value, true);
+    }
+
+    /** '' / null → null; còn lại → đầu ngày (00:00:00) hoặc cuối ngày (23:59:59). */
+    public static function normalizeDay($value, bool $endOfDay): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $date = $value instanceof \DateTimeInterface ? Carbon::instance($value) : Carbon::parse($value);
+
+        return ($endOfDay ? $date->endOfDay() : $date->startOfDay())->format('Y-m-d H:i:s');
+    }
+
     protected static function booted()
     {
         static::creating(fn (TaskAssignmentItem $model) => $model->created_by = $model->updated_by = auth()->id());

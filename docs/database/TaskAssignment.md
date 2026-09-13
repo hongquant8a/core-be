@@ -199,6 +199,23 @@ Tệp đính kèm báo cáo.
 
 Ràng buộc: UNIQUE(task_assignment_item_report_id, media_id)
 
+### Thời hạn là trường CHỈ CÓ NGÀY (chốt 13/09/2026)
+
+Cột vẫn là `datetime`, nhưng nghiệp vụ chỉ dùng ngày. Model tự chuẩn hoá mọi lần ghi:
+
+| Cột | Luôn lưu |
+|---|---|
+| `task_assignment_items.start_at` | `00:00:00` |
+| `task_assignment_items.end_at` | `23:59:59` |
+| `task_assignment_item_extensions.current_end_at` | `23:59:59` |
+| `task_assignment_item_extensions.requested_end_at` | `23:59:59` |
+
+Chuẩn hoá nằm ở mutator của model (`TaskAssignmentItem::normalizeDay`) chứ không ở từng request, để mọi đường ghi (API web, miniapp, AI phân tích văn bản, seeder, duyệt gia hạn) cho cùng một giờ. Lý do phải thống nhất: lịch nhắc lấy **đúng giờ** của `end_at` rồi cộng/trừ phút, nên mỗi luồng một giờ là mỗi công việc nhắc một giờ.
+
+Ghi bằng `DB::table()` sẽ **lọt qua** mutator — tránh ghi thời hạn theo cách đó.
+
+Dữ liệu cũ chuẩn hoá bằng migration `2026_09_13_000000_normalize_task_assignment_dates_to_whole_days.php`.
+
 ### Xoá mềm — bốn bảng
 
 | Bảng | Xoá mềm từ | Thùng rác |

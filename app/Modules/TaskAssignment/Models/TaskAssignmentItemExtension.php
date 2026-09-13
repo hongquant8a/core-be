@@ -30,6 +30,22 @@ class TaskAssignmentItemExtension extends TenantModel
     ];
 
     /**
+     * Hạn gia hạn là trường CHỈ CÓ NGÀY — luôn lưu cuối ngày 23:59:59, cùng quy
+     * ước với `TaskAssignmentItem::end_at`. Duyệt xong giá trị này được chép sang
+     * `end_at`, nên hai bên phải cùng một giờ. Trước đây web và miniapp tự gắn
+     * 17:00:00, khiến việc đã gia hạn bị nhắc theo 17:00 thay vì 23:59:59.
+     */
+    public function setRequestedEndAtAttribute($value): void
+    {
+        $this->attributes['requested_end_at'] = TaskAssignmentItem::normalizeDay($value, true);
+    }
+
+    public function setCurrentEndAtAttribute($value): void
+    {
+        $this->attributes['current_end_at'] = TaskAssignmentItem::normalizeDay($value, true);
+    }
+
+    /**
      * Công việc được xin gia hạn.
      *
      * Bỏ global scope `issuedDocument`: scope đó lọc chỉ còn công việc thuộc văn

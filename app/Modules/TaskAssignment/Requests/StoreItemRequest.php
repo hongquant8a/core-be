@@ -142,12 +142,12 @@ class StoreItemRequest extends BaseRequest
                 'example' => 'has_deadline',
             ],
             'start_at' => [
-                'description' => 'Thời gian bắt đầu (Y-m-d H:i:s).',
-                'example' => '2026-04-10 08:00:00',
+                'description' => 'Ngày bắt đầu (Y-m-d). Chỉ lấy ngày — hệ thống luôn lưu 00:00:00.',
+                'example' => '2026-04-10',
             ],
             'end_at' => [
-                'description' => 'Thời gian kết thúc / Hạn chót (Y-m-d H:i:s).',
-                'example' => '2026-04-30 17:00:00',
+                'description' => 'Hạn chót (Y-m-d). Chỉ lấy ngày — hệ thống luôn lưu 23:59:59.',
+                'example' => '2026-04-30',
             ],
             'processing_status' => [
                 'description' => 'Trạng thái xử lý (todo, in_progress, paused, cancelled, done).',

@@ -33,7 +33,7 @@ class TaskAssignmentItemExtensionController extends Controller
      *
      * @queryParam limit integer Số bản ghi mỗi trang (1-100). Example: 10
      *
-     * @response 200 {"success": true, "data": [{"id": 1, "current_end_at": "17:00:00 30/09/2026", "requested_end_at": "17:00:00 15/10/2026", "reason": "Đơn vị phối hợp chưa cung cấp số liệu", "status": "pending", "status_label": "Chờ duyệt"}]}
+     * @response 200 {"success": true, "data": [{"id": 1, "current_end_at": "23:59:59 30/09/2026", "requested_end_at": "23:59:59 15/10/2026", "reason": "Đơn vị phối hợp chưa cung cấp số liệu", "status": "pending", "status_label": "Chờ duyệt"}]}
      */
     public function index(FilterRequest $request, TaskAssignmentItem $taskAssignmentItem)
     {

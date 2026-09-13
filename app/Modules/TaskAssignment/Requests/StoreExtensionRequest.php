@@ -43,8 +43,8 @@ class StoreExtensionRequest extends BaseRequest
     {
         return [
             'requested_end_at' => [
-                'description' => 'Thời hạn muốn dời tới (Y-m-d H:i:s). Không ràng buộc phải sau hạn hiện tại.',
-                'example' => '2026-10-15 17:00:00',
+                'description' => 'Ngày muốn dời hạn tới (Y-m-d). Chỉ lấy ngày — hệ thống luôn lưu 23:59:59. Không ràng buộc phải sau hạn hiện tại.',
+                'example' => '2026-10-15',
             ],
             'reason' => [
                 'description' => 'Lý do xin gia hạn (10-2000 ký tự).',
