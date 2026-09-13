@@ -1,7 +1,7 @@
 # API — Liên kết Telegram
 
 > Ngày tạo: 17:30:00 12/09/2026  
-> Cập nhật lần cuối: 17:30:00 12/09/2026
+> Cập nhật lần cuối: 09:20:00 13/09/2026
 
 Nhân viên tự liên kết tài khoản với Telegram bằng deep link để nhận thông báo công việc.
 Telegram là **kênh phụ**: thông báo luôn được ghi trong ứng dụng, chưa liên kết vẫn xem đủ.
@@ -16,12 +16,22 @@ Telegram là **kênh phụ**: thông báo luôn được ghi trong ứng dụng,
 | `tg_webhook_secret` | Chuỗi bí mật Telegram gửi kèm mỗi webhook. Lệnh đăng ký tự sinh nếu trống |
 | `tg_webhook_url` | Domain HTTPS công khai của backend. Bỏ trống thì lấy `APP_URL` trong `.env` |
 
-Đăng ký webhook với Telegram:
+### Đăng ký webhook
+
+Nhập domain vào cấu hình thôi là chưa đủ: Telegram nằm ở phía bên kia và không đọc được cấu
+hình của hệ thống. Phải có đúng một cú gọi sang Telegram để báo địa chỉ webhook. Hai cách,
+cùng một logic:
+
+- **Trên giao diện:** Cài đặt → Telegram → nút **Đăng ký webhook** (quyền `settings.update`).
+  Nút lưu cấu hình trước rồi mới gọi Telegram.
+- **Dòng lệnh** (triển khai tự động, hoặc khi chưa vào được màn quản trị):
 
 ```bash
 sail artisan telegram:set-webhook                              # dùng tg_webhook_url hoặc APP_URL
 sail artisan telegram:set-webhook --url=https://ngrok.../      # ghi đè khi phát triển
 ```
+
+Chạy một lần sau khi nhập bot token, và chạy lại mỗi khi đổi domain hoặc đổi bot.
 
 Telegram chỉ chấp nhận HTTPS và phải gọi vào được từ Internet — `localhost` không dùng được,
 lúc phát triển thì dựng đường hầm (ngrok, cloudflared).
@@ -35,6 +45,7 @@ lúc phát triển thì dựng đường hầm (ngrok, cloudflared).
 | Gửi tin nhắn thử | `POST` | `/api/users/me/telegram/test` | Sanctum, throttle 5/10 phút |
 | Hủy liên kết | `DELETE` | `/api/users/me/telegram` | Sanctum |
 | Webhook Telegram | `POST` | `/api/telegram/webhook` | Công khai — header `X-Telegram-Bot-Api-Secret-Token` |
+| Đăng ký webhook với Telegram | `POST` | `/api/settings/telegram/webhook` | Sanctum, quyền `settings.update` |
 
 Không có endpoint nào nhận `chat_id` từ phía người dùng. `PUT /api/users/me` **bỏ qua**
 `telegram_chat_id` nếu client gửi lên; ô nhập tay chỉ còn ở màn quản trị
@@ -70,6 +81,25 @@ Không có endpoint nào nhận `chat_id` từ phía người dùng. `PUT /api/u
 
 Mỗi lần gọi vô hiệu hoá token cũ. Token sống 24 giờ và ngắn hơn giới hạn 64 ký tự
 của payload `start` mà Telegram cho phép.
+
+### Đăng ký webhook
+
+Body có một trường tùy chọn `url` (domain HTTPS ghi đè). Bỏ trống thì dùng `tg_webhook_url`,
+không có nữa thì `APP_URL`.
+
+```json
+{
+  "success": true,
+  "message": "Đã đăng ký webhook với Telegram.",
+  "data": {
+    "url": "https://api-qlcv.danatec.vn/api/telegram/webhook",
+    "bot_username": "danatec_qlcv_bot",
+    "secret_generated": true
+  }
+}
+```
+
+`secret_generated: true` nghĩa là khóa bí mật webhook vừa được sinh và lưu vào cấu hình.
 
 ## 3. Luồng liên kết
 

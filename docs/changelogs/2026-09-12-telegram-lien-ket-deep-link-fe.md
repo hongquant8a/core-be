@@ -19,6 +19,7 @@ Chi tiết API: [`docs/api/telegram.md`](../api/telegram.md)
 | Gửi tin nhắn thử | `POST` | `/api/users/me/telegram/test` | Sanctum, throttle 5/10 phút |
 | Hủy liên kết | `DELETE` | `/api/users/me/telegram` | Sanctum |
 | Webhook Telegram | `POST` | `/api/telegram/webhook` | Công khai, xác thực header bí mật |
+| Đăng ký webhook với Telegram | `POST` | `/api/settings/telegram/webhook` | Sanctum, quyền `settings.update` |
 
 Không có quyền Spatie nào mới: đây là self endpoint, mỗi người chỉ thao tác với tài
 khoản đang đăng nhập.
@@ -38,6 +39,7 @@ là lối dự phòng và đã có cảnh báo ngay cạnh ô nhập.
 |---|---|
 | Trang cá nhân → tab Thông báo | Thẻ "Thông báo Telegram": nút liên kết → mã QR + nút mở Telegram + hạn dùng; đã liên kết thì hiện thời điểm, nút gửi tin thử, nút hủy |
 | Màn quản trị người dùng | Cảnh báo rủi ro nhập nhầm `chat_id` ngay trên ô nhập tay |
+| Màn Cài đặt → Telegram | Nút **Đăng ký webhook**: lưu cấu hình rồi báo địa chỉ webhook cho Telegram, khỏi phải vào máy chủ gõ lệnh |
 
 Mã QR dựng phía trình duyệt bằng `qrcode` (đã có sẵn trong dự án). Sau khi mở link, thẻ
 hỏi lại trạng thái mỗi 5 giây rồi tự đổi giao diện — người dùng đang ở bên cửa sổ Telegram,
@@ -55,8 +57,11 @@ Sau khi kéo code:
 ```bash
 sail artisan migrate
 sail artisan db:seed --class=SettingSeeder
-sail artisan telegram:set-webhook
 ```
+
+Rồi vào Cài đặt → Telegram: nhập Bot Token, bật kênh, nhập Domain Webhook (bỏ trống thì lấy
+`APP_URL`), bấm **Đăng ký webhook**. Lệnh `sail artisan telegram:set-webhook` vẫn còn cho
+triển khai tự động.
 
 ## 5. Hành vi tự dọn
 

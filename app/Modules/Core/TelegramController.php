@@ -4,6 +4,7 @@ namespace App\Modules\Core;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Jobs\ProcessTelegramUpdateJob;
+use App\Modules\Core\Requests\RegisterTelegramWebhookRequest;
 use App\Modules\Core\Services\SettingService;
 use App\Modules\Core\Services\TelegramLinkService;
 use Illuminate\Http\Request;
@@ -85,6 +86,33 @@ class TelegramController extends Controller
         }
 
         return $this->success(null, 'Đã gửi tin nhắn thử.');
+    }
+
+    /**
+     * Đăng ký webhook với Telegram (quản trị)
+     *
+     * Nhập domain vào màn Cài đặt thôi chưa đủ: Telegram nằm ở phía bên kia, không đọc được
+     * cấu hình của hệ thống. Endpoint này thực hiện đúng một cú gọi sang Telegram để báo địa chỉ
+     * webhook — chạy một lần sau khi nhập bot token, và chạy lại mỗi khi đổi domain hoặc đổi bot.
+     *
+     * Khóa bí mật webhook được sinh tự động nếu chưa có.
+     *
+     * @header X-Organization-Id required Tổ chức đang làm việc. Example: 28
+     *
+     * @bodyParam url string Domain HTTPS ghi đè. Bỏ trống thì dùng cấu hình `tg_webhook_url`, không có nữa thì `APP_URL`. Example: https://api-qlcv.danatec.vn
+     *
+     * @response 200 {"success": true, "message": "Đã đăng ký webhook với Telegram.", "data": {"url": "https://api-qlcv.danatec.vn/api/telegram/webhook", "bot_username": "danatec_qlcv_bot", "secret_generated": true}}
+     * @response 422 {"success": false, "message": "Domain webhook phải là HTTPS, đang là: http://localhost:8001"}
+     */
+    public function registerWebhook(RegisterTelegramWebhookRequest $request)
+    {
+        try {
+            $result = $this->linkService->registerWebhook($request->validated()['url'] ?? null);
+        } catch (RuntimeException $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+
+        return $this->success($result, 'Đã đăng ký webhook với Telegram.');
     }
 
     /**

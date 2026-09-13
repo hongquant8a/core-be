@@ -11,6 +11,7 @@ use App\Modules\Core\Services\TelegramLinkService;
 use App\Services\Notification\DTOs\SendResult;
 use App\Services\Notification\NotificationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Mockery;
 use Tests\TestCase;
@@ -175,6 +176,45 @@ class TelegramLinkTest extends TestCase
             ->assertOk();
 
         $this->assertNull(UserProfile::where('user_id', $user->id)->value('telegram_chat_id'));
+    }
+
+    public function test_dang_ky_webhook_tu_choi_domain_khong_https(): void
+    {
+        Http::fake();
+
+        $admin = User::factory()->create();
+
+        $this->withHeaders($this->authHeaders($admin))
+            ->postJson('/api/settings/telegram/webhook', ['url' => 'http://localhost:8001'])
+            ->assertStatus(422);
+
+        // Không được gọi sang Telegram khi domain đã sai ngay từ đầu.
+        Http::assertNothingSent();
+    }
+
+    public function test_dang_ky_webhook_sinh_khoa_bi_mat_va_goi_telegram(): void
+    {
+        Setting::where('key', 'tg_webhook_secret')->update(['value' => null]);
+        Setting::clearCache();
+
+        Http::fake([
+            'api.telegram.org/*' => Http::response(['ok' => true, 'result' => ['username' => 'danatec_test_bot']]),
+        ]);
+
+        $admin = User::factory()->create();
+
+        $this->withHeaders($this->authHeaders($admin))
+            ->postJson('/api/settings/telegram/webhook', ['url' => 'https://api-qlcv.example.vn'])
+            ->assertOk()
+            ->assertJsonPath('data.url', 'https://api-qlcv.example.vn/api/telegram/webhook')
+            ->assertJsonPath('data.secret_generated', true);
+
+        $secret = Setting::where('key', 'tg_webhook_secret')->value('value');
+        $this->assertNotEmpty($secret);
+
+        Http::assertSent(fn ($request) => str_contains($request->url(), '/setWebhook')
+            && $request['secret_token'] === $secret
+            && $request['url'] === 'https://api-qlcv.example.vn/api/telegram/webhook');
     }
 
     public function test_huy_lien_ket_xoa_sach_du_lieu(): void

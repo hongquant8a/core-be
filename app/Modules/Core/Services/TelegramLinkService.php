@@ -11,6 +11,7 @@ use App\Services\Notification\NotificationService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -61,7 +62,7 @@ class TelegramLinkService
         $botUsername = $this->botUsername();
 
         if (! $botUsername) {
-            throw new \RuntimeException('Chưa cấu hình bot Telegram. Liên hệ quản trị hệ thống.');
+            throw new RuntimeException('Chưa cấu hình bot Telegram. Liên hệ quản trị hệ thống.');
         }
 
         // 32 ký tự an toàn URL, dưới giới hạn 64 ký tự của payload start.
@@ -100,7 +101,7 @@ class TelegramLinkService
         $chatId = $this->profileOf($user)?->telegram_chat_id;
 
         if (! $chatId) {
-            throw new \RuntimeException('Tài khoản chưa liên kết Telegram.');
+            throw new RuntimeException('Tài khoản chưa liên kết Telegram.');
         }
 
         return $this->sendMessage($chatId, '<b>Tin nhắn kiểm thử</b>'."\n\n".'Kênh Telegram của bạn đang hoạt động bình thường.');
@@ -156,6 +157,67 @@ class TelegramLinkService
             .($name ? "Tài khoản: {$name}\n" : '')
             .'Từ giờ bạn sẽ nhận thông báo công việc qua kênh này.',
         );
+    }
+
+    /**
+     * Đăng ký webhook với Telegram.
+     *
+     * Nhập domain vào cấu hình thôi thì Telegram không biết gì — nó nằm ở phía bên kia và
+     * không đọc được cơ sở dữ liệu của mình. Phải có đúng một cú gọi sang Telegram nói
+     * "webhook của bot này là địa chỉ X"; hàm này là cú gọi đó, dùng chung cho nút trên màn
+     * Cài đặt và lệnh telegram:set-webhook.
+     *
+     * @param  string|null  $url  Domain HTTPS ghi đè; bỏ trống thì lấy tg_webhook_url rồi tới APP_URL.
+     * @return array{url: string, bot_username: string|null, secret_generated: bool}
+     *
+     * @throws RuntimeException khi thiếu bot token, domain không hợp lệ, hoặc Telegram từ chối.
+     */
+    public function registerWebhook(?string $url = null): array
+    {
+        if (! ($this->settings->getByKey('tg_bot_token')['value'] ?? null)) {
+            throw new RuntimeException('Chưa cấu hình Bot Token. Nhập token rồi lưu trước khi đăng ký webhook.');
+        }
+
+        $base = rtrim((string) (
+            $url
+            ?: ($this->settings->getByKey('tg_webhook_url')['value'] ?? null)
+            ?: config('app.url')
+        ), '/');
+
+        if (! str_starts_with($base, 'https://')) {
+            throw new RuntimeException("Domain webhook phải là HTTPS, đang là: {$base}");
+        }
+
+        // Sinh sẵn khóa bí mật để không ai phải tự nghĩ chuỗi rồi copy nhầm giữa hai nơi —
+        // webhook từ chối mọi request không kèm đúng chuỗi này.
+        $secret = $this->settings->getByKey('tg_webhook_secret')['value'] ?? null;
+        $secretGenerated = false;
+
+        if (! $secret) {
+            $secret = Str::random(48);
+            $this->settings->update(['tg_webhook_secret' => $secret]);
+            $secretGenerated = true;
+        }
+
+        $webhookUrl = "{$base}/api/telegram/webhook";
+
+        $response = $this->callApi('setWebhook', [
+            'url' => $webhookUrl,
+            'secret_token' => $secret,
+            // Chỉ nhận tin nhắn: bot gửi một chiều, các loại update khác chỉ tốn hàng đợi.
+            'allowed_updates' => ['message'],
+            'drop_pending_updates' => true,
+        ]);
+
+        if (($response['ok'] ?? false) !== true) {
+            throw new RuntimeException('Telegram từ chối đăng ký webhook: '.($response['description'] ?? 'không có phản hồi từ Telegram'));
+        }
+
+        return [
+            'url' => $webhookUrl,
+            'bot_username' => $this->botUsername(),
+            'secret_generated' => $secretGenerated,
+        ];
     }
 
     /**
